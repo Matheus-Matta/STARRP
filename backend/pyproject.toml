@@ -1,0 +1,9 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = ["migrations", ".venv"]
+
+[tool.ruff.lint]
+# Entra o que aponta defeito; fica de fora o que só discorda de estilo.
+select = ["F", "W", "B", "C4", "SIM", "RET503"]
+ignore = ["SIM102", "SIM103", "SIM105", "SIM108", "C416"]

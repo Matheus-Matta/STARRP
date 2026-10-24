@@ -1,0 +1,85 @@
+/* Ajustes finos do PrimeVue sobre os tokens (o PrimeVue fica numa camada CSS
+   abaixo destes estilos, então nada aqui precisa de !important). */
+
+/* Tabela: cabeçalho discreto em caixa alta, linha com hover suave */
+.p-datatable { font-size: 14px; }
+/* Cabeçalho mais alto e legível; a coluna ordenada fica com a cor da marca. */
+.p-datatable .p-datatable-thead > tr > th {
+  height: 46px;
+  padding-block: 0.75rem;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  font: 650 12px/1.3 var(--font-sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  border-color: var(--border);
+}
+.p-datatable .p-datatable-sort-icon { width: 11px; height: 11px; margin-left: 6px; color: var(--text-subtle); }
+.p-datatable .p-datatable-column-sorted { color: var(--text-brand); background: var(--brand-subtle); }
+.p-datatable .p-datatable-column-sorted .p-datatable-sort-icon { color: var(--brand); }
+.p-datatable .p-datatable-tbody > tr { background: var(--surface-card); transition: background-color var(--dur-fast) ease; }
+.p-datatable .p-datatable-tbody > tr > td { border-color: var(--border-subtle); color: var(--text-body); }
+.p-datatable.p-datatable-hoverable .p-datatable-tbody > tr:not(.p-datatable-row-selected):hover {
+  background: var(--surface-hover);
+  color: var(--text-strong);
+}
+.p-datatable .p-datatable-tbody > tr:last-child > td { border-bottom: 0; }
+.p-datatable .p-paginator { border-top: 1px solid var(--border-subtle); background: transparent; }
+.p-datatable .p-sortable-column:not(.p-datatable-column-sorted):hover { background: var(--surface-hover); color: var(--text-strong); }
+
+/* Campos compactos: o texto digitado no mesmo corpo da tela (13,5px), não 16px. */
+.p-inputtext, .p-select-label, .p-multiselect-label, .p-textarea, .p-togglebutton, .p-select-option, .p-multiselect-option {
+  font-size: 13.5px;
+}
+.p-inputtext.p-inputtext-sm, .p-select-sm .p-select-label, .p-multiselect-sm .p-multiselect-label { font-size: 12.5px; }
+/* Mesma altura em todos os controles: o input usava line-height "normal" e ficava ~4px menor que o select. */
+.p-inputtext { line-height: 1.5; }
+.p-select.p-disabled, .p-multiselect.p-disabled, .p-inputtext:disabled, .p-textarea:disabled { opacity: 1; }
+.p-disabled .p-select-dropdown, .p-disabled .p-multiselect-dropdown, .p-disabled .p-select-clear-icon { opacity: 0.5; }
+.p-selectbutton.p-disabled { opacity: 0.75; }
+.p-toggleswitch.p-disabled { opacity: 0.6; }
+
+/* Campos: hover e foco com o anel da marca */
+.p-inputtext, .p-select, .p-multiselect, .p-inputnumber-input, .p-datepicker-input, .p-textarea, .p-password-input {
+  transition: border-color var(--dur-fast) ease, box-shadow var(--dur-fast) ease, background-color var(--dur-fast) ease;
+}
+.p-inputtext:enabled:focus, .p-select.p-focus, .p-multiselect.p-focus, .p-textarea:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 22%, transparent);
+}
+
+/* Listas suspensas e menus */
+.p-select-overlay, .p-multiselect-overlay, .p-menu, .p-tieredmenu-overlay, .p-tieredmenu-submenu, .p-datepicker-panel, .p-autocomplete-overlay {
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  border-radius: 10px;
+}
+.p-select-option, .p-multiselect-option, .p-menu-item-content { transition: background-color var(--dur-fast) ease, color var(--dur-fast) ease; }
+
+/* Diálogos: entrada com mola, cabeçalho separado */
+.p-dialog { box-shadow: var(--shadow-lg); border: 1px solid var(--border); animation: srp-fade-up var(--dur-slow) var(--ease-spring); }
+.p-dialog-header { border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem; }
+.p-dialog-title { font-weight: 700; font-size: 1.05rem; }
+.p-dialog-footer { border-top: 1px solid var(--border-subtle); padding-top: 1rem; gap: 0.5rem; }
+.p-dialog-mask { backdrop-filter: blur(2px); }
+
+/* Botões: sombra da marca só no principal, ao passar o mouse */
+.p-button:not(.p-button-text):not(.p-button-outlined):not(.p-button-secondary):not(.p-button-danger):enabled:hover {
+  box-shadow: var(--shadow-brand);
+}
+.p-button { font-weight: 600; }
+
+/* Avisos */
+.p-toast-message { border-radius: 10px; box-shadow: var(--shadow-lg); backdrop-filter: blur(6px); }
+
+/* Tags */
+.p-tag { font-weight: 600; letter-spacing: 0.01em; }
+
+/* Ícones dos menus (bolinha colorida em "Cor do sistema") */
+.menu-icon { margin-right: 0.5rem; font-size: 0.9rem; color: var(--text-muted); }
+
+/* Item perigoso nos menus (excluir, estornar) */
+.p-menu .menu-danger .p-menu-item-label, .p-menu .menu-danger .p-menu-item-icon { color: var(--danger-text); }
+
+/* Checkbox no tema escuro: a borda padrão some no fundo escuro. */
+.dark .p-checkbox:not(.p-checkbox-checked) .p-checkbox-box { border-color: var(--zinc-600); }

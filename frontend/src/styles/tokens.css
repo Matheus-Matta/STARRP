@@ -1,0 +1,123 @@
+/* ============================================================================
+   Starrp — tokens de design. Componentes consomem SÓ os semânticos
+   (--surface-*, --text-*, --border*, --brand*, --success...), nunca as escalas.
+   Tema claro: ardósia (slate). Tema escuro: zinco.
+   Cor da marca: uma escala --brand-50…950 escolhida por `data-brand` no <html>
+   (azul é o padrão; índigo, violeta e verde-petróleo são as alternativas).
+   ========================================================================== */
+/* Paletas da marca (escalas do Tailwind, testadas para contraste). */
+:root, [data-brand="azul"] {
+  --brand-50: #eff6ff; --brand-100: #dbeafe; --brand-200: #bfdbfe; --brand-300: #93c5fd; --brand-400: #60a5fa;
+  --brand-500: #3b82f6; --brand-600: #2563eb; --brand-700: #1d4ed8; --brand-800: #1e40af; --brand-900: #1e3a8a;
+  --brand-950: #172554;
+}
+[data-brand="indigo"] {
+  --brand-50: #eef2ff; --brand-100: #e0e7ff; --brand-200: #c7d2fe; --brand-300: #a5b4fc; --brand-400: #818cf8;
+  --brand-500: #6366f1; --brand-600: #4f46e5; --brand-700: #4338ca; --brand-800: #3730a3; --brand-900: #312e81;
+  --brand-950: #1e1b4b;
+}
+[data-brand="violeta"] {
+  --brand-50: #f5f3ff; --brand-100: #ede9fe; --brand-200: #ddd6fe; --brand-300: #c4b5fd; --brand-400: #a78bfa;
+  --brand-500: #8b5cf6; --brand-600: #7c3aed; --brand-700: #6d28d9; --brand-800: #5b21b6; --brand-900: #4c1d95;
+  --brand-950: #2e1065;
+}
+[data-brand="petroleo"] {
+  --brand-50: #effcf9; --brand-100: #c9f6ec; --brand-200: #94ecd9; --brand-300: #57dbc2; --brand-400: #26c0a7;
+  --brand-500: #0d9488; --brand-600: #0a7a72; --brand-700: #0d625d; --brand-800: #0f4f4b; --brand-900: #11423f;
+  --brand-950: #032725;
+}
+
+:root {
+  /* Altura única dos controles de formulário (= input/select: 13,5px × 1,5 + padding 0,45rem × 2 + borda). */
+  --control-h: calc(13.5px * 1.5 + 0.9rem + 2px);
+
+  --slate-0: #ffffff;  --slate-50: #f8fafc;  --slate-100: #f1f5f9; --slate-150: #e9eef4;
+  --slate-200: #e2e8f0; --slate-300: #cbd5e1; --slate-400: #94a3b8; --slate-500: #64748b;
+  --slate-600: #475569; --slate-700: #334155; --slate-800: #1e293b; --slate-900: #0f172a;
+
+  --zinc-50: #fafafa;  --zinc-100: #f4f4f5; --zinc-200: #e4e4e7; --zinc-300: #d4d4d8;
+  --zinc-400: #a1a1aa; --zinc-500: #71717a; --zinc-600: #52525b; --zinc-700: #3f3f46;
+  --zinc-800: #27272a; --zinc-850: #1f1f23; --zinc-900: #18181b; --zinc-950: #09090b;
+
+  /* Fonte, espaço, raio, movimento */
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+  --radius-sm: 6px; --radius-md: 8px; --radius-lg: 12px; --radius-xl: 16px; --radius-pill: 999px;
+  --sidebar-w: 232px; --sidebar-w-mini: 64px; --topbar-h: 52px; --page-max: 1680px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); --ease-spring: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-fast: 120ms; --dur-base: 180ms; --dur-slow: 280ms;
+}
+
+/* ── Tema claro (padrão) ─────────────────────────────────────────────────── */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --brand: var(--brand-600);        --brand-hover: var(--brand-700);   --brand-strong: var(--brand-800);
+  --brand-subtle: var(--brand-50);  --brand-subtle-2: var(--brand-100); --brand-border: var(--brand-200);
+  --on-brand: #ffffff;
+
+  --surface-ground: var(--slate-100); --surface-card: var(--slate-0);   --surface-raised: var(--slate-0);
+  --surface-sunken: var(--slate-50);  --surface-hover: var(--slate-100); --surface-active: var(--slate-150);
+  --surface-nav: var(--slate-0);      --nav-item-hover: var(--slate-100); --nav-item-active: var(--brand-50);
+  --surface-overlay: rgba(15, 23, 42, 0.45);
+
+  --text-strong: var(--slate-900); --text-body: var(--slate-700); --text-muted: var(--slate-500);
+  --text-subtle: var(--slate-400); --text-brand: var(--brand-700);
+
+  --border: var(--slate-200); --border-strong: var(--slate-300); --border-subtle: var(--slate-150);
+  --ring: var(--brand-500);
+
+  --success: #16a34a; --success-text: #15803d; --success-subtle: #f0fdf4;
+  --warning: #d97706; --warning-text: #b45309; --warning-subtle: #fffbeb;
+  --danger: #dc2626;  --danger-text: #b91c1c;  --danger-subtle: #fef2f2;
+  --info: #2563eb;    --info-text: #1d4ed8;    --info-subtle: #eff6ff;
+  --accent: #f59e0b;  /* promoção e destaque */
+
+  --shadow-xs: 0 1px 2px rgba(15, 23, 42, 0.05);
+  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+  --shadow-md: 0 4px 14px rgba(15, 23, 42, 0.08), 0 2px 4px rgba(15, 23, 42, 0.04);
+  --shadow-lg: 0 14px 32px rgba(15, 23, 42, 0.14), 0 4px 10px rgba(15, 23, 42, 0.06);
+  --shadow-brand: 0 8px 20px color-mix(in srgb, var(--brand-600) 28%, transparent);
+
+  /* Menu lateral (e barras do PDV): branco no tema claro, escuro no escuro.
+     `--nav-strong` = texto em destaque (nome da loja, item com o mouse em cima). */
+  --nav-bg: #ffffff; --nav-border: var(--slate-200); --nav-border-strong: var(--slate-300);
+  --nav-text: var(--slate-700); --nav-muted: var(--slate-500); --nav-strong: var(--slate-900);
+  --nav-hover: var(--slate-100); --nav-active: var(--brand-50); --nav-active-text: var(--brand-700);
+}
+
+/* ── Tema escuro ─────────────────────────────────────────────────────────── */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --brand: var(--brand-400);  --brand-hover: var(--brand-300); --brand-strong: var(--brand-200);
+  --brand-subtle: color-mix(in srgb, var(--brand-400) 12%, transparent);
+  --brand-subtle-2: color-mix(in srgb, var(--brand-400) 20%, transparent);
+  --brand-border: color-mix(in srgb, var(--brand-400) 35%, transparent); --on-brand: var(--brand-950);
+
+  --surface-ground: var(--zinc-950); --surface-card: var(--zinc-900);  --surface-raised: var(--zinc-850);
+  --surface-sunken: #0d0d10;         --surface-hover: var(--zinc-800); --surface-active: var(--zinc-700);
+  --surface-nav: var(--zinc-900);    --nav-item-hover: var(--zinc-800); --nav-item-active: color-mix(in srgb, var(--brand-400) 14%, transparent);
+  --surface-overlay: rgba(0, 0, 0, 0.6);
+
+  --text-strong: var(--zinc-50); --text-body: var(--zinc-200); --text-muted: var(--zinc-400);
+  --text-subtle: var(--zinc-500); --text-brand: var(--brand-300);
+
+  --border: var(--zinc-800); --border-strong: var(--zinc-700); --border-subtle: var(--zinc-850);
+  --ring: var(--brand-400);
+
+  --success: #22c55e; --success-text: #86efac; --success-subtle: rgba(34, 197, 94, 0.14);
+  --warning: #f59e0b; --warning-text: #fcd34d; --warning-subtle: rgba(245, 158, 11, 0.14);
+  --danger: #ef4444;  --danger-text: #fca5a5;  --danger-subtle: rgba(239, 68, 68, 0.14);
+  --info: #3b82f6;    --info-text: #93c5fd;    --info-subtle: rgba(59, 130, 246, 0.14);
+  --accent: #fbbf24;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-md: 0 6px 16px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 16px 36px rgba(0, 0, 0, 0.55);
+  --shadow-brand: 0 8px 22px color-mix(in srgb, var(--brand-400) 22%, transparent);
+
+  --nav-bg: #0b0b0e; --nav-border: #1f1f23; --nav-border-strong: #3f3f46; --nav-text: #d4d4d8; --nav-muted: #71717a;
+  --nav-strong: #ffffff;
+  --nav-hover: #1f1f23; --nav-active: color-mix(in srgb, var(--brand-400) 16%, transparent); --nav-active-text: var(--brand-300);
+}

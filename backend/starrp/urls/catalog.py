@@ -1,0 +1,27 @@
+from starrp.views import catalog, logistics, modules, registry, variants
+
+
+def register(router):
+    router.register("catalog/categories", catalog.CategoryViewSet, basename="categories")
+    router.register("catalog/brands", catalog.BrandViewSet, basename="brands")
+    router.register("catalog/attributes", catalog.AttributeViewSet, basename="attributes")
+    router.register("catalog/attribute-values", catalog.AttributeValueViewSet, basename="attribute-values")
+    router.register("catalog/products", catalog.ProductViewSet, basename="products")
+    router.register("catalog/service-rules", catalog.ServiceRuleViewSet, basename="service-rules")
+    router.register("metafield-definitions", logistics.MetafieldDefinitionViewSet, basename="metafield-definitions")
+    router.register("logistics/freight-tables", logistics.FreightTableViewSet, basename="freight-tables")
+    router.register("catalog/variants", variants.VariantViewSet, basename="variants")
+    router.register("catalog/volumes", variants.ProductVolumeViewSet, basename="volumes")
+    router.register("catalog/components", catalog.KitComponentViewSet, basename="kit-components")
+    router.register("catalog/product-images", catalog.ProductImageViewSet, basename="product-images")
+    router.register("catalog/supplier-products", catalog.SupplierProductViewSet, basename="supplier-products")
+    router.register("catalog/images", catalog.ImageViewSet, basename="images")
+    router.register("tags", catalog.TagViewSet, basename="tags")
+    router.register("customers/groups", registry.CustomerGroupViewSet, basename="customer-groups")
+    router.register("customers/addresses", registry.CustomerAddressViewSet, basename="customer-addresses")
+    router.register("customers", registry.CustomerViewSet, basename="customers")
+    router.register("suppliers", registry.SupplierViewSet, basename="suppliers")
+    router.register("promotions/tables", modules.DiscountTableViewSet, basename="discount-tables")
+    router.register("promotions/rules", modules.PromotionViewSet, basename="promotions")
+    router.register("promotions/rule-products", modules.PromotionProductViewSet, basename="promotion-products")
+    router.register("promotions/coupons", modules.CouponViewSet, basename="coupons")

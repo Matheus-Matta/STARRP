@@ -1,0 +1,29 @@
+Django>=5.1,<5.2
+# Histórico de TODA alteração (quem, quando, o quê) em todas as models — padrão do StarHub.
+# 3.8 é a última que aceita Django 5.1 (as novas puxam Django 6).
+django-simple-history>=3.8,<3.9
+djangorestframework>=3.15,<3.16
+djangorestframework-simplejwt>=5.3,<5.4
+django-cors-headers>=4.3,<4.5
+django-filter>=24.1,<25.0
+drf-spectacular>=0.27,<0.28
+channels>=4.1,<4.2
+channels-redis>=4.2,<4.3
+daphne>=4.1,<4.2
+celery>=5.4,<5.5
+redis>=5.0,<5.1
+psycopg[binary,pool]>=3.1,<3.3
+python-decouple>=3.8,<3.9
+python-json-logger>=2.0,<3.0
+Pillow>=10.0,<11.0
+requests>=2.31,<3.0
+django-storages>=1.14,<2.0
+boto3>=1.34,<2.0
+# Sincronização loja⇄nuvem: AES-256-GCM do payload e cliente WSS do nó local.
+cryptography>=42.0,<50.0
+websockets>=12.0,<16.0
+# Etiquetas: códigos de barras (EAN-13/Code128) e QR em SVG, sem imagem raster.
+python-barcode>=0.15,<1.0
+qrcode>=7.4,<9.0
+# Descrição em texto rico (editor): o HTML é limpo no servidor antes de salvar.
+nh3>=0.2,<0.4
