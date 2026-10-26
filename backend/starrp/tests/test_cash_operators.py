@@ -21,6 +21,9 @@ def test_so_quem_esta_vinculado_abre_e_o_gerente_assume_qualquer_caixa(ctx):
     assert blocked.status_code == 403 and "vinculado" in blocked.json()["error"]["message"]
     assert [r["id"] for r in boot_cashier["cash_registers"]] == [str(ctx.register.pk)]
     assert boot_other["cash_registers"] == []  # não vinculado: o PDV não oferece o caixa
+    # Tem acesso ao caixa mas nenhum vinculado: entra só para criar pedidos (modo vendedor).
+    assert boot_cashier["mode"] == "cashier" and boot_other["mode"] == "seller"
+    assert boot_other["cash_session"] is None
     assert opened.status_code == 201 and stranger_close.status_code == 403
     assert manager_move.status_code == 200  # gerente assume qualquer caixa
 
@@ -43,3 +46,16 @@ def test_fechamento_cego_o_operador_nao_ve_a_gaveta(ctx):
     assert set(report["drawer"]) == {"opening", "counted"} and report["blind"] is True
     assert closed["difference"] is None and closed["status"] == "pending_approval"  # faltou 10: vai ao gerente
     assert Decimal(boss["difference"]) == Decimal("-10.00") and Decimal(boss["expected_now"]) == Decimal("150.00")
+
+
+def test_sem_caixa_vinculado_ainda_cria_e_guarda_pedido(ctx):
+    variant = ctx.product(name="Caneca", price="30.00", track_stock=False)
+    cashier = ctx.user("caixa9", "cashier")
+    api = ctx.client(cashier)
+    boot = api.post("/api/v1/pdv/bootstrap/", {"installation_id": "t9"}, format="json").json()
+    sale = api.post("/api/v1/sales/", {}, format="json").json()
+    api.post(f"/api/v1/sales/{sale['id']}/items/", {"variant": str(variant.pk)}, format="json")
+    parked = api.post(f"/api/v1/sales/{sale['id']}/park/", {"note": "Enviado ao caixa"}, format="json")
+
+    assert boot["mode"] == "seller" and boot["cash_registers"] == []
+    assert parked.status_code == 200 and parked.json()["status"] == "draft"

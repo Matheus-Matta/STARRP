@@ -10,6 +10,7 @@ def register(router):
     router.register("catalog/service-rules", catalog.ServiceRuleViewSet, basename="service-rules")
     router.register("metafield-definitions", logistics.MetafieldDefinitionViewSet, basename="metafield-definitions")
     router.register("logistics/freight-tables", logistics.FreightTableViewSet, basename="freight-tables")
+    router.register("logistics/settings", logistics.LogisticsSettingsViewSet, basename="logistics-settings")
     router.register("catalog/variants", variants.VariantViewSet, basename="variants")
     router.register("catalog/volumes", variants.ProductVolumeViewSet, basename="volumes")
     router.register("catalog/components", catalog.KitComponentViewSet, basename="kit-components")

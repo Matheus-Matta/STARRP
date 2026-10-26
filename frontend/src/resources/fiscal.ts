@@ -62,7 +62,7 @@ export const inboundColumns: ColumnDef[] = [
   { key: "manifestation", label: "Manifestação", type: "tag", map: manifestation.map,
     tones: { none: "neutral", error: "danger", science: "info", confirmed: "success" } },
   { key: "pending_count", label: "A vincular", sortable: false },
-  { key: "store_name", label: "Loja" },
+  { key: "store_name", label: "Filial" },
 ];
 
 export const invoiceColumns: ColumnDef[] = [
@@ -88,7 +88,7 @@ export const fiscalConfigs = defineResource({
     { key: "name", label: "Nome", title: true },
     { key: "cnpj", label: "CNPJ" },
     { key: "legal_name", label: "Razão social" },
-    { key: "store_names", label: "Lojas", sortable: false },
+    { key: "store_names", label: "Filiais", sortable: false },
     { key: "environment", label: "Ambiente", type: "tag", map: environment.map, tones: { "1": "success", "2": "warning" } },
     { key: "has_certificate", label: "Certificado", type: "boolean", sortable: false },
     { key: "certificate_valid_until", label: "Validade do A1", type: "date" },
@@ -100,14 +100,14 @@ export const fiscalConfigs = defineResource({
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   listActions: [
-    { label: "Criar a partir das lojas", icon: "pi pi-building", success: "Dados fiscais criados a partir das lojas",
-      confirm: "Criar os dados fiscais de cada loja com CNPJ que ainda não tem, copiando razão social, IE e endereço?",
+    { label: "Criar a partir das filiais", icon: "pi pi-building", success: "Dados fiscais criados a partir das filiais",
+      confirm: "Criar os dados fiscais de cada filial com CNPJ que ainda não tem, copiando razão social, IE e endereço?",
       run: () => fiscalApi.fromStores() },
   ],
   sections: {
-    Emitente: { icon: "pi pi-id-card", description: "Como a SEFAZ conhece a empresa. Lojas com o mesmo CNPJ usam o mesmo cadastro." },
+    Emitente: { icon: "pi pi-id-card", description: "Como a SEFAZ conhece a empresa. Filiais com o mesmo CNPJ usam o mesmo cadastro." },
     Endereço: { icon: "pi pi-map-marker", description: "Endereço do emitente na nota. A UF define o webservice da SEFAZ." },
-    Lojas: { icon: "pi pi-building", description: "As lojas que emitem com este CNPJ e recebem as notas de entrada dele." },
+    Filiais: { icon: "pi pi-building", description: "As filiais que emitem com este CNPJ e recebem as notas de entrada dele." },
     Emissão: { icon: "pi pi-send", description: "Ambiente, provedor e código de segurança (CSC) para NFC-e/NF-e." },
     "Notas de entrada": { icon: "pi pi-inbox",
       description: "Busca na SEFAZ tudo que foi emitido contra o CNPJ; com o certificado, baixa o XML e gera a entrada." },
@@ -130,8 +130,8 @@ export const fiscalConfigs = defineResource({
     { name: "city", label: "Cidade", type: "text", section: "Endereço" },
     { name: "state", label: "UF", type: "select", options: UFS, required: true, section: "Endereço" },
     { name: "city_ibge", label: "Código IBGE", type: "text", mask: "9999999", section: "Endereço" },
-    { name: "stores", label: "Lojas vinculadas", type: "multirelation", relation: { endpoint: "/stores/" }, full: true,
-      default: [], section: "Lojas" },
+    { name: "stores", label: "Filiais vinculadas", type: "multirelation", relation: { endpoint: "/stores/" }, full: true,
+      default: [], section: "Filiais" },
     { name: "environment", label: "Ambiente", type: "segmented", options: environment.options, default: "2", section: "Emissão" },
     { name: "provider", label: "Provedor", type: "select", options: provider.options, default: "manual", section: "Emissão" },
     { name: "default_profile", label: "Perfil fiscal padrão", type: "relation", relation: { endpoint: "/fiscal/profiles/" },
@@ -195,7 +195,7 @@ export const invoices = defineResource({
     sections: [
       { title: "Emitente e destinatário", icon: "pi pi-id-card", description: "Quem emitiu (dados fiscais) e para quem.", items: [
         { label: "Emitente", key: "fiscal_config_name", link: (v) => linkTo("dados-fiscais", v.fiscal_config) },
-        { label: "Loja", key: "store_name" },
+        { label: "Filial", key: "store_name" },
         { label: "Destinatário", value: (v) => v.recipient_name || "Consumidor" },
         { label: "CPF/CNPJ", key: "recipient_document", type: "document" },
         { label: "Venda", value: (v) => (v.sale ? `Venda ${v.sale_number}` : null), link: (v) => linkTo("vendas", v.sale) },
@@ -311,6 +311,6 @@ export const inboundNfes = defineResource({
   ],
   rowActions: [
     { label: "Abrir entrada de estoque", icon: "pi pi-file-edit", visible: (row) => Boolean(row.entry),
-      to: (row) => `/cadastros/documentos-de-estoque/${(row.entry as { id: string }).id}` },
+      to: (row) => `/cadastros/entradas-e-saidas/${(row.entry as { id: string }).id}` },
   ],
 });

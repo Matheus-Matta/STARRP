@@ -162,7 +162,7 @@ const place = (a: Address) => [a.district, [a.city, a.state].filter(Boolean).joi
 .muted { color: var(--text-muted); font-size: 13px; display: flex; gap: 6px; align-items: center; margin: 0; }
 .empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 40px 12px; text-align: center; color: var(--text-muted); }
 .empty i { font-size: 2rem; }
-.addrs, .quotes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 8px; }
+.addrs, .quotes { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 8px; }
 .addr, .quote {
   display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; text-align: left; cursor: pointer; min-width: 0;
   border: 1px solid var(--border); border-radius: 10px; background: var(--surface-card); font-family: var(--font-sans);

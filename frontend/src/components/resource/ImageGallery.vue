@@ -114,10 +114,10 @@ function onItemDrop(index: number) {
 
 <style scoped>
 .gallery {
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 12px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(min(148px, 100%), 1fr)); gap: 12px;
   padding: 2px; border-radius: 10px; transition: background-color var(--dur-fast) ease;
 }
-.gallery--compact { grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px; }
+.gallery--compact { grid-template-columns: repeat(auto-fill, minmax(min(112px, 100%), 1fr)); gap: 10px; }
 .gallery--over { background: var(--brand-subtle); outline: 2px dashed var(--brand); outline-offset: 2px; }
 .photo {
   position: relative; margin: 0; aspect-ratio: 1; border-radius: 10px; overflow: hidden; cursor: grab;

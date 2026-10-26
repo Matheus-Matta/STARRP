@@ -17,7 +17,7 @@ from django.utils import timezone
 
 from starrp.core.errors import BusinessError, StateConflict
 from starrp.models import (
-    FinancialTitle, InboundNFe, Installment, StockDocument, StockDocumentItem, SupplierProduct,
+    FinancialTitle, InboundNFe, Installment, StockDocument, StockDocumentItem, SupplierProduct, TitleStatus,
 )
 from starrp.services import numbering, stock
 from starrp.services.ledger import category
@@ -51,7 +51,8 @@ def _lines(item):
 
 
 def _payables(nfe, user):
-    if not nfe.installments or FinancialTitle.all_objects.filter(inbound_nfe=nfe, deleted_at__isnull=True).exists():
+    if not nfe.installments or FinancialTitle.all_objects.filter(
+            inbound_nfe=nfe, deleted_at__isnull=True).exclude(status=TitleStatus.CANCELLED).exists():
         return None
     total = sum(Decimal(dup["amount"]) for dup in nfe.installments)
     title = FinancialTitle.all_objects.create(
@@ -101,7 +102,7 @@ def build_entry(nfe, warehouse, user, *, bin=None):
     if nfe.ignored_at:
         raise StateConflict("Nota marcada como ignorada.")
     if warehouse.store_id != nfe.store_id:
-        raise BusinessError("O depósito precisa ser da loja destinatária da nota.")
+        raise BusinessError("O depósito precisa ser da filial destinatária da nota.")
     existing = open_entry(nfe)
     if existing is not None and existing.status == StockDocument.Status.DRAFT:
         if existing.warehouse_id != warehouse.pk:
@@ -147,6 +148,12 @@ def on_entry_posted(doc):
 
 
 def on_entry_cancelled(doc):
+    """Entrada aprovada cancelada (desfazer o recebimento): as contas a pagar da nota
+    caem junto. Duplicata já paga barra tudo (a transação desfaz o estorno do estoque)."""
+    from starrp.services import finance
+
     nfe = doc.inbound_nfe
+    finance.cancel_titles(FinancialTitle.all_objects.filter(inbound_nfe=nfe),
+                          "Duplicata desta nota já foi paga: estorne o pagamento no financeiro antes.")
     nfe.receiving = InboundNFe.Receiving.NOT_STARTED
     nfe.save(update_fields=["receiving", "updated_at"])

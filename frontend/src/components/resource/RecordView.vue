@@ -185,7 +185,7 @@ const wide = computed(() => main.value.filter(isTable));
 <style scoped>
 .rv { display: flex; flex-direction: column; gap: 14px; }
 
-.rv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.rv-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 12px; }
 .rv-stat {
   display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 10px;
   background: var(--surface-card); border: 1px solid var(--border); box-shadow: var(--shadow-xs);

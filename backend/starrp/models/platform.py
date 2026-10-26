@@ -58,6 +58,8 @@ class Account(TimeStampedModel):
     currency = models.CharField(max_length=3, default="BRL")
     # Módulos extras liberados além dos do plano (cortesia, piloto).
     extra_modules = models.JSONField(default=list, blank=True)
+    # Logo da empresa: quadrado 1080×1080 (o envio já ajusta). Vai no canto das impressões.
+    logo = models.ForeignKey("starrp.Image", null=True, blank=True, related_name="+", on_delete=models.SET_NULL)
     # Trava de cima da emissão fiscal no terminal; a de baixo é por loja
     # (`FiscalConfig.local_fiscal_enabled`). Documento fiscal emitido não se
     # apaga — ligar por engano custa nota real no CNPJ do cliente.

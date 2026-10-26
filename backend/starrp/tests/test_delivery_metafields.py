@@ -113,3 +113,33 @@ def test_ficha_tecnica_personalizada_por_categoria(ctx):
     # Ficha técnica: na ordem das definições, com unidade; a que não vai na ficha (código ERP) não aparece.
     assert [(x["label"], x["text"]) for x in specs] == [("Garantia", "12 meses"), ("Tempo de montagem", "2,5 h")]
     assert other.status_code == 200  # fora de Móveis a definição não vale: vira texto livre
+
+
+def test_conferir_frete_por_endereco_completo(ctx):
+    """Endereço completo: o CEP sai da ViaCEP (tabela por faixa) e a coordenada do OpenStreetMap
+    (tabela por distância, medida até o endereço exato)."""
+    api = ctx.client()
+    api.post("/api/v1/logistics/freight-tables/", {"name": "Motoboy", "kind": "zip_range", "ranges": [
+        {"zip_start": "01000000", "zip_end": "05999999", "value": "19.90"}]}, format="json")
+    api.post("/api/v1/logistics/freight-tables/", {"name": "Caminhão", "kind": "distance", "origin_zip": "01001000",
+                                                   "price_per_km": "2.00", "fixed_fee": "10"}, format="json")
+    found = {"zip_code": "01310100", "street": "Avenida Paulista", "district": "Bela Vista", "city": "São Paulo", "state": "SP"}
+    point = (Decimal("-23.5614"), Decimal("-46.6559"))
+    with mock.patch.object(freight, "zip_for_address", return_value=found) as by_zip, \
+            mock.patch.object(freight, "geocode_address", return_value=point), \
+            mock.patch.object(freight, "coordinate", return_value=(Decimal("-23.55"), Decimal("-46.63"))), \
+            mock.patch.object(freight, "road_km", return_value=(Decimal("4.0"), True)) as road:
+        body = api.get("/api/v1/logistics/freight-tables/estimate/", {
+            "street": "Av Paulista", "number": "1578", "district": "Bela Vista", "city": "São Paulo", "state": "SP"}).json()
+        by_cep = api.get("/api/v1/logistics/freight-tables/estimate/?zip=01310-100").json()
+    with mock.patch.object(freight, "zip_for_address", return_value=None), \
+            mock.patch.object(freight, "geocode_address", return_value=None):
+        lost = api.get("/api/v1/logistics/freight-tables/estimate/", {"street": "Rua Que Não Existe", "city": "X",
+                                                                      "state": "SP"})
+
+    values = {q["table_name"]: q["value"] for q in body["quotes"]}
+    assert body["zip_code"] == "01310100" and body["address"]["district"] == "Bela Vista"
+    assert values == {"Motoboy": "19.90", "Caminhão": "18.00"}  # 10 + 4 km × 2,00 até o ponto exato
+    assert road.call_args_list[0].args[1] == point and by_zip.call_args.args[:3] == ("Av Paulista", "São Paulo", "SP")
+    assert by_cep["zip_code"] == "01310100" and by_cep["address"] is None
+    assert lost.status_code == 422 and lost.json()["error"]["code"] == "address_not_found"

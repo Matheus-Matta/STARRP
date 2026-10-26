@@ -13,10 +13,25 @@ import InputText from "primevue/inputtext";
 import { computed, ref, watch } from "vue";
 
 import type { PaymentInput } from "@/api/sales";
-import type { PaymentMethod } from "@/api/types";
+import type { PaymentMethod, Sale } from "@/api/types";
 import { money } from "@/utils/format";
 
-const props = defineProps<{ total: string; methods: PaymentMethod[]; busy: boolean; hasCustomer: boolean }>();
+/** `sale`: para mostrar a conta (itens, descontos, FRETE da entrega) antes das formas de pagamento. */
+const props = defineProps<{ total: string; methods: PaymentMethod[]; busy: boolean; hasCustomer: boolean;
+                            sale?: Sale | null }>();
+type Delivery = { table_name: string; lead_days: number | null; address_label: string };
+const delivery = computed(() => (props.sale?.shipping_address
+  ? ((props.sale?.metafields ?? {}) as Record<string, unknown>)._entrega as Delivery | undefined : undefined));
+const billRows = computed(() => {
+  const s = props.sale;
+  if (!s) return [];
+  const rows: { label: string; value: number; tone?: string }[] = [{ label: "Itens", value: Number(s.subtotal) }];
+  if (Number(s.discount)) rows.push({ label: "Desconto", value: -Number(s.discount), tone: "neg" });
+  if (Number(s.coupon_discount)) rows.push({ label: `Cupom ${s.coupon_code}`, value: -Number(s.coupon_discount), tone: "neg" });
+  rows.push({ label: delivery.value ? `Frete · ${delivery.value.table_name}` : "Frete (retirada na loja)",
+              value: Number(s.freight ?? 0) });
+  return rows;
+});
 const visible = defineModel<boolean>("visible", { required: true });
 const emit = defineEmits<{ confirm: [payments: PaymentInput[]] }>();
 
@@ -118,6 +133,12 @@ function finish() {
 
 <template>
   <Dialog v-model:visible="visible" modal header="Pagamento" :style="{ width: '46rem' }" :breakpoints="{ '760px': '96vw' }">
+    <dl v-if="billRows.length" class="bill">
+      <div v-for="row in billRows" :key="row.label" :class="row.tone"><dt>{{ row.label }}</dt>
+        <dd>{{ row.value < 0 ? "− " : "" }}{{ money(Math.abs(row.value)) }}</dd></div>
+      <p v-if="delivery" class="bill__note"><i class="pi pi-truck" /> Entrega em {{ delivery.address_label }} ·
+        {{ delivery.lead_days ? `${delivery.lead_days} dia(s) útil(eis)` : "no mesmo dia" }}</p>
+    </dl>
     <div class="summary">
       <div class="tile"><span>Total</span><strong class="num">{{ money(total) }}</strong></div>
       <div class="tile"><span>Pago</span><strong class="num">{{ money(paid) }}</strong></div>
@@ -176,6 +197,12 @@ function finish() {
 </template>
 
 <style scoped>
+.bill { margin: 0 0 12px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-subtle); background: var(--surface-sunken); }
+.bill div { display: flex; justify-content: space-between; font-size: 13.5px; padding: 2px 0; }
+.bill dt { color: var(--text-muted); }
+.bill dd { margin: 0; color: var(--text-strong); font-weight: 600; }
+.bill .neg dd { color: var(--danger-text); }
+.bill__note { margin: 6px 0 0; font-size: 12px; color: var(--text-brand); display: flex; gap: 6px; align-items: center; }
 .summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 1.25rem; }
 .tile { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border-radius: 12px; background: var(--surface-sunken); border: 1px solid var(--border-subtle); }
 .tile span { font-size: 11.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-muted); }
@@ -183,7 +210,7 @@ function finish() {
 .tile--due { background: var(--warning-subtle); border-color: transparent; } .tile--due strong { color: var(--warning-text); }
 .tile--change { background: var(--brand-subtle); border-color: var(--brand-border); } .tile--change strong { color: var(--text-brand); }
 .tile--ok { background: var(--success-subtle); border-color: transparent; } .tile--ok strong { color: var(--success-text); }
-.methods { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; margin-bottom: 1.25rem; }
+.methods { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(130px, 100%), 1fr)); gap: 8px; margin-bottom: 1.25rem; }
 .method {
   display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 14px 10px; cursor: pointer;
   border: 1px solid var(--border); border-radius: 12px; background: var(--surface-card); color: var(--text-body); font: 600 13px/1.2 var(--font-sans);

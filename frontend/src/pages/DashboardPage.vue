@@ -53,7 +53,9 @@ const chart = computed(() => {
     return {
       label: day.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" }),
       value: Number(row?.revenue ?? 0),
-      hint: row ? `${money(row.revenue)} · ${plural(row.count, "venda", "vendas")}` : `${day.toLocaleDateString("pt-BR")} · sem vendas`,
+      // Balão com o dia por extenso ("sáb., 24/10") + o valor; sem venda, diz isso.
+      hint: `${day.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit" })} · ${
+        row ? `${money(row.revenue)} · ${plural(row.count, "venda", "vendas")}` : "sem vendas"}`,
     };
   });
 });
@@ -69,7 +71,7 @@ const methods = computed(() => (data.value?.by_payment_method ?? []).map((m) => 
 <template>
   <section class="page">
     <PageHeader title="Painel" icon="pi pi-chart-bar"
-                :subtitle="`${session.activeStore?.name ?? 'Todas as minhas lojas'} · últimos ${days} dias`">
+                :subtitle="`${session.activeStore?.name ?? 'Todas as minhas filiais'} · últimos ${days} dias`">
       <SelectButton v-model="days" :options="periods" option-label="label" option-value="value" :allow-empty="false" />
       <Button v-if="session.can('sales.manage')" label="Abrir PDV" icon="pi pi-shopping-cart" @click="router.push('/pdv')" />
     </PageHeader>
@@ -98,7 +100,7 @@ const methods = computed(() => (data.value?.by_payment_method ?? []).map((m) => 
 </template>
 
 <style scoped>
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; }
-@media (max-width: 520px) { .cards { grid-template-columns: 1fr 1fr; gap: 0.6rem; } .cards :deep(.stat__value) { font-size: 20px; } }
-.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 1rem; }
+@media (max-width: 520px) { .cards { grid-template-columns: 1fr 1fr; gap: 0.6rem; } }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 1rem; }
 </style>

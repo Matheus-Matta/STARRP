@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from starrp.core.tenant import tenant_context
-from starrp.models import CashRegister, PaymentMethod, Role, UserProfile
+from starrp.models import CashRegister, PaymentMethod, Role, Store, UserProfile
 from starrp.services import catalog
 from starrp.services.provisioning import create_account
 
@@ -19,6 +19,10 @@ class Ctx:
             name=name, admin_username=f"admin-{name}".replace(" ", "").lower(), admin_password="senha123"
         )
         self.register = CashRegister.all_objects.get(store=self.store)
+        # A maioria dos testes cobra sem abrir caixa (comissão, cupom, financeiro...): o "exige caixa
+        # aberto" fica desligado aqui; os testes de caixa ligam (`ctx.require_cash()`).
+        Store.all_objects.filter(pk=self.store.pk).update(require_open_cash_session=False)
+        self.store.refresh_from_db()
         self.methods = {m.kind: m for m in PaymentMethod.all_objects.filter(account=self.account)}
 
     def client(self, user=None, store="default"):
@@ -31,6 +35,10 @@ class Ctx:
             headers["HTTP_X_STORE_ID"] = str(store.pk)
         client.credentials(**headers)
         return client
+
+    def require_cash(self):
+        Store.all_objects.filter(pk=self.store.pk).update(require_open_cash_session=True)
+        self.store.refresh_from_db()
 
     def user(self, username, role_code, stores=None, **profile):
         """Usuário com acesso às `stores` (padrão: a loja do contexto)."""

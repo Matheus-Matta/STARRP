@@ -40,7 +40,7 @@ def _seller(store, user_id):
         return None
     profile = sellers_of(store).filter(user_id=user_id).first()
     if profile is None:
-        raise BusinessError("Vendedor não encontrado nesta loja.", code="seller_not_found")
+        raise BusinessError("Vendedor não encontrado nesta filial.", code="seller_not_found")
     return profile.user
 
 
@@ -76,7 +76,7 @@ class SaleViewSet(TenantViewSet):
 
     def create(self, request, *args, **kwargs):
         if request.store is None:
-            raise BusinessError("Selecione a loja (header X-Store-ID).", code="store_required")
+            raise BusinessError("Selecione a filial (header X-Store-ID).", code="store_required")
         data = self._body(s.SaleCreateSerializer)
         sale = sales.create(
             request.store, request.user, channel=data["channel"], terminal=data.get("terminal"),

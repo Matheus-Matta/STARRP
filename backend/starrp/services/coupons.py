@@ -62,7 +62,7 @@ def evaluate(coupon, sale, subtotal):
     if not coupon.is_active:
         raise CouponRejected("Cupom fora da validade ou desativado.")
     if coupon.store_id and coupon.store_id != sale.store_id:
-        raise CouponRejected("Cupom não vale nesta loja.")
+        raise CouponRejected("Cupom não vale nesta filial.")
     if coupon.channels and sale.channel not in coupon.channels:
         raise CouponRejected("Cupom não vale neste canal de venda.")
     if subtotal < coupon.min_subtotal:

@@ -11,7 +11,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import F, Q
 
-from starrp.models.base import MoneyField, TenantModel, alive, optional_store_fk
+from starrp.models.base import MoneyField, StoreModel, TenantModel, alive, optional_store_fk
 
 ZIP = RegexValidator(r"^\d{8}$", "Informe o CEP com 8 dígitos, por exemplo 01001-000.")
 
@@ -88,3 +88,19 @@ class ZipDistance(models.Model):
 
     class Meta:
         constraints = [models.UniqueConstraint(fields=["origin", "destination"], name="uniq_zip_distance")]
+
+
+class LogisticsSettings(StoreModel):
+    """Regras de logística de UMA filial (cada uma pode trabalhar de um jeito).
+    Nasce sozinha para cada filial (`services/logistics_settings.for_store`)."""
+
+    # Conferir o recebimento marcando item a item (correto / incorreto) em vez de ler cada
+    # código. Desligado, a entrada da NF-e só é conferida pela leitura (leitor ou câmera).
+    allow_manual_conference = models.BooleanField(
+        default=False, help_text="Permite conferir o recebimento manualmente, sem ler os códigos.")
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["store"], condition=alive(), name="uniq_logistics_settings")]
+
+    def __str__(self):
+        return f"Logística - {self.store}"

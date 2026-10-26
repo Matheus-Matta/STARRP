@@ -144,6 +144,16 @@ PDV com carrinho e pagamento, menu recolhido e celular.
 
 ## Layout e velocidade (inspirado no PrimeBlocks)
 
+- **Celular (até 640px, `composables/useViewport`):**
+  - listas viram cartões (`components/list/MobileCards`): título, etiquetas e até 6 campos;
+    tocar abre, segurar marca para as ações em massa; `mobile: false` na coluna tira do cartão;
+  - filtros atrás do botão "Filtros (n)" e paginação só com anterior/próxima;
+  - cabeçalho do registro: ações numa linha que rola para o lado; trilha mostra só a página;
+  - tabelas de leitura (`ViewTable`) viram blocos "rótulo  valor"; itens de entrada/saída e da
+    NF-e viram cartões com rótulos; `segmented` com mais de 3 opções vira lista de seleção;
+  - tabelas pequenas escondem colunas com `hide-sm-N` (base.css); diálogos quase tela cheia e
+    campos com 16px (o iPhone não dá zoom); grades usam `minmax(min(Npx, 100%), 1fr)`.
+
 - **Casca:** menu lateral escuro e compacto nos dois temas (diferente do StarChef),
   usuário no rodapé do menu e barra superior fina.
 - **Busca rápida (`Ctrl+K`):** vai para qualquer tela, cria um cadastro

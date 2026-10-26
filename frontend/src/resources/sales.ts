@@ -3,6 +3,8 @@
  * As colunas daqui também servem às consultas de outros cadastros
  * ("compras do cliente", "vendas do produto", "vendas do turno").
  */
+import { defineAsyncComponent } from "vue";
+
 import { openPrint } from "@/utils/print";
 
 import { http } from "@/api/http";
@@ -10,6 +12,8 @@ import { resourceApi } from "@/api/resource";
 import { money, quantity } from "@/utils/format";
 
 import { choices, type ColumnDef, defineResource, linkTo, rowsOf, type Tone } from "./types";
+
+const ReviewLinkDialog = defineAsyncComponent(() => import("@/components/reviews/ReviewLinkDialog.vue"));
 
 export const saleStatus = choices({ open: "Aberta", draft: "Pedido guardado", completed: "Concluída", cancelled: "Cancelada" });
 /**
@@ -278,6 +282,8 @@ export const sales = defineResource({
       permission: "logistics.manage",
       confirm: "Confirmar que o pedido chegou no cliente? O status geral vira Concluído.",
       visible: (v) => isDelivery(v) && step(v) >= 0 && step(v) < 3 },
+    // O cliente avalia os produtos e a entrega pelo celular (sem login): link + mensagem pronta para o WhatsApp.
+    { label: "Link de avaliação", icon: "pi pi-star", visible: (v) => v.status === "completed", dialog: ReviewLinkDialog },
     { label: "Recibo (bobina)", icon: "pi pi-receipt", run: async ({ id }) => openPrint("venda", id, { formato: "80mm" }) },
     { label: "Imprimir A4", icon: "pi pi-print", run: async ({ id }) => openPrint("venda", id, { formato: "a4" }) },
   ],

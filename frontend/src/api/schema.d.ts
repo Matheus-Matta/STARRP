@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/api/v1/account/logo/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST multipart `file`: troca o logo (ajustado para 1080×1080). DELETE: tira (volta o do Starrp). */
+        post: operations["api_v1_account_logo_create"];
+        /** @description POST multipart `file`: troca o logo (ajustado para 1080×1080). DELETE: tira (volta o do Starrp). */
+        delete: operations["api_v1_account_logo_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/account/settings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_account_settings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: operations["api_v1_account_settings_partial_update"];
+        trace?: never;
+    };
     "/api/v1/assets/": {
         parameters: {
             query?: never;
@@ -638,6 +672,23 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["api_v1_cash_sessions_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash/sessions/{id}/approve-opening/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Abertura com diferença: o gerente aprova (direto ou pelo `approval` no corpo). */
+        post: operations["api_v1_cash_sessions_approve_opening_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2871,18 +2922,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
-         *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
-         *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
-         */
+        /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
         get: operations["api_v1_fiscal_profiles_list"];
         put?: never;
-        /**
-         * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
-         *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
-         *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
-         */
+        /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
         post: operations["api_v1_fiscal_profiles_create"];
         delete?: never;
         options?: never;
@@ -2897,32 +2940,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
-         *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
-         *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
-         */
+        /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
         get: operations["api_v1_fiscal_profiles_retrieve"];
-        /**
-         * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
-         *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
-         *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
-         */
+        /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
         put: operations["api_v1_fiscal_profiles_update"];
         post?: never;
-        /**
-         * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
-         *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
-         *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
-         */
+        /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
         delete: operations["api_v1_fiscal_profiles_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
-         *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
-         *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
-         */
+        /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
         patch: operations["api_v1_fiscal_profiles_partial_update"];
         trace?: never;
     };
@@ -2953,18 +2980,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
-         *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
-         *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
-         */
+        /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
         get: operations["api_v1_fiscal_profiles_bulk_retrieve"];
         put?: never;
-        /**
-         * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
-         *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
-         *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
-         */
+        /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
         post: operations["api_v1_fiscal_profiles_bulk_create"];
         delete?: never;
         options?: never;
@@ -3140,6 +3159,22 @@ export interface paths {
         patch: operations["api_v1_inbound_nfe_partial_update"];
         trace?: never;
     };
+    "/api/v1/inbound-nfe/{id}/discard-entry/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_inbound_nfe_discard_entry_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/inbound-nfe/{id}/download/": {
         parameters: {
             query?: never;
@@ -3256,6 +3291,22 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inbound-nfe/{id}/restore/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_inbound_nfe_restore_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/inbound-nfe/{id}/science/": {
         parameters: {
             query?: never;
@@ -3266,6 +3317,22 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["api_v1_inbound_nfe_science_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inbound-nfe/{id}/undo-receipt/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_inbound_nfe_undo_receipt_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3524,6 +3591,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/inbound-nfe/items/{id}/unignore/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_inbound_nfe_items_unignore_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/inbound-nfe/items/{id}/unmap/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_inbound_nfe_items_unmap_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/inbound-nfe/items/bulk/": {
         parameters: {
             query?: never;
@@ -3668,6 +3767,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/logistics/freight-tables/estimate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Conferir frete no PDV: `?zip=` OU o endereço (`street`, `number`, `district`, `city`, `state`).
+         *     Endereço: o CEP vem da ViaCEP (para as tabelas por faixa) e a coordenada do OpenStreetMap
+         *     (para as por distância, medidas até o endereço exato).
+         */
+        get: operations["api_v1_logistics_freight_tables_estimate_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/logistics/freight-tables/quote/": {
         parameters: {
             query?: never;
@@ -3677,6 +3797,79 @@ export interface paths {
         };
         /** @description GET ?zip=01001000 → as cotações de todas as tabelas ativas da loja. */
         get: operations["api_v1_logistics_freight_tables_quote_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/logistics/settings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
+        get: operations["api_v1_logistics_settings_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/logistics/settings/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
+        get: operations["api_v1_logistics_settings_retrieve"];
+        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
+        put: operations["api_v1_logistics_settings_update"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
+        patch: operations["api_v1_logistics_settings_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/logistics/settings/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_logistics_settings_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/logistics/settings/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
+        get: operations["api_v1_logistics_settings_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4504,8 +4697,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
+         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
+         */
         get: operations["api_v1_roles_list"];
         put?: never;
+        /**
+         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
+         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
+         */
         post: operations["api_v1_roles_create"];
         delete?: never;
         options?: never;
@@ -4520,12 +4721,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
+         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
+         */
         get: operations["api_v1_roles_retrieve"];
+        /**
+         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
+         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
+         */
         put: operations["api_v1_roles_update"];
         post?: never;
+        /**
+         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
+         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
+         */
         delete: operations["api_v1_roles_destroy"];
         options?: never;
         head?: never;
+        /**
+         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
+         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
+         */
         patch: operations["api_v1_roles_partial_update"];
         trace?: never;
     };
@@ -4556,8 +4773,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
+         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
+         */
         get: operations["api_v1_roles_bulk_retrieve"];
         put?: never;
+        /**
+         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
+         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
+         */
         post: operations["api_v1_roles_bulk_create"];
         delete?: never;
         options?: never;
@@ -4705,6 +4930,23 @@ export interface paths {
         get?: never;
         put?: never;
         post: operations["api_v1_sales_discount_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales/{id}/fulfillment/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description POST {"status": "ready"|"shipped"|"delivered", "note"}: anda (ou volta, com motivo) a entrega. */
+        post: operations["api_v1_sales_fulfillment_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5197,6 +5439,77 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stock/divergences/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Erros de entrada: o que a nota dizia × o que chegou × o que entrou, com o motivo. */
+        get: operations["api_v1_stock_divergences_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/divergences/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Erros de entrada: o que a nota dizia × o que chegou × o que entrou, com o motivo. */
+        get: operations["api_v1_stock_divergences_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/divergences/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_stock_divergences_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/divergences/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Erros de entrada: o que a nota dizia × o que chegou × o que entrou, com o motivo. */
+        get: operations["api_v1_stock_divergences_bulk_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stock/documents/": {
         parameters: {
             query?: never;
@@ -5256,7 +5569,9 @@ export interface paths {
         put?: never;
         /**
          * @description Conclui a conferência: {"codes": [...]} grava o contado de cada produto;
-         *     sem `codes`, vale a quantidade já digitada. Depois disso a entrada pode ser aprovada.
+         *     {"lines": [{"item", "ok"} | {"item", "ok": false, "arrived", "accepted", "reason", "notes"}]}
+         *     é a conferência manual (se a Logística permitir); sem nada, vale a quantidade digitada.
+         *     Depois disso a entrada pode ser aprovada.
          */
         post: operations["api_v1_stock_documents_check_create"];
         delete?: never;
@@ -6563,9 +6878,13 @@ export interface components {
          * @enum {string}
          */
         CashMovementStatusEnum: "pending" | "approved" | "cancelled";
+        /** @description Caixa e QUEM opera (`operators`, ids de usuário): só eles abrem, movimentam e fecham. */
         CashRegister: {
             /** Format: uuid */
             readonly id: string;
+            readonly operator_names: string;
+            /** @description Quem está com o turno deste caixa agora (vazio = livre). */
+            readonly in_use_by: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -6599,8 +6918,26 @@ export interface components {
             readonly status: components["schemas"]["CashSessionStatusEnum"];
             /** Format: date-time */
             readonly opened_at: string;
-            /** Format: decimal */
+            /**
+             * Format: decimal
+             * @description Contado na gaveta pelo operador ao abrir (conferência cega).
+             */
             readonly opening_amount: string;
+            /**
+             * Format: decimal
+             * @description O que o último fechamento deste caixa deixou na gaveta.
+             */
+            readonly opening_expected: string | null;
+            /**
+             * Format: decimal
+             * @description Contado na abertura - deixado no último fechamento.
+             */
+            readonly opening_difference: string;
+            /** @description 1ª abertura do caixa: vira o saldo inicial. */
+            readonly opening_is_initial: boolean;
+            readonly opening_notes: string;
+            /** Format: date-time */
+            readonly opening_approved_at: string | null;
             /** Format: date-time */
             readonly closed_at: string | null;
             /**
@@ -6635,17 +6972,19 @@ export interface components {
             /** Format: uuid */
             readonly terminal: string | null;
             readonly opened_by: number;
+            readonly opening_approved_by: number | null;
             readonly closed_by: number | null;
             readonly approved_by: number | null;
         };
         /**
          * @description * `open` - Aberto
+         *     * `pending_opening` - Abertura aguardando o gerente
          *     * `pending_approval` - Aguardando aprovação do gerente
          *     * `closed` - Fechado
          *     * `cancelled` - Cancelado
          * @enum {string}
          */
-        CashSessionStatusEnum: "open" | "pending_approval" | "closed" | "cancelled";
+        CashSessionStatusEnum: "open" | "pending_opening" | "pending_approval" | "closed" | "cancelled";
         /**
          * @description Descrição do editor chega limpa (sem script) e o slug sai do nome quando vazio.
          *     Ex.: "Camiseta Básica" → slug "camiseta-basica" (ou "camiseta-basica-2" se já existir).
@@ -6749,6 +7088,13 @@ export interface components {
          * @enum {string}
          */
         CommissionStatusEnum: "pending" | "paid" | "cancelled";
+        /**
+         * @description * `scan` - Leitura dos códigos
+         *     * `manual` - Manual (item a item)
+         *     * `typed` - Quantidades digitadas
+         * @enum {string}
+         */
+        ConferenceModeEnum: "scan" | "manual" | "typed";
         /**
          * @description * `windows` - Spooler do Windows
          *     * `network` - Rede (TCP 9100)
@@ -6957,9 +7303,17 @@ export interface components {
          * @enum {string}
          */
         DeviceTypeEnum: "desktop" | "mobile" | "web";
+        /**
+         * @description Tabela de desconto COM as regras dentro (`rules`, lista completa): o que sai da lista é
+         *     excluído e a ordem é a prioridade. Ex.:
+         *         {"name": "Liquida verão", "rules": [{"name": "Moda praia -20%", "target": "categories",
+         *           "kind": "percent", "value": "20", "categories": ["<id>"]}]}
+         */
         DiscountTable: {
             /** Format: uuid */
             readonly id: string;
+            rules?: components["schemas"]["Rule"][];
+            readonly rule_count: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -6983,6 +7337,16 @@ export interface components {
              */
             store?: string | null;
         };
+        /**
+         * @description * `missing` - Faltou
+         *     * `extra` - Veio a mais
+         *     * `damaged` - Avariado
+         *     * `wrong_product` - Produto errado
+         *     * `expired` - Vencido / validade curta
+         *     * `other` - Outro
+         * @enum {string}
+         */
+        DivergenceReasonEnum: "missing" | "extra" | "damaged" | "wrong_product" | "expired" | "other";
         /**
          * @description * `65` - NFC-e (modelo 65)
          *     * `55` - NF-e (modelo 55)
@@ -7275,6 +7639,8 @@ export interface components {
             /** Format: date-time */
             readonly deleted_at: string | null;
             name: string;
+            /** @description Pré-pronto do sistema: ajusta, mas não exclui. */
+            is_system?: boolean;
             cfop?: string;
             /** @description CFOP para outra UF (ex.: 6102). */
             cfop_interstate?: string;
@@ -7404,6 +7770,17 @@ export interface components {
             /** @description Ex.: "Zona Sul", "Grande SP". */
             label?: string;
         };
+        /**
+         * @description * `pending` - Pendente
+         *     * `ready` - Separado
+         *     * `shipped` - Saiu para entrega
+         *     * `delivered` - Entregue
+         *     * `picked_up` - Retirado na loja
+         *     * `returned` - Devolvido
+         *     * `cancelled` - Cancelado
+         * @enum {string}
+         */
+        FulfillmentStatusEnum: "pending" | "ready" | "shipped" | "delivered" | "picked_up" | "returned" | "cancelled";
         Image: {
             /** Format: uuid */
             readonly id: string;
@@ -7518,6 +7895,7 @@ export interface components {
             readonly variant_name: string;
             readonly variant_sku: string;
             readonly stock_quantity: string;
+            readonly volumes: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -7760,6 +8138,13 @@ export interface components {
          * @enum {string}
          */
         InvoiceStatusEnum: "draft" | "processing" | "authorized" | "rejected" | "cancelled" | "error";
+        /**
+         * @description * `percent` - Percentual sobre o preço
+         *     * `amount` - Valor abatido
+         *     * `fixed` - Preço fixo
+         * @enum {string}
+         */
+        KindB2bEnum: "percent" | "amount" | "fixed";
         KitComponent: {
             /** Format: uuid */
             readonly id: string;
@@ -7807,6 +8192,8 @@ export interface components {
             custom_text?: string;
             is_default?: boolean;
             is_active?: boolean;
+            /** @description Modelo pré-pronto do sistema: ajusta, mas não exclui. */
+            is_system?: boolean;
             /** Format: uuid */
             readonly account: string;
             readonly created_by: number | null;
@@ -7820,6 +8207,25 @@ export interface components {
          * @enum {string}
          */
         LevelEnum: "info" | "success" | "warning" | "error";
+        LogisticsSettings: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly store_name: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** Format: date-time */
+            readonly deleted_at: string | null;
+            /** @description Permite conferir o recebimento manualmente, sem ler os códigos. */
+            allow_manual_conference?: boolean;
+            /** Format: uuid */
+            readonly account: string;
+            readonly created_by: number | null;
+            readonly updated_by: number | null;
+            /** Format: uuid */
+            readonly store: string;
+        };
         /**
          * @description * `none` - Sem manifestação
          *     * `science` - Ciência da operação
@@ -7870,6 +8276,13 @@ export interface components {
          * @enum {string}
          */
         MetafieldDefinitionTypeEnum: "text" | "number" | "boolean" | "select" | "date";
+        /**
+         * @description * `scan` - Leitura dos códigos
+         *     * `manual` - Manual (item a item)
+         *     * `typed` - Quantidades digitadas
+         * @enum {string}
+         */
+        ModeEnum: "scan" | "manual" | "typed";
         NFeEvent: {
             /** Format: uuid */
             readonly id: string;
@@ -8003,6 +8416,19 @@ export interface components {
          * @enum {string}
          */
         OriginEnum: "store" | "cloud";
+        /**
+         * @description * `draft` - Pedido guardado
+         *     * `open` - Em atendimento
+         *     * `awaiting_payment` - Pagamento em andamento
+         *     * `awaiting_picking` - Aguardando separação
+         *     * `ready` - Pronto para entrega
+         *     * `in_transit` - Em rota de entrega
+         *     * `completed` - Concluído
+         *     * `returned` - Devolvido
+         *     * `cancelled` - Cancelado
+         * @enum {string}
+         */
+        OverallStatusEnum: "draft" | "open" | "awaiting_payment" | "awaiting_picking" | "ready" | "in_transit" | "completed" | "returned" | "cancelled";
         /**
          * @description * `product` - Produto
          *     * `customer` - Cliente
@@ -8565,6 +8991,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["LabelTemplate"][];
         };
+        PaginatedLogisticsSettingsList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["LogisticsSettings"][];
+        };
         PaginatedMetafieldDefinitionList: {
             /** @example 123 */
             count: number;
@@ -8744,6 +9185,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["PromotionProduct"][];
+        };
+        PaginatedReceivingDivergenceList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["ReceivingDivergence"][];
         };
         PaginatedRoleList: {
             /** @example 123 */
@@ -9310,9 +9766,13 @@ export interface components {
             session?: string;
             readonly resolved_by?: number | null;
         };
+        /** @description Caixa e QUEM opera (`operators`, ids de usuário): só eles abrem, movimentam e fecham. */
         PatchedCashRegister: {
             /** Format: uuid */
             readonly id?: string;
+            readonly operator_names?: string;
+            /** @description Quem está com o turno deste caixa agora (vazio = livre). */
+            readonly in_use_by?: string;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -9543,9 +10003,17 @@ export interface components {
             readonly created_by?: number | null;
             readonly updated_by?: number | null;
         };
+        /**
+         * @description Tabela de desconto COM as regras dentro (`rules`, lista completa): o que sai da lista é
+         *     excluído e a ordem é a prioridade. Ex.:
+         *         {"name": "Liquida verão", "rules": [{"name": "Moda praia -20%", "target": "categories",
+         *           "kind": "percent", "value": "20", "categories": ["<id>"]}]}
+         */
         PatchedDiscountTable: {
             /** Format: uuid */
             readonly id?: string;
+            rules?: components["schemas"]["Rule"][];
+            readonly rule_count?: string;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -9755,6 +10223,8 @@ export interface components {
             /** Format: date-time */
             readonly deleted_at?: string | null;
             name?: string;
+            /** @description Pré-pronto do sistema: ajusta, mas não exclui. */
+            is_system?: boolean;
             cfop?: string;
             /** @description CFOP para outra UF (ex.: 6102). */
             cfop_interstate?: string;
@@ -9992,10 +10462,31 @@ export interface components {
             custom_text?: string;
             is_default?: boolean;
             is_active?: boolean;
+            /** @description Modelo pré-pronto do sistema: ajusta, mas não exclui. */
+            is_system?: boolean;
             /** Format: uuid */
             readonly account?: string;
             readonly created_by?: number | null;
             readonly updated_by?: number | null;
+        };
+        PatchedLogisticsSettings: {
+            /** Format: uuid */
+            readonly id?: string;
+            readonly store_name?: string;
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            /** Format: date-time */
+            readonly deleted_at?: string | null;
+            /** @description Permite conferir o recebimento manualmente, sem ler os códigos. */
+            allow_manual_conference?: boolean;
+            /** Format: uuid */
+            readonly account?: string;
+            readonly created_by?: number | null;
+            readonly updated_by?: number | null;
+            /** Format: uuid */
+            readonly store?: string;
         };
         PatchedMetafieldDefinition: {
             /** Format: uuid */
@@ -10295,7 +10786,7 @@ export interface components {
             /** Format: int64 */
             position?: number;
             target?: components["schemas"]["TargetEnum"];
-            kind?: components["schemas"]["PromotionKindEnum"];
+            kind?: components["schemas"]["KindB2bEnum"];
             /** Format: decimal */
             value?: string;
             /** Format: uuid */
@@ -10335,10 +10826,17 @@ export interface components {
             /** Format: uuid */
             product?: string;
         };
+        /**
+         * @description Cargo fixo: a conta só ajusta o desconto máximo e o "ativo"; o resto é do catálogo
+         *     (`services/access_catalog.SYSTEM_ROLES`). O superusuário (suporte) mexe em tudo.
+         */
         PatchedRole: {
             /** Format: uuid */
             readonly id?: string;
             permissions?: string[];
+            readonly user_count?: string;
+            /** @description Para ler: "Logística: gerenciar", "Estoque: ver". */
+            readonly permission_names?: string;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -10347,6 +10845,10 @@ export interface components {
             readonly deleted_at?: string | null;
             code?: string;
             name?: string;
+            /** @description Agrupa na tela: Direção, Vendas, Logística... */
+            area?: string;
+            /** @description O que o cargo faz no sistema. */
+            description?: string;
             /** Format: int64 */
             rank?: number;
             /**
@@ -10372,6 +10874,8 @@ export interface components {
             readonly balance_due?: string;
             readonly seller_name?: string;
             readonly shipping_address_detail?: string;
+            /** @description Notas fiscais do pedido, a principal primeiro. */
+            readonly invoices?: string;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -10412,6 +10916,20 @@ export interface components {
             readonly change_amount?: string;
             readonly notes?: string;
             readonly metafields?: unknown;
+            readonly payment_status?: components["schemas"]["PaymentStatusEnum"];
+            /**
+             * Format: decimal
+             * @description Devolvido ao cliente (devoluções concluídas).
+             */
+            readonly refunded_amount?: string;
+            readonly fulfillment_status?: components["schemas"]["FulfillmentStatusEnum"];
+            readonly overall_status?: components["schemas"]["OverallStatusEnum"];
+            /** Format: date-time */
+            readonly ready_at?: string | null;
+            /** Format: date-time */
+            readonly shipped_at?: string | null;
+            /** Format: date-time */
+            readonly delivered_at?: string | null;
             /** Format: date-time */
             readonly completed_at?: string | null;
             /** Format: date-time */
@@ -10440,6 +10958,9 @@ export interface components {
             readonly discount_approved_by?: number | null;
             /** Format: uuid */
             readonly coupon?: string | null;
+            readonly ready_by?: number | null;
+            readonly shipped_by?: number | null;
+            readonly delivered_by?: number | null;
             readonly cancelled_by?: number | null;
             readonly cancel_approved_by?: number | null;
         };
@@ -10529,6 +11050,7 @@ export interface components {
             readonly checked_by_name?: string;
             readonly inbound_nfe_number?: string;
             readonly item_count?: string;
+            readonly manual_conference?: string;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -10551,6 +11073,7 @@ export interface components {
             /** Format: date */
             effective_date?: string;
             reason?: string;
+            readonly conference_mode?: components["schemas"]["ConferenceModeEnum"];
             /** Format: date-time */
             readonly checked_at?: string | null;
             /** Format: date-time */
@@ -10662,6 +11185,9 @@ export interface components {
             readonly id?: string;
             cash_action_password?: string;
             readonly has_cash_action_password?: string;
+            readonly parent_name?: string;
+            /** @default 0 */
+            readonly children_count: number;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -10679,6 +11205,7 @@ export interface components {
             zip_code?: string;
             /** @description Nome fantasia. */
             name?: string;
+            kind?: components["schemas"]["StoreKindEnum"];
             /** @description Razão social. */
             legal_name?: string;
             cnpj?: string;
@@ -10705,6 +11232,11 @@ export interface components {
             readonly account?: string;
             readonly created_by?: number | null;
             readonly updated_by?: number | null;
+            /**
+             * Format: uuid
+             * @description Unidade a que esta responde (matriz, regional).
+             */
+            parent?: string | null;
             /** Format: uuid */
             logo?: string | null;
             /**
@@ -10821,6 +11353,11 @@ export interface components {
             email?: string;
             password?: string;
             readonly role_name?: string;
+            /** @description Cargo principal + somados, para a lista. */
+            readonly roles_label?: string;
+            /** @description Id do login (operadores do caixa). */
+            readonly user_id?: number;
+            readonly full_name?: string;
             extra_permissions?: string[];
             /** Format: date-time */
             readonly created_at?: string;
@@ -10840,13 +11377,17 @@ export interface components {
             readonly account?: string;
             readonly created_by?: number | null;
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Cargo principal.
+             */
             role?: string;
             /**
              * Format: uuid
              * @description Loja aberta por padrão quando a requisição não informa X-Store-ID.
              */
             default_store?: string | null;
+            extra_roles?: string[];
             stores?: string[];
         };
         PatchedWarehouse: {
@@ -10969,13 +11510,15 @@ export interface components {
          */
         PaymentMethodKindEnum: "cash" | "credit_card" | "debit_card" | "pix" | "voucher" | "store_credit" | "installment_plan" | "bank_slip" | "other";
         /**
-         * @description * `pending` - Aguardando (TEF/PIX)
-         *     * `approved` - Aprovado
-         *     * `cancelled` - Cancelado
+         * @description * `pending` - Aguardando pagamento
+         *     * `partial` - Pago em parte
+         *     * `paid` - Pago
+         *     * `partially_refunded` - Estorno parcial
          *     * `refunded` - Estornado
+         *     * `cancelled` - Cancelado
          * @enum {string}
          */
-        PaymentStatusEnum: "pending" | "approved" | "cancelled" | "refunded";
+        PaymentStatusEnum: "pending" | "partial" | "paid" | "partially_refunded" | "refunded" | "cancelled";
         Permission: {
             code: string;
             name: string;
@@ -11247,7 +11790,7 @@ export interface components {
             /** Format: int64 */
             position?: number;
             target?: components["schemas"]["TargetEnum"];
-            kind?: components["schemas"]["PromotionKindEnum"];
+            kind?: components["schemas"]["KindB2bEnum"];
             /** Format: decimal */
             value?: string;
             /** Format: uuid */
@@ -11259,13 +11802,6 @@ export interface components {
             categories?: string[];
             brands?: string[];
         };
-        /**
-         * @description * `percent` - Percentual sobre o preço
-         *     * `amount` - Valor abatido
-         *     * `fixed` - Preço fixo
-         * @enum {string}
-         */
-        PromotionKindEnum: "percent" | "amount" | "fixed";
         PromotionProduct: {
             /** Format: uuid */
             readonly id: string;
@@ -11311,6 +11847,59 @@ export interface components {
          */
         ProviderSyncStatusEnum: "not_configured" | "pending" | "synced" | "error";
         /**
+         * @description * `missing` - Faltou
+         *     * `extra` - Veio a mais
+         *     * `damaged` - Avariado
+         *     * `wrong_product` - Produto errado
+         *     * `expired` - Vencido / validade curta
+         *     * `other` - Outro
+         * @enum {string}
+         */
+        ReasonEnum: "missing" | "extra" | "damaged" | "wrong_product" | "expired" | "other";
+        ReceivingDivergence: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly variant_name: string;
+            readonly sku: string;
+            readonly supplier_name: string;
+            readonly document_number: number;
+            readonly nfe_number: string;
+            readonly checked_by_name: string;
+            readonly difference: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** Format: date-time */
+            readonly deleted_at: string | null;
+            /** Format: decimal */
+            expected_quantity?: string;
+            /** Format: decimal */
+            arrived_quantity?: string;
+            /** Format: decimal */
+            accepted_quantity?: string;
+            reason: components["schemas"]["ReasonEnum"];
+            notes?: string;
+            mode?: components["schemas"]["ModeEnum"] | components["schemas"]["BlankEnum"];
+            /** Format: uuid */
+            readonly account: string;
+            readonly created_by: number | null;
+            readonly updated_by: number | null;
+            /** Format: uuid */
+            store?: string;
+            /** Format: uuid */
+            document: string;
+            /** Format: uuid */
+            document_item?: string | null;
+            /** Format: uuid */
+            inbound_nfe?: string | null;
+            /** Format: uuid */
+            supplier?: string | null;
+            /** Format: uuid */
+            variant: string;
+            checked_by?: number | null;
+        };
+        /**
          * @description * `not_started` - Não iniciado
          *     * `partial` - Parcial
          *     * `received` - Recebido
@@ -11335,10 +11924,17 @@ export interface components {
          * @enum {string}
          */
         ResolutionEnum: "CLOUD_WINS" | "LOCAL_WINS" | "LAST_VERSION" | "MANUAL" | "IGNORED";
+        /**
+         * @description Cargo fixo: a conta só ajusta o desconto máximo e o "ativo"; o resto é do catálogo
+         *     (`services/access_catalog.SYSTEM_ROLES`). O superusuário (suporte) mexe em tudo.
+         */
         Role: {
             /** Format: uuid */
             readonly id: string;
             permissions: string[];
+            readonly user_count: string;
+            /** @description Para ler: "Logística: gerenciar", "Estoque: ver". */
+            readonly permission_names: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -11347,6 +11943,10 @@ export interface components {
             readonly deleted_at: string | null;
             code: string;
             name: string;
+            /** @description Agrupa na tela: Direção, Vendas, Logística... */
+            area?: string;
+            /** @description O que o cargo faz no sistema. */
+            description?: string;
             /** Format: int64 */
             rank?: number;
             /**
@@ -11362,6 +11962,36 @@ export interface components {
             readonly account: string;
             readonly created_by: number | null;
             readonly updated_by: number | null;
+        };
+        /** @description Regra DENTRO da tabela de desconto. A ordem da lista é a prioridade (1ª = topo). */
+        Rule: {
+            /** Format: uuid */
+            id?: string;
+            name: string;
+            /** @default categories */
+            target: components["schemas"]["TargetEnum"];
+            /** @default percent */
+            kind: components["schemas"]["KindB2bEnum"];
+            /** Format: decimal */
+            value: string;
+            categories?: string[];
+            brands?: string[];
+            products?: components["schemas"]["RuleProduct"][];
+            /** @default true */
+            is_enabled: boolean;
+            /** Format: date-time */
+            starts_at?: string | null;
+            /** Format: date-time */
+            ends_at?: string | null;
+        };
+        /** @description Produto da regra (alvo "Produtos"), com o "por" do encarte opcional. */
+        RuleProduct: {
+            /** Format: uuid */
+            product: string;
+            /** Format: decimal */
+            promotional_price?: string | null;
+            /** Format: decimal */
+            compare_at_price?: string | null;
         };
         /**
          * @description * `BOOTSTRAP` - Dados essenciais
@@ -11379,6 +12009,8 @@ export interface components {
             readonly balance_due: string;
             readonly seller_name: string;
             readonly shipping_address_detail: string;
+            /** @description Notas fiscais do pedido, a principal primeiro. */
+            readonly invoices: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -11419,6 +12051,20 @@ export interface components {
             readonly change_amount: string;
             readonly notes: string;
             readonly metafields: unknown;
+            readonly payment_status: components["schemas"]["PaymentStatusEnum"];
+            /**
+             * Format: decimal
+             * @description Devolvido ao cliente (devoluções concluídas).
+             */
+            readonly refunded_amount: string;
+            readonly fulfillment_status: components["schemas"]["FulfillmentStatusEnum"];
+            readonly overall_status: components["schemas"]["OverallStatusEnum"];
+            /** Format: date-time */
+            readonly ready_at: string | null;
+            /** Format: date-time */
+            readonly shipped_at: string | null;
+            /** Format: date-time */
+            readonly delivered_at: string | null;
             /** Format: date-time */
             readonly completed_at: string | null;
             /** Format: date-time */
@@ -11447,6 +12093,9 @@ export interface components {
             readonly discount_approved_by: number | null;
             /** Format: uuid */
             readonly coupon: string | null;
+            readonly ready_by: number | null;
+            readonly shipped_by: number | null;
+            readonly delivered_by: number | null;
             readonly cancelled_by: number | null;
             readonly cancel_approved_by: number | null;
         };
@@ -11587,6 +12236,16 @@ export interface components {
             terminal?: string | null;
             /** Format: uuid */
             cash_session?: string | null;
+            overall_status?: components["schemas"]["OverallStatusEnum"];
+            payment_status?: components["schemas"]["PaymentStatusEnum"];
+            fulfillment_status?: components["schemas"]["FulfillmentStatusEnum"];
+            /** Format: uuid */
+            shipping_address?: string | null;
+            /**
+             * Format: decimal
+             * @description Devolvido ao cliente (devoluções concluídas).
+             */
+            refunded_amount?: string;
         };
         /**
          * @description * `unit` - Por unidade
@@ -11830,6 +12489,7 @@ export interface components {
             readonly checked_by_name: string;
             readonly inbound_nfe_number: string;
             readonly item_count: string;
+            readonly manual_conference: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -11852,6 +12512,7 @@ export interface components {
             /** Format: date */
             effective_date: string;
             reason?: string;
+            readonly conference_mode: components["schemas"]["ConferenceModeEnum"];
             /** Format: date-time */
             readonly checked_at: string | null;
             /** Format: date-time */
@@ -11881,6 +12542,7 @@ export interface components {
             id?: string;
             readonly variant_name: string;
             readonly sku: string;
+            readonly volumes: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -11900,6 +12562,10 @@ export interface components {
             expires_at?: string | null;
             serials?: unknown;
             notes?: string;
+            /** Format: decimal */
+            arrived_quantity?: string | null;
+            divergence_reason?: components["schemas"]["DivergenceReasonEnum"] | components["schemas"]["BlankEnum"];
+            divergence_notes?: string;
             /** Format: uuid */
             variant: string;
             /** Format: uuid */
@@ -12105,6 +12771,9 @@ export interface components {
             readonly id: string;
             cash_action_password?: string;
             readonly has_cash_action_password: string;
+            readonly parent_name: string;
+            /** @default 0 */
+            readonly children_count: number;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -12122,6 +12791,7 @@ export interface components {
             zip_code?: string;
             /** @description Nome fantasia. */
             name: string;
+            kind?: components["schemas"]["StoreKindEnum"];
             /** @description Razão social. */
             legal_name?: string;
             cnpj?: string;
@@ -12148,6 +12818,11 @@ export interface components {
             readonly account: string;
             readonly created_by: number | null;
             readonly updated_by: number | null;
+            /**
+             * Format: uuid
+             * @description Unidade a que esta responde (matriz, regional).
+             */
+            parent?: string | null;
             /** Format: uuid */
             logo?: string | null;
             /**
@@ -12156,6 +12831,14 @@ export interface components {
              */
             fiscal_config?: string | null;
         };
+        /**
+         * @description * `headquarters` - Matriz
+         *     * `regional` - Regional
+         *     * `branch` - Filial
+         *     * `distribution` - Centro de distribuição
+         * @enum {string}
+         */
+        StoreKindEnum: "headquarters" | "regional" | "branch" | "distribution";
         /**
          * @description * `product` - Produto / gôndola
          *     * `lot` - Lote (validade)
@@ -12508,6 +13191,11 @@ export interface components {
             email?: string;
             password?: string;
             readonly role_name: string;
+            /** @description Cargo principal + somados, para a lista. */
+            readonly roles_label: string;
+            /** @description Id do login (operadores do caixa). */
+            readonly user_id: number;
+            readonly full_name: string;
             extra_permissions?: string[];
             /** Format: date-time */
             readonly created_at: string;
@@ -12527,13 +13215,17 @@ export interface components {
             readonly account: string;
             readonly created_by: number | null;
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Format: uuid
+             * @description Cargo principal.
+             */
             role: string;
             /**
              * Format: uuid
              * @description Loja aberta por padrão quando a requisição não informa X-Store-ID.
              */
             default_store?: string | null;
+            extra_roles?: string[];
             stores?: string[];
         };
         /** @description Variante aninhada no produto. `values` = ids dos valores da grade (Cor: Azul...). */
@@ -12710,6 +13402,78 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    api_v1_account_logo_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_account_logo_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_account_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_account_settings_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_v1_assets_list: {
         parameters: {
             query?: {
@@ -14262,11 +15026,12 @@ export interface operations {
                 search?: string;
                 /**
                  * @description * `open` - Aberto
+                 *     * `pending_opening` - Abertura aguardando o gerente
                  *     * `pending_approval` - Aguardando aprovação do gerente
                  *     * `closed` - Fechado
                  *     * `cancelled` - Cancelado
                  */
-                status?: "cancelled" | "closed" | "open" | "pending_approval";
+                status?: "cancelled" | "closed" | "open" | "pending_approval" | "pending_opening";
             };
             header?: never;
             path?: never;
@@ -14332,6 +15097,34 @@ export interface operations {
         };
     };
     api_v1_cash_sessions_approve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cash session. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CashSession"];
+                "application/x-www-form-urlencoded": components["schemas"]["CashSession"];
+                "multipart/form-data": components["schemas"]["CashSession"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashSession"];
+                };
+            };
+        };
+    };
+    api_v1_cash_sessions_approve_opening_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -20343,6 +21136,7 @@ export interface operations {
         parameters: {
             query?: {
                 is_active?: boolean;
+                is_system?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -21061,6 +21855,34 @@ export interface operations {
             };
         };
     };
+    api_v1_inbound_nfe_discard_entry_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this inbound n fe. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InboundNFe"];
+                "multipart/form-data": components["schemas"]["InboundNFe"];
+                "application/x-www-form-urlencoded": components["schemas"]["InboundNFe"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboundNFe"];
+                };
+            };
+        };
+    };
     api_v1_inbound_nfe_download_create: {
         parameters: {
             query?: never;
@@ -21251,7 +22073,63 @@ export interface operations {
             };
         };
     };
+    api_v1_inbound_nfe_restore_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this inbound n fe. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InboundNFe"];
+                "multipart/form-data": components["schemas"]["InboundNFe"];
+                "application/x-www-form-urlencoded": components["schemas"]["InboundNFe"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboundNFe"];
+                };
+            };
+        };
+    };
     api_v1_inbound_nfe_science_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this inbound n fe. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InboundNFe"];
+                "multipart/form-data": components["schemas"]["InboundNFe"];
+                "application/x-www-form-urlencoded": components["schemas"]["InboundNFe"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboundNFe"];
+                };
+            };
+        };
+    };
+    api_v1_inbound_nfe_undo_receipt_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -21737,6 +22615,62 @@ export interface operations {
             };
         };
     };
+    api_v1_inbound_nfe_items_unignore_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this inbound n fe item. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InboundNFeItem"];
+                "application/x-www-form-urlencoded": components["schemas"]["InboundNFeItem"];
+                "multipart/form-data": components["schemas"]["InboundNFeItem"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboundNFeItem"];
+                };
+            };
+        };
+    };
+    api_v1_inbound_nfe_items_unmap_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this inbound n fe item. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["InboundNFeItem"];
+                "application/x-www-form-urlencoded": components["schemas"]["InboundNFeItem"];
+                "multipart/form-data": components["schemas"]["InboundNFeItem"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["InboundNFeItem"];
+                };
+            };
+        };
+    };
     api_v1_inbound_nfe_items_bulk_retrieve: {
         parameters: {
             query?: never;
@@ -22183,6 +23117,25 @@ export interface operations {
             };
         };
     };
+    api_v1_logistics_freight_tables_estimate_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FreightTable"];
+                };
+            };
+        };
+    };
     api_v1_logistics_freight_tables_quote_retrieve: {
         parameters: {
             query?: never;
@@ -22198,6 +23151,154 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["FreightTable"];
+                };
+            };
+        };
+    };
+    api_v1_logistics_settings_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+                store?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedLogisticsSettingsList"];
+                };
+            };
+        };
+    };
+    api_v1_logistics_settings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this logistics settings. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogisticsSettings"];
+                };
+            };
+        };
+    };
+    api_v1_logistics_settings_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this logistics settings. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["LogisticsSettings"];
+                "application/x-www-form-urlencoded": components["schemas"]["LogisticsSettings"];
+                "multipart/form-data": components["schemas"]["LogisticsSettings"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogisticsSettings"];
+                };
+            };
+        };
+    };
+    api_v1_logistics_settings_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this logistics settings. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedLogisticsSettings"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedLogisticsSettings"];
+                "multipart/form-data": components["schemas"]["PatchedLogisticsSettings"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogisticsSettings"];
+                };
+            };
+        };
+    };
+    api_v1_logistics_settings_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this logistics settings. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogisticsSettings"];
+                };
+            };
+        };
+    };
+    api_v1_logistics_settings_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogisticsSettings"];
                 };
             };
         };
@@ -24130,6 +25231,7 @@ export interface operations {
     api_v1_roles_list: {
         parameters: {
             query?: {
+                area?: string;
                 is_active?: boolean;
                 is_system?: boolean;
                 /** @description Which field to use when ordering the results. */
@@ -24364,13 +25466,50 @@ export interface operations {
                 created_at__lte?: string;
                 created_by?: number;
                 customer?: string;
+                /**
+                 * @description * `pending` - Pendente
+                 *     * `ready` - Separado
+                 *     * `shipped` - Saiu para entrega
+                 *     * `delivered` - Entregue
+                 *     * `picked_up` - Retirado na loja
+                 *     * `returned` - Devolvido
+                 *     * `cancelled` - Cancelado
+                 */
+                fulfillment_status?: "cancelled" | "delivered" | "pending" | "picked_up" | "ready" | "returned" | "shipped";
+                /** @description Valores múltiplos podem ser separados por vírgulas. */
+                fulfillment_status__in?: string[];
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
+                /**
+                 * @description * `draft` - Pedido guardado
+                 *     * `open` - Em atendimento
+                 *     * `awaiting_payment` - Pagamento em andamento
+                 *     * `awaiting_picking` - Aguardando separação
+                 *     * `ready` - Pronto para entrega
+                 *     * `in_transit` - Em rota de entrega
+                 *     * `completed` - Concluído
+                 *     * `returned` - Devolvido
+                 *     * `cancelled` - Cancelado
+                 */
+                overall_status?: "awaiting_payment" | "awaiting_picking" | "cancelled" | "completed" | "draft" | "in_transit" | "open" | "ready" | "returned";
+                /** @description Valores múltiplos podem ser separados por vírgulas. */
+                overall_status__in?: string[];
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
                 parked_by?: number;
+                /**
+                 * @description * `pending` - Aguardando pagamento
+                 *     * `partial` - Pago em parte
+                 *     * `paid` - Pago
+                 *     * `partially_refunded` - Estorno parcial
+                 *     * `refunded` - Estornado
+                 *     * `cancelled` - Cancelado
+                 */
+                payment_status?: "cancelled" | "paid" | "partial" | "partially_refunded" | "pending" | "refunded";
+                /** @description Valores múltiplos podem ser separados por vírgulas. */
+                payment_status__in?: string[];
                 /** @description A search term. */
                 search?: string;
                 seller?: number;
@@ -24708,6 +25847,34 @@ export interface operations {
         };
     };
     api_v1_sales_discount_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this sale. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Sale"];
+                "application/x-www-form-urlencoded": components["schemas"]["Sale"];
+                "multipart/form-data": components["schemas"]["Sale"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
+    api_v1_sales_fulfillment_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -25636,6 +26803,112 @@ export interface operations {
             };
         };
     };
+    api_v1_stock_divergences_list: {
+        parameters: {
+            query?: {
+                created_at__gte?: string;
+                created_at__lte?: string;
+                document?: string;
+                inbound_nfe?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /**
+                 * @description * `missing` - Faltou
+                 *     * `extra` - Veio a mais
+                 *     * `damaged` - Avariado
+                 *     * `wrong_product` - Produto errado
+                 *     * `expired` - Vencido / validade curta
+                 *     * `other` - Outro
+                 */
+                reason?: "damaged" | "expired" | "extra" | "missing" | "other" | "wrong_product";
+                /** @description A search term. */
+                search?: string;
+                supplier?: string;
+                variant?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedReceivingDivergenceList"];
+                };
+            };
+        };
+    };
+    api_v1_stock_divergences_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this receiving divergence. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceivingDivergence"];
+                };
+            };
+        };
+    };
+    api_v1_stock_divergences_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this receiving divergence. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceivingDivergence"];
+                };
+            };
+        };
+    };
+    api_v1_stock_divergences_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReceivingDivergence"];
+                };
+            };
+        };
+    };
     api_v1_stock_documents_list: {
         parameters: {
             query?: {
@@ -26034,6 +27307,9 @@ export interface operations {
     api_v1_stock_label_templates_list: {
         parameters: {
             query?: {
+                is_active?: boolean;
+                is_default?: boolean;
+                is_system?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -26042,6 +27318,13 @@ export interface operations {
                 page_size?: number;
                 /** @description A search term. */
                 search?: string;
+                /**
+                 * @description * `product` - Produto / gôndola
+                 *     * `lot` - Lote (validade)
+                 *     * `bin` - Endereço de armazenagem
+                 *     * `volume` - Volume (caixa do produto)
+                 */
+                subject?: "bin" | "lot" | "product" | "volume";
             };
             header?: never;
             path?: never;
@@ -26964,12 +28247,20 @@ export interface operations {
         parameters: {
             query?: {
                 is_active?: boolean;
+                /**
+                 * @description * `headquarters` - Matriz
+                 *     * `regional` - Regional
+                 *     * `branch` - Filial
+                 *     * `distribution` - Centro de distribuição
+                 */
+                kind?: "branch" | "distribution" | "headquarters" | "regional";
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
                 page?: number;
                 /** @description Number of results to return per page. */
                 page_size?: number;
+                parent?: string;
                 /** @description A search term. */
                 search?: string;
                 state?: string;

@@ -19,7 +19,7 @@ from cryptography.hazmat.primitives.serialization.pkcs12 import serialize_key_an
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from starrp.models import (
-    FinancialTitle, FiscalConfig, InboundNFe, NFeIssue, ProductBarcode, StockDocument, Store,
+    FinancialTitle, FiscalConfig, InboundNFe, LogisticsSettings, NFeIssue, ProductBarcode, StockDocument, Store,
 )
 from starrp.services import dfe, fiscal_data, sefaz, stock
 
@@ -210,6 +210,9 @@ def test_cancelamento_do_fornecedor_derruba_o_rascunho_ou_abre_pendencia(fiscal,
     nfe = InboundNFe.all_objects.get(access_key=KEY)
     ctx.client().post(f"/api/v1/inbound-nfe/{nfe.pk}/map-item/",
                       {"item": str(nfe.items.get(item_number=2).pk), "variant": str(yogurt.pk)}, format="json")
+    # "Receber e aprovar de uma vez" é conferência manual: precisa estar liberada na Logística.
+    LogisticsSettings.all_objects.update_or_create(store=ctx.store, defaults={"account": ctx.account,
+                                                                              "allow_manual_conference": True})
     ctx.client().post(f"/api/v1/inbound-nfe/{nfe.pk}/receive/", {"post": True}, format="json")
     fake.pages = [answer("138", [("000000000000103", "resEvento_v1.01.xsd", CANCEL)], last="103", maximum="103")]
     from starrp.models import DFeSyncState

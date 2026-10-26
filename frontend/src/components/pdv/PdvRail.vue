@@ -1,12 +1,12 @@
 <script setup lang="ts">
 /**
  * Trilho de atalhos do PDV (esquerda), cada um com a sua tecla:
- * F1 venda · F2 pedidos · F3 cliente · F4 caixa (só no modo caixa) · F5 preço · F8 sair.
+ * F1 venda · F2 pedidos · F3 cliente · F4 caixa (só no modo caixa) · F5 preço · Shift+F5 frete · F8 sair.
  * Venda, pedidos, cliente e caixa abrem DENTRO do PDV (sem janela por cima).
  */
 import { computed } from "vue";
 
-export type RailAction = "sale" | "orders" | "customer" | "cash" | "price" | "backoffice";
+export type RailAction = "sale" | "orders" | "customer" | "cash" | "price" | "freight" | "backoffice";
 
 const props = defineProps<{ active?: RailAction; seller?: boolean; exitLabel?: string }>();
 const emit = defineEmits<{ select: [action: RailAction] }>();
@@ -17,6 +17,7 @@ const items = computed(() => [
   { action: "customer" as const, label: "Cliente", icon: "pi pi-user", key: "F3" },
   ...(props.seller ? [] : [{ action: "cash" as const, label: "Caixa", icon: "pi pi-wallet", key: "F4" }]),
   { action: "price" as const, label: "Preço", icon: "pi pi-tag", key: "F5" },
+  { action: "freight" as const, label: "Frete", icon: "pi pi-truck", key: "⇧F5" },
   { action: "backoffice" as const, label: props.exitLabel ?? "Sair", icon: "pi pi-sign-out", key: "F8" },
 ]);
 </script>

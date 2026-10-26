@@ -25,7 +25,7 @@ def from_store(store, user=None):
     """Dados fiscais da loja: acha pelo CNPJ ou cria com o cadastro dela, e vincula."""
     cnpj = only_digits(store.cnpj)
     if len(cnpj) != 14:
-        raise BusinessError(f"A loja {store.name} não tem CNPJ válido para os dados fiscais.", code="store_no_cnpj")
+        raise BusinessError(f"A filial {store.name} não tem CNPJ válido para os dados fiscais.", code="store_no_cnpj")
     config = FiscalConfig.all_objects.filter(account_id=store.account_id, cnpj=cnpj, deleted_at__isnull=True).first()
     if config is None:
         config = FiscalConfig.all_objects.create(

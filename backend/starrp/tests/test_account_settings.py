@@ -39,3 +39,25 @@ def test_modelos_de_etiqueta_pre_prontos_nascem_com_a_conta_e_nao_sao_excluidos(
     assert presets.count() == len(LABEL_TEMPLATES)
     assert {p.subject for p in presets} == {"product", "lot", "bin", "volume"}
     assert deleted.status_code == 409 and mine.status_code == 201
+
+
+def test_logo_da_empresa_vira_quadrado_1080_e_vai_no_me(ctx, settings, tmp_path):
+    from io import BytesIO
+
+    from django.core.files.uploadedfile import SimpleUploadedFile
+    from PIL import Image as Pillow
+
+    settings.MEDIA_ROOT = tmp_path
+    raw = BytesIO()
+    Pillow.new("RGB", (1600, 900), "#1d4ed8").save(raw, format="JPEG")
+    api = ctx.client()
+    sent = api.post("/api/v1/account/logo/", {"file": SimpleUploadedFile("logo.jpg", raw.getvalue(), "image/jpeg")},
+                    format="multipart")
+    me = api.get("/api/v1/me/").json()
+    page = api.get("/api/v1/account/settings/").json()
+    removed = api.delete("/api/v1/account/logo/").json()
+    seller = ctx.client(ctx.user("vend", "seller")).post("/api/v1/account/logo/", {}, format="multipart")
+
+    assert sent.status_code == 200 and (sent.json()["width"], sent.json()["height"]) == (1080, 1080)
+    assert me["account"]["logo_url"] == sent.json()["logo_url"] == page["account"]["logo_url"]
+    assert removed["logo_url"] is None and seller.status_code == 403

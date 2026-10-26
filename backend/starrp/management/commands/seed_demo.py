@@ -14,6 +14,7 @@ import random
 from datetime import timedelta
 from decimal import Decimal
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
@@ -140,6 +141,9 @@ class Command(BaseCommand):
                 transaction.set_rollback(True)
                 self.stdout.write(self.style.WARNING("--dry-run: tudo certo, nada foi gravado."))
                 return
+        # Cupom, desconto e promoção (relatórios de Promoções) e depois avaliações e entregas.
+        call_command("seed_promotions", account=options["account"], stdout=self.stdout)
+        call_command("seed_reviews", account=options["account"], stdout=self.stdout)
         self.stdout.write(self.style.SUCCESS("Demo pronta: lojas, catálogo, estoque, vendas, financeiro e fiscal."))
 
     def log(self, text):
@@ -491,11 +495,17 @@ class Command(BaseCommand):
                     payment["nsu"] = f"{random.randint(100000, 999999)}"
                 api.post(f"/sales/{sale['id']}/checkout/", {"payments": [payment]})
                 self.sale_ids.append(sale["id"])
+            # Fim do dia como numa loja: sangria do excedente para o cofre, fica o troco de R$ 200 na gaveta,
+            # e o fechamento conta os R$ 200. A próxima abertura confere os mesmos R$ 200 (conferência cega).
             current = api.get(f"/cash/sessions/{session['id']}/")
-            expected = current.get("expected_now") or current.get("expected_amount") or "200.00"
-            api.post(f"/cash/sessions/{session['id']}/close/", {"counted_amount": expected, "notes": f"Turno {turn + 1}"})
+            extra = Decimal(current.get("expected_now") or "200.00") - Decimal("200.00")
+            if extra > 0:
+                api.post(f"/cash/sessions/{session['id']}/movements/", {"kind": "withdrawal", "amount": money(extra),
+                                                                       "reason": "Sangria de fechamento",
+                                                                       "destination": "Cofre"})
+            api.post(f"/cash/sessions/{session['id']}/close/", {"counted_amount": "200.00", "notes": f"Turno {turn + 1}"})
         # Uma venda no crediário (vira conta a receber), num turno que fica aberto: o "turno de hoje".
-        api.post("/cash/sessions/", {"register": register, "opening_amount": "100.00"})  # fica aberto: o turno de hoje
+        api.post("/cash/sessions/", {"register": register, "opening_amount": "200.00"})  # fica aberto: o turno de hoje
         sale = api.post("/sales/", {"customer": self.customers[0]["id"]})
         body = api.post(f"/sales/{sale['id']}/items/", {"variant": sellable[5]["id"], "quantity": "1"})
         api.post(f"/sales/{sale['id']}/checkout/", {"payments": [{"method": methods["installment_plan"],

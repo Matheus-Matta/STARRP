@@ -15,11 +15,11 @@ const open = ref(false);
 const root = ref<HTMLElement>();
 
 const multi = computed(() => session.stores.length > 1);
-const title = computed(() => session.activeStore?.name ?? (session.activeStoreId === ALL_STORES ? "Todas as lojas" : "Selecione a loja"));
+const title = computed(() => session.activeStore?.name ?? (session.activeStoreId === ALL_STORES ? "Todas as filiais" : "Selecione a filial"));
 const subtitle = computed(() => {
-  if (!session.activeStore) return `${session.stores.length} lojas`;
+  if (!session.activeStore) return `${session.stores.length} filiais`;
   const account = session.me?.account?.name;
-  return account && account !== session.activeStore.name ? account : multi.value ? "Trocar de loja" : "Loja ativa";
+  return account && account !== session.activeStore.name ? account : multi.value ? "Trocar de filial" : "Filial ativa";
 });
 
 async function choose(id: string) {
@@ -51,7 +51,7 @@ onBeforeUnmount(() => document.removeEventListener("click", onOutside));
       <div v-if="open" class="picker__menu" role="menu">
         <button type="button" class="picker__option" :class="{ active: session.activeStoreId === ALL_STORES }"
                 @click="choose(ALL_STORES)">
-          <span>Todas as minhas lojas</span><small>Visão consolidada</small>
+          <span>Todas as minhas filiais</span><small>Visão consolidada</small>
         </button>
         <button v-for="store in session.stores" :key="store.id" type="button" class="picker__option"
                 :class="{ active: session.activeStoreId === store.id }" @click="choose(store.id)">

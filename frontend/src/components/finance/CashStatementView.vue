@@ -96,7 +96,7 @@ function csv() {
     </div>
 
     <SectionCard title="Vendas do turno" :description="`${s.sales_list.length} vendas — clique para abrir`" icon="pi pi-shopping-cart">
-      <table class="list">
+      <table class="hide-sm-4 hide-sm-5 list">
         <thead><tr><th>Nº</th><th>Hora</th><th>Cliente</th><th>Vendedor</th><th>Pagamentos</th><th class="right">Total</th><th>Situação</th></tr></thead>
         <tbody>
           <tr v-for="x in s.sales_list" :key="x.id" :class="{ cancelled: x.status === 'cancelled' }" @click="router.push(`/cadastros/vendas/${x.id}`)">
@@ -109,7 +109,7 @@ function csv() {
     </SectionCard>
 
     <SectionCard title="Movimentos da gaveta" description="Sangrias, suprimentos e dinheiro das vendas" icon="pi pi-arrow-right-arrow-left">
-      <table class="list">
+      <table class="hide-sm-5 hide-sm-6 list">
         <thead><tr><th>Quando</th><th>Tipo</th><th class="right">Valor</th><th>Situação</th><th>Motivo / destino</th><th>Operador</th></tr></thead>
         <tbody>
           <tr v-for="m in s.movements" :key="m.id">
@@ -122,7 +122,7 @@ function csv() {
     </SectionCard>
 
     <SectionCard title="Itens vendidos" description="Somados por produto, do que mais rendeu" icon="pi pi-box">
-      <table class="list">
+      <table class="hide-sm-3 hide-sm-5 list">
         <thead><tr><th>Produto</th><th class="right">Qtd.</th><th class="right">Vendas</th><th class="right">Total</th><th class="right">Custo</th><th class="right">Margem</th></tr></thead>
         <tbody>
           <tr v-for="i in s.items" :key="i.variant">
@@ -144,11 +144,11 @@ function csv() {
 .identity > div { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; background: var(--surface-card); }
 .identity small { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
 .identity b { color: var(--text-strong); font-size: 13.5px; }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.6rem; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 0.6rem; }
 .kpis div { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-card); }
 .kpis small { font-size: 12px; color: var(--text-muted); }
 .kpis strong { font-size: 19px; color: var(--text-strong); }
-.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1rem; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr)); gap: 1rem; }
 .line { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-subtle); font-size: 13.5px; }
 .line.total { font-weight: 700; }
 .issues { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 13.5px; }
@@ -159,7 +159,7 @@ function csv() {
 .list tbody tr { cursor: pointer; }
 .list tbody tr:hover { background: var(--surface-hover); }
 .list tr.cancelled td { color: var(--text-subtle); text-decoration: line-through; }
-.right { text-align: right; }
+.right, .list .right { text-align: right; }
 .pos { color: var(--success-text); }
 .neg { color: var(--danger-text); }
 @media (max-width: 720px) { .identity { grid-template-columns: 1fr 1fr; } .list { display: block; overflow-x: auto; } }

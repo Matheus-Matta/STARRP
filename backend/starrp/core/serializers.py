@@ -110,7 +110,7 @@ def related_scope_error(obj, account):
     from starrp.models.base import TenantManager
 
     if isinstance(manager, TenantManager) and not manager.filter(pk=obj.pk).exists():
-        return "Registro relacionado pertence a uma loja à qual você não tem acesso."
+        return "Registro relacionado pertence a uma filial à qual você não tem acesso."
     return None
 
 

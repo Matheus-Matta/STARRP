@@ -60,6 +60,9 @@
 .p-dialog { box-shadow: var(--shadow-lg); border: 1px solid var(--border); animation: srp-fade-up var(--dur-slow) var(--ease-spring); }
 .p-dialog-header { border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem; }
 .p-dialog-title { font-weight: 700; font-size: 1.05rem; }
+/* O cabeçalho tem divisória: o conteúdo precisa de respiro em cima (o padrão do PrimeVue é 0). */
+.p-dialog-content { padding-top: 1.25rem; }
+.p-dialog-content:first-child { padding-top: 0; } /* sem cabeçalho (paleta, vitrine do PDV): o conteúdo controla */
 .p-dialog-footer { border-top: 1px solid var(--border-subtle); padding-top: 1rem; gap: 0.5rem; }
 .p-dialog-mask { backdrop-filter: blur(2px); }
 
@@ -83,3 +86,27 @@
 
 /* Checkbox no tema escuro: a borda padrão some no fundo escuro. */
 .dark .p-checkbox:not(.p-checkbox-checked) .p-checkbox-box { border-color: var(--zinc-600); }
+
+/* Celular: diálogo quase na tela toda (rola por dentro), campos com 16px (o iPhone não dá zoom
+   ao tocar) e botões do rodapé que quebram linha em vez de vazar. */
+@media (max-width: 640px) {
+  .p-dialog { width: calc(100vw - 16px) !important; max-width: none !important; max-height: calc(100dvh - 16px); }
+  .p-dialog-header { padding: 0.9rem 1rem 0.8rem; }
+  .p-dialog-content { padding: 1rem; }
+  .p-dialog-content:first-child { padding-top: 0; }
+  .p-dialog-footer { padding: 0.75rem 1rem 1rem; flex-wrap: wrap; }
+  .p-dialog-footer .p-button { flex: 1 1 auto; }
+  .p-inputtext, .p-select-label, .p-inputnumber-input, .p-textarea, .p-datepicker-input { font-size: 16px; }
+  .p-menu, .p-tieredmenu { max-width: calc(100vw - 16px); }
+}
+
+/* Coluna numérica: o PrimeVue põe título e valor numa caixa flex, então o text-align da célula não
+   basta. Encosta os dois à direita e passa o ícone de ordenar para ANTES do título, para o texto do
+   cabeçalho terminar na mesma linha dos números. */
+.p-datatable th.right .p-datatable-column-header-content,
+.p-treetable th.right .p-treetable-column-header-content,
+.p-treetable td.right .p-treetable-body-cell-content { justify-content: flex-end; }
+.p-datatable th.right [data-pc-section="sort"],
+.p-treetable th.right [data-pc-section="sort"] { order: -1; display: inline-flex; }
+.p-datatable th.right .p-datatable-sort-icon,
+.p-treetable th.right .p-treetable-sort-icon { margin-left: 0; margin-right: 6px; }

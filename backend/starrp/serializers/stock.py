@@ -4,13 +4,24 @@ from rest_framework import serializers
 from starrp.core.errors import StateConflict
 from starrp.core.serializers import TenantSerializer, tenant_serializer
 from starrp.models import (
-    LabelTemplate, StockBalance, StockDocument, StockDocumentItem, StockLot, StockMovement, StockSettings, Warehouse,
+    LabelTemplate, ReceivingDivergence, StockBalance, StockDocument, StockDocumentItem, StockLot, StockMovement,
+    StockSettings, Warehouse,
 )
 from starrp.services import numbering
 
 StockSettingsSerializer = tenant_serializer(StockSettings)
 WarehouseSerializer = tenant_serializer(Warehouse)
 LabelTemplateSerializer = tenant_serializer(LabelTemplate)
+
+
+def volumes_of(variant):
+    """Caixas em que UMA unidade vem (guarda-roupa em 3 volumes): número e o que vai em cada."""
+    if variant is None:
+        return []
+    return [{"number": v.number, "description": v.description}
+            for v in variant.volumes.all() if v.deleted_at is None]
+
+
 class StockLotSerializer(TenantSerializer):
     variant_name = serializers.CharField(source="variant.display_name", read_only=True)
     sku = serializers.CharField(source="variant.sku", read_only=True)
@@ -48,10 +59,14 @@ class StockDocumentItemSerializer(serializers.ModelSerializer):
     id = serializers.UUIDField(required=False)
     variant_name = serializers.CharField(source="variant.display_name", read_only=True)
     sku = serializers.CharField(source="variant.sku", read_only=True)
+    volumes = serializers.SerializerMethodField()
 
     class Meta:
         model = StockDocumentItem
         exclude = ["account", "document", "deleted_at", "created_by", "updated_by"]
+
+    def get_volumes(self, obj):
+        return volumes_of(obj.variant)
 
 
 class StockDocumentSerializer(TenantSerializer):
@@ -64,16 +79,23 @@ class StockDocumentSerializer(TenantSerializer):
     checked_by_name = serializers.CharField(source="checked_by.get_full_name", read_only=True, default=None)
     inbound_nfe_number = serializers.CharField(source="inbound_nfe.number", read_only=True, default=None)
     item_count = serializers.SerializerMethodField()
+    # Logística permite conferir item a item (sem ler os códigos)?
+    manual_conference = serializers.SerializerMethodField()
 
     class Meta:
         model = StockDocument
         fields = "__all__"
         read_only_fields = ["number", "status", "posted_at", "posted_by", "cancelled_at", "cancelled_by",
-                            "checked_at", "checked_by", "inbound_nfe"]
+                            "checked_at", "checked_by", "inbound_nfe", "conference_mode"]
         signed_fields = ()
 
     def get_item_count(self, obj):
         return len(obj.items.all())
+
+    def get_manual_conference(self, obj):
+        from starrp.services import logistics_settings
+
+        return logistics_settings.for_store(obj.store_id).allow_manual_conference
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -116,3 +138,20 @@ class StockDocumentSerializer(TenantSerializer):
         if items is not None:
             self._save_items(document, items)
         return document
+
+
+class ReceivingDivergenceSerializer(TenantSerializer):
+    variant_name = serializers.CharField(source="variant.display_name", read_only=True)
+    sku = serializers.CharField(source="variant.sku", read_only=True)
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True, default=None)
+    document_number = serializers.IntegerField(source="document.number", read_only=True)
+    nfe_number = serializers.CharField(source="inbound_nfe.number", read_only=True, default=None)
+    checked_by_name = serializers.CharField(source="checked_by.get_full_name", read_only=True, default=None)
+    difference = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ReceivingDivergence
+        fields = "__all__"
+
+    def get_difference(self, obj):
+        return str(obj.arrived_quantity - obj.expected_quantity)

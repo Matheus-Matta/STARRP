@@ -8,9 +8,12 @@
     POST /inbound-nfe/{id}/map-item/     vincula um item a um produto (e aprende)
     POST /inbound-nfe/{id}/rematch/      tenta casar de novo os itens pendentes
     POST /inbound-nfe/{id}/receive/      gera (ou devolve) a entrada em rascunho para a conferência
-    POST /inbound-nfe/{id}/ignore/       marca a nota como ignorada
+    POST /inbound-nfe/{id}/ignore/       marca a nota como ignorada (restore/ desfaz)
+    POST /inbound-nfe/{id}/discard-entry/  volta da conferência: descarta a entrada em rascunho
+    POST /inbound-nfe/{id}/undo-receipt/   desfaz o recebimento {reason}: estorna estoque e contas a pagar
     POST /inbound-nfe/items/{id}/create-product/   cadastra o produto a partir do item
-    POST /inbound-nfe/items/{id}/ignore/           o item não entra no estoque
+    POST /inbound-nfe/items/{id}/ignore/           o item não entra no estoque (unignore/ desfaz)
+    POST /inbound-nfe/items/{id}/unmap/            desfaz o vínculo {forget: esquece o aprendido}
 """
 from django.db.models import Q
 from django.utils import timezone
@@ -18,7 +21,7 @@ from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
-from starrp.core.errors import BusinessError
+from starrp.core.errors import BusinessError, StateConflict
 from starrp.core.viewsets import TenantViewSet
 from starrp.models import FiscalConfig, InboundNFe, InboundNFeItem
 from starrp.models.platform import Module
@@ -38,12 +41,13 @@ class InboundNFeViewSet(TenantViewSet):
     http_method_names = ["get", "patch", "post", "head", "options"]
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     select_related = ("store", "fiscal_config")
-    prefetch_related = ("items__variant__product", "stock_documents")
+    prefetch_related = ("items__variant__product", "items__variant__volumes", "stock_documents")
     filterset_fields = {"receiving": ["exact"], "fiscal_status": ["exact"], "manifestation": ["exact"],
                         "supplier": ["exact"], "store": ["exact"], "fiscal_config": ["exact"],
                         "xml_status": ["exact"], "issued_at": ["gte", "lte"]}
     search_fields = ["access_key", "number", "supplier_name", "supplier_document"]
-    action_permissions = {"sync": "inbound_nfe.manage"}
+    # Desfazer o recebimento estorna estoque: além da nota, precisa mexer no estoque.
+    action_permissions = {"sync": "inbound_nfe.manage", "undo_receipt": "stock.manage"}
 
     # Etapa (`stage`) é derivada: o filtro traduz para as colunas que a compõem.
     STAGES = {
@@ -75,7 +79,7 @@ class InboundNFeViewSet(TenantViewSet):
         return body.validated_data
 
     def _respond(self, nfe, status=200):
-        nfe = InboundNFe.all_objects.prefetch_related("items__variant__product").get(pk=nfe.pk)
+        nfe = InboundNFe.all_objects.prefetch_related("items__variant__product", "items__variant__volumes").get(pk=nfe.pk)
         return Response(self.get_serializer(nfe).data, status=status)
 
     @action(detail=False, methods=["post"])
@@ -119,7 +123,7 @@ class InboundNFeViewSet(TenantViewSet):
     @action(detail=False, methods=["post"], url_path="import")
     def import_xml(self, request):
         if request.store is None:
-            raise BusinessError("Selecione a loja destinatária (X-Store-ID).", code="store_required")
+            raise BusinessError("Selecione a filial destinatária (X-Store-ID).", code="store_required")
         data = self._body(s.NFeImportSerializer)
         upload = data.get("file")
         if upload is not None and upload.size > MAX_XML_BYTES:
@@ -152,9 +156,27 @@ class InboundNFeViewSet(TenantViewSet):
             doc = stock_documents.post(stock_documents.check(doc, request.user), request.user)
         return Response(StockDocumentSerializer(doc, context=self.get_serializer_context()).data, status=201)
 
+    @action(detail=True, methods=["post"], url_path="discard-entry")
+    def discard_entry(self, request, pk=None):
+        nfe = self.get_object()
+        inbound_nfe.discard_entry(nfe, request.user)
+        return self._respond(nfe)
+
+    @action(detail=True, methods=["post"], url_path="undo-receipt")
+    def undo_receipt(self, request, pk=None):
+        nfe = self.get_object()
+        inbound_nfe.undo_receipt(nfe, request.user, str(request.data.get("reason", "")))
+        return self._respond(nfe)
+
+    @action(detail=True, methods=["post"])
+    def restore(self, request, pk=None):
+        return self._respond(inbound_nfe.restore(self.get_object()))
+
     @action(detail=True, methods=["post"])
     def ignore(self, request, pk=None):
         nfe = self.get_object()
+        if nfe_receiving.open_entry(nfe) is not None:
+            raise StateConflict("A nota tem entrada de estoque: descarte a conferência ou desfaça o recebimento antes.")
         nfe.ignored_at, nfe.ignored_by = timezone.now(), request.user
         nfe.ignored_reason = str(request.data.get("reason", ""))
         nfe.save(update_fields=["ignored_at", "ignored_by", "ignored_reason", "updated_at"])
@@ -179,5 +201,15 @@ class InboundNFeItemViewSet(TenantViewSet):
     @action(detail=True, methods=["post"])
     def ignore(self, request, pk=None):
         item = inbound_nfe.ignore_item(self.get_object(), str(request.data.get("reason", "")), request.user)
+        return Response(self.get_serializer(item).data)
+
+    @action(detail=True, methods=["post"])
+    def unignore(self, request, pk=None):
+        item = inbound_nfe.unignore_item(self.get_object(), request.user)
+        return Response(self.get_serializer(item).data)
+
+    @action(detail=True, methods=["post"])
+    def unmap(self, request, pk=None):
+        item = inbound_nfe.unmap_item(self.get_object(), request.user, forget=request.data.get("forget", True) is not False)
         return Response(self.get_serializer(item).data)
 

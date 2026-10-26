@@ -32,12 +32,22 @@ class AddressFields(models.Model):
 class Store(AddressFields, TenantModel):
     store_lookup = "pk"
 
+    class Kind(models.TextChoices):
+        HEADQUARTERS = "headquarters", "Matriz"
+        REGIONAL = "regional", "Regional"
+        BRANCH = "branch", "Filial"
+        DISTRIBUTION = "distribution", "Centro de distribuição"
+
     class ScaleBarcode(models.TextChoices):
         DISABLED = "", "Não usa etiqueta de balança"
         PRICE = "price", "Etiqueta traz o preço"
         WEIGHT = "weight", "Etiqueta traz o peso"
 
     name = models.CharField(max_length=160, help_text="Nome fantasia.")
+    # Hierarquia: a quem esta unidade responde (filial → regional → matriz).
+    kind = models.CharField(max_length=14, choices=Kind.choices, default=Kind.BRANCH)
+    parent = models.ForeignKey("self", null=True, blank=True, related_name="children", on_delete=models.SET_NULL,
+                               help_text="Unidade a que esta responde (matriz, regional).")
     legal_name = models.CharField(max_length=180, blank=True, help_text="Razão social.")
     cnpj = models.CharField(max_length=18, blank=True)
     state_registration = models.CharField(max_length=20, blank=True)

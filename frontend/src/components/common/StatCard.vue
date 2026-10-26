@@ -35,6 +35,10 @@ withDefaults(defineProps<{ label: string; value: string; icon: string; caption?:
 .stat__head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .stat__label { font: 600 12.5px/1.2 var(--font-sans); color: var(--text-muted); }
 .stat__icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; color: var(--tone); background: var(--tone-bg); }
-.stat__value { font: 800 26px/1.1 var(--font-sans); letter-spacing: -0.02em; color: var(--text-strong); }
+/* O valor encolhe com o cartão (container query): "R$ 46.650,00" cabe inteiro no celular. */
+.stat { container-type: inline-size; }
+.stat__value { font: 800 clamp(15px, 10.5cqi, 26px)/1.1 var(--font-sans); letter-spacing: -0.02em; color: var(--text-strong);
+               white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 640px) { .stat { padding: 14px; } .stat__icon { width: 30px; height: 30px; } }
 .stat__caption { font-size: 12px; color: var(--text-subtle); }
 </style>

@@ -85,7 +85,7 @@ const expected = computed(() => detail.data.value?.expected_now ?? detail.data.v
 .panel__head { display: flex; align-items: center; gap: 10px; }
 .panel__head h2 { margin: 0; font: 700 17px/1.2 var(--font-sans); color: var(--text-strong); }
 .panel__head p { margin: 2px 0 0; font-size: 13px; color: var(--text-muted); }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 10px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr)); gap: 10px; }
 .stat { display: flex; flex-direction: column; gap: 4px; padding: 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-card); }
 .stat span { font-size: 12px; font-weight: 600; color: var(--text-muted); }
 .stat strong { font: 800 20px/1.2 var(--font-sans); color: var(--text-strong); }
@@ -93,7 +93,7 @@ const expected = computed(() => detail.data.value?.expected_now ?? detail.data.v
 .stat--brand strong { color: var(--text-brand); }
 .stat--blind strong { color: var(--text-muted); display: flex; gap: 8px; align-items: center; font-size: 17px; }
 .stat--blind small { font-size: 11.5px; color: var(--text-muted); }
-.actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+.actions { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 10px; }
 .action {
   display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 16px; text-align: left; cursor: pointer;
   border: 1px solid var(--border); border-radius: 12px; background: var(--surface-card); font-family: var(--font-sans);

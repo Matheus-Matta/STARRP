@@ -139,7 +139,7 @@ function fill(patch: Record<string, string>) {
 
 async function reload(force = false) {
   await load(force);
-  // Cadastro novo aceita valores pela URL: ".../documentos-de-estoque/novo?kind=exit" já abre como saída.
+  // Cadastro novo aceita valores pela URL: ".../entradas-e-saidas/novo?kind=exit" já abre como saída.
   if (isNew.value) {
     const names = new Set(resource.value.fields.map((f) => f.name));
     for (const [key, value] of Object.entries(route.query)) if (names.has(key) && typeof value === "string") values.value[key] = value;
@@ -365,6 +365,16 @@ h1 { font: 700 19px/1.2 var(--font-sans); letter-spacing: -0.01em; white-space: 
 .actionbar--dirty .actionbar__status > i { color: var(--accent); }
 .actionbar__status .hint { font-weight: 500; color: var(--text-subtle); margin-left: 6px; }
 .actionbar__buttons { display: flex; gap: 0.4rem; }
+@media (max-width: 640px) {
+  /* Celular: as ações descem para uma linha própria que rola para o lado (não esmagam o título). */
+  .head { flex-wrap: wrap; row-gap: 10px; }
+  .head__text { flex: 1; }
+  .head__title { gap: 6px; }
+  h1 { font-size: 18px; white-space: normal; }
+  .head__actions { order: 3; flex: 1 1 100%; margin: 0 -16px; padding: 0 16px 2px; flex-wrap: nowrap; overflow-x: auto;
+                   justify-content: flex-start; scrollbar-width: none; }
+  .head__actions :deep(.p-button) { flex: none; }
+}
 @media (max-width: 560px) {
   .actionbar { padding: 6px; gap: 0.4rem; }
   .actionbar__status > span, .another { display: none; }

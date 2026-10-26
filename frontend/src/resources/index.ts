@@ -7,17 +7,20 @@ import {
 import { fiscalConfigs, inboundNfes, invoices } from "./fiscal";
 import { customerGroups, customers, suppliers } from "./partners";
 import { coupons, discountTables } from "./promotions";
+import { reviews } from "./reviews";
 import { sales } from "./sales";
-import { cashRegisters, freightTables, metafieldDefinitions, paymentMethods, roles, stores, users } from "./settings";
 import {
-  labelTemplates, stockBalances, stockDocuments, stockLots, stockMovements, storageBins,
+  cashRegisters, freightTables, logisticsSettings, metafieldDefinitions, paymentMethods, roles, stores, users,
+} from "./settings";
+import {
+  labelTemplates, receivingDivergences, stockBalances, stockDocuments, stockLots, stockMovements, storageBins,
 } from "./stock";
 import type { ResourceDef } from "./types";
 
 /** A ordem aqui é a ordem dentro de cada grupo do menu (o grupo vem do `group` de cada cadastro). */
 export const resources: ResourceDef[] = [
   // Vendas
-  sales, customers, customerGroups,
+  sales, reviews, customers, customerGroups,
   // Catálogo
   products, categories, brands, serviceRules, metafieldDefinitions,
   // Promoções
@@ -27,7 +30,7 @@ export const resources: ResourceDef[] = [
   // Estoque
   stockBalances, stockMovements, stockDocuments, stockLots, labelTemplates,
   // Logística
-  freightTables, warehouses, storageBins,
+  freightTables, warehouses, storageBins, receivingDivergences, logisticsSettings,
   // Financeiro
   receivables, payables, installments, transactions, cashSessions, cashRegisters, paymentMethods, financialAccounts,
   financialCategories,

@@ -50,6 +50,7 @@ from starrp.models.tags import (  # noqa: F401
 from starrp.models.logistics import (  # noqa: F401
     FreightTable,
     FreightZipRange,
+    LogisticsSettings,
     ZipCoordinate,
     ZipDistance,
 )
@@ -121,6 +122,9 @@ from starrp.models.stock import (  # noqa: F401
     StockMovement,
 )
 from starrp.models.stock_documents import (  # noqa: F401
+    ConferenceMode,
+    DivergenceReason,
+    ReceivingDivergence,
     StockDocument,
     StockDocumentItem,
 )
@@ -157,6 +161,7 @@ from starrp.models.system import (  # noqa: F401
     Notification,
     ImportJob,
 )
+from starrp.models.reviews import Review  # noqa: F401
 from starrp.models.sync import (  # noqa: F401
     SyncEnvironment,
     NodeType,

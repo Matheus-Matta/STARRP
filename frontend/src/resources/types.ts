@@ -72,7 +72,8 @@ export type FieldDef = {
 
 export type Tone = "success" | "warning" | "danger" | "info" | "neutral" | "brand";
 
-export type ColumnType = "text" | "money" | "quantity" | "percent" | "date" | "datetime" | "boolean" | "tag" | "image";
+export type ColumnType = "text" | "money" | "quantity" | "percent" | "date" | "datetime" | "boolean" | "tag" | "image"
+  | "stars";
 
 export type ColumnDef = {
   key: string;
@@ -89,6 +90,8 @@ export type ColumnDef = {
   tones?: Record<string, Tone>;
   /** Largura mínima na lista (ex.: "90px" para Nº); sem ela, a do tipo da coluna. */
   width?: string;
+  /** No celular a lista vira cartões: `false` tira a coluna do cartão (sobra espaço para o que importa). */
+  mobile?: boolean;
 };
 
 export type FilterDef = {

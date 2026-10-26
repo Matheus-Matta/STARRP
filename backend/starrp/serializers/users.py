@@ -98,19 +98,19 @@ class UserProfileSerializer(TenantSerializer):
         admin = any(r.is_account_admin for r in every)
         if allowed is not None:
             if all_stores:
-                raise serializers.ValidationError({"all_stores": "Só quem acessa todas as lojas concede este acesso."})
+                raise serializers.ValidationError({"all_stores": "Só quem acessa todas as filiais concede este acesso."})
             if admin:
-                raise serializers.ValidationError({"role": "Só quem acessa todas as lojas atribui o cargo de administrador."})
+                raise serializers.ValidationError({"role": "Só quem acessa todas as filiais atribui o cargo de administrador."})
         if request is not None:
             above = [r for r in every if r.rank > role_rank(request.user)]
             if above:
                 field = "role" if above[0] == role else "extra_roles"
                 raise serializers.ValidationError({field: f"Você não pode atribuir um cargo acima do seu ({above[0].name})."})
         if not all_stores and not admin and not stores:
-            raise serializers.ValidationError({"stores": "Informe ao menos uma loja (ou marque todas as lojas)."})
+            raise serializers.ValidationError({"stores": "Informe ao menos uma filial (ou marque todas as filiais)."})
         default = attrs.get("default_store")
         if default is not None and not all_stores and stores and default not in stores:
-            raise serializers.ValidationError({"default_store": "A loja padrão precisa estar entre as lojas do usuário."})
+            raise serializers.ValidationError({"default_store": "A filial padrão precisa estar entre as filiais do usuário."})
         return attrs
 
     def validate_username(self, value):
@@ -155,12 +155,17 @@ class MeSerializer(serializers.Serializer):
             "email": user.email,
             "is_superuser": user.is_superuser,
             "account": {"id": str(request.account.id), "name": request.account.name,
-                        "modules": sorted(request.account.active_modules())} if request.account else None,
+                        "modules": sorted(request.account.active_modules()),
+                        # Logo da empresa (impressões); sem ele, a tela usa o do Starrp.
+                        "logo_url": request.account.logo.file.url if request.account.logo_id else None}
+            if request.account else None,
             "role": {"code": profile.role.code, "name": profile.role.name, "rank": profile.rank} if profile else None,
             "roles": [{"code": r.code, "name": r.name} for r in profile.roles_all()] if profile else [],
             "all_stores": getattr(request, "allowed_store_ids", None) is None,
             "stores": [{"id": str(store.pk), "name": store.name} for store in Store.objects.all()],
             "active_store_id": str(request.store.pk) if getattr(request, "store", None) else None,
+            # Loja principal do usuário: o PDV entra nela quando a retaguarda está em "todas as lojas".
+            "default_store_id": str(profile.default_store_id) if profile and profile.default_store_id else None,
             "is_seller": bool(profile and profile.is_seller),
             "permissions": sorted(user_permission_codes(user)),
         }

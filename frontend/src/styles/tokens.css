@@ -121,3 +121,22 @@
   --nav-strong: #ffffff;
   --nav-hover: #1f1f23; --nav-active: color-mix(in srgb, var(--brand-400) 16%, transparent); --nav-active-text: var(--brand-300);
 }
+
+/* ── Gráficos (relatórios) ────────────────────────────────────────────────────
+   Paleta categórica validada (CVD e visão normal, ordem fixa — nunca reciclar; a 9ª série vira
+   "Outros"). O escuro é a MESMA ordem com tons para a superfície escura, não uma inversão.
+   Sequencial (mapa de calor): um tom só, do quase-zero ao máximo. Divergente: azul ↔ vermelho. */
+:root, [data-theme="light"] {
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a; --series-4: #eda100;
+  --series-5: #e87ba4; --series-6: #008300; --series-7: #6250d6; --series-8: #e34948;
+  --seq-low: #cde2fb; --seq-high: #104281;
+  --chart-grid: #e7e9ee; --chart-axis: #c3c7cf; --chart-ink: var(--text-muted);
+  --diverge-pos: #2a78d6; --diverge-neg: #e34948; --diverge-mid: #9aa0aa;
+}
+[data-theme="dark"] {
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; --series-4: #c98500;
+  --series-5: #d55181; --series-6: #008300; --series-7: #9085e9; --series-8: #e66767;
+  --seq-low: #1d2633; --seq-high: #86b6ef;
+  --chart-grid: #26262b; --chart-axis: #3a3a40; --chart-ink: var(--text-muted);
+  --diverge-pos: #3987e5; --diverge-neg: #e66767; --diverge-mid: #6b6b73;
+}

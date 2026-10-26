@@ -45,6 +45,7 @@ export const bulkApi = {
     const url = URL.createObjectURL(response.data);
     const link = Object.assign(document.createElement("a"), { href: url, download: name });
     link.click();
-    URL.revokeObjectURL(url);
+    // Liberar o link na hora pode cancelar o download em alguns navegadores.
+    window.setTimeout(() => URL.revokeObjectURL(url), 2000);
   },
 };

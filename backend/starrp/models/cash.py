@@ -33,6 +33,8 @@ class CashRegister(StoreModel):
 class CashSession(StoreModel):
     class Status(models.TextChoices):
         OPEN = "open", "Aberto"
+        # Conferência cega da abertura não bateu com o que o último fechamento deixou na gaveta.
+        PENDING_OPENING = "pending_opening", "Abertura aguardando o gerente"
         PENDING_APPROVAL = "pending_approval", "Aguardando aprovação do gerente"
         CLOSED = "closed", "Fechado"
         CANCELLED = "cancelled", "Cancelado"
@@ -44,7 +46,14 @@ class CashSession(StoreModel):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN, db_index=True)
     opened_by = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="cash_sessions_opened", on_delete=models.PROTECT)
     opened_at = models.DateTimeField(auto_now_add=True)
-    opening_amount = MoneyField()
+    opening_amount = MoneyField(help_text="Contado na gaveta pelo operador ao abrir (conferência cega).")
+    opening_expected = MoneyField(null=True, blank=True, default=None,
+                                  help_text="O que o último fechamento deste caixa deixou na gaveta.")
+    opening_difference = MoneyField(help_text="Contado na abertura - deixado no último fechamento.")
+    opening_is_initial = models.BooleanField(default=False, help_text="1ª abertura do caixa: vira o saldo inicial.")
+    opening_notes = models.TextField(blank=True)
+    opening_approved_by = user_fk("+")
+    opening_approved_at = models.DateTimeField(null=True, blank=True)
     closed_by = user_fk("cash_sessions_closed")
     closed_at = models.DateTimeField(null=True, blank=True)
     expected_amount = MoneyField(help_text="Calculado no fechamento.")
@@ -101,8 +110,11 @@ class CashMovement(StoreModel):
     )
     operator = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="cash_movements", on_delete=models.PROTECT)
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.APPROVED, db_index=True)
+    # Quem decidiu (aprovou ou recusou). Vazio + `authorized_by_password` = foi a senha do caixa da filial.
     approved_by = user_fk("+")
     approved_at = models.DateTimeField(null=True, blank=True)
+    authorized_by_password = models.BooleanField(default=False)
+    approval_reason = models.TextField(blank=True, help_text="Justificativa de quem aprovou ou recusou.")
     reason = models.TextField(blank=True)
     destination = models.CharField(max_length=255, blank=True, help_text="Para onde foi a sangria.")
 

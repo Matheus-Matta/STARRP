@@ -28,6 +28,11 @@ export const movementKind = choices({
   consumption: "Consumo", loss: "Perda", expiration: "Vencimento", supplier_return: "Devolução ao fornecedor",
   asset_disposal: "Baixa patrimonial", relocation: "Mudança de endereço", reversal: "Estorno",
 });
+export const divergenceReason = choices({
+  missing: "Faltou", extra: "Veio a mais", damaged: "Avariado", wrong_product: "Produto errado",
+  expired: "Vencido / validade curta", other: "Outro",
+});
+const conferenceMode = choices({ scan: "Leitura dos códigos", manual: "Manual (item a item)", typed: "Quantidades digitadas" });
 export const lotStatus = choices({
   available: "Disponível", depleted: "Esgotado", blocked: "Bloqueado", expired: "Vencido", discarded: "Descartado",
 });
@@ -71,7 +76,7 @@ export const documentColumns: ColumnDef[] = [
   { key: "item_count", label: "Itens", sortable: false },
 ];
 const kardexLink = (row: Record<string, unknown>) => `/cadastros/movimentacoes-de-estoque?variant=${row.variant}`;
-const documentLink = (row: Record<string, unknown>) => `/cadastros/documentos-de-estoque/${row.id}`;
+const documentLink = (row: Record<string, unknown>) => `/cadastros/entradas-e-saidas/${row.id}`;
 export const stockLinks = { kardexLink, documentLink };
 const warehouse = { endpoint: "/stock/warehouses/" };
 const is = (...kinds: string[]) => (v: Record<string, unknown>) => kinds.includes(String(v.kind ?? ""));
@@ -88,10 +93,10 @@ const hasExpected = (v: Record<string, unknown>) => rowsOf(v, "items").some((row
 
 export const stockDocuments = defineResource({
   ...STOCK,
-  name: "documentos-de-estoque",
+  name: "entradas-e-saidas",
   display: {
     badges: (v) => [
-      { label: documentKind.map[String(v.kind)] ?? "Documento", icon: "pi pi-file" },
+      { label: documentKind.map[String(v.kind)] ?? "Lançamento", icon: "pi pi-file" },
       { label: documentStatus.map[String(v.status)] ?? "", tone: statusTone[String(v.status)] },
       Boolean(v.checked_at) && { label: "Conferido", tone: "info", icon: "pi pi-list-check" },
       Boolean(v.inbound_nfe) && { label: `NF-e ${v.inbound_nfe_number ?? ""}`, tone: "neutral", icon: "pi pi-inbox" },
@@ -111,7 +116,7 @@ export const stockDocuments = defineResource({
         description: (v) => ({ entry: "Para onde o estoque entrou.", exit: "De onde o estoque saiu e por quê.",
                                transfer: "De um depósito para o outro.", inventory: "Contagem que acertou o saldo do sistema.",
                                adjustment: "Acerto de saldo com a diferença em cada item." } as Record<string, string>)[String(v.kind)]
-          ?? "O que este documento movimenta.",
+          ?? "O que este lançamento movimenta.",
         items: [
           { label: "Tipo", key: "kind", type: "tag", map: documentKind.map },
           { label: "Depósito", key: "warehouse_name", link: (v) => linkTo("depositos", v.warehouse) },
@@ -130,15 +135,19 @@ export const stockDocuments = defineResource({
         ] },
       { title: "Itens", icon: "pi pi-list",
         description: (v) => (hasExpected(v) ? "\"Na nota\" é o que veio no documento; \"Contado\" é o que a conferência achou."
-          : "Produtos e quantidades do documento."),
+          : "Produtos e quantidades do lançamento."),
         table: {
-          rows: docItems, empty: "Documento sem itens.",
+          rows: docItems, empty: "Lançamento sem itens.",
           columns: (v) => [
             { key: "variant_name", label: "Produto", title: true }, { key: "sku", label: "SKU" },
             ...(hasExpected(v) ? [{ key: "expected_quantity", label: v.kind === "inventory" ? "Sistema" : "Na nota",
                                     type: "quantity" as const, total: true }] : []),
             { key: "quantity", label: hasExpected(v) ? "Contado" : "Qtd.", type: "quantity", total: true },
             ...(hasExpected(v) ? [{ key: "difference", label: "Diferença", type: "quantity" as const, total: true }] : []),
+            ...(rowsOf(v, "items").some((r) => r.divergence_reason)
+              ? [{ key: "arrived_quantity", label: "Chegaram", type: "quantity" as const },
+                 { key: "divergence_reason", label: "Motivo", type: "tag" as const, map: divergenceReason.map },
+                 { key: "divergence_notes", label: "Obs. da conferência" }] : []),
             ...(v.kind === "entry" ? [{ key: "unit_cost", label: "Custo unit.", type: "money" as const },
                                       { key: "total_cost", label: "Total", type: "money" as const, total: true }] : []),
             { key: "lot_number", label: "Lote" }, { key: "expires_at", label: "Validade", type: "date" },
@@ -160,12 +169,13 @@ export const stockDocuments = defineResource({
   },
   views: [
     { name: "movimentos", label: "Movimentos gerados", icon: "pi pi-arrow-right-arrow-left",
-      description: "O que este documento moveu no estoque (e os estornos, se cancelado).",
+      description: "O que este lançamento moveu no estoque (e os estornos, se cancelado).",
       list: { endpoint: "/stock/movements/", params: (id) => ({ document_item__document: id }), columns: movementColumns,
               ordering: "created_at", searchable: false } },
   ],
-  title: "Documentos de estoque",
-  singular: "documento",
+  // Nome do dia a dia: "documento de estoque" é jargão; na loja é "dar entrada" e "dar saída".
+  title: "Entradas e saídas",
+  singular: "lançamento",
   endpoint: "/stock/documents/",
   icon: "pi pi-file-edit",
   ordering: "-number",
@@ -194,39 +204,35 @@ export const stockDocuments = defineResource({
     { name: "effective_date", label: "Período", type: "daterange" },
   ],
   sections: {
-    Documento: { icon: "pi pi-file", description: "Rascunho pode tudo; confirmado move o estoque e só se desfaz cancelando (estorno)." },
+    Lançamento: { icon: "pi pi-file", description: "Rascunho pode tudo; confirmado move o estoque e só se desfaz cancelando (estorno)." },
     Itens: { icon: "pi pi-list", description: "Leia os códigos ou escolha os produtos. Entrada pede o custo, que atualiza o custo médio." },
   },
   fields: [
-    { name: "kind", label: "Tipo", type: "segmented", options: documentKind.options, default: "entry", section: "Documento", full: true },
-    { name: "warehouse", label: "Depósito", type: "relation", relation: warehouse, required: true, section: "Documento" },
-    { name: "destination", label: "Depósito de destino", type: "relation", relation: warehouse, section: "Documento",
+    { name: "kind", label: "Tipo", type: "segmented", options: documentKind.options, default: "entry", section: "Lançamento", full: true },
+    { name: "warehouse", label: "Depósito", type: "relation", relation: warehouse, required: true, section: "Lançamento" },
+    { name: "destination", label: "Depósito de destino", type: "relation", relation: warehouse, section: "Lançamento",
       visible: is("transfer") },
     { name: "exit_reason", label: "Motivo da saída", type: "select", options: exitReason.options, default: "consumption",
-      section: "Documento", visible: is("exit") },
-    { name: "supplier", label: "Fornecedor", type: "relation", relation: { endpoint: "/suppliers/" }, section: "Documento",
+      section: "Lançamento", visible: is("exit") },
+    { name: "supplier", label: "Fornecedor", type: "relation", relation: { endpoint: "/suppliers/" }, section: "Lançamento",
       visible: is("entry", "supplier_return") },
-    { name: "external_number", label: "Nº da nota / documento", type: "text", maxLength: 60, section: "Documento" },
+    { name: "external_number", label: "Nº da nota / documento", type: "text", maxLength: 60, section: "Lançamento" },
     { name: "effective_date", label: "Data", type: "date", required: true, default: new Date().toLocaleDateString("sv-SE"),
-      section: "Documento" },
-    { name: "reason", label: "Observação", type: "textarea", section: "Documento" },
+      section: "Lançamento" },
+    { name: "reason", label: "Observação", type: "textarea", section: "Lançamento" },
     { name: "items", label: "Itens", type: "stock-items", default: [], section: "Itens" },
   ],
   rowActions: [
-    { label: "Imprimir documento", icon: "pi pi-print", run: async (row) => openPrint("estoque", String(row.id)) },
+    { label: "Imprimir lançamento", icon: "pi pi-print", run: async (row) => openPrint("estoque", String(row.id)) },
     { label: "Imprimir separação", icon: "pi pi-map", run: async (row) => openPrint("separacao", String(row.id)),
       visible: (row) => row.status === "draft" && ["exit", "transfer", "supplier_return", "relocation"].includes(String(row.kind)) },
   ],
   formActions: [
     { label: "Imprimir", icon: "pi pi-print", run: async ({ id }) => openPrint("estoque", id) },
     { label: "Confirmar", icon: "pi pi-check", severity: "success", visible: (v) => draft(v) && !fromNfe(v),
-      success: "Documento confirmado",
-      confirm: "Confirmar o documento? O estoque é movimentado e o documento não poderá mais ser editado.",
+      success: "Lançamento confirmado",
+      confirm: "Confirmar o lançamento? O estoque é movimentado e o lançamento não poderá mais ser editado.",
       run: ({ id }) => stockApi.post(id) },
-    { label: "Conferido (digitado)", icon: "pi pi-list-check", visible: (v) => draft(v) && fromNfe(v) && !v.checked_at,
-      success: "Conferência concluída",
-      confirm: "Concluir a conferência com as quantidades digitadas nos itens? Use a Conferência para ler os códigos.",
-      run: ({ id }) => stockApi.check(id) },
     { label: "Aprovar entrada", icon: "pi pi-check", severity: "success", visible: (v) => draft(v) && fromNfe(v) && Boolean(v.checked_at),
       success: "Entrada aprovada: estoque e contas a pagar lançados",
       confirm: "Aprovar a entrada? O estoque entra com as quantidades conferidas e as duplicatas da nota viram contas a pagar.",
@@ -237,10 +243,12 @@ export const stockDocuments = defineResource({
     { label: "Separação", icon: "pi pi-map", dialog: PickingDialog,
       visible: (v) => draft(v) && is("exit", "transfer", "supplier_return", "relocation")(v) },
     { label: "Conferência", icon: "pi pi-qrcode", dialog: ConferenceDialog, visible: (v) => v.status !== "cancelled" },
+    { label: "Erros de entrada", icon: "pi pi-exclamation-triangle", visible: (v) => v.status === "posted" && fromNfe(v),
+      run: async ({ id }) => (await import("@/router")).router.push(`/cadastros/erros-de-entrada?document=${id}`) },
     { label: "Etiquetas", icon: "pi pi-tags", dialog: LabelsDialog, visible: (v) => v.status === "posted" && is("entry")(v) },
     { label: "Cancelar", icon: "pi pi-times", severity: "danger", visible: (v) => v.status !== "cancelled",
-      confirm: "Cancelar o documento? Se já foi confirmado, cada movimento ganha um estorno.",
-      success: "Documento cancelado", run: ({ id }) => stockApi.cancel(id) },
+      confirm: "Cancelar o lançamento? Se já foi confirmado, cada movimento ganha um estorno.",
+      success: "Lançamento cancelado", run: ({ id }) => stockApi.cancel(id) },
   ],
 });
 
@@ -446,3 +454,47 @@ export const labelTemplates = defineResource({
   ],
 });
 
+
+/** Erros de entrada: o que a nota dizia × o que chegou × o que entrou, registrados na aprovação. */
+export const receivingDivergences = defineResource({
+  ...STOCK,
+  group: "Logística",
+  name: "erros-de-entrada",
+  title: "Erros de entrada",
+  singular: "erro de entrada",
+  endpoint: "/stock/divergences/",
+  icon: "pi pi-exclamation-triangle",
+  readOnly: true,
+  creatable: false,
+  ordering: "-created_at",
+  columns: [
+    { key: "created_at", label: "Quando", type: "datetime" },
+    { key: "variant_name", label: "Produto", title: true },
+    { key: "supplier_name", label: "Fornecedor" },
+    { key: "nfe_number", label: "NF-e" },
+    { key: "reason", label: "Motivo", type: "tag", map: divergenceReason.map },
+    { key: "expected_quantity", label: "Na nota", type: "quantity" },
+    { key: "arrived_quantity", label: "Chegaram", type: "quantity" },
+    { key: "accepted_quantity", label: "Entraram", type: "quantity", total: true },
+    { key: "checked_by_name", label: "Conferido por" },
+  ],
+  filters: [
+    { name: "reason", label: "Motivo", type: "select", options: divergenceReason.options },
+    { name: "supplier", label: "Fornecedor", type: "relation", relation: { endpoint: "/suppliers/" } },
+    { name: "created_at", label: "Período", type: "daterange" },
+  ],
+  fields: [
+    { name: "variant_name", label: "Produto", type: "text", span: 4 },
+    { name: "supplier_name", label: "Fornecedor", type: "text" },
+    { name: "nfe_number", label: "NF-e", type: "text" },
+    { name: "document_number", label: "Entrada nº", type: "text" },
+    { name: "reason", label: "Motivo", type: "select", options: divergenceReason.options },
+    { name: "mode", label: "Conferência", type: "select", options: conferenceMode.options },
+    { name: "expected_quantity", label: "Na nota", type: "quantity" },
+    { name: "arrived_quantity", label: "Chegaram", type: "quantity" },
+    { name: "accepted_quantity", label: "Entraram no estoque", type: "quantity" },
+    { name: "difference", label: "Diferença (chegou − nota)", type: "quantity" },
+    { name: "checked_by_name", label: "Conferido por", type: "text" },
+    { name: "notes", label: "Observação", type: "textarea" },
+  ],
+});

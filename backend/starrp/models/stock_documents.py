@@ -6,6 +6,21 @@ from django.db import models
 from starrp.models.base import MoneyField, QuantityField, StoreModel, TenantModel, UnitCostField, user_fk
 from starrp.models.stock import StockLot, Warehouse
 
+class ConferenceMode(models.TextChoices):
+    SCAN = "scan", "Leitura dos códigos"
+    MANUAL = "manual", "Manual (item a item)"
+    TYPED = "typed", "Quantidades digitadas"
+
+
+class DivergenceReason(models.TextChoices):
+    MISSING = "missing", "Faltou"
+    EXTRA = "extra", "Veio a mais"
+    DAMAGED = "damaged", "Avariado"
+    WRONG_PRODUCT = "wrong_product", "Produto errado"
+    EXPIRED = "expired", "Vencido / validade curta"
+    OTHER = "other", "Outro"
+
+
 class StockDocument(StoreModel):
     class Kind(models.TextChoices):
         ENTRY = "entry", "Entrada / recebimento"
@@ -44,6 +59,7 @@ class StockDocument(StoreModel):
     effective_date = models.DateField()
     reason = models.TextField(blank=True)
     # Conferência física (contagem). Entrada de NF-e só é aprovada depois dela.
+    conference_mode = models.CharField(max_length=8, choices=ConferenceMode.choices, blank=True)
     checked_at = models.DateTimeField(null=True, blank=True)
     checked_by = user_fk("+")
     posted_at = models.DateTimeField(null=True, blank=True)
@@ -89,6 +105,11 @@ class StockDocumentItem(TenantModel):
         "starrp.InboundNFeItem", null=True, blank=True, related_name="stock_items", on_delete=models.SET_NULL
     )
     notes = models.CharField(max_length=255, blank=True)
+    # Conferência com diferença: quantos chegaram (pode diferir do que entra: chegaram 10,
+    # 2 avariados → `quantity` 8) e o motivo. Vira `ReceivingDivergence` na aprovação.
+    arrived_quantity = QuantityField(null=True, blank=True, default=None)
+    divergence_reason = models.CharField(max_length=14, choices=DivergenceReason.choices, blank=True)
+    divergence_notes = models.CharField(max_length=255, blank=True)
 
     class Meta:
         ordering = ["created_at"]
@@ -98,3 +119,31 @@ class StockDocumentItem(TenantModel):
         if self.expected_quantity is None:
             return None
         return self.quantity - self.expected_quantity
+
+
+class ReceivingDivergence(StoreModel):
+    """Erro de entrada registrado na aprovação: o que a nota dizia, o que chegou, o que
+    entrou no estoque e por quê. Base para cobrar o fornecedor e medir quem erra mais."""
+
+    document = models.ForeignKey(StockDocument, related_name="divergences", on_delete=models.CASCADE)
+    document_item = models.ForeignKey(StockDocumentItem, null=True, blank=True, related_name="divergences",
+                                      on_delete=models.SET_NULL)
+    inbound_nfe = models.ForeignKey("starrp.InboundNFe", null=True, blank=True, related_name="divergences",
+                                    on_delete=models.SET_NULL)
+    supplier = models.ForeignKey("starrp.Supplier", null=True, blank=True, related_name="divergences",
+                                 on_delete=models.SET_NULL)
+    variant = models.ForeignKey("starrp.ProductVariant", related_name="+", on_delete=models.PROTECT)
+    expected_quantity = QuantityField()
+    arrived_quantity = QuantityField()
+    accepted_quantity = QuantityField()
+    reason = models.CharField(max_length=14, choices=DivergenceReason.choices)
+    notes = models.CharField(max_length=255, blank=True)
+    mode = models.CharField(max_length=8, choices=ConferenceMode.choices, blank=True)
+    checked_by = user_fk("+")
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["account", "supplier", "created_at"])]
+
+    def __str__(self):
+        return f"{self.get_reason_display()} - {self.variant}"

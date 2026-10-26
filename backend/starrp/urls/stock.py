@@ -8,6 +8,7 @@ def register(router):
     router.register("stock/lots", stock.StockLotViewSet, basename="stock-lots")
     router.register("stock/documents", stock.StockDocumentViewSet, basename="stock-documents")
     router.register("stock/movements", stock.StockMovementViewSet, basename="stock-movements")
+    router.register("stock/divergences", stock.ReceivingDivergenceViewSet, basename="receiving-divergences")
     router.register("stock/label-templates", stock.LabelTemplateViewSet, basename="label-templates")
     router.register("stock/bins", wms.StorageBinViewSet, basename="storage-bins")
     router.register("stock/bin-balances", wms.BinBalanceViewSet, basename="bin-balances")

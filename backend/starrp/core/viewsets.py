@@ -117,7 +117,7 @@ class TenantViewSet(BulkActionsMixin, viewsets.ModelViewSet):
                 if field.null and not self._restricted():
                     return extra
                 if store is None:
-                    raise ValidationError({"store": "Selecione a loja (header X-Store-ID)."})
+                    raise ValidationError({"store": "Selecione a filial (header X-Store-ID)."})
                 extra["store"] = store
         return extra
 
@@ -128,7 +128,7 @@ class TenantViewSet(BulkActionsMixin, viewsets.ModelViewSet):
         """Usuário de filial não altera cadastro que vale para a rede inteira."""
         field = _store_field(type(instance))
         if field is not None and field.null and instance.store_id is None and self._restricted():
-            raise PermissionDenied("Este cadastro vale para todas as lojas; só quem acessa a rede pode alterá-lo.")
+            raise PermissionDenied("Este cadastro vale para todas as filiais; só quem acessa a rede pode alterá-lo.")
 
     @transaction.atomic
     def perform_create(self, serializer):

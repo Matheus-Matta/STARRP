@@ -24,5 +24,6 @@ defineProps<{ title: string; description?: string; icon?: string }>();
 h2 { font: 700 15px/1.2 var(--font-sans); }
 p { margin-top: 2px; font-size: 12.5px; color: var(--text-muted); }
 .section__actions { margin-left: auto; display: flex; gap: 0.5rem; }
-.section__body { padding: 20px; }
+.section__body { padding: 20px; min-width: 0; }
+@media (max-width: 640px) { .section__body { padding: 14px; } }
 </style>

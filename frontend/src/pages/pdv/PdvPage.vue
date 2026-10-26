@@ -33,6 +33,7 @@ import PdvLock from "@/components/pdv/PdvLock.vue";
 import PdvOrder from "@/components/pdv/PdvOrder.vue";
 import PdvOrders from "@/components/pdv/PdvOrders.vue";
 import PdvPaymentDialog from "@/components/pdv/PdvPaymentDialog.vue";
+import PdvFreightDialog from "@/components/pdv/PdvFreightDialog.vue";
 import PdvPriceDialog from "@/components/pdv/PdvPriceDialog.vue";
 import PdvProductDialog from "@/components/pdv/PdvProductDialog.vue";
 import PdvRail, { type RailAction } from "@/components/pdv/PdvRail.vue";
@@ -60,6 +61,7 @@ const paying = ref(false);
 const cashMode = ref<CashMode>("open");
 const cashOpen = ref(false);
 const priceOpen = ref(false);
+const freightOpen = ref(false);
 const viewing = ref<PdvProductView | null>(null);
 const opening = ref<string | null>(null);
 /** Venda recém-concluída: oferece o recibo (F9) ou segue para a próxima (Enter). */
@@ -75,6 +77,18 @@ const myRegisters = computed(() => pdv.boot.value?.cash_registers ?? []);
 function openFromAlert() {
   closedAlert.value = false;
   openCashDialog("open");
+}
+/** Caixa aberto: avisa e imprime o comprovante de abertura (abre a gaveta na térmica). */
+function openingDone(id: string) {
+  notify.success("Caixa aberto", "Comprovante de abertura enviado para a impressora.");
+  openPrint("turno", id, { formato: "80mm", auto: "1" });
+}
+function managerApproves() {
+  void guard(async () => {
+    const opened = await pdv.approveOpening("Conferido pelo gerente no PDV");
+    closedAlert.value = false;
+    if (opened?.status === "open") openingDone(opened.id);
+  }, "Abertura não aprovada");
 }
 const screenLocked = computed(() => pdv.locked.value && !seller.value && Boolean(pdv.boot.value));
 const operator = computed(() => session.me?.name ?? "");
@@ -234,7 +248,11 @@ function cashAction(action: CashAction) {
 
 async function confirmCash(data: { register?: string; amount: string; reason: string }) {
   await guard(async () => {
-    if (cashMode.value === "open") await pdv.openCash(data.register!, data.amount);
+    if (cashMode.value === "open") {
+      const opened = await pdv.openCash(data.register!, data.amount, data.reason);
+      if (opened?.status === "open") openingDone(opened.id);
+      else closedAlert.value = true; // não bateu: o aviso pede o gerente
+    }
     else if (cashMode.value === "close") {
       const closed = await pdv.closeCash(data.amount);
       // Fechamento cego: o operador não vê a diferença; só se precisa do gerente.
@@ -265,6 +283,7 @@ async function logout() {
 
 function rail(action: RailAction) {
   if (action === "price") priceOpen.value = true;
+  else if (action === "freight") freightOpen.value = true;
   else if (action === "backoffice") void (session.pdvFirst ? logout() : router.push("/"));
   else if (action === "cash" && seller.value) return;
   else show(action);
@@ -294,7 +313,7 @@ function onKey(event: KeyboardEvent) {
   }
   const actions: Record<string, () => void> = {
     F1: () => rail("sale"), F2: () => rail("orders"), F3: () => rail("customer"), F4: () => rail("cash"),
-    F5: () => rail("price"), F6: discount, F7: coupon, F8: () => rail("backoffice"), F9: park,
+    F5: () => rail(event.shiftKey ? "freight" : "price"), F6: discount, F7: coupon, F8: () => rail("backoffice"), F9: park,
     F11: () => pdv.sale.value && show("delivery"),
     F10: () => (seller.value ? send() : openPayment()), F12: () => !seller.value && pdv.lock(),
   };
@@ -316,7 +335,12 @@ onMounted(async () => {
   window.addEventListener("keydown", onKey);
   window.addEventListener("pointerdown", touch);
   window.addEventListener("beforeunload", onLeave);
-  if (!session.hasConcreteStore) return;
+  // PDV opera UMA loja: em "todas as lojas", entra na loja principal do usuário (ou na 1ª dele).
+  if (!session.hasConcreteStore) {
+    const mine = session.stores.find((st) => st.id === session.me?.default_store_id) ?? session.stores[0];
+    if (!mine) return;
+    session.setActiveStore(mine.id);
+  }
   pdv.setUser(session.me?.id ?? null);
   await guard(() => pdv.init(session.me?.id), "Não foi possível iniciar o PDV");
   if (pdv.needsCash.value && !pdv.locked.value) closedAlert.value = true;
@@ -331,7 +355,7 @@ onBeforeUnmount(() => {
 
 <template>
   <div class="pdv">
-    <PdvStatusBar :store="session.activeStore?.name ?? 'Selecione uma loja na retaguarda'" :cash-open="!!pdv.session.value"
+    <PdvStatusBar :store="session.activeStore?.name ?? 'Selecione uma filial na retaguarda'" :cash-open="!!pdv.session.value"
                   :operator="operator" :since="pdv.session.value?.opened_at ?? null" :seller="seller"
                   :terminal="pdv.boot.value?.terminal?.name ?? ''" @lock="pdv.lock()" @cash="closedAlert = true" />
     <div class="body">
@@ -359,7 +383,8 @@ onBeforeUnmount(() => {
 
     <PdvProductDialog :product="viewing" :busy="pdv.busy.value" @confirm="confirmView" @close="viewing = null; focusSearch()" />
     <PdvPriceDialog :visible="priceOpen" @close="priceOpen = false" />
-    <PdvPaymentDialog v-model:visible="paying" :total="String(pdv.sale.value?.balance_due ?? 0)"
+    <PdvFreightDialog :visible="freightOpen" @close="freightOpen = false; focusSearch()" />
+    <PdvPaymentDialog v-model:visible="paying" :total="String(pdv.sale.value?.balance_due ?? 0)" :sale="pdv.sale.value"
                       :methods="pdv.boot.value?.payment_methods ?? []" :busy="pdv.busy.value"
                       :has-customer="!!pdv.sale.value?.customer" @confirm="pay" />
     <PdvCashDialog v-model:visible="cashOpen" :mode="cashMode" :registers="pdv.boot.value?.cash_registers ?? []"
@@ -377,19 +402,26 @@ onBeforeUnmount(() => {
         <Button @click="nextSale"><i class="pi pi-arrow-right" /> Nova venda <kbd class="kbd">Enter</kbd></Button>
       </template>
     </Dialog>
-    <Dialog :visible="closedAlert && noCash && !seller && !!pdv.boot.value" modal header="Caixa fechado"
+    <Dialog :visible="closedAlert && noCash && !seller && !!pdv.boot.value" modal
+            :header="pdv.pendingOpening.value ? 'Abertura aguardando o gerente' : 'Caixa fechado'"
             :style="{ width: 'min(400px, calc(100vw - 24px))' }" @update:visible="closedAlert = false">
       <div class="closed">
         <span class="closed__icon"><i class="pi pi-lock" /></span>
-        <template v-if="myRegisters.length">
-          <p>Para vender, abra o caixa com o troco inicial que está na gaveta.</p>
+        <template v-if="pdv.pendingOpening.value">
+          <p>O dinheiro contado não bate com o que o último fechamento deixou na gaveta. Chame o gerente para
+            conferir: ele aprova com a senha dele (ou a senha de ações do caixa).</p>
         </template>
-        <p v-else>Você não está vinculado a nenhum caixa desta loja. Peça ao gerente para vincular em
+        <template v-else-if="myRegisters.length">
+          <p>Para vender, abra o caixa: conte o dinheiro que está na gaveta e informe.</p>
+        </template>
+        <p v-else>Você não está vinculado a nenhum caixa desta filial. Peça ao gerente para vincular em
           <b>Financeiro → Caixas</b>.</p>
       </div>
       <template #footer>
         <Button label="Agora não" severity="secondary" text @click="closedAlert = false" />
-        <Button v-if="myRegisters.length" label="Abrir caixa" icon="pi pi-lock-open" autofocus @click="openFromAlert" />
+        <Button v-if="pdv.pendingOpening.value" label="Gerente aprova" icon="pi pi-verified" autofocus
+                :loading="pdv.busy.value" @click="managerApproves" />
+        <Button v-else-if="myRegisters.length" label="Abrir caixa" icon="pi pi-lock-open" autofocus @click="openFromAlert" />
       </template>
     </Dialog>
     <PromptDialog :spec="prompt" @answer="answerPrompt" />

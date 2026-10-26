@@ -130,7 +130,7 @@ const accountRelation = { endpoint: "/finance/accounts/", params: { is_active: "
 <template>
   <section class="page">
     <PageHeader title="Painel financeiro" icon="pi pi-chart-line"
-                :subtitle="`${session.activeStore?.name ?? 'Todas as minhas lojas'} · últimos ${days} dias`">
+                :subtitle="`${session.activeStore?.name ?? 'Todas as minhas filiais'} · últimos ${days} dias`">
       <SelectButton v-model="days" :options="periods" option-label="label" option-value="value" :allow-empty="false" />
       <Button label="Lançamento" icon="pi pi-plus" size="small" severity="secondary" outlined
               @click="router.push('/cadastros/lancamentos/novo')" />
@@ -214,8 +214,8 @@ const accountRelation = { endpoint: "/finance/accounts/", params: { is_active: "
 </template>
 
 <style scoped>
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 1rem; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 1rem; }
 .stack { display: flex; flex-direction: column; gap: 8px; }
 .lines { display: flex; flex-direction: column; }
 .line { display: flex; justify-content: space-between; padding: 9px 4px; border-bottom: 1px solid var(--border-subtle); font-size: 13.5px; cursor: pointer; }
@@ -231,11 +231,11 @@ const accountRelation = { endpoint: "/finance/accounts/", params: { is_active: "
 .link:hover { text-decoration-color: currentColor; }
 .right { text-align: right; }
 .dre { display: flex; flex-direction: column; max-width: 720px; }
-.dre__line { display: grid; grid-template-columns: 1fr 80px 140px; gap: 0.5rem; padding: 7px 4px; border-bottom: 1px solid var(--border-subtle); font-size: 13.5px; }
+.dre__line { display: grid; grid-template-columns: minmax(0, 1fr) 56px minmax(90px, auto); gap: 0.5rem; padding: 7px 4px; border-bottom: 1px solid var(--border-subtle); font-size: 13.5px; }
 .dre__line strong { text-align: right; font-weight: 600; }
 .dre__line .pct { text-align: right; color: var(--text-muted); font-size: 12.5px; }
 .dre__line.indent span:first-child { padding-left: 1.25rem; color: var(--text-muted); }
 .dre__line.total { font-weight: 700; color: var(--text-strong); background: var(--surface-sunken); }
 .dre__line.final { font-size: 15px; border-bottom: 0; }
-@media (max-width: 520px) { .two { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .two { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr 1fr; gap: 0.6rem; } }
 </style>

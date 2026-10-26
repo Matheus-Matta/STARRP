@@ -3,6 +3,7 @@ from decimal import Decimal
 from rest_framework import serializers
 
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, tenant_serializer
+from starrp.serializers.sales import ApprovalField
 from starrp.models import (
     CashDiscrepancy, CashMovement, CashRegister, CashSession, CustomerCredit, PaymentMethod, SaleItem, SaleReturn,
     SaleReturnItem, Terminal,
@@ -15,10 +16,16 @@ class CashRegisterSerializer(TenantSerializer):
     """Caixa e QUEM opera (`operators`, ids de usuário): só eles abrem, movimentam e fecham."""
 
     operator_names = serializers.SerializerMethodField()
+    in_use_by = serializers.SerializerMethodField(help_text="Quem está com o turno deste caixa agora (vazio = livre).")
 
     class Meta:
         model = CashRegister
         fields = "__all__"
+
+    def get_in_use_by(self, obj):
+        busy = (obj.sessions.filter(deleted_at__isnull=True).exclude(status__in=["closed", "cancelled"])
+                .select_related("opened_by").first())
+        return (busy.opened_by.get_full_name() or busy.opened_by.username) if busy else None
 
     def get_operator_names(self, obj):
         return ", ".join(u.get_full_name() or u.username for u in obj.operators.all())
@@ -74,11 +81,17 @@ class ReturnCreateSerializer(serializers.Serializer):
 
 class CashMovementSerializer(TenantSerializer):
     operator_name = serializers.CharField(source="operator.get_full_name", read_only=True)
+    approved_by_name = serializers.SerializerMethodField()
 
     class Meta:
         model = CashMovement
         fields = "__all__"
         read_only_fields = [f.name for f in CashMovement._meta.fields]
+
+    def get_approved_by_name(self, obj) -> str:
+        if obj.authorized_by_password:
+            return "Senha do caixa"
+        return (obj.approved_by.get_full_name() or obj.approved_by.username) if obj.approved_by else ""
 
 
 class CashSessionSerializer(TenantSerializer):
@@ -103,13 +116,15 @@ class CashSessionSerializer(TenantSerializer):
         data = super().to_representation(instance)
         request = self.context.get("request")
         if request is None or not sees_drawer(request.user):
-            data.update(expected_now=None, expected_amount=None, difference=None, closing_report=None, blind=True)
+            data.update(expected_now=None, expected_amount=None, difference=None, closing_report=None,
+                        opening_expected=None, opening_difference=None, blind=True)
         return data
 
 
 class OpenSessionSerializer(serializers.Serializer):
     register = TenantPrimaryKeyField(CashRegister)
     opening_amount = serializers.DecimalField(min_value=ZERO, default=0, **Money)
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
     terminal = TenantPrimaryKeyField(Terminal, required=False, allow_null=True)
 
 
@@ -123,3 +138,10 @@ class ManualMovementSerializer(serializers.Serializer):
     amount = serializers.DecimalField(min_value=ZERO, **Money)
     reason = serializers.CharField(required=False, allow_blank=True, default="")
     destination = serializers.CharField(required=False, allow_blank=True, default="")
+    approval = ApprovalField()
+
+
+class DecisionSerializer(serializers.Serializer):
+    """Aprovar/recusar: justificativa e, sem permissão, a autorização (gerente ou senha do caixa)."""
+    reason = serializers.CharField(required=False, allow_blank=True, default="")
+    approval = ApprovalField()

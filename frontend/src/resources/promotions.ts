@@ -1,8 +1,8 @@
 import { choices, defineResource, type FieldDef, yesNo } from "./types";
 
 const storeScope: FieldDef = {
-  name: "store", label: "Loja", type: "relation", relation: { endpoint: "/stores/" }, section: "Validade",
-  hint: "Vazio = vale para todas as lojas (só quem acessa a rede inteira grava assim).",
+  name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" }, section: "Validade",
+  hint: "Vazio = vale para todas as filiais (só quem acessa a rede inteira grava assim).",
 };
 const window: FieldDef[] = [
   { name: "is_enabled", label: "Ligado", type: "boolean", default: true, section: "Validade" },
@@ -32,7 +32,7 @@ export const coupons = defineResource({
   filters: [
     { name: "kind", label: "Tipo", type: "select", options: couponKind.options },
     { name: "is_enabled", label: "Ligado", type: "boolean", options: yesNo },
-    { name: "store", label: "Loja", type: "relation", relation: { endpoint: "/stores/" } },
+    { name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" } },
   ],
   fields: [
     { name: "code", label: "Código", type: "text", required: true, maxLength: 40, section: "Desconto",
@@ -72,10 +72,10 @@ export const discountTables = defineResource({
   ],
   filters: [
     { name: "is_enabled", label: "Ligada", type: "boolean", options: yesNo },
-    { name: "store", label: "Loja", type: "relation", relation: { endpoint: "/stores/" } },
+    { name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" } },
   ],
   sections: {
-    Validade: { icon: "pi pi-calendar", description: "Nome, quando a tabela vale e em qual loja." },
+    Validade: { icon: "pi pi-calendar", description: "Nome, quando a tabela vale e em qual filial." },
     Regras: { icon: "pi pi-sliders-h", description: "O que tem desconto e quanto. A ordem é a prioridade: "
       + "a 1ª regra que pega o produto vale." },
   },

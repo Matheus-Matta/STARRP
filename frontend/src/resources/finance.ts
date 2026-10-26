@@ -137,7 +137,7 @@ function titles(kind: "receivable" | "payable"): ResourceDef {
       party,
       { name: "category", label: "Categoria", type: "relation", section: "Título",
         relation: { endpoint: "/finance/categories/", params: { kind: receivable ? "income" : "expense" } } },
-      { name: "store", label: "Loja", type: "relation", relation: { endpoint: "/stores/" }, section: "Título" },
+      { name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" }, section: "Título" },
       { name: "total", label: "Valor total", type: "money", required: true, section: "Título" },
       { name: "installment_count", label: "Parcelas", type: "number", default: 1, createOnly: true, section: "Título",
         hint: "Mensais, a partir do 1º vencimento." },

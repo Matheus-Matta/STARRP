@@ -152,7 +152,7 @@ const options = (d: Definition) => d.options.map((o) => ({ label: o, value: o })
 
 <style scoped>
 .meta { display: flex; flex-direction: column; gap: 16px; }
-.meta__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px 14px; }
+.meta__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 12px 14px; }
 .mf { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
 .mf label { font-size: 13px; font-weight: 600; color: var(--text-strong); display: flex; gap: 4px; align-items: center; }
 .unit { color: var(--text-muted); font-weight: 500; }

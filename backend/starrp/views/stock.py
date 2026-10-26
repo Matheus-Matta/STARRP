@@ -10,7 +10,8 @@ from starrp.core.errors import BusinessError, StateConflict
 from starrp.core.text import decimals_as_text
 from starrp.core.viewsets import ReadOnlyTenantViewSet, TenantViewSet
 from starrp.models import (
-    LabelTemplate, ProductVariant, StockBalance, StockDocument, StockLot, StockMovement, StockSettings, Warehouse,
+    LabelTemplate, ProductVariant, ReceivingDivergence, StockBalance, StockDocument, StockLot, StockMovement,
+    StockSettings, Warehouse,
 )
 from starrp.models.platform import Module
 from starrp.serializers import stock as s
@@ -85,7 +86,7 @@ class StockLotViewSet(StockView, TenantViewSet):
 class StockDocumentViewSet(StockView, TenantViewSet):
     model = StockDocument
     serializer_class = s.StockDocumentSerializer
-    prefetch_related = ("items__variant__product",)
+    prefetch_related = ("items__variant__product", "items__variant__volumes")
     filterset_fields = {"kind": ["exact"], "status": ["exact"], "warehouse": ["exact"], "supplier": ["exact"],
                         "inbound_nfe": ["exact"], "effective_date": ["gte", "lte"]}
     search_fields = ["number", "external_number"]
@@ -138,11 +139,15 @@ class StockDocumentViewSet(StockView, TenantViewSet):
     @action(detail=True, methods=["post"])
     def check(self, request, pk=None):
         """Conclui a conferência: {"codes": [...]} grava o contado de cada produto;
-        sem `codes`, vale a quantidade já digitada. Depois disso a entrada pode ser aprovada."""
-        codes = request.data.get("codes")
+        {"lines": [{"item", "ok"} | {"item", "ok": false, "arrived", "accepted", "reason", "notes"}]}
+        é a conferência manual (se a Logística permitir); sem nada, vale a quantidade digitada.
+        Depois disso a entrada pode ser aprovada."""
+        codes, lines = request.data.get("codes"), request.data.get("lines")
         if codes is not None and (not isinstance(codes, list) or not all(isinstance(c, str) for c in codes)):
             raise BusinessError("Envie `codes` como lista de códigos lidos.")
-        doc = stock_documents.check(self.get_object(), request.user, codes)
+        if lines is not None and (not isinstance(lines, list) or not all(isinstance(r, dict) for r in lines)):
+            raise BusinessError("Envie `lines` como lista de {item, ok, ...}.")
+        doc = stock_documents.check(self.get_object(), request.user, codes, lines)
         return Response(self.get_serializer(self.get_queryset().get(pk=doc.pk)).data)
 
     @action(detail=True, methods=["post"])
@@ -153,6 +158,17 @@ class StockDocumentViewSet(StockView, TenantViewSet):
         if not isinstance(codes, list) or not all(isinstance(c, str) for c in codes):
             raise BusinessError("Envie `codes` como lista de códigos lidos.")
         return Response(decimals_as_text(volumes.conference(self.get_object(), codes)))
+
+
+class ReceivingDivergenceViewSet(StockView, ReadOnlyTenantViewSet):
+    """Erros de entrada: o que a nota dizia × o que chegou × o que entrou, com o motivo."""
+
+    model = ReceivingDivergence
+    serializer_class = s.ReceivingDivergenceSerializer
+    select_related = ("variant", "supplier", "document", "inbound_nfe", "checked_by")
+    filterset_fields = {"supplier": ["exact"], "reason": ["exact"], "document": ["exact"],
+                        "inbound_nfe": ["exact"], "variant": ["exact"], "created_at": ["gte", "lte"]}
+    search_fields = ["variant__sku", "variant__product__name", "supplier__name", "notes"]
 
 
 class StockMovementViewSet(StockView, ReadOnlyTenantViewSet):

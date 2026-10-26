@@ -57,6 +57,7 @@ def test_pedido_com_pagamento_ou_vazio_nao_e_guardado(ctx):
 
 def test_desbloqueio_com_a_senha_do_operador_ou_a_do_caixa(ctx):
     cashier = ctx.user("caixa2", "cashier")
+    ctx.register.operators.add(cashier)  # modo caixa exige caixa vinculado
     Store.all_objects.filter(pk=ctx.store.pk).update(cash_action_password="")
     ctx.store.set_cash_action_password("gerente9")
     ctx.store.save()

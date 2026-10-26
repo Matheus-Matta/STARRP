@@ -116,7 +116,7 @@ export const financialAccounts = defineResource({
   ],
   filters: [
     { name: "kind", label: "Tipo", type: "select", options: [{ label: "Caixa / cofre", value: "cash" }, { label: "Banco", value: "bank" }, { label: "Adquirente", value: "acquirer" }, { label: "Carteira", value: "wallet" }] },
-    { name: "store", label: "Loja", type: "relation", relation: { endpoint: "/stores/" } },
+    { name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" } },
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   fields: [

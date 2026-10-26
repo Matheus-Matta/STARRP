@@ -49,7 +49,7 @@ const cards = computed(() => [
   { label: "Lotes vencendo", value: String(lots.data.value?.count ?? 0), icon: "pi pi-calendar-clock",
     tone: "warning" as const, caption: "nos próximos 15 dias" },
   { label: "Rascunhos", value: String(drafts.data.value?.count ?? 0), icon: "pi pi-file-edit", tone: "info" as const,
-    caption: "documentos sem confirmar" },
+    caption: "lançamentos sem confirmar" },
   { label: "Movimentos hoje", value: String(movesToday.data.value?.count ?? 0), icon: "pi pi-arrow-right-arrow-left",
     tone: "brand" as const, caption: "entradas e saídas" },
 ]);
@@ -60,13 +60,13 @@ const QUICK = [
   { kind: "transfer", label: "Transferência", icon: "pi pi-arrow-right-arrow-left" },
   { kind: "inventory", label: "Inventário", icon: "pi pi-list-check" },
 ];
-const newDoc = (kind: string) => router.push(`/cadastros/documentos-de-estoque/novo?kind=${kind}`);
+const newDoc = (kind: string) => router.push(`/cadastros/entradas-e-saidas/novo?kind=${kind}`);
 const daysTo = (iso: string) => Math.round((new Date(`${iso}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) / 86_400_000);
 </script>
 
 <template>
   <section class="page">
-    <PageHeader title="Painel de estoque" icon="pi pi-warehouse" :subtitle="session.activeStore?.name ?? 'Todas as minhas lojas'">
+    <PageHeader title="Painel de estoque" icon="pi pi-warehouse" :subtitle="session.activeStore?.name ?? 'Todas as minhas filiais'">
       <Button v-for="q in QUICK" :key="q.kind" :label="q.label" :icon="q.icon" size="small" severity="secondary" outlined
               @click="newDoc(q.kind)" />
     </PageHeader>
@@ -77,7 +77,7 @@ const daysTo = (iso: string) => Math.round((new Date(`${iso}T00:00:00`).getTime(
     </div>
 
     <div class="two">
-      <SectionCard title="Abaixo do estoque mínimo" description="Somando os depósitos da loja" icon="pi pi-exclamation-triangle">
+      <SectionCard title="Abaixo do estoque mínimo" description="Somando os depósitos da filial" icon="pi pi-exclamation-triangle">
         <div v-if="alerts.isPending.value" class="stack"><Skeleton v-for="n in 4" :key="n" height="1.8rem" /></div>
         <EmptyState v-else-if="!alerts.data.value?.length" title="Tudo acima do mínimo" icon="pi pi-check-circle"
                     description="Defina o estoque mínimo nas variantes do produto para ser avisado aqui." />
@@ -107,7 +107,7 @@ const daysTo = (iso: string) => Math.round((new Date(`${iso}T00:00:00`).getTime(
               <td><strong>{{ lot.variant_name }}</strong> <small class="muted">lote {{ lot.lot_number || lot.code }}</small></td>
               <td>
                 {{ date(lot.expires_at) }}
-                <span class="pill" :class="daysTo(String(lot.expires_at)) < 0 ? 'pill--danger' : 'pill--warning'">
+                <span class="pill pill--after" :class="daysTo(String(lot.expires_at)) < 0 ? 'pill--danger' : 'pill--warning'">
                   {{ daysTo(String(lot.expires_at)) < 0 ? "vencido" : `${daysTo(String(lot.expires_at))} dias` }}
                 </span>
               </td>
@@ -118,18 +118,18 @@ const daysTo = (iso: string) => Math.round((new Date(`${iso}T00:00:00`).getTime(
       </SectionCard>
     </div>
 
-    <SectionCard title="Documentos em rascunho" description="Só movem o estoque depois de confirmados" icon="pi pi-file-edit">
+    <SectionCard title="Entradas e saídas em rascunho" description="Só movem o estoque depois de confirmados" icon="pi pi-file-edit">
       <template #actions>
-        <Button label="Ver todos" text size="small" @click="router.push('/cadastros/documentos-de-estoque?status=draft')" />
+        <Button label="Ver todos" text size="small" @click="router.push('/cadastros/entradas-e-saidas?status=draft')" />
       </template>
       <div v-if="drafts.isPending.value" class="stack"><Skeleton v-for="n in 3" :key="n" height="1.8rem" /></div>
       <EmptyState v-else-if="!drafts.data.value?.results.length" title="Nenhum rascunho" icon="pi pi-check-circle"
                   description="Tudo o que foi lançado já está confirmado." />
-      <table v-else class="list">
+      <table v-else class="hide-sm-3 hide-sm-4 list">
         <thead><tr><th>Nº</th><th>Tipo</th><th>Depósito</th><th>Data</th><th class="right">Itens</th></tr></thead>
         <tbody>
           <tr v-for="doc in drafts.data.value.results" :key="String(doc.id)"
-              @click="router.push(`/cadastros/documentos-de-estoque/${doc.id}`)">
+              @click="router.push(`/cadastros/entradas-e-saidas/${doc.id}`)">
             <td><strong>{{ doc.number }}</strong></td>
             <td><span class="pill pill--brand">{{ documentKind.map[String(doc.kind)] }}</span></td>
             <td>{{ doc.warehouse_name }}</td>
@@ -143,8 +143,8 @@ const daysTo = (iso: string) => Math.round((new Date(`${iso}T00:00:00`).getTime(
 </template>
 
 <style scoped>
-.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; }
-.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 1rem; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr)); gap: 1rem; }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 1rem; }
 .stack { display: flex; flex-direction: column; gap: 8px; }
 .list { width: 100%; border-collapse: collapse; font-size: 13.5px; }
 .list th { text-align: left; padding: 8px 10px; font: 650 11.5px/1.3 var(--font-sans); letter-spacing: 0.04em; text-transform: uppercase;
@@ -152,8 +152,8 @@ const daysTo = (iso: string) => Math.round((new Date(`${iso}T00:00:00`).getTime(
 .list td { padding: 9px 10px; border-top: 1px solid var(--border-subtle); }
 .list tbody tr { cursor: pointer; transition: background-color var(--dur-fast) ease; }
 .list tbody tr:hover { background: var(--surface-hover); }
-.list .pill { margin-left: 6px; }
-.right { text-align: right; }
+.list .pill--after { margin-left: 6px; }
+.right, .list .right { text-align: right; }
 .neg { color: var(--danger-text); font-weight: 700; }
-@media (max-width: 520px) { .two { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 520px) { .two { grid-template-columns: 1fr; } .cards { grid-template-columns: 1fr 1fr; gap: 0.6rem; } }
 </style>

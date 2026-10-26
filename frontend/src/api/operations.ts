@@ -18,6 +18,9 @@ export type ConferenceRow = {
   difference_quantity: string; loose_volumes: string[]; missing_volumes: string[]; unexpected: boolean;
 };
 export type Conference = { document: number; ok: boolean; rows: ConferenceRow[]; unknown_codes: string[] };
+/** Conferência manual: item correto, ou a diferença (motivo, quantos chegaram, quantos entram). */
+export type ManualLine = { item: string; ok: true }
+  | { item: string; ok: false; arrived: string; accepted: string; reason: string; notes: string };
 export type StockAlert = { id: string; product: string; product_name: string; name: string; sku: string; min_stock: string; stock: string };
 
 export const stockApi = {
@@ -25,8 +28,9 @@ export const stockApi = {
   cancel: (id: string, reason = "") => data(http.post(`/stock/documents/${id}/cancel/`, { reason })),
   picking: (id: string) => data(http.get<Picking>(`/stock/documents/${id}/picking-list/`)),
   conference: (id: string, codes: string[]) => data(http.post<Conference>(`/stock/documents/${id}/conference/`, { codes })),
-  /** Conclui a conferência: com leituras grava o contado; sem, vale o que está digitado. */
-  check: (id: string, codes?: string[]) => data(http.post(`/stock/documents/${id}/check/`, codes ? { codes } : {})),
+  /** Conclui a conferência: `codes` (leituras) grava o contado; `lines` é a manual (se a Logística permitir). */
+  check: (id: string, body: { codes?: string[]; lines?: ManualLine[] } = {}) =>
+    data(http.post(`/stock/documents/${id}/check/`, body)),
   alerts: () => data(http.get<StockAlert[]>("/stock/balances/alerts/")),
   /** URL da página de impressão de etiquetas (abre em nova aba; o cookie autentica). */
   labelsUrl: (id: string, template: string) => `/api/v1/stock/documents/${id}/labels/?template=${template}`,

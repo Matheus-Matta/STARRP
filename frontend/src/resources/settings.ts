@@ -5,27 +5,41 @@ export const paymentKind = choices({
   store_credit: "Vale-troca", installment_plan: "Crediário", bank_slip: "Boleto", other: "Outro",
 });
 
+const storeKind = choices({
+  headquarters: "Matriz", regional: "Regional", branch: "Filial", distribution: "Centro de distribuição",
+});
+
+/** Filiais (no banco, "Store"). Em árvore: a matriz abre e mostra quem responde a ela. */
 export const stores = defineResource({
-  name: "lojas",
-  title: "Lojas",
-  singular: "loja",
+  name: "filiais",
+  title: "Filiais",
+  singular: "filial",
   feminine: true,
   endpoint: "/stores/",
   permission: "settings",
   icon: "pi pi-building",
   group: "Configurações",
+  tree: { parent: "parent" },
   columns: [
-    { key: "name", label: "Nome" },
+    { key: "name", label: "Nome", title: true },
+    { key: "kind", label: "Tipo", type: "tag", map: storeKind.map,
+      tones: { headquarters: "brand", regional: "info", branch: "neutral", distribution: "warning" } },
+    { key: "parent_name", label: "Responde a" },
     { key: "cnpj", label: "CNPJ" },
     { key: "city", label: "Cidade" },
     { key: "is_active", label: "Ativa", type: "boolean" },
   ],
   filters: [
+    { name: "kind", label: "Tipo", type: "select", options: storeKind.options },
     { name: "state", label: "UF", type: "select", options: UFS },
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   fields: [
     { name: "name", label: "Nome fantasia", type: "text", required: true, section: "Empresa" },
+    { name: "kind", label: "Tipo de unidade", type: "segmented", options: storeKind.options, default: "branch",
+      section: "Hierarquia", full: true },
+    { name: "parent", label: "Responde a", type: "relation", relation: { endpoint: "/stores/" }, section: "Hierarquia",
+      hint: "A unidade acima desta (ex.: a filial responde à regional, a regional à matriz). Vazio = topo da rede." },
     { name: "legal_name", label: "Razão social", type: "text", section: "Empresa" },
     { name: "cnpj", label: "CNPJ", type: "document", section: "Empresa" },
     { name: "state_registration", label: "Inscrição estadual", type: "text", section: "Empresa" },
@@ -65,7 +79,7 @@ export const users = defineResource({
     { key: "username", label: "Usuário" },
     { key: "first_name", label: "Nome" },
     { key: "roles_label", label: "Cargos", sortable: false },
-    { key: "all_stores", label: "Todas as lojas", type: "boolean" },
+    { key: "all_stores", label: "Todas as filiais", type: "boolean" },
     { key: "is_seller", label: "Vendedor", type: "boolean" },
     { key: "is_active", label: "Ativo", type: "boolean" },
   ],
@@ -85,10 +99,10 @@ export const users = defineResource({
     { name: "extra_roles", label: "Outros cargos (somam permissões)", type: "multirelation", default: [],
       relation: { endpoint: "/roles/", params: { is_active: "true" } }, section: "Acesso", full: true,
       hint: "Ex.: Coordenador de logística + Assistente financeiro. Vale o maior nível e o maior desconto." },
-    { name: "all_stores", label: "Acessa todas as lojas", type: "boolean", section: "Lojas" },
-    { name: "stores", label: "Lojas que acessa", type: "multirelation", relation: { endpoint: "/stores/" },
-      section: "Lojas", visible: (v) => !v.all_stores },
-    { name: "default_store", label: "Loja padrão", type: "relation", relation: { endpoint: "/stores/" }, section: "Lojas" },
+    { name: "all_stores", label: "Acessa todas as filiais", type: "boolean", section: "Filiais" },
+    { name: "stores", label: "Filiais que acessa", type: "multirelation", relation: { endpoint: "/stores/" },
+      section: "Filiais", visible: (v) => !v.all_stores },
+    { name: "default_store", label: "Filial padrão", type: "relation", relation: { endpoint: "/stores/" }, section: "Filiais" },
     { name: "is_seller", label: "É vendedor", type: "boolean", section: "Vendedor" },
     { name: "seller_code", label: "Código do vendedor", type: "text", section: "Vendedor", visible: (v) => Boolean(v.is_seller) },
     { name: "commission_percent", label: "Comissão (%)", type: "percent", section: "Vendedor", visible: (v) => Boolean(v.is_seller) },
@@ -166,7 +180,7 @@ export const paymentMethods = defineResource({
   ],
   filters: [
     { name: "kind", label: "Tipo", type: "select", options: paymentKind.options },
-    { name: "store", label: "Loja", type: "relation", relation: { endpoint: "/stores/" } },
+    { name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" } },
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   fields: [
@@ -207,13 +221,13 @@ export const cashRegisters = defineResource({
     { key: "is_active", label: "Ativo", type: "boolean" },
   ],
   filters: [
-    { name: "store", label: "Loja", type: "relation", relation: { endpoint: "/stores/" } },
+    { name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" } },
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   sections: {
-    Caixa: { icon: "pi pi-wallet", description: "O caixa físico da loja (a gaveta)." },
+    Caixa: { icon: "pi pi-wallet", description: "O caixa físico da filial (a gaveta)." },
     Operadores: { icon: "pi pi-users", description: "Só eles abrem, fazem sangria/suprimento e fecham este caixa. "
-      + "Gerente e supervisor (quem aprova) assumem qualquer caixa da loja." },
+      + "Gerente e supervisor (quem aprova) assumem qualquer caixa da filial." },
   },
   fields: [
     { name: "code", label: "Código", type: "text", required: true, section: "Caixa", span: 2 },
@@ -267,13 +281,13 @@ export const freightTables = defineResource({
     { name: "kind", label: "Forma de cobrar", type: "segmented", options: freightKind.options, default: "zip_range",
       section: "Tabela", span: 3 },
     { name: "lead_days", label: "Prazo (dias úteis)", type: "number", default: 0, section: "Tabela", span: 2 },
-    { name: "store", label: "Só na loja", type: "relation", relation: { endpoint: "/stores/" }, section: "Tabela", span: 2,
-      hint: "Vazio = todas as lojas." },
+    { name: "store", label: "Só na filial", type: "relation", relation: { endpoint: "/stores/" }, section: "Tabela", span: 2,
+      hint: "Vazio = todas as filiais." },
     { name: "position", label: "Ordem", type: "number", default: 0, section: "Tabela", span: 1 },
     { name: "is_active", label: "Ativa", type: "boolean", default: true, section: "Tabela", span: 1 },
     { name: "ranges", label: "Faixas", type: "zip-ranges", default: [], section: "Faixas de CEP", visible: (v) => v.kind !== "distance" },
     { name: "origin_zip", label: "CEP de origem", type: "cep", section: "Distância", visible: (v) => v.kind === "distance",
-      hint: "De onde a entrega sai (loja ou depósito)." },
+      hint: "De onde a entrega sai (filial ou depósito)." },
     { name: "price_per_km", label: "Preço por km", type: "money", section: "Distância", visible: (v) => v.kind === "distance" },
     { name: "fixed_fee", label: "Taxa fixa", type: "money", default: "0.00", section: "Distância", visible: (v) => v.kind === "distance" },
     { name: "min_value", label: "Valor mínimo", type: "money", default: "0.00", section: "Distância", visible: (v) => v.kind === "distance" },
@@ -333,5 +347,34 @@ export const metafieldDefinitions = defineResource({
     { name: "is_active", label: "Ativo", type: "boolean", default: true, section: "Onde", span: 1 },
     { name: "categories", label: "Só nas categorias", type: "multirelation", relation: { endpoint: "/catalog/categories/" },
       section: "Onde", full: true, visible: (v) => v.owner === "product", hint: "Vazio = todos os produtos. As de dentro entram." },
+  ],
+});
+
+/** Logística de cada filial: uma linha por filial (nasce sozinha); só edita. */
+export const logisticsSettings = defineResource({
+  name: "configuracoes-de-logistica",
+  title: "Configurações de logística",
+  singular: "configuração de logística",
+  feminine: true,
+  endpoint: "/logistics/settings/",
+  permission: "logistics",
+  icon: "pi pi-sliders-h",
+  group: "Logística",
+  creatable: false,
+  deletable: false,
+  searchable: false,
+  columns: [
+    { key: "store_name", label: "Filial", title: true },
+    { key: "allow_manual_conference", label: "Conferência manual", type: "boolean" },
+  ],
+  sections: {
+    Recebimento: { icon: "pi pi-inbox", description: "Como a mercadoria que chega (entrada da NF-e) é conferida nesta filial." },
+  },
+  fields: [
+    { name: "store_name", label: "Filial", type: "text", readOnly: true, section: "Recebimento" },
+    { name: "allow_manual_conference", label: "Permitir conferência manual no recebimento", type: "boolean",
+      section: "Recebimento", full: true,
+      hint: "Marca item a item se a quantidade está correta, sem ler os códigos com leitor ou câmera. "
+        + "Desligado, a entrada da nota só é conferida lendo cada item." },
   ],
 });

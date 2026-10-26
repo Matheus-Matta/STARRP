@@ -46,7 +46,10 @@ export function usePdv() {
   const mode = computed(() => boot.value?.mode ?? "cashier");
   const isSeller = computed(() => mode.value === "seller");
   /** Só o caixa precisa de turno aberto; o vendedor monta pedidos sem caixa. */
-  const needsCash = computed(() => !isSeller.value && Boolean(boot.value?.store.require_open_cash_session) && !session.value);
+  /** Só vende com o turno ABERTO (a abertura com diferença espera o gerente). */
+  const needsCash = computed(() => !isSeller.value && Boolean(boot.value?.store.require_open_cash_session)
+    && session.value?.status !== "open");
+  const pendingOpening = computed(() => session.value?.status === "pending_opening");
 
   function remember(next: Sale | null) {
     sale.value = next;
@@ -169,8 +172,14 @@ export function usePdv() {
     remember(null);
   });
 
-  const openCash = (register: string, amount: string) => run(async () => {
-    session.value = await cashApi.open(register, amount, boot.value?.terminal.id);
+  const openCash = (register: string, amount: string, notes = "") => run(async () => {
+    session.value = await cashApi.open(register, amount, boot.value?.terminal.id, notes);
+    return session.value;
+  });
+  /** Gerente confere a abertura com diferença (pede a senha dele ou a do caixa se precisar). */
+  const approveOpening = (reason = "") => run(async () => {
+    session.value = await withApproval((approval) => cashApi.approveOpening(session.value!.id, approval, reason));
+    return session.value;
   });
 
   const closeCash = (counted: string) => run(async () => {
@@ -183,7 +192,7 @@ export function usePdv() {
     run(() => cashApi.movement(session.value!.id, kind, amount, reason));
 
   return { boot, session, sale, items, busy, needsCash, mode, isSeller, locked, init, setUser, scan, addVariant, setQuantity,
-    removeItem, setCustomer, setDelivery, clearDelivery, discount, coupon, checkout, cancel, park, resume, lock, unlock, openCash, closeCash, cashMovement };
+    removeItem, pendingOpening, approveOpening, setCustomer, setDelivery, clearDelivery, discount, coupon, checkout, cancel, park, resume, lock, unlock, openCash, closeCash, cashMovement };
 }
 
 export type Pdv = ReturnType<typeof usePdv>;

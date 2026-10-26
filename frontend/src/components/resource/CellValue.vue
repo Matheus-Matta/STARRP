@@ -35,6 +35,9 @@ const numeric = computed(() => ["money", "quantity", "percent"].includes(props.c
   <span v-else-if="column.type === 'image'" class="thumb">
     <img v-if="value" :src="String(value)" alt="" loading="lazy" /><i v-else class="pi pi-image" />
   </span>
+  <span v-else-if="column.type === 'stars'" class="stars" :aria-label="`Nota ${value} de 5`">
+    <i v-for="n in 5" :key="n" :class="n <= Number(value) ? 'on' : ''">★</i>
+  </span>
   <span v-else-if="column.type === 'tag'" class="pill" :class="`pill--${column.tones?.[String(value)] ?? 'brand'}`">{{ text }}</span>
   <span v-else :class="{ num: numeric, cell: true, empty: text === '—' }">{{ text }}</span>
 </template>
@@ -47,5 +50,8 @@ const numeric = computed(() => ["money", "quantity", "percent"].includes(props.c
   width: 38px; height: 38px; border-radius: 8px; overflow: hidden; display: grid; place-items: center; flex: none;
   background: var(--surface-sunken); border: 1px solid var(--border-subtle); color: var(--text-subtle); font-size: 14px;
 }
+.stars { white-space: nowrap; letter-spacing: 1px; font-size: 14px; color: var(--border-strong, #c7cbd1); }
+.stars .on { color: #f5a524; font-style: normal; }
+.stars i { font-style: normal; }
 .thumb img { width: 100%; height: 100%; object-fit: cover; }
 </style>

@@ -14,6 +14,8 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: "/login", component: () => import("@/pages/auth/LoginPage.vue"), meta: { public: true } },
+    // Link que o cliente recebe para avaliar a compra (sem login, fora do layout do sistema).
+    { path: "/avaliar/:token", component: () => import("@/pages/public/ReviewPage.vue"), meta: { public: true, title: "Avaliar compra" } },
     { path: "/pdv", component: () => import("@/pages/pdv/PdvPage.vue"), meta: { permission: "sales.manage" } },
     // Documentos para imprimir/salvar PDF: fora do layout (só o papel e a barrinha de ações).
     { path: "/imprimir/:doc/:id?", component: () => import("@/pages/PrintPage.vue") },
@@ -26,8 +28,16 @@ export const router = createRouter({
           meta: { title: "Painel de estoque", permission: "stock.view", module: "stock" } },
         { path: "financeiro", component: () => import("@/pages/FinanceOverviewPage.vue"),
           meta: { title: "Painel financeiro", permission: "finance.view", module: "finance" } },
+        { path: "relatorios", component: () => import("@/pages/ReportsHomePage.vue"), meta: { title: "Relatórios" } },
+        { path: "relatorios/:slug", component: () => import("@/pages/ReportPage.vue"), meta: { title: "Relatório" } },
         { path: "configuracoes", component: () => import("@/pages/AccountSettingsPage.vue"),
           meta: { title: "Configurações da conta", permission: "account.admin" } },
+        // Endereços antigos (Lojas → Filiais, documentos de estoque → entradas e saídas): links salvos continuam abrindo.
+        { path: "cadastros/lojas/:rest(.*)*",
+          redirect: (to) => ({ path: ["/cadastros/filiais", ...[to.params.rest ?? []].flat()].join("/"), query: to.query }) },
+        { path: "cadastros/documentos-de-estoque/:rest(.*)*",
+          redirect: (to) => ({ path: ["/cadastros/entradas-e-saidas", ...[to.params.rest ?? []].flat()].join("/"),
+                               query: to.query }) },
         { path: "cadastros/:resource", component: () => import("@/pages/ResourceListPage.vue") },
         { path: "cadastros/:resource/:id", component: () => import("@/pages/ResourceFormPage.vue") },
         { path: "cadastros/:resource/:id/:view", component: () => import("@/pages/ResourceViewPage.vue") },

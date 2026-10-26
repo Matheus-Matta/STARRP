@@ -235,6 +235,10 @@ O cliente tem uma lista de endereços (`CustomerAddress`), editada no próprio c
   rota, estimativa em linha reta × 1,3 (e a cotação avisa).
 
 ```
+GET  /api/v1/logistics/freight-tables/estimate/?zip=01310100           → conferir frete (PDV, Shift+F5)
+GET  /api/v1/logistics/freight-tables/estimate/?street=..&number=..&district=..&city=..&state=SP
+     (endereço completo: CEP pela ViaCEP para as tabelas por faixa; lat/long pelo OpenStreetMap
+      para as por distância, medidas até o endereço exato)
 GET  /api/v1/logistics/freight-tables/quote/?zip=01310100   → cotação de todas as tabelas ativas
 POST /api/v1/sales/{id}/delivery/  {"address": "<id>", "table": "<id>"}   → frete no total
 DELETE /api/v1/sales/{id}/delivery/                                       → retirada na loja
@@ -273,10 +277,25 @@ Caminho de uma nota que o fornecedor emitiu contra a loja:
 3. inbound_nfe.import_xml: itens casados pelo EAN (cEAN → fator 1; cEANTrib → qTrib/qCom)
    e pelo que o operador já vinculou antes para o fornecedor (SupplierProduct)
 4. todos os itens vinculados → entrada de estoque em RASCUNHO (nfe_receiving.auto_entry)
-5. CONFERÊNCIA: POST /stock/documents/{id}/check/ {"codes": [...]} grava o contado
+5. CONFERÊNCIA: POST /stock/documents/{id}/check/
+   {"codes": [...]}  leitura (leitor ou câmera do navegador) grava o contado, ou
+   {"lines": [...]}  manual item a item (só na filial com "Permitir conferência manual" em
+                     Logística › Configurações de logística — `LogisticsSettings`, uma por filial):
+                     correto, ou incorreto com motivo + quantos chegaram + quantos entram
 6. APROVAÇÃO: POST /stock/documents/{id}/post/ (sem conferência devolve conference_required)
-   → estoque entra, duplicatas viram contas a pagar, nota "recebida" ou "com divergência"
+   → estoque entra AJUSTADO, duplicatas viram contas a pagar, nota "recebida" ou "com
+     divergência", e cada diferença vira um erro de entrada (ReceivingDivergence)
 ```
+
+- **Voltar passos** (`services/inbound_nfe`): desvincular item (`items/{id}/unmap/`, esquece
+  o vínculo aprendido), voltar a usar item ignorado (`unignore/`), restaurar nota ignorada
+  (`restore/`), "Voltar para os vínculos" (`discard-entry/`: cancela a entrada em rascunho)
+  e "Desfazer recebimento" (`undo-receipt/` com motivo, permissão `stock.manage`: estorna o
+  estoque e cancela as contas a pagar; duplicata já paga barra). Mexer num item com a
+  conferência aberta descarta o rascunho e a entrada nasce de novo.
+- **Erros de entrada** (`/stock/divergences/`, menu Logística): nota × chegou × entrou,
+  motivo (faltou, a mais, avariado, produto errado, vencido, outro), quem conferiu e como.
+  Cancelar a entrada aprovada tira os erros dela (a nova aprovação registra de novo).
 
 - Regras da SEFAZ: cStat 137 (nada novo) e 656 (consumo indevido) bloqueiam nova busca
   por 1 hora (`DFeSyncState.next_allowed_at`); o NSU é por CNPJ, nunca volta a zero.
@@ -311,10 +330,39 @@ suprimento e fecham (`services/cash._require_operator`; quem abriu o turno tamb�
 `cash.approve` (gerente, supervisor) assume qualquer caixa. O PDV só lista os caixas do
 usuário (`bootstrap.cash_registers`).
 
+**Abertura com conferência cega** (padrão do StarChef): o operador conta a gaveta e informa
+(`opening_amount`, com observação), sem ver o esperado. Bate com o que o último fechamento
+daquele caixa deixou (`left_in_drawer`) → turno `open`. Não bate → `pending_opening`: o caixa
+não vende até o gerente aprovar (`POST /cash/sessions/{id}/approve-opening/`, direto com
+`cash.approve` ou com `approval` — usuário/senha do gerente ou senha de ações do caixa). 1ª
+abertura do caixa vira o saldo inicial. Operador não abre dois turnos ao mesmo tempo. O PDV
+imprime o comprovante de abertura (80 mm). Com "exige caixa aberto", venda do PDV só é cobrada
+num turno ABERTO do operador, em qualquer forma (fora do PDV, só o dinheiro exige).
+
 **Fechamento cego**: sem `cash.approve`, a API não devolve o esperado na gaveta nem a diferença
 (`expected_now`, `expected_amount`, `difference` = `null`, `blind: true`), e o relatório e o
 extrato do turno saem só com troco inicial e contado (`cash.blind`). O operador conta e informa;
 a diferença fora da tolerância vai para o gerente aprovar.
+
+Modo do PDV (`bootstrap.mode`): **caixa** só para quem tem `cash.manage` E um caixa vinculado na
+loja (ou um turno dele ainda aberto); com acesso mas sem caixa vinculado, entra em modo **vendedor**
+(cria e guarda pedidos, sem nada do caixa). Em "todas as lojas", o PDV entra na loja principal do
+usuário (`me.default_store_id`, senão a 1ª dele).
+
+## Configurações da conta, logo e etiquetas pré-prontas
+
+`GET/PATCH /api/v1/account/settings/` (só admin da conta) junta numa página: empresa, PDV e caixa
+(aplicado a TODAS as lojas no salvar), estoque e plano/módulos (leitura). Na tela: Configurações →
+Configurações da conta (último item, só para o administrador).
+
+Logo: `POST /api/v1/account/logo/` (multipart `file`) recorta o centro e salva 1080×1080 em PNG
+(`media.square_logo`); `DELETE` tira. Vai em `me.account.logo_url` e no canto superior direito
+das impressões (na bobina, no topo); sem logo, o do Starrp (`/logo.svg`).
+
+Modelos de etiqueta: 8 pré-prontos nascem com a conta (`system_data.LABEL_TEMPLATES`: gôndola,
+oferta, tag de roupa, folha A4 3 colunas, lote, endereço e volume), marcados `is_system` — ajusta,
+não exclui; a conta cria os seus. Um pré-pronto só vira padrão se a conta ainda não tem padrão
+daquele tipo.
 
 ## Tabelas de desconto com as regras dentro
 
@@ -387,3 +435,108 @@ npm run manage -- shell       # qualquer comando do manage.py
 ```
 
 Swagger: `http://localhost:8000/api/schema/swagger-ui/`
+
+
+## Filiais (Store) e hierarquia
+
+Na tela a "loja" se chama **filial** (no código e na API continua `Store` / `store`; "loja
+virtual" e "retirada na loja" seguem com o nome). Cada filial tem um **tipo** (matriz,
+regional, filial, centro de distribuição) e a quem **responde** (`Store.parent`): a lista de
+Filiais abre em árvore (`?root=1` / `?parent=<id>`) e o cadastro recusa ciclo (a matriz não
+pode responder a uma subordinada). Regras que mudam de filial para filial ficam em cadastros
+por filial, como `LogisticsSettings` (nasce sozinha para cada filial).
+
+
+## Livro de relatórios
+
+`GET /reports/book/<slug>/?date_from=&date_to=` (`services/report_book.BOOK`): cada relatório
+devolve o mesmo formato — `kpis` (com `delta` contra o período anterior de mesmo tamanho e
+`good` = se subir é bom) e `blocks` (`line`, `bars`, `ranking`, `share`, `heatmap`,
+`waterfall`, `table`) — e uma só tela (`ReportPage.vue`) desenha todos. Grupos no menu
+"Relatórios" (item com submenu, em Operação): **Movimento** (vendas, horários de pico,
+recebimentos, vendedores, comparativo de filiais), **Mercadorias** (curva ABC, categorias,
+posição de estoque, entradas e saídas, erros de entrada), **Contábil** (DRE em cascata,
+fluxo de caixa, vencimentos, saldos) e **Relacionamento** (clientes). Permissão e módulo
+por relatório (contábil exige `finance.view` + módulo Financeiro; estoque, `stock.view`).
+
+Cada relatório manda também os **filtros próprios** (`filters`, com as opções já prontas:
+vendedor, forma de pagamento, canal, categoria, marca, grupo de clientes, depósito,
+fornecedor, motivo, conta, tipo...) — o valor volta como parâmetro e fica no endereço da
+página (dá para mandar o link filtrado). Séries no tempo agrupam sozinhas (`grain`): até 45
+dias por dia, até ~7 meses por semana, além por mês. O texto "para que serve / como ler /
+ajuda a decidir" de cada relatório fica em `frontend/src/reports/catalog.ts` (`about`).
+
+**Impressão e exportação.** "Imprimir" abre a folha própria do relatório
+(`/imprimir/relatorio/<slug>?<período e filtros>`, `print/docs/ReportBookPrint.vue`): cabeçalho
+da empresa, filtros aplicados, indicadores, gráficos (sempre nas cores de papel) e as tabelas
+completas, com a escolha do que sai (indicadores, gráficos, tabelas, "para que serve") e A4
+retrato ou deitado — nunca a tela. `GET /reports/book/<slug>/export/?formato=xlsx|csv`
+(`services/report_export.py`, openpyxl): Excel com a aba "Resumo" (período, filial, filtros,
+indicadores e variação) e uma aba por bloco — moeda, % e data formatados, cabeçalho fixo e
+filtro do Excel; tabela com abas (Curva ABC) ganha uma aba por classe. `bloco=<i>` exporta só
+uma tabela e `aba=<valor>` só uma classe; CSV com ponto e vírgula, vírgula decimal e BOM.
+
+Gráficos (`components/report/`): paleta categórica validada para daltonismo nos dois temas
+(`--series-1..8` em tokens.css, ordem fixa, a 9ª fatia vira "Outros"), sequencial de um tom
+no mapa de calor, divergente azul ↔ vermelho na cascata, uma escala só por gráfico, barras de
+até 24px com ponta arredondada, balão em todo gráfico e tabela com exportação CSV em todo
+relatório (os valores nunca dependem só da cor).
+
+
+## Avaliações (padrão do StarHub)
+
+`Review` (`models/reviews.py`, `services/reviews.py`): nota de 1 a 5, comentário (até 1500),
+até 3 fotos, nome público abreviado ("Matheus S."), selo de compra verificada e moderação
+(pendente → aprovada/rejeitada com motivo, quem e quando). Avalia-se o **produto** (uma por
+cliente e produto) e a **entrega** de uma venda (uma por venda) — índices únicos no banco; a
+rejeitada não conta. Na venda concluída, "Link de avaliação" gera um link assinado (120 dias,
+sem banco) e a mensagem pronta para o WhatsApp; o cliente avalia pelo celular, sem login, em
+`/avaliar/<token>` (`GET/POST /api/v1/public/reviews/<token>/`). A retaguarda modera em Vendas ›
+Avaliações e também registra a avaliação contada no balcão. `manage.py seed_reviews` cria
+avaliações e entregas de exemplo (o `seed_demo` chama no fim).
+
+Relatórios ligados: **Avaliações** e **Curva ABC de clientes** (Relacionamento), **Entregas**
+(Logística: prazo prometido = venda + dias úteis da tabela de frete × entregue, atrasos,
+bairros, frete e a nota da entrega) e **Cancelamentos e devoluções** (Movimento).
+
+
+## Cruzamentos (um assunto explicado por outro)
+
+`services/report_cross.py`: agrupa as vendas por uma dimensão e mede, em cada grupo, o
+resultado de outra. Relatórios do grupo **Cruzamentos**: clientes (classe ABC) × satisfação e
+entrega; entrega (no prazo / com atraso / atrasada aberta) × nota e recompra; vendedores ×
+desconto, margem, cancelamento e nota; produtos (classe ABC) × nota, margem e devolução, com
+quadrantes (estrela, atenção, joia escondida, revisar); faixas de desconto × ticket, margem e
+recompra. Dois blocos novos: `compare` (grupos × medidas, com o melhor ▲ e o pior ▼ de cada
+coluna) e `insights` (conclusões escritas a partir dos números, só com dado nos dois lados, e
+aviso de base pequena). Os mesmos cruzamentos aparecem dentro dos relatórios comuns (Curva ABC
+de clientes e de produtos, Avaliações, Entregas). "Voltaram a comprar" = o cliente fez outra
+compra depois daquela (até hoje). A regra de prazo da entrega fica em `report_book.delivery_state`.
+
+
+## Promoções: o desconto se paga?
+
+`services/report_promotions.py`, grupo **Promoções** do livro:
+- **Descontos: visão geral** — quanto se abriu mão em promoção de produto ((preço cheio − cobrado) ×
+  qtd. nos itens com promoção), cupom e desconto manual, e o resultado de cada tipo (ticket, margem,
+  recompra, nota) contra as vendas sem desconto.
+- **Promoções de produto** — por regra da tabela de desconto, nos mesmos produtos: unidades e lucro
+  POR DIA com a promoção valendo (janela da regra e da tabela) × no resto do período. Veredito:
+  compensou (lucro/dia subiu), vendeu mais e lucrou menos, não aumentou as vendas, prejuízo (abaixo
+  do custo) ou sem base (não vendeu fora da promoção).
+- **Cupons** — por cupom: usos, clientes novos (1ª compra com ele), margem, recompra contra quem
+  compra sem cupom, gasto nos 60 dias seguintes (um cliente conta uma vez) e lucro por R$ 1 de
+  desconto. Veredito: fideliza e dá lucro, dá lucro e não fideliza, fideliza no prejuízo, não se paga.
+
+**Prejuízo** aparece de dois jeitos, sempre com KPI, conclusão e lista própria (com mensagem quando
+a lista está vazia):
+- venda abaixo do custo (lucro < 0): listas "Vendas que deram prejuízo" (visão geral) e "Vendas com
+  cupom que deram prejuízo" (cupons), com nº da venda, cliente, vendedor, desconto e perda;
+- promoção que lucrou menos do que sem ela: coluna `impact` = (lucro/dia com − lucro/dia sem) × dias da
+  promoção (sem base, só conta se o lucro foi negativo); ranking "Deram prejuízo" e KPI "Perda com
+  promoções". Os vereditos de perda começam com "Prejuízo:".
+
+`manage.py seed_promotions` cria vendas de exemplo pela API (cupom, desconto manual, promoção e
+recompras), tudo numa transação; o `seed_demo` chama no fim.
+`seed_promotions --prejuizo` cria só 3 vendas de exemplo no prejuízo (desconto de 45–55%, nota
+"Exemplo de venda no prejuízo (gerador da demo)"), uma vez por conta.

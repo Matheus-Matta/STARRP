@@ -64,6 +64,6 @@ class NFeMapItemSerializer(serializers.Serializer):
 
 class NFeReceiveSerializer(serializers.Serializer):
     warehouse = TenantPrimaryKeyField(Warehouse, required=False, allow_null=True,
-                                      help_text="Sem depósito: o padrão da loja.")
+                                      help_text="Sem depósito: o padrão da filial.")
     bin = TenantPrimaryKeyField(StorageBin, required=False, allow_null=True)
     post = serializers.BooleanField(default=False, help_text="Confere com as quantidades da nota e aprova já.")

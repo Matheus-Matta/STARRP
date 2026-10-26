@@ -46,6 +46,26 @@ function toggleGroup(label: string) {
   }
 }
 
+/** Itens com submenu (Relatórios): abertos guardados; abre sozinho quando a tela atual é dele. */
+const OPEN_KEY = "starrp.nav.open";
+const openItems = ref<string[]>((() => {
+  try {
+    return JSON.parse(localStorage.getItem(OPEN_KEY) ?? "[]");
+  } catch {
+    return [];
+  }
+})());
+const isOpen = (to: string) => openItems.value.includes(to) || route.path.startsWith(`${to}/`);
+function toggleItem(to: string) {
+  openItems.value = isOpen(to) ? openItems.value.filter((t) => t !== to) : [...openItems.value, to];
+  if (!openItems.value.includes(to) && route.path.startsWith(`${to}/`)) void router.push(to);
+  try {
+    localStorage.setItem(OPEN_KEY, JSON.stringify(openItems.value));
+  } catch {
+    // sem storage: vale só nesta aba
+  }
+}
+
 function isActive(to: string) {
   return to === "/" ? route.path === "/" : route.path === to || route.path.startsWith(`${to}/`);
 }
@@ -91,12 +111,32 @@ const userItems = computed(() => [
           <i :class="closedGroups.includes(group.label) ? 'pi pi-chevron-right' : 'pi pi-chevron-down'" />
         </button>
         <div v-show="mini || !closedGroups.includes(group.label)">
-          <RouterLink v-for="item in group.items" :key="item.to" :to="item.to" class="nav__item"
-                      :class="{ 'nav__item--active': isActive(item.to) }" :title="mini ? item.label : undefined"
-                      @mouseenter="prefetch.route(item.to)" @focus="prefetch.route(item.to)" @click="emit('close')">
-            <i :class="item.icon" />
-            <span v-if="!mini">{{ item.label }}</span>
-          </RouterLink>
+          <template v-for="item in group.items" :key="item.to">
+            <!-- Item com submenu (Relatórios): abre os grupos; recolhido, vai direto para o índice. -->
+            <template v-if="item.children && !mini">
+              <button type="button" class="nav__item nav__item--parent" :class="{ 'nav__item--active': route.path === item.to }"
+                      :aria-expanded="isOpen(item.to)" @click="toggleItem(item.to)">
+                <i :class="item.icon" />
+                <span>{{ item.label }}</span>
+                <i class="pi nav__caret" :class="isOpen(item.to) ? 'pi-chevron-down' : 'pi-chevron-right'" />
+              </button>
+              <div v-show="isOpen(item.to)" class="nav__sub">
+                <RouterLink :to="item.to" class="nav__subitem nav__subitem--all" :class="{ 'nav__item--active': route.path === item.to }"
+                            @click="emit('close')">Todos os relatórios</RouterLink>
+                <div v-for="child in item.children" :key="child.label" class="nav__subgroup">
+                  <span class="nav__subhead"><i :class="child.icon" /> {{ child.label }}</span>
+                  <RouterLink v-for="sub in child.items" :key="sub.to" :to="sub.to" class="nav__subitem"
+                              :class="{ 'nav__item--active': isActive(sub.to) }" @click="emit('close')">{{ sub.label }}</RouterLink>
+                </div>
+              </div>
+            </template>
+            <RouterLink v-else :to="item.to" class="nav__item"
+                        :class="{ 'nav__item--active': isActive(item.to) }" :title="mini ? item.label : undefined"
+                        @mouseenter="prefetch.route(item.to)" @focus="prefetch.route(item.to)" @click="emit('close')">
+              <i :class="item.icon" />
+              <span v-if="!mini">{{ item.label }}</span>
+            </RouterLink>
+          </template>
         </div>
       </div>
     </nav>
@@ -159,6 +199,19 @@ const userItems = computed(() => [
 .nav__item:hover i { color: var(--nav-text); }
 .nav__item--active, .nav__item--active:hover { background: var(--nav-active); color: var(--nav-active-text); font-weight: 600; }
 .nav__item--active i, .nav__item--active:hover i { color: var(--nav-active-text); }
+.nav__item--parent { width: 100%; border: 0; background: transparent; cursor: pointer; text-align: left; }
+.nav__item--parent span { flex: 1; }
+.nav__caret { font-size: 9px !important; width: auto !important; }
+.nav__sub { margin: 2px 0 6px 17px; padding-left: 10px; border-left: 1px solid var(--nav-border); }
+.nav__subgroup { margin-top: 6px; }
+.nav__subhead { display: flex; align-items: center; gap: 6px; padding: 4px 8px 2px; font: 700 10px/1.4 var(--font-sans);
+                letter-spacing: 0.06em; text-transform: uppercase; color: var(--nav-muted); }
+.nav__subhead i { font-size: 10px; }
+/* Nome do relatório inteiro (quebra linha em vez de cortar com "…"). */
+.nav__subitem { display: block; padding: 6px 8px; border-radius: 6px; color: var(--nav-text); font: 500 12.5px/1.3 var(--font-sans);
+                transition: background-color var(--dur-fast) ease; }
+.nav__subitem:hover { background: var(--nav-hover); color: var(--nav-strong); }
+.nav__subitem--all { color: var(--nav-muted); }
 .nav__user {
   display: flex; align-items: center; gap: 10px; margin: 0; padding: 10px 14px; border: 0; border-top: 1px solid var(--nav-border);
   background: transparent; color: var(--nav-muted); cursor: pointer; text-align: left;

@@ -39,4 +39,10 @@ export const nfeApi = {
   createProduct: (item: string, price?: string) =>
     data(http.post(`/inbound-nfe/items/${item}/create-product/`, price ? { price } : {})),
   ignoreItem: (item: string, reason = "") => data(http.post(`/inbound-nfe/items/${item}/ignore/`, { reason })),
+  // Voltar passos
+  unignoreItem: (item: string) => data(http.post(`/inbound-nfe/items/${item}/unignore/`, {})),
+  unmapItem: (item: string, forget = true) => data(http.post(`/inbound-nfe/items/${item}/unmap/`, { forget })),
+  discardEntry: (id: string) => data(http.post(`/inbound-nfe/${id}/discard-entry/`, {})),
+  undoReceipt: (id: string, reason: string) => data(http.post(`/inbound-nfe/${id}/undo-receipt/`, { reason })),
+  restore: (id: string) => data(http.post(`/inbound-nfe/${id}/restore/`, {})),
 };

@@ -65,5 +65,10 @@ const crumbs = computed(() => {
 .search:hover { border-color: var(--border-strong); color: var(--text-muted); }
 .search span { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .search kbd { font: 600 10.5px/1 var(--font-mono); padding: 3px 5px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-muted); background: var(--surface-sunken); }
+/* Celular: só a página atual (o caminho inteiro não cabe e vira reticências). */
+@media (max-width: 640px) {
+  .crumbs > i, .crumbs > span:not(.current) { display: none; }
+  .crumbs .current { font-size: 14px; }
+}
 @media (max-width: 760px) { .search { width: 32px; padding: 0; justify-content: center; } .search span, .search kbd { display: none; } }
 </style>

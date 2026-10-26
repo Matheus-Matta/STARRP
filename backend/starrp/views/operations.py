@@ -81,11 +81,13 @@ class CashSessionViewSet(_ActionMixin, TenantViewSet):
     select_related = ("register", "opened_by")
     filterset_fields = {"status": ["exact"], "register": ["exact"], "opened_by": ["exact"], "opened_at": ["gte", "lte"]}
     ordering_map = {"opened_by_name": "opened_by__first_name"}
-    action_permissions = {"approve": "cash.approve"}
+    # Aprovar abre para quem opera o caixa: sem `cash.approve`, o corpo traz `approval` (gerente ou senha da filial).
+    action_permissions = {"approve": "cash.manage", "approve_opening": "cash.manage"}
 
     def create(self, request, *args, **kwargs):
         data = self._body(s.OpenSessionSerializer)
-        session = cash.open_session(data["register"], request.user, data["opening_amount"], data.get("terminal"))
+        session = cash.open_session(data["register"], request.user, data["opening_amount"], data.get("terminal"),
+                                    data["notes"])
         return Response(s.CashSessionSerializer(session, context=self.get_serializer_context()).data, status=201)
 
     @action(detail=False, methods=["get"])
@@ -100,18 +102,30 @@ class CashSessionViewSet(_ActionMixin, TenantViewSet):
         session = cash.close_session(self.get_object(), request.user, data["counted_amount"], data["notes"])
         return Response(s.CashSessionSerializer(session, context=self.get_serializer_context()).data)
 
+    @action(detail=True, methods=["post"], url_path="approve-opening")
+    def approve_opening(self, request, pk=None):
+        """Abertura com diferença: o gerente aprova (direto ou pelo `approval` no corpo)."""
+        session = cash.approve_opening(self.get_object(), request.user, request.data.get("reason", ""),
+                                       request.data.get("approval"))
+        return Response(s.CashSessionSerializer(session, context=self.get_serializer_context()).data)
+
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
-        session = cash.approve_closing(self.get_object(), request.user, request.data.get("reason", ""))
+        """Fechamento com diferença: o gerente aprova (direto ou pelo `approval` no corpo)."""
+        data = self._body(s.DecisionSerializer)
+        session = cash.approve_closing(self.get_object(), request.user, data["reason"], data.get("approval"))
         return Response(s.CashSessionSerializer(session, context=self.get_serializer_context()).data)
 
     @action(detail=True, methods=["get", "post"])
     def movements(self, request, pk=None):
+        """GET: movimentos do turno. POST: sangria/suprimento (devolve o movimento criado, que pode
+        vir `pending` aguardando aprovação)."""
         session = self.get_object()
         if request.method == "POST":
             data = self._body(s.ManualMovementSerializer)
-            cash.add_movement(session, request.user, data["kind"], data["amount"], data["reason"],
-                              data["destination"])
+            movement = cash.add_movement(session, request.user, data["kind"], data["amount"], data["reason"],
+                                         data["destination"], data.get("approval"))
+            return Response(s.CashMovementSerializer(movement).data, status=201)
         return Response(s.CashMovementSerializer(session.movements.all(), many=True).data)
 
     @action(detail=True, methods=["get"])
@@ -129,20 +143,30 @@ class CashSessionViewSet(_ActionMixin, TenantViewSet):
         return Response(decimals_as_text(data if cash.sees_drawer(request.user) else cash.blind(data)))
 
 
-class CashMovementViewSet(TenantViewSet):
+class CashMovementViewSet(_ActionMixin, TenantViewSet):
     model = CashMovement
     serializer_class = s.CashMovementSerializer
     permission_code = "cash"
     http_method_names = ["get", "post", "head", "options"]
     filterset_fields = ["session", "kind", "status"]
-    action_permissions = {"approve": "cash.approve"}
+    select_related = ("operator", "approved_by")
+    action_permissions = {"approve": "cash.manage", "reject": "cash.manage"}
 
     def create(self, request, *args, **kwargs):
         raise StateConflict("Lance sangria/suprimento em /cash-sessions/{id}/movements/.")
 
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
-        return Response(s.CashMovementSerializer(cash.approve_movement(self.get_object(), request.user)).data)
+        """Sangria/suprimento pendente: gerente direto, ou `approval` (gerente/senha do caixa da filial)."""
+        data = self._body(s.DecisionSerializer)
+        movement = cash.approve_movement(self.get_object(), request.user, data["reason"], data.get("approval"))
+        return Response(s.CashMovementSerializer(movement).data)
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        """Gerente recusa, ou o operador desiste do que lançou: fica cancelado, fora da gaveta."""
+        data = self._body(s.DecisionSerializer)
+        return Response(s.CashMovementSerializer(cash.reject_movement(self.get_object(), request.user, data["reason"])).data)
 
 
 class CashDiscrepancyViewSet(TenantViewSet):

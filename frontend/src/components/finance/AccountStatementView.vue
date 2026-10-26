@@ -39,7 +39,7 @@ const outflow = computed(() => (s.value?.lines ?? []).filter((l) => l.kind === "
         <div><small>Saídas</small><strong class="neg">{{ money(outflow) }}</strong></div>
         <div><small>Saldo final</small><strong>{{ money(s.closing_balance) }}</strong></div>
       </div>
-      <table class="list">
+      <table class="hide-sm-3 list">
         <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th class="right">Valor</th><th class="right">Saldo</th></tr></thead>
         <tbody>
           <tr class="opening"><td colspan="4">Saldo anterior</td><td class="right">{{ money(s.opening_balance) }}</td></tr>
@@ -58,7 +58,7 @@ const outflow = computed(() => (s.value?.lines ?? []).filter((l) => l.kind === "
 <style scoped>
 .statement, .stack { display: flex; flex-direction: column; gap: 1rem; }
 .bar { display: flex; justify-content: flex-end; gap: 0.5rem; }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 0.6rem; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(160px, 100%), 1fr)); gap: 0.6rem; }
 .kpis div { display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-card); }
 .kpis small { font-size: 12px; color: var(--text-muted); }
 .kpis strong { font-size: 19px; color: var(--text-strong); }
@@ -66,7 +66,7 @@ const outflow = computed(() => (s.value?.lines ?? []).filter((l) => l.kind === "
 .list th { text-align: left; padding: 9px 10px; font: 650 11.5px/1.3 var(--font-sans); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); background: var(--surface-sunken); }
 .list td { padding: 9px 10px; border-top: 1px solid var(--border-subtle); }
 .opening td { color: var(--text-muted); font-style: italic; }
-.right { text-align: right; }
+.right, .list .right { text-align: right; }
 .pos { color: var(--success-text); }
 .neg { color: var(--danger-text); }
 .empty { text-align: center; padding: 18px; }

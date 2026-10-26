@@ -187,7 +187,7 @@ const text = computed(() => {
 .fv-color i { width: 16px; height: 16px; border-radius: 4px; border: 1px solid var(--border); }
 .fv-text { margin: 0; white-space: pre-wrap; line-height: 1.55; }
 .fv-rich { line-height: 1.6; font-weight: 400; }
-.fv-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.fv-photos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(96px, 100%), 1fr)); gap: 8px; }
 .fv-photos img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 1px solid var(--border-subtle); }
 .fv-photos img.cover { outline: 2px solid var(--brand); outline-offset: 1px; }
 .fv-rich :deep(p) { margin: 0 0 0.5em; }

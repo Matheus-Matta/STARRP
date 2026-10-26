@@ -1,11 +1,14 @@
 <script setup lang="ts">
-/** Tabela de leitura (itens, pagamentos, parcelas...) com a linha de totais das colunas `total`. */
+/** Tabela de leitura (itens, pagamentos, parcelas...) com a linha de totais das colunas `total`.
+ * No celular cada linha vira um bloco: o título em cima e as outras colunas em "rótulo  valor". */
 import { computed } from "vue";
 
 import CellValue from "@/components/resource/CellValue.vue";
+import { useViewport } from "@/composables/useViewport";
 import type { ColumnDef } from "@/resources/types";
 
 const props = defineProps<{ columns: ColumnDef[]; rows: Record<string, unknown>[]; empty?: string }>();
+const { isPhone } = useViewport();
 const numeric = (c: ColumnDef) => ["money", "quantity", "percent"].includes(c.type ?? "");
 const filled = (v: unknown) => v !== null && v !== undefined && v !== "";
 /** Coluna de texto vazia em todas as linhas (lote, autorização...) não ocupa espaço. */
@@ -19,6 +22,25 @@ const totals = computed(() => {
 
 <template>
   <p v-if="!rows.length" class="vt-empty">{{ empty ?? "Nada por aqui." }}</p>
+  <ul v-else-if="isPhone" class="vs">
+    <li v-for="(row, i) in rows" :key="String(row.id ?? i)">
+      <template v-for="c in shown" :key="c.key">
+        <strong v-if="c.title" class="vs__title"><CellValue :column="c" :value="row[c.key]" /></strong>
+      </template>
+      <dl>
+        <template v-for="c in shown" :key="c.key">
+          <div v-if="!c.title && filled(row[c.key])"><dt>{{ c.label }}</dt><dd><CellValue :column="c" :value="row[c.key]" /></dd></div>
+        </template>
+      </dl>
+    </li>
+    <li v-if="totals" class="vs__total">
+      <dl>
+        <template v-for="c in shown" :key="c.key">
+          <div v-if="c.key in totals"><dt>Total · {{ c.label }}</dt><dd><CellValue :column="c" :value="totals[c.key]" /></dd></div>
+        </template>
+      </dl>
+    </li>
+  </ul>
   <div v-else class="vt-wrap">
     <table class="vt">
       <thead><tr><th v-for="c in shown" :key="c.key" :class="{ r: numeric(c) }">{{ c.label }}</th></tr></thead>
@@ -56,5 +78,14 @@ const totals = computed(() => {
 .vt .r { text-align: right; white-space: nowrap; }
 .vt .t { font-weight: 600; color: var(--text-strong); }
 .vt tfoot td { border-top: 1px solid var(--border); border-bottom: 0; font-weight: 700; color: var(--text-strong); background: var(--surface-sunken, var(--surface-hover)); }
+.vs { list-style: none; margin: 0; padding: 0; }
+.vs li { padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); }
+.vs li:last-child { border-bottom: 0; }
+.vs__title { display: block; margin-bottom: 4px; font-size: 14px; color: var(--text-strong); }
+.vs dl { margin: 0; display: flex; flex-direction: column; gap: 2px; }
+.vs dl div { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.vs dt { color: var(--text-muted); }
+.vs dd { margin: 0; text-align: right; min-width: 0; overflow-wrap: anywhere; }
+.vs__total { background: var(--surface-sunken, var(--surface-hover)); font-weight: 700; }
 .vt-empty { margin: 0; padding: 20px 16px; color: var(--text-muted); font-size: 13px; }
 </style>

@@ -21,7 +21,7 @@ const max = computed(() => Math.max(1, ...props.points.map((p) => p.value)));
 </template>
 
 <style scoped>
-.chart { height: 220px; display: flex; align-items: stretch; gap: 6px; padding-top: 28px; }
+.chart { overflow-x: clip; height: 220px; display: flex; align-items: stretch; gap: 6px; padding-top: 28px; }
 .chart.dense { gap: 3px; }
 .chart__empty { margin: auto; }
 .chart__col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }

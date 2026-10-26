@@ -13,6 +13,7 @@ import PageHeader from "@/components/common/PageHeader.vue";
 import SectionCard from "@/components/common/SectionCard.vue";
 import FormField from "@/components/resource/FormField.vue";
 import { useNotify } from "@/composables/useNotify";
+import { useSession } from "@/stores/session";
 import { choices, type FieldDef } from "@/resources/types";
 
 type Settings = {
@@ -32,6 +33,41 @@ const original = ref("");
 const errors = ref<Record<string, string>>({});
 const saving = ref(false);
 
+/* Logo: o servidor recorta o centro e deixa em 1080×1080 (quadrado, PNG). */
+const session = useSession();
+const logoInput = ref<HTMLInputElement>();
+const logoBusy = ref(false);
+const logoUrl = computed(() => (query.data.value?.account.logo_url as string | null) ?? null);
+async function sendLogo(event: Event) {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+  const form = new FormData();
+  form.append("file", file);
+  logoBusy.value = true;
+  try {
+    await http.post("/account/logo/", form);
+    await Promise.all([query.refetch(), session.load()]);
+    notify.success("Logo atualizado", "Já aparece nas impressões.");
+  } catch (error) {
+    notify.error(error, "Logo não enviado");
+  } finally {
+    logoBusy.value = false;
+    if (logoInput.value) logoInput.value.value = "";
+  }
+}
+async function removeLogo() {
+  logoBusy.value = true;
+  try {
+    await http.delete("/account/logo/");
+    await Promise.all([query.refetch(), session.load()]);
+    notify.success("Logo removido", "As impressões voltam a usar o logo do Starrp.");
+  } catch (error) {
+    notify.error(error, "Logo não removido");
+  } finally {
+    logoBusy.value = false;
+  }
+}
+
 watch(() => query.data.value, (data) => {
   if (!data) return;
   values.value = { account: { ...data.account }, pdv: { ...data.pdv }, stock: { ...data.stock } };
@@ -42,7 +78,7 @@ const dirty = computed(() => original.value !== "" && JSON.stringify(values.valu
 const picking = choices({ fefo: "FEFO (vence primeiro, sai primeiro)", fifo: "FIFO (entrou primeiro, sai primeiro)" });
 const SECTIONS: { key: Section; title: string; icon: string; description: string; fields: FieldDef[] }[] = [
   { key: "account", title: "Empresa", icon: "pi pi-building",
-    description: "Dados da empresa titular da conta (cada loja tem os seus em Lojas).", fields: [
+    description: "Dados da empresa titular da conta (cada filial tem os seus em Filiais).", fields: [
       { name: "name", label: "Nome da empresa", type: "text", required: true, span: 3 },
       { name: "document", label: "CNPJ / CPF", type: "document", span: 3 },
       { name: "email", label: "E-mail", type: "email", span: 3 },
@@ -53,7 +89,7 @@ const SECTIONS: { key: Section; title: string; icon: string; description: string
         { label: "Fernando de Noronha", value: "America/Noronha" }] },
     ] },
   { key: "pdv", title: "PDV e caixa", icon: "pi pi-shopping-cart",
-    description: "Vale para TODAS as lojas ao salvar. Uma loja diferente das outras se ajusta em Lojas.", fields: [
+    description: "Vale para TODAS as filiais ao salvar. Uma filial diferente das outras se ajusta em Filiais.", fields: [
       { name: "require_open_cash_session", label: "Exige caixa aberto para vender", type: "boolean", span: 3 },
       { name: "cash_closing_tolerance", label: "Tolerância no fechamento (R$)", type: "money", span: 3,
         hint: "Diferença até este valor fecha direto; acima, vai para o gerente aprovar." },
@@ -79,7 +115,7 @@ async function save() {
   try {
     const { data } = await http.patch<Settings>("/account/settings/", values.value);
     client.setQueryData(["account-settings"], data);
-    notify.success("Configurações salvas", "O PDV das lojas pega as novas regras na próxima abertura.");
+    notify.success("Configurações salvas", "O PDV das filiais pega as novas regras na próxima abertura.");
   } catch (error) {
     const details = (error as { response?: { data?: { error?: { message?: Record<string, Record<string, string[]>> } } } })
       .response?.data?.error?.message;
@@ -119,6 +155,23 @@ const MODULES: Record<string, string> = {
     <template v-else-if="query.data.value">
       <SectionCard v-for="section in SECTIONS" :key="section.key" :title="section.title" :icon="section.icon"
                    :description="section.description">
+        <div v-if="section.key === 'account'" class="logo">
+          <span class="logo__box" :class="{ 'logo__box--empty': !logoUrl }">
+            <img :src="logoUrl ?? '/logo.svg'" alt="Logo da empresa" />
+          </span>
+          <div class="logo__text">
+            <strong>Logo da empresa</strong>
+            <small>{{ logoUrl ? "Vai no canto superior direito das impressões." : "Sem logo: as impressões usam o do Starrp." }}
+              Envie uma imagem quadrada; ajustamos para 1080×1080.</small>
+            <span class="logo__actions">
+              <Button :label="logoUrl ? 'Trocar logo' : 'Enviar logo'" icon="pi pi-upload" size="small" severity="secondary"
+                      outlined :loading="logoBusy" @click="logoInput?.click()" />
+              <Button v-if="logoUrl" label="Remover" icon="pi pi-trash" size="small" severity="danger" text :disabled="logoBusy"
+                      @click="removeLogo" />
+            </span>
+            <input ref="logoInput" type="file" accept="image/png,image/jpeg,image/webp" hidden @change="sendLogo" />
+          </div>
+        </div>
         <div class="grid-form">
           <FormField v-for="field in section.fields" :key="field.name" v-model="values[section.key][field.name]" :field="field"
                      :context="values[section.key]" :error="errors[`${section.key}.${field.name}`]" />
@@ -128,7 +181,7 @@ const MODULES: Record<string, string> = {
         <dl class="plan">
           <div><dt>Plano</dt><dd>{{ query.data.value.plan.name }}</dd></div>
           <div><dt>Situação</dt><dd>{{ query.data.value.plan.status }}</dd></div>
-          <div><dt>Lojas</dt><dd>{{ query.data.value.plan.stores }}</dd></div>
+          <div><dt>Filiais</dt><dd>{{ query.data.value.plan.stores }}</dd></div>
           <div class="wide"><dt>Módulos</dt>
             <dd class="chips"><span v-for="m in query.data.value.plan.modules" :key="m" class="chip">{{ MODULES[m] ?? m }}</span></dd></div>
         </dl>
@@ -146,6 +199,16 @@ const MODULES: Record<string, string> = {
 <style scoped>
 .page { display: flex; flex-direction: column; gap: 16px; padding-bottom: 80px; }
 .muted { color: var(--text-muted); display: flex; gap: 8px; align-items: center; }
+.logo { display: flex; gap: 16px; align-items: center; margin-bottom: 18px; padding-bottom: 18px; border-bottom: 1px solid var(--border-subtle); }
+.logo__box { width: 96px; height: 96px; border-radius: 14px; overflow: hidden; flex-shrink: 0; display: grid; place-items: center;
+             border: 1px solid var(--border); background: #fff; }
+.logo__box img { width: 100%; height: 100%; object-fit: contain; }
+.logo__box--empty { opacity: 0.7; border-style: dashed; }
+.logo__box--empty img { width: 70%; height: 70%; }
+.logo__text { display: flex; flex-direction: column; gap: 6px; }
+.logo__text strong { color: var(--text-strong); font-size: 14px; }
+.logo__text small { color: var(--text-muted); font-size: 12.5px; max-width: 520px; }
+.logo__actions { display: flex; gap: 6px; }
 .plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; margin: 0; }
 .plan .wide { grid-column: 1 / -1; }
 .plan dt { font-size: 12px; font-weight: 600; color: var(--text-muted); }

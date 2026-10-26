@@ -66,7 +66,7 @@ class TenantMiddleware:
         request.profile = profile
         allowed = profile.allowed_store_ids() if profile is not None else None
         if allowed is not None and not allowed:
-            return _deny(403, "Seu usuário não tem acesso a nenhuma loja. Peça ao administrador.", "no_store_access")
+            return _deny(403, "Seu usuário não tem acesso a nenhuma filial. Peça ao administrador.", "no_store_access")
         request.allowed_store_ids = allowed
         set_current_account(account, allowed)
         return self._resolve_store(request, profile, allowed)
@@ -103,7 +103,7 @@ class TenantMiddleware:
             except (ValueError, ValidationError):
                 request.store = None
             if request.store is None:
-                return _deny(403, "Você não tem acesso à loja informada em X-Store-ID.", "store_forbidden")
+                return _deny(403, "Você não tem acesso à filial informada em X-Store-ID.", "store_forbidden")
         elif profile is not None and profile.default_store_id and Store.objects.filter(
             pk=profile.default_store_id
         ).exists():

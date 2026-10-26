@@ -18,7 +18,7 @@ from starrp.core.permissions import has_permission_code
 from starrp.models import CashRegister, PaymentMethod, Printer, Scale, Terminal
 from starrp.serializers import company, operations
 from starrp.serializers import misc as s
-from starrp.services.cash import sees_drawer, session_for_user
+from starrp.services.cash import active_session_for_user, sees_drawer
 from starrp.services.store_access import sellers_of
 
 
@@ -26,7 +26,7 @@ class PdvBootstrapView(APIView):
     def post(self, request):
         store = request.store
         if store is None:
-            raise BusinessError("Informe a loja do PDV no header X-Store-ID.", code="store_required")
+            raise BusinessError("Informe a filial do PDV no header X-Store-ID.", code="store_required")
         installation_id = (request.data.get("installation_id") or "").strip()
         if not installation_id:
             raise BusinessError("installation_id é obrigatório.")
@@ -38,18 +38,23 @@ class PdvBootstrapView(APIView):
         if not terminal.is_active:
             raise BusinessError("Este terminal foi revogado.", code="terminal_revoked")
         if terminal.store_id != store.pk:
-            raise BusinessError("Este terminal pertence a outra loja.", code="terminal_other_store")
+            raise BusinessError("Este terminal pertence a outra filial.", code="terminal_other_store")
         terminal.last_seen_at = timezone.now()
         terminal.app_version = request.data.get("app_version", terminal.app_version)
         terminal.save(update_fields=["last_seen_at", "app_version", "updated_at"])
 
-        session = session_for_user(store, request.user)
+        session = active_session_for_user(store, request.user)  # aberto ou abertura esperando o gerente
         sellers = sellers_of(store)
-        # Vendedor monta e guarda pedidos; caixa (quem tem `cash.manage`) cobra, abre e fecha o turno.
-        mode = "cashier" if has_permission_code(request.user, "cash.manage") else "seller"
         registers = CashRegister.objects.filter(store=store, is_active=True).prefetch_related("operators")
         if not sees_drawer(request.user):
             registers = registers.filter(operators=request.user)
+        # Vendedor monta e guarda pedidos; caixa cobra, abre e fecha o turno. Modo caixa = tem
+        # `cash.manage` E um caixa desta loja vinculado a ele (ou um turno dele ainda aberto).
+        # Com acesso mas sem caixa vinculado: entra só para criar pedidos, sem nada do caixa.
+        cashier = has_permission_code(request.user, "cash.manage") and (session is not None or registers.exists())
+        mode = "cashier" if cashier else "seller"
+        if not cashier:
+            registers, session = CashRegister.objects.none(), None
         ctx = {"request": request}
         return Response({
             "mode": mode,

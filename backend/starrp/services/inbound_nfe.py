@@ -6,10 +6,16 @@ Casamento automático, nesta ordem:
   3. o EAN tributável (`cEANTrib`, a unidade) → fator = qTrib / qCom
      (a nota vende "1 CX" e tributa "12 UN": entram 12 no estoque).
 O que o operador confirma vira `SupplierProduct` e casa sozinho na próxima nota.
+
+Voltar passos: desvincular / voltar a usar um item, descartar a conferência
+(rascunho da entrada) e desfazer o recebimento (estorna o estoque e cancela as
+contas a pagar). Mexer num vínculo com a conferência aberta descarta o rascunho
+(ele não moveu estoque) e a entrada nasce de novo com os itens certos.
 """
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from starrp.core.errors import BusinessError, StateConflict
 from starrp.core.text import only_digits
@@ -47,7 +53,7 @@ def import_xml(store, content, user, *, config=None, nsu=""):
         raise BusinessError("Chave de acesso inválida no XML.", code="nfe_invalid")
     config = config or store.fiscal_config
     if not _recipient_ok(store, config, data.recipient_document):
-        raise BusinessError(f"Esta nota é para o CNPJ {data.recipient_document}, não para a loja {store.name}.",
+        raise BusinessError(f"Esta nota é para o CNPJ {data.recipient_document}, não para a filial {store.name}.",
                             code="nfe_other_recipient")
     existing = InboundNFe.all_objects.select_for_update().filter(
         account_id=store.account_id, access_key=data.access_key, deleted_at__isnull=True).first()
@@ -127,14 +133,25 @@ def auto_match(nfe):
     return matched
 
 
+def _received(nfe):
+    return nfe.receiving in (InboundNFe.Receiving.RECEIVED, InboundNFe.Receiving.DIVERGENT)
+
+
+def _editable(nfe, user):
+    """Vínculos só mudam antes do recebimento; a conferência aberta é descartada."""
+    if _received(nfe):
+        raise StateConflict("Nota já recebida: desfaça o recebimento para mexer nos itens.",
+                            code="nfe_already_received")
+    discard_entry(nfe, user, quiet=True)
+
+
 @transaction.atomic
 def map_item(item, variant, factor, user):
     """O operador confirma o vínculo: grava no item e APRENDE para a próxima nota."""
-    if item.nfe.receiving in (InboundNFe.Receiving.RECEIVED, InboundNFe.Receiving.DIVERGENT):
-        raise StateConflict("Nota já recebida: o vínculo não pode mais mudar.")
     factor = Decimal(factor)
     if factor <= 0:
         raise BusinessError("O fator de conversão precisa ser maior que zero.")
+    _editable(item.nfe, user)
     item.variant, item.conversion_factor, item.ignored = variant, factor, False
     item.save(update_fields=["variant", "conversion_factor", "ignored", "updated_at"])
     supplier = item.nfe.supplier
@@ -171,9 +188,75 @@ def _entry_when_ready(nfe, user):
     auto_entry(nfe, user)
 
 
+@transaction.atomic
 def ignore_item(item, reason, user=None):
+    _editable(item.nfe, user)
     item.ignored, item.ignored_reason, item.variant = True, reason[:255], None
     item.save(update_fields=["ignored", "ignored_reason", "variant", "updated_at"])
     _entry_when_ready(item.nfe, user)
     return item
+
+
+@transaction.atomic
+def unignore_item(item, user=None):
+    """Item ignorado volta a entrar no estoque (e tenta casar sozinho de novo)."""
+    _editable(item.nfe, user)
+    item.ignored, item.ignored_reason = False, ""
+    item.variant, item.conversion_factor = match_item(item, item.nfe.supplier)
+    item.save(update_fields=["ignored", "ignored_reason", "variant", "conversion_factor", "updated_at"])
+    _entry_when_ready(item.nfe, user)
+    return item
+
+
+@transaction.atomic
+def unmap_item(item, user=None, *, forget=True):
+    """Desfaz o vínculo do item. `forget`: o vínculo aprendido com o fornecedor também
+    sai, para a próxima nota não casar errado de novo."""
+    _editable(item.nfe, user)
+    supplier = item.nfe.supplier
+    if forget and supplier and item.supplier_code and item.variant_id:
+        SupplierProduct.all_objects.filter(supplier=supplier, supplier_code=item.supplier_code,
+                                           variant_id=item.variant_id, deleted_at__isnull=True).update(
+            confirmed=False, updated_at=timezone.now())
+    item.variant, item.conversion_factor = None, Decimal("1")
+    item.save(update_fields=["variant", "conversion_factor", "updated_at"])
+    return item
+
+
+@transaction.atomic
+def discard_entry(nfe, user, *, quiet=False):
+    """Volta da conferência para os vínculos: cancela a entrada em RASCUNHO (não moveu estoque)."""
+    from starrp.models import StockDocument
+    from starrp.services import stock_documents
+    from starrp.services.nfe_receiving import open_entry
+
+    doc = open_entry(nfe)
+    if doc is None or doc.status != StockDocument.Status.DRAFT:
+        if quiet:
+            return None
+        raise StateConflict("Esta nota não tem conferência em andamento.", code="nfe_no_draft")
+    return stock_documents.cancel(doc, user, "Conferência descartada: vínculos da nota em revisão")
+
+
+@transaction.atomic
+def undo_receipt(nfe, user, reason):
+    """Desfaz o recebimento: cancela a entrada aprovada (cada movimento ganha um estorno)
+    e as contas a pagar da nota. A nota volta para "gerar entrada"."""
+    from starrp.models import StockDocument
+    from starrp.services import stock_documents
+    from starrp.services.nfe_receiving import open_entry
+
+    if len(reason.strip()) < 5:
+        raise BusinessError("Explique por que o recebimento está sendo desfeito.", code="reason_required")
+    doc = open_entry(nfe)
+    if doc is None or doc.status != StockDocument.Status.POSTED:
+        raise StateConflict("Esta nota não foi recebida.", code="nfe_not_received")
+    return stock_documents.cancel(doc, user, f"Recebimento da NF-e {nfe.number} desfeito: {reason.strip()}")
+
+
+def restore(nfe):
+    """Nota ignorada volta para o fluxo."""
+    nfe.ignored_at, nfe.ignored_by, nfe.ignored_reason = None, None, ""
+    nfe.save(update_fields=["ignored_at", "ignored_by", "ignored_reason", "updated_at"])
+    return nfe
 

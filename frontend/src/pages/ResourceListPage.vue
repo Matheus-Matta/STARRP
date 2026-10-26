@@ -11,6 +11,9 @@
  *
  * Toda coluna ordena (1º clique A→Z, 2º Z→A, 3º volta ao padrão). A coluna de
  * checkbox marca itens para as ações em massa (ver `useBulkSelection`).
+ *
+ * No celular a tabela vira cartões (`MobileCards`), os filtros ficam atrás do botão
+ * "Filtros" e a paginação mostra só anterior / próxima.
  */
 import Button from "primevue/button";
 import Checkbox from "primevue/checkbox";
@@ -37,12 +40,14 @@ import { dateTime } from "@/utils/format";
 import { openPrint } from "@/utils/print";
 import EmptyState from "@/components/common/EmptyState.vue";
 import BulkBar from "@/components/list/BulkBar.vue";
+import MobileCards from "@/components/list/MobileCards.vue";
 import CellValue from "@/components/resource/CellValue.vue";
 import FormActions from "@/components/resource/FormActions.vue";
 import RelationSelect from "@/components/resource/RelationSelect.vue";
 import { useBulkSelection } from "@/composables/useBulkSelection";
 import { usePrefetch } from "@/composables/usePrefetch";
 import { useResourceList } from "@/composables/useResourceList";
+import { useViewport } from "@/composables/useViewport";
 import { findResource } from "@/resources";
 import { type ColumnDef, newLabel, type ResourceDef } from "@/resources/types";
 import { useSession } from "@/stores/session";
@@ -51,6 +56,8 @@ const route = useRoute();
 const router = useRouter();
 const session = useSession();
 const prefetch = usePrefetch();
+const { isPhone } = useViewport();
+const filtersOpen = ref(false);
 const resource = computed(() => findResource(String(route.params.resource)) as ResourceDef);
 const { state, rows, total, loading, pending, refetch, setFilter } = useResourceList(resource);
 /** Rascunhos deste cadastro (alterações guardadas para terminar depois). */
@@ -103,6 +110,11 @@ function setRange(name: string, value: (Date | null)[] | Date | null | undefined
                     [`${name}__lte`]: to?.toLocaleDateString("sv-SE") ?? null };
   state.page = 1;
 }
+/** Filtros da barra com valor (o botão "Filtros" do celular mostra quantos). */
+const activeFilters = computed(() => [...declared.value].filter((key) => {
+  const value = state.filters[key];
+  return value !== null && value !== undefined && value !== "";
+}).length);
 const hasFilters = computed(() => Boolean(state.search) || Object.values(state.filters).some((v) => v !== null && v !== undefined && v !== ""));
 const searchBox = ref<{ $el: HTMLElement }>();
 const selection = useBulkSelection(rows as Ref<{ id: string }[]>, total);
@@ -163,6 +175,7 @@ const titleKey = computed(() => {
   return (columns.find((c) => c.title) ?? columns.find((c) => c.key === "name") ?? columns[0])?.key;
 });
 const bodyClass = (column: ColumnDef) => [numeric(column.type) ? "right" : "", column.key === titleKey.value ? "cell-title" : ""].join(" ");
+const headerClass = (column: ColumnDef) => (numeric(column.type) ? "right" : column.key === titleKey.value ? "cell-title" : "");
 const open = (id?: string) => router.push(`/cadastros/${resource.value.name}/${id ?? "novo"}`);
 /** Menu "⋯" da linha: abrir, as consultas do cadastro, ações extras e excluir. */
 const notify = useNotify();
@@ -359,7 +372,10 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
           <InputIcon class="pi pi-search" />
           <InputText v-model="searchText" placeholder="Buscar…  ( / )" size="small" fluid />
         </IconField>
-        <template v-for="filter in resource.filters ?? []" :key="filter.name">
+        <Button v-if="isPhone && resource.filters?.length" :label="activeFilters ? `Filtros (${activeFilters})` : 'Filtros'"
+                icon="pi pi-sliders-h" size="small" :severity="activeFilters ? undefined : 'secondary'" outlined
+                class="filters-toggle" :aria-expanded="filtersOpen" @click="filtersOpen = !filtersOpen" />
+        <template v-for="filter in !isPhone || filtersOpen ? resource.filters ?? [] : []" :key="filter.name">
           <DatePicker v-if="filter.type === 'daterange'" :model-value="rangeOf(filter.name)" selection-mode="range"
                       :manual-input="false" date-format="dd/mm/yy" :placeholder="filter.label" show-icon show-button-bar
                       size="small" class="filter filter--date" @update:model-value="setRange(filter.name, $event)" />
@@ -383,7 +399,23 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
         </div>
       </div>
 
-      <div v-if="pending" class="body">
+      <div v-if="pending && isPhone" class="body">
+        <div v-for="n in 6" :key="n" class="ghost-card">
+          <Skeleton width="60%" height="1rem" /><Skeleton width="35%" height="0.8rem" />
+          <div class="ghost-card__grid"><Skeleton height="0.8rem" /><Skeleton height="0.8rem" /></div>
+        </div>
+      </div>
+      <div v-else-if="isPhone" :class="['body', { refreshing: loading }]">
+        <MobileCards v-if="rows.length" :rows="rows" :columns="resource.columns" :title-key="titleKey"
+                     :selected="(id) => selection.isSelected(id)" :selecting="selection.count.value > 0"
+                     @open="openRow" @toggle="selection.toggle" @menu="toggleRowMenu" @warm="warm" />
+        <EmptyState v-else :title="hasFilters ? 'Nada encontrado com esses filtros' : `Nenhum ${resource.singular} ainda`"
+                    :description="hasFilters ? 'Tente outra busca ou limpe os filtros.' : 'Os registros aparecem aqui assim que forem criados.'"
+                    :icon="hasFilters ? 'pi pi-search' : resource.icon">
+          <Button v-if="!hasFilters && canCreate" :label="newLabel(resource)" icon="pi pi-plus" size="small" @click="open()" />
+        </EmptyState>
+      </div>
+      <div v-else-if="pending" class="body">
       <table class="ghost" aria-busy="true" aria-label="Carregando">
         <thead><tr><th class="check" /><th v-for="column in resource.columns" :key="column.key">{{ column.label }}</th></tr></thead>
         <tbody>
@@ -424,7 +456,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
         </Column>
         <Column v-for="column in resource.columns" :key="column.key" :field="column.key" :header="column.label"
                 :expander="column.key === titleKey" :sortable="column.sortable !== false" :sort-field="column.key"
-                :header-class="numeric(column.type) ? 'right' : ''" :body-class="bodyClass(column)"
+                :header-class="headerClass(column)" :body-class="bodyClass(column)"
                 :style="{ minWidth: column.width ?? (column.key === titleKey ? '240px' : minWidth(column.type)) }">
           <template #body="{ node }">
             <span :class="{ 'tree-child': kindOf(node.data) === 'child' }">
@@ -483,7 +515,10 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
       <Menu ref="rowMenu" :model="rowMenuItems" popup />
 
       <div class="pager">
-        <Paginator v-model:first="first" v-model:rows="state.pageSize" :total-records="total"
+        <Paginator v-if="isPhone" v-model:first="first" v-model:rows="state.pageSize" :total-records="total"
+                   template="FirstPageLink PrevPageLink CurrentPageReport NextPageLink LastPageLink"
+                   current-page-report-template="{first}–{last} de {totalRecords}" @page="onPage" />
+        <Paginator v-else v-model:first="first" v-model:rows="state.pageSize" :total-records="total"
                    :rows-per-page-options="[10, 20, 30]" @page="onPage" />
         <span v-if="total" class="pager__info">{{ first + 1 }}–{{ Math.min(first + state.pageSize, total) }} de {{ total }}</span>
       </div>
@@ -525,6 +560,8 @@ h1 { font: 700 19px/1.2 var(--font-sans); letter-spacing: -0.01em; }
 .tree :deep(.p-treetable-column-sorted) { color: var(--text-brand); background: var(--brand-subtle); }
 .tree :deep(.p-treetable-sort-icon) { width: 11px; height: 11px; margin-left: 6px; color: var(--text-subtle); }
 .tree :deep(.p-treetable-node-toggle-button) { width: 1.6rem; height: 1.6rem; margin-right: 0.35rem; }
+/* O título da coluna principal recua o espaço da seta de expandir (+ o gap do PrimeVue), para alinhar com o texto das linhas. */
+.tree :deep(th.cell-title .p-treetable-column-header-content) { padding-left: calc(1.6rem + 0.35rem + 0.5rem); }
 .tree :deep(.p-treetable-body-cell-content) { display: flex; align-items: center; }
 .tree-child :deep(.cell) { color: var(--text-body); font-weight: 500; }
 .tree-loading { font-size: 12px; margin-right: 6px; color: var(--text-muted); }
@@ -572,10 +609,27 @@ h1 { font: 700 19px/1.2 var(--font-sans); letter-spacing: -0.01em; }
 }
 .row-menu:hover { background: var(--surface-active); color: var(--text-strong); border-color: var(--border); }
 :deep(.p-datatable-tbody > tr:hover) .row-menu { color: var(--text-strong); }
+.ghost-card { display: flex; flex-direction: column; gap: 8px; margin: 8px; padding: 14px 12px; border: 1px solid var(--border);
+              border-radius: 12px; }
+.ghost-card__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
 @media (max-width: 760px) {
   .search { max-width: none; flex-basis: 100%; }
   .filter { flex: 1 1 140px; min-width: 0; }
   .pager__info { display: none; }
   .page--list { height: calc(100dvh - var(--topbar-h)); }
+}
+@media (max-width: 640px) {
+  /* Celular: a lista encosta nas bordas e o cabeçalho fica compacto. */
+  .page--list { gap: 10px; }
+  .head { align-items: center; }
+  .head h1 { font-size: 18px; }
+  .table-card { border-radius: 12px; }
+  .toolbar { padding: 8px; gap: 6px; }
+  .search { flex: 1 1 0; min-width: 0; }
+  .filter, .filter--date { flex: 1 1 100%; width: 100%; }
+  .toolbar__end { margin-left: 0; }
+  .body { background: var(--surface-sunken); }
+  .pager :deep(.p-paginator) { padding: 4px; }
+  .pager :deep(.p-paginator-current) { font-size: 12.5px; }
 }
 </style>

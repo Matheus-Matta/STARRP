@@ -11,7 +11,8 @@ from django.utils import timezone
 
 from starrp.core.errors import BusinessError, StateConflict
 from starrp.models import (
-    Commission, CouponRedemption, CustomerCredit, Payment, PaymentMethod, Sale, SaleItem, StockMovement,
+    Commission, CouponRedemption, CustomerCredit, Payment, PaymentMethod, Sale, SaleChannel, SaleItem,
+    StockMovement,
 )
 from starrp.services import cash, coupons, finance, ledger, stock
 from starrp.services.approvals import authorize
@@ -21,9 +22,13 @@ Kind = PaymentMethod.Kind
 
 
 def _session_for(sale, user, method):
+    """Turno que recebe o pagamento. Com "exige caixa aberto", venda do PDV só é cobrada num
+    turno ABERTO do operador (qualquer forma); fora do PDV, só o dinheiro exige o turno."""
     session = sale.cash_session or cash.session_for_user(sale.store, user)
-    if session is None and method.kind == Kind.CASH and sale.store.require_open_cash_session:
-        raise StateConflict("Abra o caixa antes de receber em dinheiro.", code="cash_session_required")
+    at_counter = sale.channel in (SaleChannel.POS, SaleChannel.MOBILE)
+    if session is None and sale.store.require_open_cash_session and (at_counter or method.kind == Kind.CASH):
+        raise StateConflict("Abra o caixa antes de receber (o turno também pode estar esperando o gerente conferir "
+                            "a abertura).", code="cash_session_required")
     return session
 
 

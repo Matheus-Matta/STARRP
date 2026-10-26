@@ -1,4 +1,4 @@
-from starrp.views import commissions, operations, sale_items, sales
+from starrp.views import commissions, operations, reviews, sale_items, sales
 
 
 def register(router):
@@ -7,3 +7,4 @@ def register(router):
     router.register("returns", operations.SaleReturnViewSet, basename="returns")
     router.register("customer-credits", operations.CustomerCreditViewSet, basename="customer-credits")
     router.register("commissions", commissions.CommissionViewSet, basename="commissions")
+    router.register("reviews", reviews.ReviewViewSet, basename="reviews")

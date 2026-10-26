@@ -3,9 +3,12 @@
  * pelo `group` deles; telas especiais (painel, PDV) são declaradas aqui.
  * Item sem permissão ou de módulo fora do plano nem aparece.
  */
+import { visibleGroups } from "@/reports/catalog";
 import { resources } from "@/resources";
 
-export type NavItem = { label: string; icon: string; to: string; permission?: string; module?: string };
+/** `children`: o item abre um submenu em grupos (o livro de relatórios). */
+export type NavItem = { label: string; icon: string; to: string; permission?: string; module?: string;
+                        children?: { label: string; icon: string; items: NavItem[] }[] };
 export type NavGroup = { label: string; items: NavItem[] };
 
 /** Pelo processo: vender → o que se vende → comprar → guardar → entregar → receber/pagar → fiscal → ajustes. */
@@ -41,6 +44,15 @@ export function buildNavigation(can: (code?: string) => boolean, hasModule: (m?:
                      module: r.module }));
     groups.push({ label: name, items: [...(PANELS[name] ? [PANELS[name]] : []), ...items,
                                        ...(FOOTERS[name] ? [FOOTERS[name]] : [])] });
+  }
+  // Relatórios: um item só em Operação, que abre o livro em grupos (Movimento, Mercadorias, Contábil...).
+  const book = visibleGroups(can, hasModule);
+  if (book.length) {
+    groups[0]!.items.splice(1, 0, {
+      label: "Relatórios", icon: "pi pi-chart-pie", to: "/relatorios",
+      children: book.map((g) => ({ label: g.label, icon: g.icon, items: g.reports.map((r) => ({
+        label: r.title, icon: r.icon, to: `/relatorios/${r.slug}` })) })),
+    });
   }
   return groups
     .map((g) => ({ ...g, items: g.items.filter((i) => can(i.permission) && hasModule(i.module)) }))

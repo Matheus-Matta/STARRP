@@ -39,6 +39,29 @@ def _shrink(data, picture):
     return out.getvalue(), picture.size
 
 
+LOGO_SIDE = 1080
+
+
+def square_logo(upload):
+    """Logo no formato padrão: quadrado de 1080×1080 (recorta o centro e ajusta o tamanho),
+    em PNG para manter o fundo transparente. Ex.: 1600×900 → recorta 900×900 do meio → 1080×1080."""
+    data = upload.read()
+    if len(data) > MAX_BYTES:
+        raise BusinessError("Imagem grande demais: o limite é 8 MB.", code="image_too_large")
+    try:
+        picture = Pillow.open(BytesIO(data))
+        picture.load()
+    except (UnidentifiedImageError, OSError, SyntaxError):
+        raise BusinessError("O arquivo não é uma imagem (use JPG, PNG ou WEBP).", code="image_invalid") from None
+    picture = picture.convert("RGBA")
+    side = min(picture.size)
+    left, top = (picture.width - side) // 2, (picture.height - side) // 2
+    picture = picture.crop((left, top, left + side, top + side)).resize((LOGO_SIDE, LOGO_SIDE), Pillow.LANCZOS)
+    out = BytesIO()
+    picture.save(out, format="PNG", optimize=True)
+    return ContentFile(out.getvalue(), name="logo.png")
+
+
 @transaction.atomic
 def store_upload(account, user, upload, alt=""):
     data = upload.read()

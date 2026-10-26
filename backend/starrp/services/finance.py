@@ -125,9 +125,15 @@ def settle(installment, financial_account, amount, user, *, interest=0, fine=0, 
 
 
 @transaction.atomic
-def cancel_titles_of_sale(sale):
-    for title in FinancialTitle.all_objects.filter(sale=sale, deleted_at__isnull=True):
+def cancel_titles(titles, paid_message):
+    """Cancela as parcelas dos títulos; com algo já pago/recebido, recusa (estorne no financeiro antes)."""
+    for title in titles.filter(deleted_at__isnull=True).exclude(status=TitleStatus.CANCELLED):
         if title.installments.filter(paid_amount__gt=0).exists():
-            raise StateConflict("A venda tem parcelas já recebidas; estorne-as no financeiro antes.")
+            raise StateConflict(paid_message, code="title_paid")
         title.installments.update(status=TitleStatus.CANCELLED)
         _refresh_title(title)
+
+
+def cancel_titles_of_sale(sale):
+    cancel_titles(FinancialTitle.all_objects.filter(sale=sale),
+                  "A venda tem parcelas já recebidas; estorne-as no financeiro antes.")

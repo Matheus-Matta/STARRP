@@ -59,6 +59,9 @@ const store = useQuery({
   enabled: computed(() => Boolean(storeId.value)),
   staleTime: 10 * 60_000,
 });
+/** Logo da empresa (Configurações da conta); sem ele, o do Starrp. */
+const logo = computed(() => session.me?.account?.logo_url || "/logo.svg");
+
 const company = computed(() => {
   const s = (store.data.value ?? {}) as Record<string, string>;
   const cnpj = onlyDigits(s.cnpj ?? "");
@@ -128,6 +131,7 @@ function back() {
           <h1>{{ title }}</h1>
           <p v-if="subtitle">{{ subtitle }}</p>
         </div>
+        <img :src="logo" alt="" class="doc-logo" />
       </header>
 
       <main class="doc-body">
@@ -172,6 +176,11 @@ function back() {
 .doc-head .doc-title { text-align: right; }
 .doc-head h1 { margin: 0; font-size: 15pt; letter-spacing: -0.01em; color: #111; }
 .doc-head p { margin: 2px 0 0; font-size: 9pt; color: #444; }
+.doc-head { align-items: flex-start; }
+.doc-head .doc-title { margin-left: auto; }
+.doc-logo { width: 22mm; height: 22mm; object-fit: contain; flex-shrink: 0; }
+.doc-head--thermal .doc-logo { order: -1; width: 16mm; height: 16mm; }
+.doc-head--thermal .doc-title { margin-left: 0; }
 .doc-head--thermal { flex-direction: column; align-items: center; text-align: center; gap: 4px; border-bottom: 1px dashed #111; }
 .doc-head--thermal .company { align-items: center; }
 .doc-head--thermal .company strong { font-size: 10.5pt; }
@@ -190,7 +199,7 @@ function back() {
 .doc-kpis small { display: block; font-size: 7.5pt; color: #555; text-transform: uppercase; }
 .doc-kpis b { font-size: 12pt; }
 .doc-note { font-size: 8.5pt; color: #444; }
-.doc-signatures { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 24px; margin-top: 28px; }
+.doc-signatures { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 24px; margin-top: 28px; }
 .doc-signatures div { border-top: 1px solid #111; padding-top: 4px; text-align: center; font-size: 8.5pt; }
 .doc-total-box { margin-left: auto; min-width: 230px; border: 1.5px solid #111; border-radius: 4px; }
 .doc-total-box div { display: flex; justify-content: space-between; padding: 4px 8px; border-bottom: 1px solid #ddd; }

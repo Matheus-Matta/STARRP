@@ -55,7 +55,7 @@ const picking = useQuery({ queryKey: ["picking", props.ctx.id], queryFn: () => s
 .list th { text-align: left; padding: 8px; font: 650 11.5px/1.3 var(--font-sans); text-transform: uppercase; letter-spacing: 0.04em;
            color: var(--text-muted); background: var(--surface-sunken); }
 .list td { padding: 8px; border-top: 1px solid var(--border-subtle); }
-.right { text-align: right; }
+.right, .list .right { text-align: right; }
 .bin { font: 700 14px/1 var(--font-mono); color: var(--text-strong); }
 .shortage { margin-top: 0.75rem; padding: 8px 10px; border-radius: 8px; background: var(--warning-subtle); color: var(--warning-text); font-size: 13px; }
 .load { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-top: 0.75rem; font-size: 13px; color: var(--text-muted); }

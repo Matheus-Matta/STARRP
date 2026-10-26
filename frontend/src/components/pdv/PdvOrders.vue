@@ -57,11 +57,11 @@ const view = computed<ListViewDef>(() => ({
 }));
 
 const hint = computed(() => ({
-  draft: props.seller ? "Pedidos guardados da loja. Abra um para ver e continuar editando." : "Abra um pedido para conferir, retomar e cobrar.",
-  open: "Vendas em andamento agora nos caixas da loja.",
+  draft: props.seller ? "Pedidos guardados da filial. Abra um para ver e continuar editando." : "Abra um pedido para conferir, retomar e cobrar.",
+  open: "Vendas em andamento agora nos caixas da filial.",
   deliveries: "Pagas e ainda não entregues (as mais antigas primeiro). Abra para separar, despachar e dar baixa.",
   completed: "Abra uma venda para conferir ou reimprimir.",
-  cancelled: "Vendas canceladas hoje nesta loja.",
+  cancelled: "Vendas canceladas hoje nesta filial.",
 })[filter.value]);
 
 function pick(row: Row) {
@@ -76,7 +76,7 @@ function pick(row: Row) {
     <header class="panel__head">
       <Button icon="pi pi-arrow-left" text rounded severity="secondary" aria-label="Voltar para a venda" @click="emit('back')" />
       <div>
-        <h2>Pedidos da loja</h2>
+        <h2>Pedidos da filial</h2>
         <p>{{ hint }}</p>
       </div>
     </header>

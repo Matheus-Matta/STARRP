@@ -5,16 +5,19 @@ Rascunho pode tudo; confirmado vira imutável e só se desfaz por estorno
 
 Entrada de NF-e tem duas etapas antes de mover o estoque:
   1. conferência (`check`): o que foi contado vira a quantidade do item;
-  2. aprovação (`post`): só depois da conferência.
+  2. aprovação (`post`): só depois da conferência. A diferença conferida (faltou,
+     avariado...) entra ajustada e fica registrada em `ReceivingDivergence`.
 """
 import uuid
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
 from django.utils import timezone
 
 from starrp.core.errors import BusinessError, StateConflict
-from starrp.models import BinBalance, StockDocument, StockLot, StockMovement
+from starrp.models import (
+    BinBalance, ConferenceMode, DivergenceReason, ReceivingDivergence, StockDocument, StockLot, StockMovement,
+)
 from starrp.services import stock
 
 Kind = StockDocument.Kind
@@ -119,17 +122,70 @@ def _spread(lines, counted):
     return lines
 
 
+def _manual_allowed(doc):
+    from starrp.services import logistics_settings
+
+    if not logistics_settings.for_store(doc.store_id).allow_manual_conference:
+        raise BusinessError("A conferência manual está desligada nesta filial (Logística › Configurações de "
+                            "logística): leia os códigos.", code="manual_conference_disabled")
+
+
+def _manual(doc, lines):
+    """Conferência manual: cada linha esperada vem marcada `ok` (bateu) ou com a diferença
+    (`arrived` chegaram, `accepted` entram no estoque, `reason` obrigatório)."""
+    answers = {str(line.get("item")): line for line in lines}
+    items = list(doc.items.filter(deleted_at__isnull=True, expected_quantity__isnull=False))
+    missing = [i.variant.display_name for i in items if str(i.pk) not in answers]
+    if missing:
+        raise BusinessError("Marque todos os itens: " + ", ".join(missing[:10]), code="conference_incomplete")
+    for item in items:
+        line = answers[str(item.pk)]
+        if line.get("ok"):
+            item.quantity = item.arrived_quantity = item.expected_quantity
+            item.divergence_reason, item.divergence_notes = "", ""
+        else:
+            reason = str(line.get("reason") or "")
+            if reason not in DivergenceReason.values:
+                raise BusinessError(f"Informe o motivo da diferença em {item.variant.display_name}.",
+                                    code="divergence_reason_required")
+            try:
+                arrived, accepted = Decimal(str(line["arrived"])), Decimal(str(line["accepted"]))
+            except (KeyError, InvalidOperation):
+                raise BusinessError(f"Informe quantos chegaram e quantos entram em {item.variant.display_name}.",
+                                    code="divergence_quantity_required") from None
+            if arrived < 0 or accepted < 0:
+                raise BusinessError("Quantidade não pode ser negativa.")
+            item.arrived_quantity, item.quantity = arrived, accepted
+            item.divergence_reason, item.divergence_notes = reason, str(line.get("notes") or "")[:255]
+        item.total_cost = (item.quantity * (item.unit_cost or 0)).quantize(Decimal("0.01"))
+        item.save(update_fields=["quantity", "arrived_quantity", "divergence_reason", "divergence_notes",
+                                 "total_cost", "updated_at"])
+
+
 @transaction.atomic
-def check(document, user, codes=None):
-    """Conclui a conferência. Com `codes` (leituras do coletor), o contado de cada
-    produto vira a quantidade das linhas dele; sem leituras, vale o que está no
-    documento (contagem digitada). Código desconhecido ou produto fora do
-    documento barra: o conferente desfaz a leitura e segue."""
+def check(document, user, codes=None, lines=None):
+    """Conclui a conferência.
+    - `codes` (leituras do coletor/câmera): o contado de cada produto vira a quantidade
+      das linhas dele. Código desconhecido ou produto fora do documento barra.
+    - `lines` (conferência manual, se a Logística permitir): item a item, correto ou
+      com a diferença (motivo, quantos chegaram, quantos entram).
+    - nenhum dos dois: vale o que está digitado no documento (na entrada de NF-e, só
+      com a conferência manual permitida)."""
     from starrp.services import volumes
 
     doc = StockDocument.all_objects.select_for_update().get(pk=document.pk)
     if doc.status != StockDocument.Status.DRAFT:
         raise StateConflict("Só rascunho pode ser conferido.")
+    if lines is not None:
+        _manual_allowed(doc)
+        _manual(doc, lines)
+        mode = ConferenceMode.MANUAL
+    elif codes is None:
+        if doc.inbound_nfe_id:
+            _manual_allowed(doc)
+        mode = ConferenceMode.TYPED
+    else:
+        mode = ConferenceMode.SCAN
     if codes is not None:
         result = volumes.conference(doc, codes)
         if result["unknown_codes"]:
@@ -145,10 +201,37 @@ def check(document, user, codes=None):
         for variant, group in lines.items():
             for line in _spread(group, counted.get(variant, Decimal("0"))):
                 line.total_cost = (line.quantity * (line.unit_cost or 0)).quantize(Decimal("0.01"))
-                line.save(update_fields=["quantity", "total_cost", "updated_at"])
-    doc.checked_at, doc.checked_by = timezone.now(), user
-    doc.save(update_fields=["checked_at", "checked_by", "updated_at"])
+                line.arrived_quantity = line.quantity
+                line.divergence_reason = _auto_reason(line)
+                line.save(update_fields=["quantity", "arrived_quantity", "divergence_reason", "total_cost",
+                                         "updated_at"])
+    doc.conference_mode, doc.checked_at, doc.checked_by = mode, timezone.now(), user
+    doc.save(update_fields=["conference_mode", "checked_at", "checked_by", "updated_at"])
     return doc
+
+
+def _auto_reason(line):
+    if line.expected_quantity is None or line.quantity == line.expected_quantity:
+        return ""
+    return DivergenceReason.MISSING if line.quantity < line.expected_quantity else DivergenceReason.EXTRA
+
+
+def _register_divergences(doc, items, user):
+    """Aprovou com diferença: cada linha vira um registro de erro de entrada."""
+    for item in items:
+        if item.expected_quantity is None:
+            continue
+        arrived = item.arrived_quantity if item.arrived_quantity is not None else item.quantity
+        if item.quantity == item.expected_quantity and arrived == item.expected_quantity:
+            continue
+        ReceivingDivergence.all_objects.create(
+            account_id=doc.account_id, store_id=doc.store_id, document=doc, document_item=item,
+            inbound_nfe_id=doc.inbound_nfe_id, supplier_id=doc.supplier_id, variant_id=item.variant_id,
+            expected_quantity=item.expected_quantity, arrived_quantity=arrived, accepted_quantity=item.quantity,
+            reason=item.divergence_reason or _auto_reason(item) or DivergenceReason.OTHER,
+            notes=item.divergence_notes, mode=doc.conference_mode, checked_by=doc.checked_by or user,
+            created_by=user,
+        )
 
 
 @transaction.atomic
@@ -178,6 +261,7 @@ def post(document, user):
                        allow_negative=True, source_key=f"doc:{item.pk}", document_item=item, operator=user)
         elif doc.kind == Kind.INVENTORY:
             _inventory(item, doc, user)
+    _register_divergences(doc, items, user)
     doc.status, doc.posted_at, doc.posted_by = StockDocument.Status.POSTED, timezone.now(), user
     doc.save(update_fields=["status", "posted_at", "posted_by", "updated_at"])
     if doc.inbound_nfe_id:
@@ -197,6 +281,8 @@ def cancel(document, user, reason=""):
         for movement in movements.exclude(kind=StockMovement.Kind.REVERSAL):
             stock.reverse(movement, operator=user, reason=reason or f"Cancelamento do documento {doc.number}")
     was_posted = doc.status == StockDocument.Status.POSTED
+    # Desfeito o lançamento, o erro de entrada dele deixa de valer (a nova aprovação registra de novo).
+    doc.divergences.filter(deleted_at__isnull=True).update(deleted_at=timezone.now())
     doc.status, doc.cancelled_at, doc.cancelled_by = StockDocument.Status.CANCELLED, timezone.now(), user
     doc.save(update_fields=["status", "cancelled_at", "cancelled_by", "updated_at"])
     if doc.inbound_nfe_id and was_posted:

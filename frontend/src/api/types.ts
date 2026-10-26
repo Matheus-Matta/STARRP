@@ -29,13 +29,16 @@ export type Me = {
   name: string;
   email: string;
   is_superuser: boolean;
-  account: { id: string; name: string; modules: string[] } | null;
+  /** `logo_url`: logo da empresa (1080×1080); vazio = as impressões usam o do Starrp. */
+  account: { id: string; name: string; modules: string[]; logo_url: string | null } | null;
   role: { code: string; name: string; rank: number } | null;
   /** Cargo principal + os somados (as permissões já vêm somadas em `permissions`). */
   roles: { code: string; name: string }[];
   all_stores: boolean;
   stores: { id: string; name: string }[];
   active_store_id: string | null;
+  /** Loja principal do usuário (o PDV entra nela quando está em "todas as lojas"). */
+  default_store_id: string | null;
   is_seller: boolean;
   permissions: string[];
 };

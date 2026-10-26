@@ -77,14 +77,17 @@ class StoreViewSet(TenantViewSet):
     permission_code = "settings"
     # O seletor de loja precisa listar mesmo para quem não gerencia lojas.
     action_permissions = {"list": None, "retrieve": None}
-    filterset_fields = ["is_active", "state"]
+    filterset_fields = ["is_active", "state", "kind", "parent"]
     search_fields = ["name", "legal_name", "cnpj", "city"]
+    select_related = ("parent",)
+    # Hierarquia: a lista abre a matriz e mostra quem responde a ela (`?root=1` / `?parent=`).
+    tree_parent = "parent"
 
     def perform_create(self, serializer):
         from starrp.services.provisioning import create_store
 
         if self._restricted():
-            raise PermissionDenied("Só quem acessa todas as lojas pode criar uma loja nova.")
+            raise PermissionDenied("Só quem acessa todas as filiais pode criar uma filial nova.")
 
         data = dict(serializer.validated_data)
         raw = data.pop("cash_action_password", None)
@@ -156,7 +159,7 @@ class UserProfileViewSet(TenantViewSet):
     def sellers(self, request):
         """Lista curta de vendedores ativos para o seletor do PDV."""
         if request.store is None:
-            raise StateConflict("Selecione a loja (X-Store-ID) para listar os vendedores dela.")
+            raise StateConflict("Selecione a filial (X-Store-ID) para listar os vendedores dela.")
         rows = sellers_of(request.store)
         return Response([
             {"user_id": p.user_id, "name": p.user.get_full_name() or p.user.username, "code": p.seller_code}

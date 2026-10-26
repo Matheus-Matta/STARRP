@@ -81,3 +81,10 @@ button:not(:disabled):active { transform: scale(0.975); }
 .pill--danger { color: var(--danger-text); background: var(--danger-subtle); }
 .pill--info { color: var(--info-text); background: var(--info-subtle); }
 .pill--brand { color: var(--text-brand); background: var(--brand-subtle); }
+
+/* Celular: tabelas pequenas (painéis, extratos) escondem colunas secundárias.
+   Uso: <table class="list hide-sm-3 hide-sm-4"> some com a 3ª e a 4ª coluna até 640px. */
+@media (max-width: 640px) {
+  .hide-sm-2 tr > :nth-child(2), .hide-sm-3 tr > :nth-child(3), .hide-sm-4 tr > :nth-child(4),
+  .hide-sm-5 tr > :nth-child(5), .hide-sm-6 tr > :nth-child(6) { display: none; }
+}

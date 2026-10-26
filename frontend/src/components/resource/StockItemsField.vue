@@ -116,29 +116,42 @@ const totals = computed(() => ({
         <RelationSelect v-if="!locked" :model-value="row.variant" :relation="variantRelation" placeholder="Produto"
                         @update:model-value="update(index, { variant: $event as string })" />
         <span v-else class="name">{{ row.variant_name }} <small>{{ row.sku }}</small></span>
-        <span v-if="isInventory" class="right muted">{{ row.expected_quantity == null ? "—" : quantity(row.expected_quantity) }}</span>
-        <InputNumber :model-value="num(row.quantity)" :disabled="locked" :min-fraction-digits="0" :max-fraction-digits="3"
-                     locale="pt-BR" size="small" fluid input-class="right"
-                     @update:model-value="update(index, { quantity: text($event, 3) })" />
-        <InputNumber v-if="isEntry" :model-value="num(row.unit_cost)" :disabled="locked" mode="currency" currency="BRL"
-                     locale="pt-BR" :max-fraction-digits="4" size="small" fluid input-class="right"
-                     @update:model-value="update(index, { unit_cost: text($event, 4) })" />
+        <!-- data-label: no celular a linha vira cartão e o rótulo aparece em cima de cada campo. -->
+        <span v-if="isInventory" class="right muted cellx" data-label="Sistema">{{ row.expected_quantity == null ? "—" : quantity(row.expected_quantity) }}</span>
+        <span class="cellx" :data-label="isInventory ? 'Contado' : kind === 'adjustment' ? 'Diferença (±)' : 'Quantidade'">
+          <InputNumber :model-value="num(row.quantity)" :disabled="locked" :min-fraction-digits="0" :max-fraction-digits="3"
+                       locale="pt-BR" size="small" fluid input-class="right"
+                       @update:model-value="update(index, { quantity: text($event, 3) })" />
+        </span>
+        <span v-if="isEntry" class="cellx" data-label="Custo unit.">
+          <InputNumber :model-value="num(row.unit_cost)" :disabled="locked" mode="currency" currency="BRL"
+                       locale="pt-BR" :max-fraction-digits="4" size="small" fluid input-class="right"
+                       @update:model-value="update(index, { unit_cost: text($event, 4) })" />
+        </span>
         <template v-if="showLots && isEntry">
-          <InputText :model-value="row.lot_number" :disabled="locked" size="small" placeholder="Lote" fluid
-                     @update:model-value="update(index, { lot_number: String($event ?? '') })" />
-          <DatePicker :model-value="row.expires_at ? new Date(`${row.expires_at}T00:00:00`) : null" :disabled="locked"
-                      date-format="dd/mm/yy" size="small" fluid placeholder="Validade"
-                      @update:model-value="update(index, { expires_at: $event ? ($event as Date).toLocaleDateString('sv-SE') : null })" />
+          <span class="cellx" data-label="Lote">
+            <InputText :model-value="row.lot_number" :disabled="locked" size="small" placeholder="Lote" fluid
+                       @update:model-value="update(index, { lot_number: String($event ?? '') })" />
+          </span>
+          <span class="cellx" data-label="Validade">
+            <DatePicker :model-value="row.expires_at ? new Date(`${row.expires_at}T00:00:00`) : null" :disabled="locked"
+                        date-format="dd/mm/yy" size="small" fluid placeholder="Validade"
+                        @update:model-value="update(index, { expires_at: $event ? ($event as Date).toLocaleDateString('sv-SE') : null })" />
+          </span>
         </template>
         <template v-if="showBins">
-          <RelationSelect :model-value="row.bin" :relation="binRelation" placeholder="Endereço"
-                          @update:model-value="update(index, { bin: $event as string })" />
-          <RelationSelect v-if="isRelocation" :model-value="row.destination_bin" :relation="binRelation" placeholder="Destino"
-                          @update:model-value="update(index, { destination_bin: $event as string })" />
+          <span class="cellx" :data-label="isRelocation ? 'De' : 'Endereço'">
+            <RelationSelect :model-value="row.bin" :relation="binRelation" placeholder="Endereço"
+                            @update:model-value="update(index, { bin: $event as string })" />
+          </span>
+          <span v-if="isRelocation" class="cellx" data-label="Para">
+            <RelationSelect :model-value="row.destination_bin" :relation="binRelation" placeholder="Destino"
+                            @update:model-value="update(index, { destination_bin: $event as string })" />
+          </span>
         </template>
         <Button v-if="!locked" icon="pi pi-trash" text rounded size="small" severity="danger" aria-label="Remover item"
-                @click="remove(index)" />
-        <span v-else />
+                class="row__remove" @click="remove(index)" />
+        <span v-else class="row__remove" />
       </div>
     </div>
     <div v-if="model.length" class="items__foot">
@@ -172,5 +185,21 @@ const totals = computed(() => ({
 .empty { margin: 0; padding: 14px; text-align: center; font-size: 13px; }
 .items__foot { display: flex; justify-content: space-between; font-size: 13px; color: var(--text-muted); }
 .items__foot strong { color: var(--text-strong); }
-@media (max-width: 900px) { .table { overflow-x: auto; } .row { min-width: 760px; } }
+.cellx { min-width: 0; }
+@media (min-width: 641px) and (max-width: 900px) { .table { overflow-x: auto; } .row { min-width: 760px; } }
+/* Celular: cada item vira um cartão (produto em cima, campos em 2 colunas com rótulo). */
+@media (max-width: 640px) {
+  .table { border: 0; display: flex; flex-direction: column; gap: 8px; overflow: visible; }
+  .row.head { display: none; }
+  .row, .row.cost, .row.lots, .row.bins, .row.cost.lots, .row.cost.bins, .row.cost.lots.bins {
+    position: relative; grid-template-columns: 1fr 1fr; min-width: 0; padding: 10px; gap: 8px 10px;
+    border: 1px solid var(--border); border-radius: 10px; background: var(--surface-card);
+  }
+  .row > :first-child { grid-column: 1 / -1; margin-right: 38px; }
+  .cellx[data-label]::before { content: attr(data-label); display: block; margin-bottom: 3px; font-size: 11px; font-weight: 600;
+                               text-transform: uppercase; letter-spacing: 0.03em; color: var(--text-subtle); text-align: left; }
+  /* !important: o efeito de toque do PrimeVue põe position: relative inline no botão. */
+  .row .row__remove { position: absolute !important; top: 13px; right: 6px; }
+  .scan { flex-basis: 100%; }
+}
 </style>

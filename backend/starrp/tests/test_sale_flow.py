@@ -54,6 +54,7 @@ def test_venda_nao_conclui_sem_pagamento_total(ctx):
 
 def test_dinheiro_exige_caixa_aberto(ctx):
     """Sem turno aberto, pagamento em dinheiro devolve 409 — não 400 —, para o PDV não reenviar em laço."""
+    ctx.require_cash()
     product = ctx.product(price="10.00")
     _stock(ctx, product, 5)
     api = ctx.client()

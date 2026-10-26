@@ -14,6 +14,7 @@ import Textarea from "primevue/textarea";
 import ToggleSwitch from "primevue/toggleswitch";
 import { computed, defineAsyncComponent, ref } from "vue";
 
+import { useViewport } from "@/composables/useViewport";
 import type { FieldDef } from "@/resources/types";
 import { lookupCep, MASKS } from "@/utils/masks";
 
@@ -35,6 +36,7 @@ const VariantsField = defineAsyncComponent(() => import("./VariantsField.vue"));
 
 /** `context` = todos os valores do formulário (campos que dependem de outros, como as variantes). */
 /** `bare`: o campo É a seção (editor de texto ocupando o cartão inteiro): sem rótulo nem margem. */
+const { isPhone } = useViewport();
 const props = defineProps<{ field: FieldDef; error?: string; context?: Record<string, unknown>; disabled?: boolean;
                             bare?: boolean }>();
 const model = defineModel<unknown>();
@@ -161,6 +163,11 @@ const color = computed({
       currency="BRL" locale="pt-BR" :suffix="field.type === 'percent' ? ' %' : undefined" :placeholder="field.placeholder"
       :invalid="!!error" :disabled="disabled" fluid
     />
+    <!-- No celular, botões demais (mais de 3) não cabem: vira lista de seleção. -->
+    <Select
+      v-else-if="field.type === 'segmented' && isPhone && (field.options?.length ?? 0) > 3" v-model="model" :input-id="id"
+      :options="field.options" option-label="label" option-value="value" :invalid="!!error" :disabled="disabled" fluid
+    />
     <SelectButton
       v-else-if="field.type === 'segmented'" v-model="model" :options="field.options" option-label="label"
       option-value="value" :allow-empty="false" :invalid="!!error" :disabled="disabled" class="segmented" :aria-label="field.label"
@@ -254,5 +261,5 @@ const color = computed({
 :root[data-theme="dark"] .seo__title { color: #8ab4f8; }
 /* Segmentado ocupa a largura e quebra no celular, sem estourar. */
 .segmented { display: flex; flex-wrap: wrap; }
-.segmented :deep(.p-togglebutton) { flex: 1 1 auto; font-size: 12.5px; height: var(--control-h); padding-block: 0; }
+.segmented :deep(.p-togglebutton) { flex: 1 1 auto; font-size: 12.5px; height: var(--control-h); }
 </style>

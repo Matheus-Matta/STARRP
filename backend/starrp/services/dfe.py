@@ -66,7 +66,7 @@ def target_store(config):
     stores = list(config.stores.filter(deleted_at__isnull=True).order_by("created_at"))
     same = [store for store in stores if only_digits(store.cnpj) == only_digits(config.cnpj)]
     if not stores:
-        raise BusinessError(f"Vincule uma loja aos dados fiscais {config.name} para receber as notas.",
+        raise BusinessError(f"Vincule uma filial aos dados fiscais {config.name} para receber as notas.",
                             code="fiscal_no_store")
     return (same or stores)[0]
 
@@ -244,7 +244,7 @@ def cancel_nfe(nfe, *, protocol="", reason=""):
 def _config(nfe):
     config = nfe.fiscal_config or nfe.store.fiscal_config
     if config is None:
-        raise BusinessError("A loja da nota não tem dados fiscais (CNPJ e certificado).", code="fiscal_missing")
+        raise BusinessError("A filial da nota não tem dados fiscais (CNPJ e certificado).", code="fiscal_missing")
     return config
 
 

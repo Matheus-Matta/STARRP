@@ -191,7 +191,7 @@ class FiscalConfigSerializer(TenantSerializer):
             return
         found = Store.objects.filter(pk__in=ids)
         if found.count() != len(set(ids)):
-            raise serializers.ValidationError({"stores": "Loja não encontrada."})
+            raise serializers.ValidationError({"stores": "Filial não encontrada."})
         Store.all_objects.filter(fiscal_config=config).exclude(pk__in=ids).update(fiscal_config=None)
         found.update(fiscal_config=config)
 
@@ -225,6 +225,7 @@ class InboundNFeItemSerializer(TenantSerializer):
     variant_name = serializers.CharField(source="variant.display_name", read_only=True, default=None)
     variant_sku = serializers.CharField(source="variant.sku", read_only=True, default=None)
     stock_quantity = serializers.SerializerMethodField()
+    volumes = serializers.SerializerMethodField()
 
     class Meta:
         model = InboundNFeItem
@@ -235,6 +236,11 @@ class InboundNFeItemSerializer(TenantSerializer):
     def get_stock_quantity(self, obj):
         """Quanto entra no estoque: quantidade da nota vezes o fator (1 CX x 12 = 12 UN)."""
         return str((obj.quantity * obj.conversion_factor).quantize(Decimal("0.001")))
+
+    def get_volumes(self, obj):
+        from starrp.serializers.stock import volumes_of
+
+        return volumes_of(obj.variant)
 NFeEventSerializer = tenant_serializer(NFeEvent)
 NFeIssueSerializer = tenant_serializer(NFeIssue)
 

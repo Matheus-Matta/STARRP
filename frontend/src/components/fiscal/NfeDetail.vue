@@ -6,6 +6,10 @@
  * Etapas: Recebida (resumo) → XML com os itens (ciência) → Vincular itens →
  * Conferência (a entrada de estoque já existe em rascunho) → Aprovada.
  * O vínculo é aprendido: a próxima nota do mesmo fornecedor já vem casada.
+ *
+ * Toda etapa volta: desvincular / voltar a usar um item, "Voltar para os vínculos"
+ * (descarta a conferência em rascunho) e "Desfazer recebimento" (estorna o estoque e
+ * cancela as contas a pagar). Mexer num item com a conferência aberta refaz a entrada.
  */
 import Button from "primevue/button";
 import InputNumber from "primevue/inputnumber";
@@ -39,8 +43,9 @@ const stage = computed(() => String(v.value.stage ?? ""));
 const items = computed(() => (v.value.items ?? []) as Item[]);
 const entry = computed(() => v.value.entry as Entry);
 const variantRelation = { endpoint: "/catalog/variants/", labelKey: "display_name", params: { is_active: "true" } };
-/** Vínculo só muda antes de existir a entrada (depois, cancele a entrada para mexer). */
-const canMap = computed(() => v.value.xml_status === "available" && !entry.value
+/** Vínculo muda até o recebimento; com a conferência aberta, mexer descarta o rascunho e refaz. */
+const draftEntry = computed(() => (entry.value?.status === "draft" ? entry.value : null));
+const canMap = computed(() => v.value.xml_status === "available" && (!entry.value || Boolean(draftEntry.value))
   && !["cancelled", "ignored", "received"].includes(stage.value));
 
 const STEPS = [
@@ -85,7 +90,7 @@ async function receive() {
   try {
     const doc = await nfeApi.receive(props.ctx.id);
     notify.success(`Entrada nº ${doc.number} criada: confira os itens`);
-    void router.push(`/cadastros/documentos-de-estoque/${doc.id}`);
+    void router.push(`/cadastros/entradas-e-saidas/${doc.id}`);
   } catch (error) {
     notify.error(error, "Não foi possível gerar a entrada");
   } finally {
@@ -93,9 +98,32 @@ async function receive() {
   }
 }
 
+/** Com a conferência aberta, avisa antes: a entrada em rascunho é descartada e refeita. */
+function guarded(label: string, run: () => void) {
+  if (!draftEntry.value) return run();
+  confirm.require({
+    header: label,
+    message: `A entrada nº ${draftEntry.value.number} está em conferência. Ela será descartada e gerada de novo com o item corrigido (a contagem feita até agora se perde).`,
+    icon: "pi pi-exclamation-triangle", acceptProps: { label: "Continuar" },
+    rejectProps: { label: "Voltar", severity: "secondary", outlined: true }, accept: run,
+  });
+}
+
 function mapItem(item: Item, variant: unknown, factor?: number | null) {
-  if (!variant) return;
-  void act("Vincular", () => nfeApi.mapItem(props.ctx.id, String(item.id), String(variant), factor ?? item.conversion_factor));
+  if (!variant) return item.variant ? unmapItem(item) : undefined; // limpou o campo = desvincular
+  guarded("Trocar o vínculo", () => void act("Vincular",
+    () => nfeApi.mapItem(props.ctx.id, String(item.id), String(variant), factor ?? item.conversion_factor)));
+}
+
+function unmapItem(item: Item) {
+  confirm.require({
+    header: "Desvincular item",
+    message: `Tirar o vínculo de "${item.description}" com ${item.variant_name}? O vínculo aprendido com este fornecedor também é esquecido.`
+      + (draftEntry.value ? ` A entrada nº ${draftEntry.value.number} em conferência será descartada.` : ""),
+    icon: "pi pi-link", acceptProps: { label: "Desvincular", severity: "danger" },
+    rejectProps: { label: "Voltar", severity: "secondary", outlined: true },
+    accept: () => act("Desvincular", () => nfeApi.unmapItem(String(item.id)), "Item desvinculado: escolha o produto certo"),
+  });
 }
 
 async function createProduct(item: Item) {
@@ -106,9 +134,37 @@ async function createProduct(item: Item) {
 }
 
 function toggleIgnore(item: Item) {
-  if (item.ignored) return mapItem(item, item.variant);
-  void act("Ignorar item", () => nfeApi.ignoreItem(String(item.id), "Não entra no estoque"), "Item fora do estoque");
+  if (item.ignored) {
+    return guarded("Voltar a usar o item", () => void act("Voltar a usar", () => nfeApi.unignoreItem(String(item.id)),
+                                                            "O item volta a entrar no estoque"));
+  }
+  guarded("Ignorar item", () => void act("Ignorar item", () => nfeApi.ignoreItem(String(item.id), "Não entra no estoque"),
+                                         "Item fora do estoque"));
 }
+
+function discardEntry() {
+  if (!draftEntry.value) return;
+  confirm.require({
+    header: "Voltar para os vínculos",
+    message: `Descartar a entrada nº ${draftEntry.value.number} (em conferência)? Ela não moveu o estoque. Os vínculos ficam como estão para você revisar e gerar a entrada de novo.`,
+    icon: "pi pi-undo", acceptProps: { label: "Descartar conferência", severity: "danger" },
+    rejectProps: { label: "Voltar", severity: "secondary", outlined: true },
+    accept: () => act("Voltar para os vínculos", () => nfeApi.discardEntry(props.ctx.id), "Conferência descartada"),
+  });
+}
+
+async function undoReceipt() {
+  const answer = await ask({
+    title: "Desfazer recebimento",
+    label: `O estoque da entrada nº ${entry.value?.number} é estornado e as contas a pagar da nota são canceladas. Por quê?`,
+    kind: "text", required: true, danger: true, confirmLabel: "Desfazer recebimento",
+    options: ["Produto vinculado errado", "Quantidade lançada errada", "Fator de conversão errado", "Depósito errado"],
+  });
+  if (answer) void act("Desfazer recebimento", () => nfeApi.undoReceipt(props.ctx.id, answer.text ?? ""),
+                       "Recebimento desfeito: corrija e receba de novo");
+}
+
+const restore = () => act("Restaurar nota", () => nfeApi.restore(props.ctx.id), "A nota voltou para o fluxo");
 
 async function manifest(code: string, label: string) {
   let reason = "";
@@ -142,12 +198,20 @@ const menu = computed(() => [
     { label: "Casar itens de novo", icon: "pi pi-sync", command: rematch, visible: canMap.value },
     { label: "Ignorar esta nota", icon: "pi pi-eye-slash", command: ignoreNote, visible: !v.value.ignored_at && !entry.value },
   ] },
+  { label: "Voltar etapa", items: [
+    { label: "Voltar para os vínculos", icon: "pi pi-undo", command: discardEntry, visible: Boolean(draftEntry.value) },
+    { label: "Desfazer recebimento", icon: "pi pi-replay", command: undoReceipt, visible: stage.value === "received" },
+    { label: "Restaurar a nota", icon: "pi pi-eye", command: restore, visible: Boolean(v.value.ignored_at) },
+  ] },
 ]);
 
 function copyKey() {
   void navigator.clipboard?.writeText(String(v.value.access_key ?? ""));
   notify.success("Chave copiada");
 }
+/** Dica com as caixas: "Vol 1 · Laterais", "Vol 2 · Portas"... */
+const volumesHint = (item: Item) => (item.volumes as { number: number; description: string }[])
+  .map((vol) => `Vol ${vol.number}${vol.description ? ` · ${vol.description}` : ""}`).join(" | ");
 const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, "$1 ");
 </script>
 
@@ -158,7 +222,7 @@ const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, 
       <li v-for="(step, index) in STEPS" :key="step.key"
           :class="{ done: index < reached, current: index === reached && stage !== 'received' }">
         <span class="dot"><i v-if="index < reached" class="pi pi-check" /><template v-else>{{ index + 1 }}</template></span>
-        {{ step.label }}
+        <span class="steps__label">{{ step.label }}</span>
       </li>
     </ol>
 
@@ -171,6 +235,8 @@ const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, 
       </template>
       <template v-else-if="stage === 'ignored'">
         <i class="pi pi-eye-slash" /><p><b>Nota ignorada.</b> {{ v.ignored_reason }}</p>
+        <Button label="Restaurar a nota" icon="pi pi-eye" size="small" severity="secondary" outlined
+                :loading="busy === 'Restaurar nota'" @click="restore" />
       </template>
       <template v-else-if="stage === 'summary'">
         <i class="pi pi-envelope" />
@@ -196,8 +262,12 @@ const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, 
           {{ v.receiving === "divergent" ? "A conferência achou diferença com a nota." : "Tudo conforme a nota." }}</p>
         <p v-else><b>Entrada nº {{ entry.number }} {{ entry.checked ? "conferida: falta aprovar." : "esperando a conferência." }}</b>
           Leia os códigos na conferência e aprove para o estoque entrar.</p>
+        <Button v-if="stage === 'received'" label="Desfazer recebimento" icon="pi pi-replay" size="small"
+                severity="danger" outlined :loading="busy === 'Desfazer recebimento'" @click="undoReceipt" />
+        <Button v-else label="Voltar para os vínculos" icon="pi pi-undo" size="small" severity="secondary" outlined
+                :loading="busy === 'Voltar para os vínculos'" @click="discardEntry" />
         <Button :label="`Abrir entrada nº ${entry.number}`" icon="pi pi-external-link" size="small"
-                @click="router.push(`/cadastros/documentos-de-estoque/${entry.id}`)" />
+                @click="router.push(`/cadastros/entradas-e-saidas/${entry.id}`)" />
       </template>
       <Button icon="pi pi-ellipsis-v" text rounded severity="secondary" size="small" aria-label="Mais ações"
               class="next__more" @click="more?.toggle($event)" />
@@ -253,27 +323,34 @@ const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, 
                 <small>Cód. {{ item.supplier_code || "—" }} · EAN {{ item.barcode || "sem" }}
                   <template v-if="item.taxable_barcode && item.taxable_barcode !== item.barcode"> · trib. {{ item.taxable_barcode }}</template>
                   · NCM {{ item.ncm || "—" }}</small>
+                <!-- Produto em volumes (móvel em várias caixas): quantas caixas devem chegar. -->
+                <span v-if="item.volumes?.length && !item.ignored" class="vols" :title="volumesHint(item)">
+                  <i class="pi pi-box" /> {{ item.volumes.length }} volumes por unidade ·
+                  <b>{{ Number(item.stock_quantity) * item.volumes.length }} caixas</b>
+                </span>
               </td>
-              <td class="r">{{ quantity(item.quantity) }} <small>{{ item.unit }}</small></td>
-              <td class="r">{{ money(item.unit_value) }}</td>
-              <td class="r b">{{ money(item.total) }}</td>
-              <td class="map">
+              <td class="r" data-label="Qtd.">{{ quantity(item.quantity) }} <small>{{ item.unit }}</small></td>
+              <td class="r" data-label="Valor un.">{{ money(item.unit_value) }}</td>
+              <td class="r b" data-label="Total">{{ money(item.total) }}</td>
+              <td class="map" data-label="Produto no sistema">
                 <span v-if="item.ignored" class="pill pill--neutral">Fora do estoque</span>
                 <RelationSelect v-else-if="canMap" :model-value="item.variant" :relation="variantRelation" size="small"
                                 placeholder="Escolha o produto" @update:model-value="mapItem(item, $event)" />
                 <span v-else-if="item.variant" class="linked"><i class="pi pi-link" /> {{ item.variant_name }}</span>
                 <span v-else class="muted">—</span>
               </td>
-              <td class="r">
+              <td class="r" data-label="Fator">
                 <InputNumber v-if="canMap && item.variant" :model-value="Number(item.conversion_factor)" :min="0.000001"
                              :max-fraction-digits="6" size="small" class="factor" input-class="factor__input"
                              title="Quantas unidades de estoque vêm em 1 unidade da nota (1 CX = 12 UN → 12)"
                              @update:model-value="mapItem(item, item.variant, $event)" />
                 <span v-else>{{ item.ignored ? "—" : quantity(item.conversion_factor) }}</span>
               </td>
-              <td class="r b">{{ item.ignored ? "—" : quantity(item.stock_quantity) }}</td>
+              <td class="r b" data-label="Entra no estoque">{{ item.ignored ? "—" : quantity(item.stock_quantity) }}</td>
               <td class="act">
                 <template v-if="canMap">
+                  <Button v-if="item.variant && !item.ignored" icon="pi pi-times" text rounded size="small" severity="danger"
+                          title="Desvincular (esquece o vínculo aprendido)" aria-label="Desvincular" @click="unmapItem(item)" />
                   <Button v-if="!item.variant && !item.ignored" icon="pi pi-plus" text rounded size="small"
                           title="Cadastrar produto a partir do item" aria-label="Cadastrar produto"
                           @click="createProduct(item)" />
@@ -360,9 +437,12 @@ const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, 
 .items .desc strong { display: block; color: var(--text-strong); font-weight: 600; }
 .items .desc small, .items td small { color: var(--text-muted); font-size: 11.5px; }
 .items .map { min-width: 240px; width: 28%; }
-.items .act { width: 76px; white-space: nowrap; text-align: right; }
+.items .act { width: 112px; white-space: nowrap; text-align: right; }
 .items tr.pending { background: color-mix(in srgb, var(--warning-subtle) 55%, transparent); }
 .items tr.ignored td { color: var(--text-subtle); }
+.vols { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 6px;
+        background: var(--brand-subtle); color: var(--text-brand); font-size: 11.5px; }
+.vols i { font-size: 11px; margin-right: 4px; }
 .linked { display: inline-flex; gap: 6px; align-items: center; color: var(--text-strong); font-weight: 600; }
 .linked i { color: var(--success-text); font-size: 12px; }
 .items .map :deep(.p-select) { width: 100%; }
@@ -372,5 +452,30 @@ const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, 
 @media (max-width: 900px) {
   .head { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .kv--wide, .kv--key { grid-column: 1 / -1; }
+}
+/* Celular: etapas viram só bolinhas (o nome só da etapa atual), o aviso empilha os botões
+   e cada item da nota vira um cartão com rótulos. */
+@media (max-width: 640px) {
+  .steps { gap: 2px; overflow: visible; }
+  .steps li { min-width: 0; flex: 0 0 auto; padding: 8px 4px; }
+  .steps li.current { flex: 1 1 auto; }
+  .steps li:not(.current) .steps__label { display: none; }
+  .next { flex-wrap: wrap; position: relative; padding-right: 44px; }
+  .next p { flex-basis: calc(100% - 40px); }
+  .next > .p-button:not(.next__more) { flex: 1 1 auto; }
+  .next__more { position: absolute !important; top: 8px; right: 8px; margin: 0; }
+  .head { padding: 12px; gap: 12px; }
+  .items thead { display: none; }
+  .items, .items tbody, .items tr, .items td { display: block; width: auto; }
+  .items tr { position: relative; padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); }
+  .items td { padding: 3px 0; border: 0; }
+  .items td[data-label] { display: flex; align-items: center; gap: 4px; }
+  .items td[data-label]::before { content: attr(data-label); margin-right: auto; font-size: 12px; font-weight: 500;
+                                  color: var(--text-muted); }
+  .items .n { position: absolute; top: 10px; left: 12px; width: auto; }
+  .items .desc { padding-left: 24px; padding-right: 76px; min-width: 0; }
+  .items .map { width: auto; min-width: 0; flex-direction: column; align-items: stretch !important; }
+  .items .map::before { margin-top: 4px; }
+  .items .act { position: absolute; top: 6px; right: 6px; width: auto; }
 }
 </style>

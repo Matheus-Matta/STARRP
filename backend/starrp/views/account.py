@@ -13,6 +13,7 @@ from decimal import Decimal
 
 from django.db import transaction
 from rest_framework import serializers
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -64,7 +65,8 @@ class AccountSettingsView(APIView):
         stock = self._stock(account)
         subscription = getattr(account, "subscription", None)
         return {
-            "account": {f: getattr(account, f) for f in ("name", "document", "email", "phone", "timezone")},
+            "account": {**{f: getattr(account, f) for f in ("name", "document", "email", "phone", "timezone")},
+                        "logo_url": account.logo.file.url if account.logo_id else None},
             "pdv": {**{f: getattr(main, f) if main else None for f in PDV_FIELDS},
                     "cash_closing_tolerance": str(main.cash_closing_tolerance) if main else "0.50",
                     "pdv_lock_minutes": int((main.settings or {}).get("pdv_lock_minutes", 5)) if main else 5},
@@ -108,3 +110,27 @@ class AccountSettingsView(APIView):
             stock.updated_by = request.user
             stock.save()
         return Response(self._payload(request))
+
+
+class AccountLogoView(APIView):
+    """POST multipart `file`: troca o logo (ajustado para 1080×1080). DELETE: tira (volta o do Starrp)."""
+
+    permission_classes = [IsAccountAdmin]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
+
+    def post(self, request):
+        from starrp.core.errors import BusinessError
+        from starrp.services import media
+
+        upload = request.FILES.get("file")
+        if upload is None:
+            raise BusinessError("Envie a imagem do logo no campo `file`.", code="file_required")
+        image = media.store_upload(request.account, request.user, media.square_logo(upload), alt="Logo da empresa")
+        request.account.logo = image
+        request.account.save(update_fields=["logo", "updated_at"])
+        return Response({"logo_url": image.file.url, "width": image.width, "height": image.height})
+
+    def delete(self, request):
+        request.account.logo = None
+        request.account.save(update_fields=["logo", "updated_at"])
+        return Response({"logo_url": None})

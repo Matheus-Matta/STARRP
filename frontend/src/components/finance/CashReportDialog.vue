@@ -54,7 +54,7 @@ const difference = computed(() => Number(r.value?.drawer.difference ?? 0));
 <style scoped>
 .stack { display: flex; flex-direction: column; gap: 8px; }
 .report > p { margin: 0 0 0.75rem; font-size: 12.5px; }
-.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; }
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(150px, 100%), 1fr)); gap: 0.5rem; }
 .kpis div { display: flex; flex-direction: column; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; }
 .kpis small { font-size: 12px; color: var(--text-muted); }
 .kpis strong { font-size: 18px; color: var(--text-strong); }

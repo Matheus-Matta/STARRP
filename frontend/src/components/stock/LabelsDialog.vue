@@ -50,7 +50,7 @@ function print() {
 
 <style scoped>
 .labels > p { margin: 0 0 0.75rem; font-size: 13px; }
-.options { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; }
+.options { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 0.5rem; }
 .option {
   display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--surface-card); cursor: pointer; text-align: left; font-family: var(--font-sans);

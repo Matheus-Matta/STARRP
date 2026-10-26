@@ -69,7 +69,7 @@ async function submit() {
         <img src="/brand/logo.png" alt="Starrp" class="box__logo box__logo--light" height="34" />
         <img src="/brand/logo-light.png" alt="" class="box__logo box__logo--dark" height="34" aria-hidden="true" />
         <h2>Entrar</h2>
-        <p class="muted">Use o usuário e a senha fornecidos pelo administrador da sua loja.</p>
+        <p class="muted">Use o usuário e a senha fornecidos pelo administrador da sua filial.</p>
         <Message v-if="error" severity="error" :closable="false" icon="pi pi-exclamation-circle">{{ error }}</Message>
         <label class="field">
           <span>Usuário</span>

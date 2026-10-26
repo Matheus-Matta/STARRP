@@ -150,7 +150,7 @@ kbd { font: 600 10.5px/1 var(--font-mono); padding: 3px 6px; border-radius: 4px;
 .chip--sub { height: 28px; padding: 0 12px; font-size: 12px; background: transparent; }
 .chip--sub.active { background: var(--brand-subtle); border-color: var(--brand-border); color: var(--text-brand); }
 .grid-wrap { flex: 1; min-height: 0; overflow-y: auto; }
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 8px; transition: opacity var(--dur-fast) ease; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); gap: 8px; transition: opacity var(--dur-fast) ease; }
 .grid.refreshing { opacity: 0.6; }
 .card {
   display: flex; gap: 12px; align-items: center; padding: 10px; text-align: left; cursor: pointer; height: 98px; min-width: 0; overflow: hidden;
