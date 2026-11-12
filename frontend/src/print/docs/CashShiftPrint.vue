@@ -19,7 +19,7 @@ const props = defineProps<{ id: string; initialFormat?: PrintFormat }>();
 const format = ref<PrintFormat>(props.initialFormat ?? "a4");
 const query = useQuery({ queryKey: ["print-cash", props.id], queryFn: () => financeApi.cashStatement(props.id) });
 const s = computed(() => query.data.value);
-const STATUS: Record<string, string> = { open: "Aberto", pending_approval: "Aguardando gerente", closed: "Fechado", cancelled: "Cancelado" };
+const STATUS: Record<string, string> = { open: "Aberto", pending_opening: "Abertura aguardando gerente", pending_approval: "Aguardando gerente", closed: "Fechado", cancelled: "Cancelado" };
 
 const DRAWER: [string, string][] = [
   ["opening", "Troco inicial"], ["sale", "Vendas em dinheiro"], ["supply", "Suprimentos"], ["withdrawal", "Sangrias"],

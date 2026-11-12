@@ -18,6 +18,18 @@ SKIP = {
     # Já são registro de acontecimento (imutáveis).
     "AuditLog", "StockMovement", "ScaleReading", "Notification", "PrintJob", "ImportJob",
     "IdempotencyRecord", "NFeEvent",
+    # Conversa com a Cosmos: as falas e os relatórios nunca mudam depois de gravados.
+    "CosmosMessage", "CosmosReport", "CosmosAttachment",
+    # Contador de consumo: muda a cada resposta da Cosmos.
+    "CosmosUsage",
+    # Ofertas do mercado: trocadas a cada leitura (o histórico da referência está no PriceCheck).
+    "MarketOffer",
+    # Contador de consultas; e a chave própria da conta, que não deve ficar copiada.
+    "PriceUsage", "PriceSourceToken",
+    # O mesmo no SEO; e o volume de busca, que é dado público trocado todo mês.
+    "SeoUsage", "SeoCredential", "KeywordMetric",
+    # A própria tarefa já é o registro: muda a cada lote.
+    "BackgroundTask",
     # Mudam a cada venda/movimento/sincronização: o histórico está nos movimentos.
     "StockBalance", "BinBalance", "NumberSequence", "DFeSyncState",
     # Sincronização (fila e controle técnico) e cache público de CEP.

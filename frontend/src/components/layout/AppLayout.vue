@@ -9,6 +9,7 @@
 import { onBeforeUnmount, onMounted, ref } from "vue";
 import { RouterView, useRouter } from "vue-router";
 
+import CosmosWidget from "@/components/cosmos/CosmosWidget.vue";
 import { usePrefetch } from "@/composables/usePrefetch";
 
 import AppSidebar from "./AppSidebar.vue";
@@ -81,6 +82,8 @@ function onMenu() {
       </main>
     </div>
     <CommandPalette v-model:open="paletteOpen" />
+    <!-- Cosmos (IA): só aparece para quem tem `cosmos.view` (o próprio widget confere). -->
+    <CosmosWidget />
   </div>
 </template>
 

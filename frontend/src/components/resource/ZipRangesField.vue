@@ -42,8 +42,9 @@ const inverted = (r: ZipRange) => r.zip_start.length === 8 && r.zip_end.length =
                  :disabled="disabled" aria-label="CEP final" :invalid="inverted(r)"
                  @update:model-value="update(i, { zip_end: String($event ?? '') })" />
       <InputNumber :model-value="r.value === null ? null : Number(r.value)" mode="currency" currency="BRL" locale="pt-BR" fluid
+                   :min="0" highlight-on-focus placeholder="R$ 0,00"
                    :disabled="disabled" aria-label="Valor" @update:model-value="update(i, { value: $event === null ? null : Number($event).toFixed(2) })" />
-      <InputNumber :model-value="r.lead_days" :min="0" placeholder="da tabela" fluid :disabled="disabled" aria-label="Prazo em dias"
+      <InputNumber :model-value="r.lead_days" :min="0" suffix=" dias" highlight-on-focus placeholder="da tabela" fluid :disabled="disabled" aria-label="Prazo em dias"
                    @update:model-value="update(i, { lead_days: $event })" />
       <Button icon="pi pi-trash" text rounded severity="danger" size="small" :disabled="disabled" aria-label="Remover faixa"
               @click="remove(i)" />

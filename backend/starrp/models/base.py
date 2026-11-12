@@ -174,3 +174,42 @@ def alive(**extra):
     Sem ela, um registro excluído seguraria o nome/código para sempre.
     """
     return models.Q(deleted_at__isnull=True, **extra)
+
+
+class AutoCodeMixin:
+    """`code` opcional: veio vazio, é GERADO ao salvar (o usuário não precisa inventar código).
+
+    Cada modelo diz de onde vem (`code_base`, ex.: o nome em slug) e onde o código não pode
+    repetir (`CODE_SCOPE`, ex.: na filial). Repetiu: `-2`, `-3`... dentro do tamanho do campo.
+    Código digitado é respeitado.
+    """
+
+    CODE_SCOPE = ("account",)
+
+    def code_base(self):
+        raise NotImplementedError
+
+    def save(self, *args, **kwargs):
+        if not (self.code or "").strip():
+            self.code = self._free_code(self.code_base())
+        super().save(*args, **kwargs)
+
+    def _free_code(self, base):
+        size = type(self)._meta.get_field("code").max_length
+        taken = type(self).all_objects.filter(deleted_at__isnull=True, **{
+            f"{field}_id": getattr(self, f"{field}_id") for field in self.CODE_SCOPE}).exclude(pk=self.pk)
+        candidate, n = base[:size], 2
+        while taken.filter(code__iexact=candidate).exists():
+            suffix = f"-{n}"
+            candidate, n = base[:size - len(suffix)] + suffix, n + 1
+        return candidate
+
+
+def code_from(text, fallback, upper=False, joined=False):
+    """"Caixa da Frente" → `caixa-da-frente` (ou `CAIXA-DA-FRENTE`, `CAIXADAFRENTE`)."""
+    from django.utils.text import slugify
+
+    slug = slugify(text or "") or fallback
+    if joined:
+        slug = slug.replace("-", "")
+    return slug.upper() if upper else slug

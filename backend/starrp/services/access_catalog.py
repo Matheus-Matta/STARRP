@@ -24,6 +24,9 @@ AREAS = [
     ("inbound_nfe", "NF-e de entrada", "inbound_nfe"),
     ("assets", "Patrimônio", "assets"),
     ("sync", "Sincronização", "sync"),
+    # Assistente de IA: `view` conversa e consulta; `manage` deixa ela PROPOR gravações (que ainda pedem
+    # confirmação e a permissão da área — quem não cadastra produto não cadastra pela Cosmos).
+    ("cosmos", "Assistente Cosmos (IA)", "base"),
 ]
 
 SPECIAL = [
@@ -32,7 +35,10 @@ SPECIAL = [
     ("sales.discount", "Autorizar desconto acima do limite", "sales"),
     ("sales.price_override", "Alterar preço no PDV", "sales"),
     ("sales.return", "Fazer troca/devolução", "sales"),
+    ("sales.edit_delivery", "Alterar a entrega de venda concluída", "sales"),
+    ("sales.edit_payment", "Trocar a forma de pagamento de venda concluída", "sales"),
     ("cash.approve", "Aprovar sangria e fechamento com diferença", "cash"),
+    ("cosmos.supervise", "Receber da Cosmos os alertas sobre a equipe", "cosmos"),
 ]
 
 
@@ -72,13 +78,13 @@ SYSTEM_ROLES = [
     {"code": "manager", "name": "Gerente de filial", "area": "Direção", "rank": 80, "max_discount_percent": Decimal("30"),
      # `users`: o gerente cadastra a equipe das lojas DELE (o serializer barra escalada).
      "permissions": _all("catalog", "partners", "promotions", "sales", "cash", "reports", "commissions", "stock",
-                         "logistics", "devices", "finance", "fiscal", "inbound_nfe", "assets", "users") + SPECIAL_CODES,
+                         "logistics", "devices", "finance", "fiscal", "inbound_nfe", "assets", "users", "cosmos") + SPECIAL_CODES,
      "description": "A filial inteira: vendas, caixa, estoque, entrega, financeiro e a equipe; aprova tudo."},
     {"code": "supervisor", "name": "Supervisor de filial", "area": "Direção", "rank": 70,
      "max_discount_percent": Decimal("15"),
      "permissions": _all("sales", "cash", "partners", "logistics") + _views("catalog", "promotions", "reports",
                                                                           "commissions", "stock")
-     + ["sales.cancel_item", "sales.discount", "sales.return", "cash.approve"],
+     + ["sales.cancel_item", "sales.discount", "sales.return", "cash.approve", "cosmos.view", "cosmos.supervise"],
      "description": "Toca o salão e os caixas: aprova desconto, retirada de item, troca e sangria."},
     # ── Vendas ────────────────────────────────────────────────────────────
     {"code": "sales_lead", "name": "Líder de vendas", "area": "Vendas", "rank": 60, "max_discount_percent": Decimal("10"),
@@ -139,3 +145,10 @@ SYSTEM_ROLES = [
      "permissions": _views(*ALL_AREAS),
      "description": "Vê tudo e não altera nada."},
 ]
+
+# Os coordenadores de área também conversam com a Cosmos (consulta, relatório e cadastro com
+# confirmação); os demais ganham pelo perfil (`extra_permissions`), se o administrador quiser.
+COSMOS_ROLES = {"sales_lead", "stock_lead", "logistics_lead", "financeiro"}
+for _role in SYSTEM_ROLES:
+    if _role["code"] in COSMOS_ROLES:
+        _role["permissions"] = [*_role["permissions"], *_all("cosmos")]

@@ -78,9 +78,13 @@ export type PdvBootstrap = {
   sees_drawer: boolean;
   server_time: string;
   store: Store;
+  /** A regra (PDV, caixa, venda) que esta filial usa — compartilhada com outras filiais. */
+  rules: S["StoreRule"];
   terminal: S["Terminal"];
   payment_methods: PaymentMethod[];
   cash_registers: CashRegister[];
+  /** O caixa do usuário (um por usuário): o PDV abre nele sem perguntar. */
+  my_register: string | null;
   cash_session: CashSession | null;
   sellers: Seller[];
   /** "seller": monta e guarda pedidos; "cashier": cobra, abre/fecha o turno (tem `cash.manage`). */

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * Página de impressão: `/imprimir/<documento>/<id>` fora do layout do sistema.
- * Documentos: turno, venda, estoque, separacao, conta, titulo, dre, lista, relatorio.
+ * Documentos: turno, venda, danfe, estoque, separacao, conta, titulo, dre, lista, relatorio.
  * `?formato=a4|a4-landscape|80mm` escolhe o papel; sem ele vale o último escolhido para
  * aquele documento neste navegador (o caixa que troca para bobina uma vez fica nela) e,
  * na primeira vez, o padrão do documento (A4). `?auto=1` já abre a impressão.
@@ -14,6 +14,7 @@ import { type PrintFormat, rememberedFormat } from "@/print/format";
 const DOCS: Record<string, ReturnType<typeof defineAsyncComponent>> = {
   turno: defineAsyncComponent(() => import("@/print/docs/CashShiftPrint.vue")),
   venda: defineAsyncComponent(() => import("@/print/docs/SalePrint.vue")),
+  danfe: defineAsyncComponent(() => import("@/print/docs/DanfePrint.vue")),
   estoque: defineAsyncComponent(() => import("@/print/docs/StockDocumentPrint.vue")),
   separacao: defineAsyncComponent(() => import("@/print/docs/PickingPrint.vue")),
   conta: defineAsyncComponent(() => import("@/print/docs/AccountStatementPrint.vue")),

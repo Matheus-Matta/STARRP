@@ -3,7 +3,7 @@ from decimal import Decimal
 from rest_framework import serializers
 
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, tenant_serializer
-from starrp.models import BinBalance, InboundNFeItem, LabelTemplate, ProductVariant, StorageBin, Warehouse
+from starrp.models import BinBalance, InboundNFeItem, LabelTemplate, ProductVariant, StockAdvice, StorageBin, Warehouse
 
 StorageBinSerializer = tenant_serializer(StorageBin)
 
@@ -41,8 +41,15 @@ class LabelItemSerializer(serializers.Serializer):
 
 
 class LabelPrintSerializer(serializers.Serializer):
-    template = TenantPrimaryKeyField(LabelTemplate)
+    # Sem modelo: o PADRÃO do tipo `subject` (os pré-prontos do sistema já vêm marcados).
+    template = TenantPrimaryKeyField(LabelTemplate, required=False)
+    subject = serializers.ChoiceField(choices=LabelTemplate.Subject.choices, required=False)
     items = LabelItemSerializer(many=True, allow_empty=False)
+
+    def validate(self, attrs):
+        if not attrs.get("template") and not attrs.get("subject"):
+            raise serializers.ValidationError("Escolha o modelo de etiqueta (ou o tipo, para usar o padrão).")
+        return attrs
 
 
 class NFeImportSerializer(serializers.Serializer):
@@ -67,3 +74,15 @@ class NFeReceiveSerializer(serializers.Serializer):
                                       help_text="Sem depósito: o padrão da filial.")
     bin = TenantPrimaryKeyField(StorageBin, required=False, allow_null=True)
     post = serializers.BooleanField(default=False, help_text="Confere com as quantidades da nota e aprova já.")
+
+
+class StockAdviceSerializer(serializers.ModelSerializer):
+    warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
+    document_number = serializers.IntegerField(source="document.number", read_only=True, default=None)
+    decided_by_name = serializers.CharField(source="decided_by.username", read_only=True, default=None)
+
+    class Meta:
+        model = StockAdvice
+        fields = ("id", "store", "warehouse", "warehouse_name", "kind", "status", "title", "detail", "impact", "moves", "checked_at",
+                  "document", "document_number", "decided_by_name", "decided_at", "updated_at")
+        read_only_fields = fields

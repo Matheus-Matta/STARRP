@@ -107,7 +107,7 @@ def test_fechamento_com_diferenca_acima_da_tolerancia_pede_aprovacao(ctx):
     """Faltou R$ 5 na gaveta: o turno não fecha sozinho; o gerente aprova com motivo."""
     cashier = ctx.user("caixa2", "cashier")
     manager = ctx.user("gerente2", "manager")
-    ctx.register.operators.add(cashier)  # o caixa é dele
+    ctx.link(cashier)  # o caixa é dele
     session = cash.open_session(ctx.register, cashier, Decimal("100"))
 
     closed = cash.close_session(session, cashier, Decimal("95"))

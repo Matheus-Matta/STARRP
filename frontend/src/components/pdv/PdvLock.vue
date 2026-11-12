@@ -2,14 +2,16 @@
 /**
  * Tela bloqueada do caixa: cobre o PDV inteiro (venda e valores ficam escondidos).
  * Volta com a senha do próprio operador ou a senha de ações do caixa (o gerente
- * que veio liberar). Recarregar a página NÃO desbloqueia.
+ * que veio liberar). Recarregar a página NÃO desbloqueia. Quem tem retaguarda (`backoffice`) pode
+ * voltar para ela: o PDV continua bloqueado quando ele voltar.
  */
 import Button from "primevue/button";
 import Password from "primevue/password";
 import { nextTick, onMounted, ref } from "vue";
 
-const props = defineProps<{ operator: string; unlock: (password: string) => Promise<void>; managerPassword: boolean }>();
-const emit = defineEmits<{ logout: [] }>();
+const props = defineProps<{ operator: string; unlock: (password: string) => Promise<void>; managerPassword: boolean;
+                            backoffice?: boolean }>();
+const emit = defineEmits<{ logout: []; backoffice: [] }>();
 const password = ref("");
 const error = ref("");
 const busy = ref(false);
@@ -42,7 +44,12 @@ onMounted(() => document.getElementById("pdv-unlock")?.focus());
                 placeholder="Senha" :invalid="!!error" />
       <small v-if="error" class="lock__error"><i class="pi pi-exclamation-circle" /> {{ error }}</small>
       <Button type="submit" label="Desbloquear" icon="pi pi-lock-open" size="large" :loading="busy" fluid />
-      <Button label="Trocar de operador (sair)" severity="secondary" text size="small" @click="emit('logout')" />
+      <div class="lock__exits">
+        <Button v-if="backoffice" label="Voltar à retaguarda" icon="pi pi-arrow-left" severity="secondary" text size="small"
+                @click="emit('backoffice')" />
+        <Button label="Trocar de operador (sair)" icon="pi pi-sign-out" severity="secondary" text size="small"
+                @click="emit('logout')" />
+      </div>
     </form>
   </div>
 </template>
@@ -60,5 +67,6 @@ onMounted(() => document.getElementById("pdv-unlock")?.focus());
 .lock__card h2 { margin: 0; font: 800 20px/1.2 var(--font-sans); color: var(--text-strong); }
 .lock__card p { margin: 0; font-size: 13.5px; color: var(--text-muted); }
 .lock__card :deep(.p-password), .lock__card :deep(.p-password-input) { width: 100%; }
+.lock__exits { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; }
 .lock__error { color: var(--danger-text); align-self: flex-start; display: flex; gap: 6px; align-items: center; }
 </style>

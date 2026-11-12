@@ -17,7 +17,8 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       // Proxy da API: app e API na MESMA origem, como os cookies httpOnly (SameSite=Lax) exigem.
       proxy: {
-        "/api": { target: env.VITE_API_TARGET || "http://localhost:8000", changeOrigin: true },
+        // `ws`: o widget da Cosmos conversa por WebSocket em /api/v1/ws/cosmos/.
+        "/api": { target: env.VITE_API_TARGET || "http://localhost:8000", changeOrigin: true, ws: true },
         // Fotos enviadas (produto, variante): o Django serve em desenvolvimento.
         "/media": { target: env.VITE_API_TARGET || "http://localhost:8000", changeOrigin: true },
       },

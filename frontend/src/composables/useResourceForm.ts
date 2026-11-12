@@ -3,14 +3,17 @@
  *
  * Erro por campo vem de dois lugares e cai no MESMO mapa: a validação local
  * (aviso rápido) e a resposta do backend (a que vale).
+ *
+ * A conferência local roda ao sair do campo (`check`) e de novo a cada mudança de um
+ * campo com erro: corrigiu, o aviso some na hora, sem precisar salvar para ver.
  */
 import { useQueryClient } from "@tanstack/vue-query";
-import { computed, ref, type Ref } from "vue";
+import { computed, ref, type Ref, watch } from "vue";
 
 import { toApiError } from "@/api/errors";
 import { resourceApi, type Row } from "@/api/resource";
 import type { ResourceDef } from "@/resources/types";
-import { validate } from "@/utils/validation";
+import { validate, validateField, withError } from "@/utils/validation";
 
 import { detailKey } from "./usePrefetch";
 
@@ -29,7 +32,7 @@ export function useResourceForm(resource: Ref<ResourceDef>, id: Ref<string | nul
 
   /** `force`: ignora o cache (o registro acabou de mudar no servidor: baixa, confirmação...). */
   async function load(force = false) {
-    errors.value = {};
+    setErrors({});
     if (isNew.value) {
       values.value = defaults(resource.value);
       return;
@@ -42,10 +45,17 @@ export function useResourceForm(resource: Ref<ResourceDef>, id: Ref<string | nul
       values.value = structuredClone(cached);
       return;
     }
+    const fetchRow = () => queryClient.fetchQuery({ queryKey: key, staleTime: 0,
+                                                    queryFn: () => resourceApi.get(resource.value.endpoint, id.value!) });
+    // O registro já está na tela (uma ação mudou algo nele): relê por baixo, sem skeleton,
+    // sem desmontar a tela nem perder a rolagem.
+    if (force && String(values.value.id ?? "") === id.value) {
+      values.value = structuredClone(await fetchRow());
+      return;
+    }
     loading.value = true;
     try {
-      const row = await queryClient.fetchQuery({ queryKey: key, staleTime: 0, queryFn: () => resourceApi.get(resource.value.endpoint, id.value!) });
-      values.value = structuredClone(row);
+      values.value = structuredClone(await fetchRow());
     } finally {
       loading.value = false;
     }
@@ -64,8 +74,44 @@ export function useResourceForm(resource: Ref<ResourceDef>, id: Ref<string | nul
     return body;
   }
 
+  /** Saiu do campo: confere o que foi digitado. Vazio só acusa no "Salvar" (não grita "obrigatório" ao passar com Tab). */
+  function check(name: string) {
+    const field = resource.value.fields.find((f) => f.name === name);
+    if (!field) return;
+    const message = validateField(field, values.value);
+    const value = values.value[name];
+    if (message && value !== null && value !== undefined && value !== "") setError(name, message);
+    else if (!message) clearError(name);
+  }
+
+  /* Valor de cada campo quando o erro apareceu: mudou, confere de novo (o erro do backend também sai). */
+  const errorAt = new Map<string, string>();
+  function setError(name: string, message: string) {
+    errors.value = withError(errors.value, name, message);
+    errorAt.set(name, JSON.stringify(values.value[name] ?? null));
+  }
+  function clearError(name: string) {
+    if (!(name in errors.value)) return;
+    errors.value = withError(errors.value, name);
+    errorAt.delete(name);
+  }
+  function setErrors(next: Record<string, string>) {
+    errors.value = next;
+    errorAt.clear();
+    for (const name of Object.keys(next)) errorAt.set(name, JSON.stringify(values.value[name] ?? null));
+  }
+  watch(values, () => {
+    for (const [name, before] of errorAt) {
+      if (JSON.stringify(values.value[name] ?? null) === before) continue;
+      const field = resource.value.fields.find((f) => f.name === name);
+      const message = field && validateField(field, values.value);
+      if (message) setError(name, message);
+      else clearError(name);
+    }
+  }, { deep: true });
+
   async function save(): Promise<Row | null> {
-    errors.value = validate(resource.value.fields, values.value);
+    setErrors(validate(resource.value.fields, values.value));
     if (Object.keys(errors.value).length) return null;
     saving.value = true;
     try {
@@ -79,12 +125,12 @@ export function useResourceForm(resource: Ref<ResourceDef>, id: Ref<string | nul
       return saved;
     } catch (error) {
       const apiError = toApiError(error);
-      errors.value = apiError.fields;
+      setErrors(apiError.fields);
       throw apiError;
     } finally {
       saving.value = false;
     }
   }
 
-  return { values, errors, loading, saving, isNew, load, save };
+  return { values, errors, loading, saving, isNew, load, save, check };
 }

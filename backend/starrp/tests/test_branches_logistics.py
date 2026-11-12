@@ -1,5 +1,6 @@
-"""Filiais: hierarquia (quem responde a quem) e configuração de logística por filial."""
+"""Filiais: hierarquia (quem responde a quem) e a regra de logística de cada filial."""
 from starrp.models import Store
+from starrp.services import rules
 from starrp.services.provisioning import create_store
 
 
@@ -22,18 +23,19 @@ def test_hierarquia_de_filiais_lista_em_arvore_e_recusa_ciclo(ctx):
     assert Store.all_objects.get(pk=ctx.store.pk).parent_id is None
 
 
-def test_conferencia_manual_e_ligada_por_filial(ctx):
+def test_conferencia_manual_e_ligada_pela_regra_de_logistica_da_filial(ctx):
+    """Filial B usa outra regra de logística (com conferência manual); a filial do contexto segue na padrão."""
     other = create_store(ctx.account, "Filial B")
     api = ctx.client(store=None)
 
-    rows = {r["store_name"]: r for r in api.get("/api/v1/logistics/settings/", HTTP_X_STORE_ID="*").json()["results"]}
-    turned = api.patch(f"/api/v1/logistics/settings/{rows['Filial B']['id']}/", {"allow_manual_conference": True},
+    created = api.post("/api/v1/logistics/rules/", {"name": "Confere à mão", "allow_manual_conference": True},
                        format="json", HTTP_X_STORE_ID="*")
-    again = {r["store_name"]: r for r in api.get("/api/v1/logistics/settings/", HTTP_X_STORE_ID="*").json()["results"]}
-    create = api.post("/api/v1/logistics/settings/", {"allow_manual_conference": True}, format="json")
+    moved = api.patch(f"/api/v1/stores/{other.pk}/", {"logistics_rule": created.json()["id"]}, format="json",
+                      HTTP_X_STORE_ID="*")
+    rows = {r["name"]: r for r in api.get("/api/v1/logistics/rules/", HTTP_X_STORE_ID="*").json()["results"]}
 
-    assert set(rows) == {ctx.store.name, "Filial B"} and turned.status_code == 200
-    assert again["Filial B"]["allow_manual_conference"] is True
-    assert again[ctx.store.name]["allow_manual_conference"] is False
-    assert create.status_code == 405
-    assert other.pk
+    assert created.status_code == 201 and moved.status_code == 200
+    assert rows["Confere à mão"]["store_names"] == ["Filial B"] and rows["Confere à mão"]["is_default"] is False
+    assert rows["Padrão"]["is_default"] is True and ctx.store.name in rows["Padrão"]["store_names"]
+    assert rules.of_store("logistics_rule", other.pk, ctx.account.pk).allow_manual_conference is True
+    assert rules.of_store("logistics_rule", ctx.store.pk, ctx.account.pk).allow_manual_conference is False

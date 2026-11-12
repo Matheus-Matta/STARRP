@@ -46,6 +46,7 @@ import FormActions from "@/components/resource/FormActions.vue";
 import RelationSelect from "@/components/resource/RelationSelect.vue";
 import { useBulkSelection } from "@/composables/useBulkSelection";
 import { usePrefetch } from "@/composables/usePrefetch";
+import { tasksApi } from "@/api/tasks";
 import { useResourceList } from "@/composables/useResourceList";
 import { useViewport } from "@/composables/useViewport";
 import { findResource } from "@/resources";
@@ -71,7 +72,51 @@ const draftItems = computed(() => [{
   })),
 }]);
 /** Ações do topo da lista não têm registro: só recarregam a lista ao terminar. */
-const listCtx = { id: "", values: {}, reload: async () => void (await refetch()) };
+/* Rodada em lotes (`resource.progress`): mostra quanto falta e relê a lista enquanto os itens vão sendo criados. */
+const progress = ref<{ running: boolean; done: number; total: number; task?: string | null } | null>(null);
+const stopping = ref(false);
+async function stopRound() {
+  if (!progress.value?.task) return;
+  stopping.value = true;
+  try {
+    await tasksApi.stop(progress.value.task);
+    notify.success("Rodada parada", "O que já foi feito fica salvo.");
+    await checkProgress();
+  } catch (error) {
+    notify.error(error, "Não foi possível parar");
+  } finally {
+    stopping.value = false;
+  }
+}
+let progressTimer: ReturnType<typeof setTimeout> | undefined;
+async function checkProgress() {
+  clearTimeout(progressTimer);
+  const source = resource.value.progress;
+  if (!source) {
+    progress.value = null;
+    return;
+  }
+  const was = progress.value?.running;
+  try {
+    progress.value = await source.load();
+  } catch {
+    return;  // o aviso é um extra: a lista segue funcionando
+  }
+  if (progress.value.running || was) void refetch();
+  if (progress.value.running) progressTimer = setTimeout(() => void checkProgress(), 4000);
+}
+onMounted(() => void checkProgress());
+watch(resource, () => void checkProgress());
+onBeforeUnmount(() => clearTimeout(progressTimer));
+const listCtx = { id: "", values: {}, reload: async () => { await refetch(); await checkProgress(); } };
+/* Linha com trabalho em segundo plano (`resource.poll`): a lista relê sozinha até terminar. */
+const polling = computed(() => rows.value.some((row) => resource.value.poll?.while(row)));
+let pollTimer: ReturnType<typeof setInterval> | undefined;
+watch(polling, (on) => {
+  clearInterval(pollTimer);
+  if (on) pollTimer = setInterval(() => void refetch(), 3000);
+}, { immediate: true });
+onBeforeUnmount(() => clearInterval(pollTimer));
 const canWrite = computed(() => !resource.value.readOnly && session.can(`${resource.value.permission}.manage`));
 /** Cadastro fixo do sistema: só o superusuário cria ou exclui (a loja só ajusta). */
 const locked = computed(() => Boolean(resource.value.systemData) && !session.me?.is_superuser);
@@ -79,9 +124,9 @@ const canCreate = computed(() => canWrite.value && resource.value.creatable !== 
 
 /** Nome amigável dos filtros que chegam por link (o selo mostra "Filtrado: produto"). */
 const FILTER_NAMES: Record<string, string> = {
-  variant: "produto", product: "produto", financial_account: "conta", warehouse: "depósito", customer: "cliente",
+  variant: "produto", product: "produto", variant__product: "produto", financial_account: "conta", warehouse: "depósito", customer: "cliente",
   supplier: "fornecedor", title__kind: "tipo", status: "situação", due_date__gte: "vence a partir de",
-  due_date__lte: "vence até", expires_at__lte: "vence até", category: "categoria",
+  due_date__lte: "vence até", expires_at__lte: "vence até", category: "categoria", sale: "venda",
 };
 
 /** Filtro vindo da URL (ex.: o saldo abre o kardex com `?variant=<id>`). */
@@ -117,7 +162,9 @@ const activeFilters = computed(() => [...declared.value].filter((key) => {
 }).length);
 const hasFilters = computed(() => Boolean(state.search) || Object.values(state.filters).some((v) => v !== null && v !== undefined && v !== ""));
 const searchBox = ref<{ $el: HTMLElement }>();
-const selection = useBulkSelection(rows as Ref<{ id: string }[]>, total);
+/** Na árvore de `parent` os filhos são do mesmo cadastro: os abertos entram no "marcar a página". */
+const selectable = computed(() => [...rows.value, ...Object.values(childRows.value).flat().filter((row) => kindOf(row) === "same")]);
+const selection = useBulkSelection(selectable as Ref<{ id: string }[]>, total);
 /** Os mesmos filtros da tela: "selecionar todos" vale para o que a lista mostra. */
 const listFilters = computed(() => ({ search: state.search, ordering: state.ordering, ...state.filters }) as Record<string, string>);
 watch(() => [state.search, state.filters, resource.value.endpoint], selection.clear, { deep: true });
@@ -268,7 +315,9 @@ const rowClass = (row: Row) => (selection.isSelected(String(row.id)) ? "row-sele
 /*
  * Árvore (`resource.tree`): cada linha pode abrir e mostrar o que tem dentro.
  * Os filhos são buscados na 1ª vez que a linha abre e ficam guardados até a
- * lista mudar (página, busca, ordem). Linha filha não tem caixa de marcar nem "⋯".
+ * lista mudar (página, busca, ordem). Na árvore de `parent` (categorias, filiais) tudo já
+ * vem aberto e o filho, do mesmo cadastro, tem caixa de marcar e "⋯"; a linha de outro
+ * cadastro (`children`) não tem.
  */
 type Kind = "same" | "child";
 const tree = computed(() => resource.value.tree);
@@ -280,8 +329,11 @@ const selectedKeys = ref<Record<string, boolean>>({});
 watch(() => rows.value.map((row) => row.id).join(), () => {
   childRows.value = {};
   expandedKeys.value = {};
-});
-const kindOf = (row: Row) => row.__kind as Kind | undefined;
+  if (tree.value && (tree.value.expanded ?? Boolean(tree.value.parent))) void expandAll(rows.value, "");
+}, { immediate: true }); // lista que já veio do cache também abre
+function kindOf(row: Row) {
+  return row.__kind as Kind | undefined;
+}
 function expandable(row: Row) {
   if (kindOf(row) === "child") return false;
   return tree.value?.hasChildren ? tree.value.hasChildren(row) : Number(row.children_count ?? 0) > 0;
@@ -310,6 +362,17 @@ async function onExpand(node: TreeNode) {
   } finally {
     loadingKeys.value = new Set([...loadingKeys.value].filter((k) => k !== key));
   }
+}
+/** Abre cada linha com filhos e, carregados, os filhos deles (até 6 níveis). */
+async function expandAll(level: Row[], prefix: string, depth = 0) {
+  if (depth > 5) return;
+  await Promise.all(level.filter(expandable).map(async (row) => {
+    const key = `${prefix}${String(row.id)}`;
+    await onExpand({ key, data: row } as TreeNode);
+    if (!childRows.value[key]) return;
+    expandedKeys.value = { ...expandedKeys.value, [key]: true };
+    await expandAll(childRows.value[key], `${key}/`, depth + 1);
+  }));
 }
 /** Clique na linha: abre o registro (a linha filha leva ao `childLink` ou ao pai). */
 function onNodeSelect(node: TreeNode) {
@@ -357,6 +420,13 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
       <Menu ref="draftMenu" :model="draftItems" popup />
       <Button v-if="canCreate" icon="pi pi-plus" :label="newLabel(resource)" size="small" title="Atalho: N" @click="open()" />
     </header>
+    <p v-if="progress?.running" class="list-progress" role="status">
+      <i class="pi pi-spin pi-spinner" />
+      <span class="list-progress__text">{{ resource.progress?.label(progress.done, progress.total) }}</span>
+      <RouterLink v-if="progress.task" :to="`/cadastros/tarefas/${progress.task}`">Ver tarefa</RouterLink>
+      <Button v-if="progress.task && session.can('catalog.manage')" label="Parar rodada" icon="pi pi-stop-circle" size="small" severity="danger"
+              outlined :loading="stopping" @click="stopRound" />
+    </p>
 
     <p v-if="locked" class="system-note">
       <i class="pi pi-lock" /> {{ resource.systemNote ?? "Cadastro do sistema: já vem pronto com a conta. Você pode ajustar "
@@ -448,7 +518,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
             </button>
           </template>
           <template #body="{ node }">
-            <span v-if="!kindOf(node.data)" class="check-cell" @click.stop>
+            <span v-if="kindOf(node.data) !== 'child'" class="check-cell" @click.stop>
               <Checkbox :model-value="selection.isSelected(String(node.data.id))" binary :aria-label="`Marcar ${node.data.name ?? ''}`"
                         @update:model-value="selection.toggle(String(node.data.id))" />
             </span>
@@ -527,6 +597,11 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 </template>
 
 <style scoped>
+.list-progress__text { flex: 1; min-width: 0; }
+.list-progress {
+  display: flex; align-items: center; gap: 0.5rem; margin: 0 0 0.6rem; padding: 0.55rem 0.85rem; border-radius: var(--radius-md);
+  font-size: 13px; color: var(--info-text); background: var(--info-subtle); border: 1px solid var(--border-subtle);
+}
 .head { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
 .head__actions { margin-left: auto; }
 .system-note {

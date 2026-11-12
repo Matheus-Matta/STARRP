@@ -1,6 +1,7 @@
 /** Cadastros de apoio de estoque, fiscal e financeiro. */
 import { defineAsyncComponent } from "vue";
 
+import { CSOSN, CST_ICMS } from "./fiscalCodes";
 import { balanceColumns, movementColumns, stockLinks } from "./stock";
 import { choices, defineResource, yesNo } from "./types";
 
@@ -44,7 +45,7 @@ export const warehouses = defineResource({
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true },
+    { name: "name", label: "Nome", type: "text", required: true, placeholder: "Ex.: Depósito central" },
     { name: "kind", label: "Tipo", type: "select", options: warehouseKind.options, default: "storage" },
     { name: "is_default", label: "O PDV baixa a venda daqui", type: "boolean" },
     { name: "is_active", label: "Ativo", type: "boolean", default: true },
@@ -72,15 +73,19 @@ export const fiscalProfiles = defineResource({
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true, section: "Regra" },
-    { name: "cfop", label: "CFOP", type: "text", default: "5102", maxLength: 4, section: "Regra" },
-    { name: "cfop_interstate", label: "CFOP interestadual", type: "text", maxLength: 4, section: "Regra" },
-    { name: "csosn", label: "CSOSN (Simples)", type: "text", maxLength: 3, section: "Regra" },
-    { name: "cst_icms", label: "CST ICMS (regime normal)", type: "text", maxLength: 2, section: "Regra" },
+    { name: "name", label: "Nome", type: "text", required: true, section: "Regra", placeholder: "Ex.: Revenda no Simples Nacional" },
+    { name: "ncm", label: "NCM", type: "text", format: "ncm", section: "Regra",
+      hint: "Opcional. Vale para o produto do perfil que não tiver NCM próprio." },
+    { name: "cest", label: "CEST", type: "text", format: "cest", section: "Regra",
+      hint: "Opcional. Vale para o produto do perfil que não tiver CEST próprio." },
+    { name: "cfop", label: "CFOP", type: "text", format: "cfop", default: "5102", section: "Regra" },
+    { name: "cfop_interstate", label: "CFOP interestadual", type: "text", format: "cfop-interstate", section: "Regra" },
+    { name: "csosn", label: "CSOSN (Simples)", type: "select", options: CSOSN, section: "Regra" },
+    { name: "cst_icms", label: "CST ICMS (regime normal)", type: "select", options: CST_ICMS, section: "Regra" },
     { name: "icms_rate", label: "ICMS (%)", type: "percent", section: "Alíquotas" },
-    { name: "pis_cst", label: "CST PIS", type: "text", default: "49", section: "Alíquotas" },
+    { name: "pis_cst", label: "CST PIS", type: "text", format: "cst-pis", default: "49", section: "Alíquotas" },
     { name: "pis_rate", label: "PIS (%)", type: "percent", section: "Alíquotas" },
-    { name: "cofins_cst", label: "CST COFINS", type: "text", default: "49", section: "Alíquotas" },
+    { name: "cofins_cst", label: "CST COFINS", type: "text", format: "cst-pis", default: "49", section: "Alíquotas" },
     { name: "cofins_rate", label: "COFINS (%)", type: "percent", section: "Alíquotas" },
     { name: "approx_tax_rate", label: "Tributos aproximados (%)", type: "percent", section: "Alíquotas" },
     { name: "is_default", label: "Sugerido no cadastro de produto", type: "boolean", section: "Alíquotas" },
@@ -120,14 +125,14 @@ export const financialAccounts = defineResource({
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true },
+    { name: "name", label: "Nome", type: "text", required: true, placeholder: "Ex.: Itaú conta movimento" },
     { name: "kind", label: "Tipo", type: "select", default: "bank", options: [
       { label: "Caixa / cofre", value: "cash" }, { label: "Banco", value: "bank" },
       { label: "Adquirente", value: "acquirer" }, { label: "Carteira digital", value: "wallet" }] },
-    { name: "bank_code", label: "Banco", type: "text" },
+    { name: "bank_code", label: "Banco", type: "text", format: "bank", placeholder: "001, 341, 260…" },
     { name: "agency", label: "Agência", type: "text" },
     { name: "account_number", label: "Conta", type: "text" },
-    { name: "opening_balance", label: "Saldo inicial", type: "money" },
+    { name: "opening_balance", label: "Saldo inicial", type: "money", signed: true, hint: "Negativo = conta começa no vermelho." },
     { name: "is_active", label: "Ativa", type: "boolean", default: true },
   ],
 });

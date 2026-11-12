@@ -86,10 +86,11 @@ watch(variable, (isVariable) => {
 const DETAIL: FieldDef[] = [
   { name: "images", label: "Fotos desta variação", type: "images", full: true,
     hint: "Ex.: a camiseta azul de frente e de costas. A 1ª aparece no PDV quando esta variação é escolhida." },
-  { name: "scale_code", label: "PLU da balança", type: "text", maxLength: 6, hint: "Código do item na balança etiquetadora." },
+  { name: "barcodes", label: "Código de barras (EAN/GTIN)", type: "barcodes", full: true,
+    hint: "Cadastre o EAN e o GTIN: a pesquisa de preço usa todos, o principal primeiro. O principal vai na etiqueta." },
+  { name: "scale_code", label: "PLU da balança", type: "text", format: "digits6", hint: "Código do item na balança etiquetadora." },
   { name: "min_stock", label: "Estoque mínimo", type: "quantity" },
   { name: "max_stock", label: "Estoque máximo", type: "quantity" },
-  { name: "barcodes", label: "Códigos de barras", type: "barcodes", full: true },
   { name: "gross_weight", label: "Peso bruto (kg)", type: "quantity" },
   { name: "net_weight", label: "Peso líquido (kg)", type: "quantity" },
   { name: "height_cm", label: "Altura (cm)", type: "measure" },
@@ -98,9 +99,9 @@ const DETAIL: FieldDef[] = [
   { name: "volumes", label: "Volumes (caixas da unidade)", type: "volumes", full: true },
 ];
 const MAIN: FieldDef[] = [
-  { name: "sku", label: "SKU (código interno)", type: "text", maxLength: 60, hint: "Vazio = gerado pela referência." },
+  { name: "sku", label: "SKU (código interno)", type: "text", maxLength: 60, placeholder: "Gerado pela referência", hint: "Vazio = gerado pela referência." },
   { name: "price", label: "Preço de venda", type: "money", required: true },
-  { name: "promotional_price", label: "Preço promocional fixo", type: "money",
+  { name: "promotional_price", label: "Preço promocional fixo", type: "money", placeholder: "Sem promoção",
     hint: "Sem data. Promoção com período fica nas tabelas de desconto." },
 ];
 
@@ -117,6 +118,20 @@ const photoOf = (row: VariantRow) => (row.images as { url: string }[] | undefine
 
 function update(index: number, patch: Partial<VariantRow>) {
   model.value = model.value.map((row, i) => (i === index ? { ...row, ...patch } : row));
+}
+
+type Barcode = { code: string; is_primary: boolean };
+const barcodesOf = (row: VariantRow) => (row.barcodes as Barcode[] | undefined) ?? [];
+const mainCode = (row: VariantRow) => (barcodesOf(row).find((b) => b.is_primary) ?? barcodesOf(row)[0])?.code ?? "";
+
+/** O EAN na própria linha da grade: troca o principal. Os outros códigos ficam nos detalhes. */
+function setMainCode(index: number, code: string) {
+  const row = model.value[index]!;
+  const typed = code.trim();
+  const others = barcodesOf(row).filter((b) => b.code !== mainCode(row) && b.code !== typed)
+    .map((b) => ({ ...b, is_primary: false }));
+  if (typed) return update(index, { barcodes: [{ code: typed, is_primary: true }, ...others] });
+  update(index, { barcodes: others.map((b, i) => ({ ...b, is_primary: i === 0 })) });
 }
 
 function setDefault(index: number) {
@@ -163,7 +178,7 @@ const money = (v: number | null) => (v === null ? null : v.toFixed(2));
       </p>
       <div v-if="model.length || fresh.length" class="table" role="table">
         <div class="row head" role="row">
-          <span>Variação</span><span>SKU</span><span>Preço</span><span>Promocional</span><span>Ativa</span><span />
+          <span>Variação</span><span>SKU</span><span>EAN</span><span>Preço</span><span>Promocional</span><span>Ativa</span><span />
         </div>
         <template v-for="(row, index) in model" :key="row.id ?? index">
           <div class="row" :class="{ 'row--open': open.has(index), 'row--off': row.is_active === false, 'row--leaving': leaving.has(index) }"
@@ -180,15 +195,18 @@ const money = (v: number | null) => (v === null ? null : v.toFixed(2));
             </span>
             <InputText :model-value="row.sku" size="small" fluid aria-label="SKU" :invalid="!String(row.sku ?? '').trim()"
                        placeholder="Gerado ao salvar" @update:model-value="update(index, { sku: String($event ?? '') })" />
+            <InputText :model-value="mainCode(row)" size="small" fluid aria-label="EAN" placeholder="Código de barras"
+                       @update:model-value="setMainCode(index, String($event ?? ''))" />
             <InputNumber :model-value="num(row.price)" mode="currency" currency="BRL" locale="pt-BR" size="small" fluid
-                         aria-label="Preço" @update:model-value="update(index, { price: money($event) })" />
+                         :min="0" highlight-on-focus placeholder="R$ 0,00" aria-label="Preço" @update:model-value="update(index, { price: money($event) })" />
             <InputNumber :model-value="num(row.promotional_price)" mode="currency" currency="BRL" locale="pt-BR" size="small"
-                         fluid aria-label="Promocional" @update:model-value="update(index, { promotional_price: money($event) })" />
+                         fluid :min="0" highlight-on-focus placeholder="Sem promoção" aria-label="Promocional" @update:model-value="update(index, { promotional_price: money($event) })" />
             <ToggleSwitch :model-value="row.is_active !== false" aria-label="Ativa"
                           @update:model-value="update(index, { is_active: $event })" />
             <span class="actions">
-              <Button :icon="open.has(index) ? 'pi pi-chevron-up' : 'pi pi-sliders-h'" text rounded size="small"
-                      :aria-label="open.has(index) ? 'Fechar detalhes' : 'Detalhes'" @click="toggle(index)" />
+              <Button :icon="open.has(index) ? 'pi pi-chevron-up' : 'pi pi-sliders-h'" text size="small" label="Detalhes"
+                      :aria-label="open.has(index) ? 'Fechar detalhes' : 'Abrir detalhes: códigos, estoque mínimo, medidas e volumes'"
+                      @click="toggle(index)" />
               <Button icon="pi pi-trash" text rounded size="small" severity="danger" aria-label="Excluir variante"
                       @click="remove(index)" />
             </span>
@@ -204,7 +222,7 @@ const money = (v: number | null) => (v === null ? null : v.toFixed(2));
             <span class="chips"><Tag v-for="value in item.label" :key="value" :value="value" severity="info" /></span>
           </span>
           <span class="fresh-sku" title="SKU que a variante vai ganhar (pode mudar depois de salvar)">{{ item.sku }}</span>
-          <span class="muted fresh-note">Nova: criada ao salvar com o preço da padrão</span>
+          <span class="muted fresh-note">Nova: criada ao salvar com o preço da padrão. O EAN e os detalhes ficam disponíveis depois de salvar.</span>
         </div>
       </div>
       <p v-if="fresh.length || leaving.size" class="muted preview-note">
@@ -220,7 +238,7 @@ const money = (v: number | null) => (v === null ? null : v.toFixed(2));
 .empty { margin: 0; font-size: 13px; }
 .table { border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; }
 .row {
-  display: grid; grid-template-columns: minmax(180px, 1.4fr) 1fr 0.9fr 0.9fr 56px 76px; gap: 0.6rem; align-items: center;
+  display: grid; grid-template-columns: minmax(160px, 1.3fr) 1fr 1.1fr 0.85fr 0.85fr 48px 150px; gap: 0.6rem; align-items: center;
   padding: 0.5rem 0.75rem; border-top: 1px solid var(--border); transition: background-color var(--dur-fast) ease;
 }
 .row:first-child { border-top: 0; }
@@ -242,7 +260,7 @@ const money = (v: number | null) => (v === null ? null : v.toFixed(2));
 .row--leaving { background: color-mix(in srgb, var(--danger-subtle) 60%, transparent); }
 .row--leaving .chips :deep(.p-tag) { text-decoration: line-through; }
 .row--fresh { background: color-mix(in srgb, var(--info-subtle) 55%, transparent); }
-.row--fresh .fresh-note { grid-column: span 4; font-size: 12.5px; }
+.row--fresh .fresh-note { grid-column: span 5; font-size: 12.5px; }
 .fresh-icon { color: var(--info-text); }
 .fresh-sku { font: 600 13px/1.2 var(--font-mono, monospace); color: var(--text-strong); padding-left: 0.6rem; }
 .preview-note { margin: 0; font-size: 12.5px; display: flex; gap: 0.4rem; align-items: center; }

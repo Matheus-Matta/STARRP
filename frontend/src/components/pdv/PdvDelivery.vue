@@ -3,7 +3,7 @@
  * Entrega DENTRO do PDV: o endereço do cliente da venda (ou um novo, cadastrado aqui
  * e já guardado no cliente) e a cotação de TODAS as tabelas de frete ativas para o CEP
  * dele — cada uma com valor e prazo; as que não atendem dizem por quê. Escolher uma
- * lança o frete no total. "Retirar na loja" tira a entrega.
+ * lança o frete no total. "Retirar na loja" marca a retirada (a venda nasce sem nenhuma das duas).
  */
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import Button from "primevue/button";
@@ -51,6 +51,7 @@ const quotes = useQuery({
 });
 const delivery = computed(() => ((props.sale?.metafields ?? {}) as Record<string, unknown>)._entrega as
   { table: string } | undefined);
+const pickedUp = computed(() => !props.sale?.shipping_address && Boolean(((props.sale?.metafields ?? {}) as Record<string, unknown>)._retirada));
 
 /* Endereço novo: o mesmo editor do cadastro, guardado no cliente ao confirmar. */
 const adding = ref<Address[] | null>(null);
@@ -93,8 +94,9 @@ const place = (a: Address) => [a.district, [a.city, a.state].filter(Boolean).joi
         <h2>Entrega</h2>
         <p>{{ sale?.customer_name ? `Para ${sale.customer_name}` : "Escolha o endereço e a forma de entrega." }}</p>
       </div>
-      <Button label="Retirar na loja" icon="pi pi-shop" severity="secondary" outlined class="pickup"
-              :disabled="busy || !sale?.shipping_address" @click="emit('pickup')" />
+      <Button :label="pickedUp ? 'Retirada na loja' : 'Retirar na loja'" :icon="pickedUp ? 'pi pi-check' : 'pi pi-shop'"
+              :severity="pickedUp ? undefined : 'secondary'" :outlined="!pickedUp" class="pickup"
+              :disabled="busy || !sale || pickedUp" @click="emit('pickup')" />
     </header>
 
     <div v-if="!customerId" class="empty">

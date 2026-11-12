@@ -6,7 +6,7 @@ from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from starrp.core.tenant import tenant_context
-from starrp.models import CashRegister, PaymentMethod, Role, Store, UserProfile
+from starrp.models import CashRegister, PaymentMethod, Role, StoreRule, UserProfile
 from starrp.services import catalog
 from starrp.services.provisioning import create_account
 
@@ -21,7 +21,7 @@ class Ctx:
         self.register = CashRegister.all_objects.get(store=self.store)
         # A maioria dos testes cobra sem abrir caixa (comissão, cupom, financeiro...): o "exige caixa
         # aberto" fica desligado aqui; os testes de caixa ligam (`ctx.require_cash()`).
-        Store.all_objects.filter(pk=self.store.pk).update(require_open_cash_session=False)
+        StoreRule.all_objects.filter(pk=self.store.rule_id).update(require_open_cash_session=False)
         self.store.refresh_from_db()
         self.methods = {m.kind: m for m in PaymentMethod.all_objects.filter(account=self.account)}
 
@@ -37,8 +37,15 @@ class Ctx:
         return client
 
     def require_cash(self):
-        Store.all_objects.filter(pk=self.store.pk).update(require_open_cash_session=True)
+        StoreRule.all_objects.filter(pk=self.store.rule_id).update(require_open_cash_session=True)
         self.store.refresh_from_db()
+
+    def link(self, user, register=None):
+        """Vincula o operador ao caixa (um por caixa, um caixa por usuário)."""
+        register = register or self.register
+        register.operator = user
+        register.save(update_fields=["operator"])
+        return register
 
     def user(self, username, role_code, stores=None, **profile):
         """Usuário com acesso às `stores` (padrão: a loja do contexto)."""
@@ -69,6 +76,16 @@ class Ctx:
 
     def tenant(self):
         return tenant_context(self.account)
+
+
+@pytest.fixture(autouse=True)
+def _no_search_service(settings):
+    """O serviço de busca do `.env` de quem roda os testes não entra: quem testa o serviço liga ele."""
+    settings.SHOPPING_SEARCH_URL, settings.SHOPPING_SEARCH_TOKEN = "", ""
+    settings.BRIGHTDATA_API_KEY, settings.BRIGHTDATA_ZONE = "", ""
+    settings.OPENAI_API_KEY = ""  # nenhum teste chama o modelo de verdade
+    settings.GOOGLE_ADS_CLIENT_ID = settings.GOOGLE_ADS_CLIENT_SECRET = settings.GOOGLE_ADS_REFRESH_TOKEN = ""
+    settings.GOOGLE_ADS_CUSTOMER_ID = settings.GOOGLE_ADS_LOGIN_CUSTOMER_ID = settings.GOOGLE_ADS_DEVELOPER_TOKEN = ""
 
 
 @pytest.fixture

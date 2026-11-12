@@ -1,0 +1,51 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block title %}Entrar | Starrp Admin{% endblock %}
+{% block bodyclass %}{{ block.super }} login{% endblock %}
+{% block usertools %}{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+{% block content_title %}{% endblock %}
+
+{% block content %}
+<div class="starrp-login">
+  <section class="starrp-login__intro">
+    <a class="starrp-brand starrp-login__brand" href="{% url 'admin:index' %}" aria-label="Starrp">
+      {% include 'admin/includes/brand.html' %}
+    </a>
+    <div class="starrp-login__copy">
+      <span>Gestão conectada</span>
+      <h1>Seu negócio sob controle, em um só lugar.</h1>
+      <p>Administração segura dos cadastros, integrações e configurações da plataforma Starrp.</p>
+    </div>
+    <p class="starrp-login__foot">Ambiente administrativo · Acesso restrito</p>
+  </section>
+  <section class="starrp-login__form-wrap">
+    <div class="starrp-login__mobile-brand"><span class="starrp-brand">{% include 'admin/includes/brand.html' %}</span></div>
+    <div class="starrp-login__card">
+      <div class="starrp-login__heading"><span>Área segura</span><h2>Bem-vindo de volta</h2><p>Entre com suas credenciais administrativas.</p></div>
+      {% if form.errors and not form.non_field_errors %}<p class="errornote">Confira os campos abaixo e tente novamente.</p>{% endif %}
+      {% if form.non_field_errors %}{% for error in form.non_field_errors %}<p class="errornote">{{ error }}</p>{% endfor %}{% endif %}
+      {% if user.is_authenticated %}<p class="errornote">Sua conta não tem acesso a esta página. Entre com outro usuário.</p>{% endif %}
+      <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
+        <div class="form-row">
+          {{ form.username.errors }}
+          <label for="{{ form.username.id_for_label }}">Usuário</label>
+          <div class="starrp-login-field"><span aria-hidden="true">@</span>{{ form.username }}</div>
+        </div>
+        <div class="form-row">
+          {{ form.password.errors }}
+          <label for="{{ form.password.id_for_label }}">Senha</label>
+          <div class="starrp-login-field"><span aria-hidden="true">●</span>{{ form.password }}</div>
+          <input type="hidden" name="next" value="{{ next }}">
+        </div>
+        {% url 'admin_password_reset' as password_reset_url %}
+        {% if password_reset_url %}<div class="password-reset-link"><a href="{{ password_reset_url }}">Esqueceu sua senha?</a></div>{% endif %}
+        <div class="submit-row"><input type="submit" value="Entrar no admin"></div>
+      </form>
+      <p class="starrp-login__help">Problemas para acessar? Fale com o responsável pela plataforma.</p>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -7,7 +7,7 @@ import { defineAsyncComponent } from "vue";
 
 import { reviewsApi } from "@/api/reviews";
 
-import { choices, defineResource } from "./types";
+import { choices, type ColumnDef, defineResource } from "./types";
 
 const ReviewSummary = defineAsyncComponent(() => import("@/components/reviews/ReviewSummary.vue"));
 const RejectReviewDialog = defineAsyncComponent(() => import("@/components/reviews/RejectReviewDialog.vue"));
@@ -15,6 +15,19 @@ const RejectReviewDialog = defineAsyncComponent(() => import("@/components/revie
 export const reviewKind = choices({ product: "Produto", delivery: "Entrega" });
 export const reviewStatus = choices({ pending: "Pendente", approved: "Aprovada", rejected: "Rejeitada" });
 const stars = choices({ 5: "★★★★★ Ótimo", 4: "★★★★ Bom", 3: "★★★ Regular", 2: "★★ Ruim", 1: "★ Péssimo" });
+
+/** Aba "Avaliações" da venda e do produto: a mesma lista, filtrada, com o atalho para a lista completa. */
+export const reviewColumns: ColumnDef[] = [
+  { key: "public_name", label: "Cliente" },
+  { key: "rating", label: "Nota", type: "stars" },
+  { key: "created_at", label: "Quando", type: "datetime" },
+  { key: "kind", label: "Tipo", type: "tag", map: reviewKind.map, tones: { product: "brand", delivery: "info" } },
+  { key: "product_name", label: "Produto" },
+  { key: "comment", label: "Comentário", sortable: false },
+  { key: "status", label: "Situação", type: "tag", map: reviewStatus.map,
+    tones: { pending: "warning", approved: "success", rejected: "danger" } },
+];
+export const reviewLink = (row: Record<string, unknown>) => `/cadastros/avaliacoes/${row.id}`;
 
 export const reviews = defineResource({
   name: "avaliacoes",
@@ -30,9 +43,9 @@ export const reviews = defineResource({
   lockedWhen: (v) => Boolean(v.id),
   summary: ReviewSummary,
   columns: [
-    { key: "created_at", label: "Quando", type: "datetime" },
     { key: "public_name", label: "Cliente", title: true },
     { key: "rating", label: "Nota", type: "stars" },
+    { key: "created_at", label: "Quando", type: "datetime" },
     { key: "kind", label: "Tipo", type: "tag", map: reviewKind.map, tones: { product: "brand", delivery: "info" } },
     { key: "product_name", label: "Produto" },
     { key: "comment", label: "Comentário", mobile: false },

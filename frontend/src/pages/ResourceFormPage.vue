@@ -36,7 +36,7 @@ const confirm = useConfirm();
 
 const resource = computed(() => findResource(String(route.params.resource)) as ResourceDef);
 const id = computed(() => (route.params.id === "novo" ? null : String(route.params.id)));
-const { values, errors, loading, saving, isNew, load, save } = useResourceForm(resource, id);
+const { values, errors, loading, saving, isNew, load, save, check } = useResourceForm(resource, id);
 const canWrite = computed(() => !resource.value.readOnly && session.can(`${resource.value.permission}.manage`)
   && (isNew.value || resource.value.editable !== false) && !resource.value.lockedWhen?.(values.value));
 /** Sem edição (confirmado, só leitura, sem permissão): página de leitura em vez de campos desabilitados. */
@@ -116,6 +116,8 @@ const sections = computed(() => {
   for (const field of resource.value.fields) {
     if (field.visible && !field.visible(values.value)) continue;
     if (field.createOnly && !isNew.value) continue;
+    if (field.permission && !session.can(field.permission)) continue;
+    if (field.module && !session.hasModule(field.module)) continue;
     const name = field.section ?? "Dados";
     groups.set(name, [...(groups.get(name) ?? []), field]);
   }
@@ -213,6 +215,16 @@ onBeforeUnmount(() => {
   window.removeEventListener("beforeunload", onUnload);
 });
 watch([resource, id], () => reload());
+
+/* Trabalho em segundo plano (`resource.poll`): avisa e relê até terminar, sem skeleton nem perder a rolagem. */
+const polling = computed(() => !isNew.value && !loading.value && Boolean(resource.value.poll?.while(values.value)));
+let pollTimer: ReturnType<typeof setInterval> | undefined;
+watch(polling, (on, before) => {
+  clearInterval(pollTimer);
+  if (on) pollTimer = setInterval(() => void reload(true), 3000);
+  else if (before && resource.value.poll?.done) notify.success(resource.value.poll.done);
+});
+onBeforeUnmount(() => clearInterval(pollTimer));
 </script>
 
 <template>
@@ -228,13 +240,15 @@ watch([resource, id], () => reload());
             <i v-if="badge.icon" :class="badge.icon" /> {{ badge.label }}
           </span>
         </div>
-        <p>{{ isNew ? `Preencha os dados do ${resource.singular}` : `${resource.group} · ${resource.title}` }}</p>
+        <p>{{ isNew ? `Preencha os dados ${resource.feminine ? "da" : "do"} ${resource.singular}` : `${resource.group} · ${resource.title}` }}</p>
       </div>
       <FormActions v-if="!isNew && !loading && resource.formActions?.length" :actions="resource.formActions"
                    :ctx="{ id: id!, values, reload: () => reload(true) }" class="head__actions" />
     </header>
 
     <RecordTabs v-if="!isNew && resource.views?.length" :resource="resource" :id="id!" active="dados" />
+
+    <Message v-if="polling" severity="info" :closable="false" icon="pi pi-spin pi-spinner">{{ resource.poll?.message }}</Message>
 
     <div v-if="draft && !loading" class="draft-banner" role="status">
       <i class="pi pi-file-edit" />
@@ -271,7 +285,8 @@ watch([resource, id], () => reload());
         <div class="fsec__card grid-form" :class="{ 'fsec__card--bare': isBare(fields) }">
           <FormField v-for="field in fields" :key="field.name" v-model="values[field.name]" :field="field" :bare="isBare(fields)"
                      :error="errors[field.name]" :context="values"
-                     :disabled="!canWrite || (field.readOnly && !session.me?.is_superuser)" @reload="reload(true)" @fill="fill" />
+                     :disabled="!canWrite || (field.readOnly && !session.me?.is_superuser)" @reload="reload(true)" @fill="fill"
+                     @check="check(field.name)" />
         </div>
       </section>
     </fieldset>
@@ -298,20 +313,14 @@ watch([resource, id], () => reload());
       </div>
     </div>
     <!-- Sair com alterações não salvas: continuar, descartar ou guardar rascunho. -->
-    <Dialog :visible="leaveTo !== null" modal header="Alterações não salvas" :closable="true" :draggable="false"
-            :style="{ width: 'min(580px, calc(100vw - 24px))' }" @update:visible="leaveTo = null">
-      <div class="leave">
-        <span class="leave__icon"><i class="pi pi-exclamation-triangle" /></span>
-        <p>Você mudou {{ resource.feminine ? "esta" : "este" }} {{ resource.singular }} e ainda não salvou. O que fazer com as alterações?</p>
-      </div>
-      <ul class="leave__options">
-        <li><b>Guardar rascunho</b> — ficam neste navegador; ao voltar, você continua de onde parou.</li>
-        <li><b>Descartar</b> — volta para o que está salvo; as alterações se perdem.</li>
-      </ul>
+    <!-- Sair com alterações: curto e direto; o rascunho fica neste navegador para continuar depois. -->
+    <Dialog :visible="leaveTo !== null" modal header="Sair sem salvar?" :draggable="false"
+            :style="{ width: 'min(440px, calc(100vw - 24px))' }" @update:visible="leaveTo = null">
+      <p class="leave">As alterações ainda não foram salvas. Guarde um rascunho para continuar depois ou descarte.</p>
       <template #footer>
-        <Button label="Continuar editando" severity="secondary" text @click="leaveTo = null" />
-        <Button label="Descartar" icon="pi pi-trash" severity="danger" outlined @click="leaveDiscarding" />
-        <Button label="Guardar rascunho" icon="pi pi-bookmark" autofocus @click="leaveKeepingDraft" />
+        <Button label="Continuar" severity="secondary" text size="small" class="nowrap" @click="leaveTo = null" />
+        <Button label="Descartar" severity="danger" size="small" class="nowrap" @click="leaveDiscarding" />
+        <Button label="Guardar rascunho" size="small" class="nowrap" autofocus @click="leaveKeepingDraft" />
       </template>
     </Dialog>
   </form>
@@ -326,15 +335,8 @@ watch([resource, id], () => reload());
 .draft-banner > i { font-size: 18px; }
 .draft-banner p { margin: 0; flex: 1; min-width: 240px; font-size: 13.5px; color: var(--text-body); }
 .draft-banner p b { color: var(--text-strong); }
-.leave { display: flex; gap: 12px; align-items: flex-start; }
-.leave__icon {
-  flex: none; width: 36px; height: 36px; border-radius: 50%; display: grid; place-items: center;
-  background: var(--warning-subtle); color: var(--warning-text);
-}
-.leave p { margin: 6px 0 0; font-size: 14px; color: var(--text-body); }
-.leave__options { margin: 12px 0 0 48px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px;
-                  font-size: 13px; color: var(--text-muted); }
-.leave__options b { color: var(--text-strong); }
+.leave { margin: 0; font-size: 13.5px; line-height: 1.5; color: var(--text-body); }
+.nowrap { white-space: nowrap; }
 .head { display: flex; align-items: center; gap: 0.5rem; }
 .head__text { min-width: 0; }
 .head__title { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

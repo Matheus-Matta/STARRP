@@ -5,7 +5,7 @@ Etiqueta de balança (EAN-13 começando pelo prefixo da loja, padrão "2"):
     2 PPPPPP VVVVV C   ->  prefixo (1) + PLU (6) + valor (5) + verificador (1)
 
 O valor é o PREÇO em centavos ou o PESO em gramas, conforme
-`Store.scale_barcode_mode`. No modo preço, a quantidade sai do preço/kg.
+`StoreRule.scale_barcode_mode` (a regra das filiais). No modo preço, a quantidade sai do preço/kg.
 
 O código pode ser também o de um VOLUME (caixa "Vol 2/3"): o resultado traz a
 variante e o volume, para a conferência saber que leu só uma parte da unidade.
@@ -13,7 +13,7 @@ variante e o volume, para a conferência saber que leu só uma parte da unidade.
 from dataclasses import dataclass
 from decimal import Decimal
 
-from starrp.models import ProductBarcode, ProductVariant, ProductVolume, Store
+from starrp.models import ProductBarcode, ProductVariant, ProductVolume, StockLot, StoreRule
 
 
 @dataclass
@@ -21,6 +21,7 @@ class CodeResult:
     variant: ProductVariant
     quantity: Decimal | None = None
     volume: ProductVolume | None = None
+    lot: StockLot | None = None
 
 
 def ean_check_digit_ok(code):
@@ -34,16 +35,16 @@ def ean_check_digit_ok(code):
 
 
 def _scale_label(account_id, code):
-    store = Store.all_objects.filter(account_id=account_id, deleted_at__isnull=True).exclude(
-        scale_barcode_mode=""
-    ).first()
+    # A regra (de uma filial ativa) que usa etiqueta de balança; a padrão primeiro.
+    store = StoreRule.all_objects.filter(account_id=account_id, deleted_at__isnull=True,
+                                         stores__deleted_at__isnull=True).exclude(scale_barcode_mode="").first()
     if store is None or not ean_check_digit_ok(code) or not code.startswith(store.scale_barcode_prefix):
         return None
     plu, value = code[1:7].lstrip("0"), Decimal(code[7:12])
     variant = _alive(account_id).filter(scale_code=plu).first()
     if variant is None:
         return None
-    if store.scale_barcode_mode == Store.ScaleBarcode.WEIGHT:
+    if store.scale_barcode_mode == StoreRule.ScaleBarcode.WEIGHT:
         return CodeResult(variant, (value / 1000).quantize(Decimal("0.001")))
     if not variant.price:
         return CodeResult(variant)
@@ -74,4 +75,9 @@ def resolve_code(account_id, code):
     if scale is not None:
         return scale
     variant = _alive(account_id).filter(sku=code).first()
-    return CodeResult(variant) if variant else None
+    if variant is not None:
+        return CodeResult(variant)
+    # Etiqueta interna do lote (entrada de estoque): o leitor acha o produto e o lote.
+    lot = StockLot.all_objects.filter(account_id=account_id, code__iexact=code, deleted_at__isnull=True,
+                                      variant__deleted_at__isnull=True).select_related("variant__product").first()
+    return CodeResult(lot.variant, lot=lot) if lot else None

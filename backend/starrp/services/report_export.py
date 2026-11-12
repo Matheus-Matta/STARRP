@@ -4,6 +4,7 @@ Excel: aba "Resumo" (título, período, filial, filtros aplicados e indicadores 
 e uma aba por bloco (tabela, ranking, participação, série no tempo, mapa de calor, cascata),
 com moeda/percentual/data formatados, cabeçalho fixo e filtro do Excel. Tabela com abas (Curva
 ABC por classe) ganha também uma aba por classe. `bloco` exporta só um bloco; `aba` só uma classe.
+`charts=True` põe ao lado de cada tabela o gráfico nativo do Excel (linha, barras, pizza, ranking).
 
 CSV (abre no Excel brasileiro): ponto e vírgula, vírgula decimal e BOM UTF-8; um bloco só
 (o pedido, ou a primeira tabela do relatório).
@@ -15,6 +16,7 @@ from datetime import date
 from decimal import Decimal
 
 from openpyxl import Workbook
+from openpyxl.chart import BarChart, LineChart, PieChart, Reference
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
 
@@ -160,7 +162,38 @@ def _summary(ws, report, context):
         ws.column_dimensions[col].width = width
 
 
-def to_xlsx(report, context, block_index=None, tab=None):
+CHART_ROWS = 40  # ranking/pizza com mais linhas que isso fica ilegível: o gráfico mostra as primeiras
+
+
+def _add_chart(ws, block, cols, rows):
+    """Gráfico nativo do Excel sobre a tabela que acabou de ser escrita (cabeçalho na linha 1)."""
+    kind, count = block["type"], len(rows)
+    if not count or kind not in ("line", "bars", "share", "ranking"):
+        return
+    keys = [key for _, key, _ in cols]
+    if kind in ("line", "bars"):
+        chart = LineChart() if kind == "line" else BarChart()
+        if kind == "bars" and block.get("stacked"):
+            chart.grouping, chart.overlap = "stacked", 100
+        data = Reference(ws, min_col=2, max_col=len(cols), min_row=1, max_row=count + 1)
+        labels = Reference(ws, min_col=1, min_row=2, max_row=count + 1)
+    else:
+        label_col, value_col = keys.index("label") + 1, keys.index("value") + 1
+        last = min(count, CHART_ROWS) + 1
+        chart = PieChart() if kind == "share" else BarChart()
+        if kind == "ranking":
+            chart.type, chart.legend = "bar", None
+            chart.y_axis.majorGridlines = None
+        data = Reference(ws, min_col=value_col, min_row=1, max_row=last)
+        labels = Reference(ws, min_col=label_col, min_row=2, max_row=last)
+    chart.add_data(data, titles_from_data=True)
+    chart.set_categories(labels)
+    chart.title = block.get("title", "")
+    chart.height, chart.width = 9, 18
+    ws.add_chart(chart, f"{get_column_letter(len(cols) + 2)}2")
+
+
+def to_xlsx(report, context, block_index=None, tab=None, charts=False):
     wb = Workbook()
     used = set()
     blocks = list(enumerate(report["blocks"]))
@@ -176,7 +209,10 @@ def to_xlsx(report, context, block_index=None, tab=None):
         if not cols:
             continue
         title = block["title"] + (f" - {block['tabs']['label']} {tab}" if tab and block.get("tabs") else "")
-        _write_table(wb.create_sheet(_sheet_name(title, used)), cols, rows)
+        sheet = wb.create_sheet(_sheet_name(title, used))
+        _write_table(sheet, cols, rows)
+        if charts:
+            _add_chart(sheet, block, cols, rows)
         tabs = block.get("tabs")
         if tabs and not tab and block_index is None:  # uma aba por classe (A, B, C...)
             for value in sorted({str(r.get(tabs["key"])) for r in block["rows"]}):

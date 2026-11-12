@@ -11,7 +11,7 @@ para filtrar rápido — quem grava é `services.finance`, nunca a view.
 """
 from django.db import models
 
-from starrp.models.base import MoneyField, StoreModel, TenantModel, alive, optional_store_fk, user_fk
+from starrp.models.base import AutoCodeMixin, MoneyField, StoreModel, TenantModel, alive, code_from, optional_store_fk, user_fk
 
 
 class FinancialAccount(TenantModel):
@@ -43,7 +43,7 @@ class FinancialAccount(TenantModel):
         return self.name
 
 
-class FinancialCategory(TenantModel):
+class FinancialCategory(AutoCodeMixin, TenantModel):
     """Plano de contas (receitas e despesas), hierárquico."""
 
     class Kind(models.TextChoices):
@@ -70,6 +70,9 @@ class FinancialCategory(TenantModel):
 
     def __str__(self):
         return f"{self.code} {self.name}".strip()
+
+    def code_base(self):
+        return code_from(self.name, "categoria")
 
 
 class TitleStatus(models.TextChoices):

@@ -9,25 +9,35 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
-from starrp.models.base import MoneyField, StoreModel, alive, user_fk
+from starrp.models.base import AutoCodeMixin, MoneyField, StoreModel, alive, code_from, user_fk
 
 FINAL_SESSION_STATUSES = ("closed", "cancelled")
 
 
-class CashRegister(StoreModel):
+class CashRegister(AutoCodeMixin, StoreModel):
+    CODE_SCOPE = ("account", "store")
+
     name = models.CharField(max_length=120)
-    code = models.CharField(max_length=40)
-    operators = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name="cash_registers")
+    code = models.CharField(max_length=40, blank=True, help_text="Vazio = gerado pelo nome (CAIXA-01).")
+    # Quem opera ESTE caixa: um operador por caixa e um caixa por usuário (índice único abaixo).
+    # O PDV já abre no caixa do usuário, sem perguntar.
+    operator = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, related_name="cash_registers",
+                                 on_delete=models.SET_NULL)
     is_active = models.BooleanField(default=True)
 
     class Meta:
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(fields=["store", "code"], condition=alive(), name="uniq_cash_register_code"),
+            models.UniqueConstraint(fields=["operator"], condition=alive() & Q(operator__isnull=False),
+                                    name="uniq_cash_register_operator"),
         ]
 
     def __str__(self):
         return f"{self.store} - {self.name}"
+
+    def code_base(self):
+        return code_from(self.name, "CAIXA", upper=True)
 
 
 class CashSession(StoreModel):

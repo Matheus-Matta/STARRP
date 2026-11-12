@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from django.utils import timezone
 
-from starrp.models import Category, Coupon, DiscountTable, ProductVariant, Promotion, Store
+from starrp.models import Category, Coupon, DiscountTable, ProductVariant, Promotion, StoreRule
 from starrp.services import pricing
 from starrp.services.barcodes import ean_check_digit_ok
 
@@ -84,7 +84,7 @@ def test_conta_nao_enxerga_nem_referencia_dado_de_outra(ctx, other):
 
 def test_etiqueta_de_balanca_vira_quantidade(ctx):
     """EAN-13 "2 PLU(6) VALOR(5) DV": no modo preço, R$ 12,50 de um item de R$ 25,00/kg = 0,500 kg."""
-    Store.all_objects.filter(pk=ctx.store.pk).update(scale_barcode_mode="price")
+    StoreRule.all_objects.filter(pk=ctx.store.rule_id).update(scale_barcode_mode="price")
     product = ctx.product(name="Queijo", price="25.00", scale_code="123", sale_method="weight", unit="KG")
     api = ctx.client()
 

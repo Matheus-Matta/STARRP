@@ -33,6 +33,167 @@ def test_produto_simples_nasce_com_a_variante_padrao_e_codigo(ctx):
     assert lookup["id"] == variant["id"] and lookup["display_name"] == "Café 500g"
 
 
+def test_ncm_e_cest_do_perfil_fiscal_valem_ate_o_produto_sobrescrever(ctx, other):
+    from starrp.models import FiscalProfile
+    from starrp.services.cosmos import supervision
+
+    api = ctx.client()
+    profile = api.post("/api/v1/fiscal/profiles/", {"name": "Bebidas", "ncm": "22021000", "cest": "0300700"}, format="json")
+    assert profile.status_code == 201, profile.json()
+    profile_id = profile.json()["id"]
+
+    herda = _create(api, name="Refri", fiscal_profile=profile_id, variants=[{"sku": "R1", "price": "5"}])
+    assert (herda["ncm"], herda["fiscal_ncm"], herda["fiscal_cest"]) == ("", "22021000", "0300700")
+    product = Product.all_objects.get(pk=herda["id"])
+    assert "produto_sem_ncm" not in [row[0] for row in supervision._product(product)]
+
+    proprio = _create(api, name="Suco", fiscal_profile=profile_id, ncm="20091100", variants=[{"sku": "S1", "price": "5"}])
+    assert (proprio["fiscal_ncm"], proprio["fiscal_cest"]) == ("20091100", "0300700")  # só o NCM foi sobrescrito
+
+    sem_perfil = _create(api, name="Avulso", variants=[{"sku": "A1", "price": "5"}])
+    assert sem_perfil["fiscal_ncm"] == ""
+    assert "produto_sem_ncm" in [row[0] for row in supervision._product(Product.all_objects.get(pk=sem_perfil["id"]))]
+
+    FiscalProfile.all_objects.filter(pk=profile_id).update(deleted_at=timezone.now())  # perfil excluído não vale mais
+    assert Product.all_objects.get(pk=herda["id"]).fiscal_ncm == ""
+
+    alheio = FiscalProfile.all_objects.create(account=other.account, name="De outra conta", ncm="11111111")
+    refused = api.post(PRODUCTS, {"name": "X", "fiscal_profile": str(alheio.pk), "variants": [{"sku": "X1", "price": "5"}]},
+                       format="json")
+    assert refused.status_code == 400
+
+
+def test_modelo_do_produto_salva_busca_e_entra_no_pareamento(ctx):
+    from starrp.services.market import tracker
+
+    api = ctx.client()
+    body = _create(api, name="Fone Bluetooth", model_name="Tune 510BT", variants=[{"sku": "FONE", "price": "199.00"}])
+    assert body["model_name"] == "Tune 510BT"
+    assert [r["id"] for r in api.get(PRODUCTS, {"search": "510BT"}).json()["results"]] == [body["id"]]
+    variant = ProductVariant.all_objects.get(pk=body["variants"][0]["id"])
+    assert "Tune 510BT" in tracker._ours(variant).reference
+
+
+def test_marca_vinculada_ao_fornecedor_aparece_na_lista_dele(ctx, other):
+    from starrp.models import Supplier
+
+    api = ctx.client()
+    supplier = Supplier.all_objects.create(account=ctx.account, name="Distribuidora X")
+    alheio = Supplier.all_objects.create(account=other.account, name="De outra conta")
+    brand = api.post("/api/v1/catalog/brands/", {"name": "Nike", "supplier": str(supplier.pk)}, format="json").json()
+    assert brand["supplier_name"] == "Distribuidora X"
+    api.post("/api/v1/catalog/brands/", {"name": "Sem fornecedor"}, format="json")
+    listed = api.get("/api/v1/catalog/brands/", {"supplier": str(supplier.pk)}).json()["results"]
+    assert [b["name"] for b in listed] == ["Nike"]
+    refused = api.post("/api/v1/catalog/brands/", {"name": "Alheia", "supplier": str(alheio.pk)}, format="json")
+    assert refused.status_code == 400
+
+
+def _balances(body):
+    return {v["sku"]: stock.available(ProductVariant.all_objects.get(pk=v["id"])) for v in body["variants"]}
+
+
+@pytest.fixture
+def with_stock(ctx):
+    ctx.account.extra_modules = ["stock"]
+    ctx.account.save(update_fields=["extra_modules"])
+
+
+def test_estoque_inicial_pede_o_modulo_de_estoque(ctx):
+    response = ctx.client().post(PRODUCTS, {"name": "Item", "initial_stock": "5", "variants": [{"sku": "I", "price": "1"}]},
+                                 format="json")
+    assert response.status_code == 403
+    assert not Product.all_objects.filter(account=ctx.account, name="Item").exists()
+
+
+@pytest.mark.usefixtures("with_stock")
+def test_estoque_inicial_vira_implantacao_de_saldo_com_custo(ctx):
+    body = _create(ctx.client(), name="Café", initial_stock="12.5", initial_cost="7.50",
+                   variants=[{"sku": "CAF", "price": "18.90"}])
+    move = StockMovement.all_objects.get(variant_id=body["variants"][0]["id"])
+    assert move.kind == StockMovement.Kind.INITIAL and move.quantity == Decimal("12.5") and move.operator == ctx.admin
+    assert move.warehouse == stock.default_warehouse(ctx.store)
+    assert ProductVariant.all_objects.get(pk=move.variant_id).average_cost == Decimal("7.50")
+    assert "initial_stock" not in body
+
+
+@pytest.mark.usefixtures("with_stock")
+def test_estoque_inicial_em_cada_variacao_da_grade(ctx):
+    body = _create(ctx.client(), name="Camiseta", type="variable", reference="CAM", initial_stock="3",
+                   grid={"Tamanho": ["P", "M"]})
+    assert len(body["variants"]) == 2 and set(_balances(body).values()) == {Decimal("3")}
+
+
+def test_sem_estoque_inicial_nao_movimenta(ctx):
+    body = _create(ctx.client(), name="Café", initial_stock=None, initial_warehouse=None,
+                   variants=[{"sku": "CAF", "price": "18.90"}])
+    assert not StockMovement.all_objects.filter(variant_id=body["variants"][0]["id"]).exists()
+
+
+@pytest.mark.usefixtures("with_stock")
+@pytest.mark.parametrize("extra", [{"type": "service"}, {"type": "kit"}, {"track_stock": False}, {"track_lots": True},
+                                   {"track_serial": True}])
+def test_estoque_inicial_recusa_o_que_nao_cabe_e_nao_cria_o_produto(ctx, extra):
+    response = ctx.client().post(PRODUCTS, {"name": "Item", "initial_stock": "5", "variants": [{"sku": "ITEM", "price": "10"}], **extra},
+                                 format="json")
+    assert response.status_code == 400 and "initial_stock" in str(response.json())
+    assert not Product.all_objects.filter(account=ctx.account, name="Item").exists()
+
+
+@pytest.mark.usefixtures("with_stock")
+def test_estoque_inicial_so_ao_criar(ctx):
+    api = ctx.client()
+    body = _create(api, name="Café", variants=[{"sku": "CAF", "price": "18.90"}])
+    assert api.patch(f"{PRODUCTS}{body['id']}/", {"initial_stock": "5"}, format="json").status_code == 400
+    assert not StockMovement.all_objects.filter(variant_id=body["variants"][0]["id"]).exists()
+
+
+@pytest.mark.usefixtures("with_stock")
+def test_estoque_inicial_pede_permissao_de_estoque(ctx):
+    api = ctx.client(ctx.user("fiscal-1", "fiscal"))  # gerencia o catálogo, mas não o estoque
+    body = {"name": "Item", "variants": [{"sku": "I", "price": "1"}]}
+    assert api.post(PRODUCTS, {**body, "initial_stock": "5"}, format="json").status_code == 403
+    assert not Product.all_objects.filter(account=ctx.account, name="Item").exists()
+    assert api.post(PRODUCTS, body, format="json").status_code == 201  # sem estoque, o cadastro continua liberado
+
+
+@pytest.mark.usefixtures("with_stock")
+def test_estoque_inicial_nao_aceita_deposito_de_filial_sem_acesso(ctx):
+    from starrp.models import Warehouse
+    from starrp.services.provisioning import create_store
+
+    outra = create_store(ctx.account, "Filial 2")
+    deposito = Warehouse.all_objects.filter(store=outra).first()
+    api = ctx.client(ctx.user("estoquista-1", "stockist"))  # só enxerga a loja do contexto
+    response = api.post(PRODUCTS, {"name": "Item", "initial_stock": "5", "initial_warehouse": str(deposito.pk),
+                                   "variants": [{"sku": "I", "price": "1"}]}, format="json")
+    assert response.status_code == 400
+    assert not StockMovement.all_objects.filter(warehouse=deposito).exists()
+
+
+@pytest.mark.usefixtures("with_stock")
+def test_estoque_inicial_sem_filial_selecionada_pede_o_deposito(ctx):
+    from starrp.services.provisioning import create_store
+
+    create_store(ctx.account, "Filial 2")
+    body = {"name": "Item", "initial_stock": "5", "variants": [{"sku": "I", "price": "1"}]}
+    response = ctx.client(store=None).post(PRODUCTS, body, format="json")  # o admin vê todas e não escolheu nenhuma
+    assert response.status_code == 400 and "initial_warehouse" in str(response.json())
+    deposito = stock.default_warehouse(ctx.store)
+    created = ctx.client(store=None).post(PRODUCTS, {**body, "initial_warehouse": str(deposito.pk)}, format="json")
+    assert created.status_code == 201, created.json()
+    assert StockMovement.all_objects.get(warehouse=deposito).quantity == Decimal("5")
+
+
+@pytest.mark.usefixtures("with_stock")
+def test_estoque_inicial_nao_aceita_deposito_de_outra_conta(ctx, other):
+    alheio = stock.default_warehouse(other.store)
+    response = ctx.client().post(PRODUCTS, {"name": "Item", "initial_stock": "5", "initial_warehouse": str(alheio.pk),
+                                            "variants": [{"sku": "I", "price": "1"}]}, format="json")
+    assert response.status_code == 400
+    assert not StockMovement.all_objects.filter(warehouse=alheio).exists()
+
+
 def test_produto_simples_nao_aceita_duas_variantes(ctx):
     response = ctx.client().post(PRODUCTS, {"name": "Arroz", "variants": [
         {"sku": "A1", "price": "5"}, {"sku": "A2", "price": "6"}]}, format="json")

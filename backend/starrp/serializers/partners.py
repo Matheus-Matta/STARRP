@@ -80,6 +80,7 @@ class CustomerSerializer(TaggedSerializerMixin, DocumentMixin, TenantSerializer)
         current = {a.pk: a for a in customer.addresses.filter(deleted_at__isnull=True)}
         kept = []
         wants_default = next((i for i, r in enumerate(rows) if r.get("is_default")), 0 if rows else None)
+        wants_billing = next((i for i, r in enumerate(rows) if r.get("is_billing")), None)  # uma só de cobrança
         for index, row in enumerate(rows):
             row = {k: v for k, v in row.items() if k not in ("customer",)}
             address = current.pop(row.pop("id", None), None) or CustomerAddress(
@@ -87,6 +88,7 @@ class CustomerSerializer(TaggedSerializerMixin, DocumentMixin, TenantSerializer)
             for field, value in row.items():
                 setattr(address, field, value)
             address.is_default = index == wants_default
+            address.is_billing = index == wants_billing
             address.label = (address.label or "").strip() or ("Principal" if index == 0 else f"Endereço {index + 1}")
             address.updated_by = user
             address.save()

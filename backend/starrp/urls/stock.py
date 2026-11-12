@@ -1,8 +1,8 @@
-from starrp.views import inbound_nfe, modules, stock, wms
+from starrp.views import inbound_nfe, modules, rules, stock, wms
 
 
 def register(router):
-    router.register("stock/settings", stock.StockSettingsViewSet, basename="stock-settings")
+    router.register("stock/rules", rules.StockRuleViewSet, basename="stock-rules")
     router.register("stock/warehouses", stock.WarehouseViewSet, basename="warehouses")
     router.register("stock/balances", stock.StockBalanceViewSet, basename="stock-balances")
     router.register("stock/lots", stock.StockLotViewSet, basename="stock-lots")
@@ -12,6 +12,7 @@ def register(router):
     router.register("stock/label-templates", stock.LabelTemplateViewSet, basename="label-templates")
     router.register("stock/bins", wms.StorageBinViewSet, basename="storage-bins")
     router.register("stock/bin-balances", wms.BinBalanceViewSet, basename="bin-balances")
+    router.register("stock/advices", wms.StockAdviceViewSet, basename="stock-advices")
     router.register("inbound-nfe/items", inbound_nfe.InboundNFeItemViewSet, basename="inbound-nfe-items")
     router.register("inbound-nfe/events", modules.NFeEventViewSet, basename="nfe-events")
     router.register("inbound-nfe/issues", modules.NFeIssueViewSet, basename="nfe-issues")

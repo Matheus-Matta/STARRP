@@ -47,10 +47,10 @@ from starrp.models.volumes import (  # noqa: F401
 from starrp.models.tags import (  # noqa: F401
     Tag,
 )
+from starrp.models.rules import LogisticsRule, SharedRule, StockRule, StoreRule  # noqa: F401
 from starrp.models.logistics import (  # noqa: F401
     FreightTable,
     FreightZipRange,
-    LogisticsSettings,
     ZipCoordinate,
     ZipDistance,
 )
@@ -77,6 +77,7 @@ from starrp.models.sales import (  # noqa: F401
     Sale,
     SaleItem,
     Commission,
+    SaleAddress,
 )
 from starrp.models.returns import (  # noqa: F401
     SaleReturn,
@@ -115,7 +116,6 @@ from starrp.models.nfe_events import (  # noqa: F401
     NFeIssue,
 )
 from starrp.models.stock import (  # noqa: F401
-    StockSettings,
     Warehouse,
     StockBalance,
     StockLot,
@@ -161,7 +161,20 @@ from starrp.models.system import (  # noqa: F401
     Notification,
     ImportJob,
 )
-from starrp.models.reviews import Review  # noqa: F401
+from starrp.models.reviews import Review, ReviewLink  # noqa: F401
+from starrp.models.cosmos import (  # noqa: F401
+    CosmosAction,
+    CosmosAttachment,
+    CosmosConversation,
+    CosmosFinding,
+    CosmosMessage,
+    CosmosReport,
+    CosmosUsage,
+)
+from starrp.models.market import CompetitorPrice, MarketOffer, PriceCheck, PriceSourceToken, PriceUsage  # noqa: F401
+from starrp.models.seo import KeywordMetric, SeoCheck, SeoCredential, SeoUsage  # noqa: F401
+from starrp.models.wms import StockAdvice  # noqa: F401
+from starrp.models.background import BackgroundTask  # noqa: F401
 from starrp.models.sync import (  # noqa: F401
     SyncEnvironment,
     NodeType,

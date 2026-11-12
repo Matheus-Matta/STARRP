@@ -56,62 +56,74 @@ class TenantMiddleware:
             request.user = AnonymousUser()
             return None  # o DRF responde 401 pela permissão IsAuthenticated
         request.user, request.auth = authenticated
+        return bind_user(request)
 
-        account, profile = self._account_for(request)
-        if account is None:
-            return _deny(403, "Seu usuário não está vinculado a nenhuma conta.")
-        if not account.is_active:
-            return _deny(403, "A conta não está ativa.", "account_inactive")
-        request.account = account
-        request.profile = profile
-        allowed = profile.allowed_store_ids() if profile is not None else None
-        if allowed is not None and not allowed:
-            return _deny(403, "Seu usuário não tem acesso a nenhuma filial. Peça ao administrador.", "no_store_access")
-        request.allowed_store_ids = allowed
-        set_current_account(account, allowed)
-        return self._resolve_store(request, profile, allowed)
 
-    def _account_for(self, request):
-        from starrp.models import Account, UserProfile
+def bind_user(request):
+    """Conta, perfil, lojas permitidas e loja ativa de `request.user` (já autenticado).
 
-        user = request.user
-        if user.is_superuser and request.headers.get("X-Account-ID"):
-            return Account.objects.filter(id=request.headers["X-Account-ID"]).first(), None
-        profile = (
-            UserProfile.alive_objects.select_related("account", "role", "default_store")
-            .filter(user=user, is_active=True)
-            .first()
-        )
-        return (profile.account, profile) if profile else (None, None)
+    Também serve fora do HTTP: o WebSocket da Cosmos e as chamadas que ela faz à API
+    em nome do usuário passam por aqui, com as mesmas regras. Devolve a resposta de
+    recusa (403) ou `None`; o contexto da conta fica fixado na thread.
+    """
+    request.store = None
+    account, profile = _account_for(request)
+    if account is None:
+        return _deny(403, "Seu usuário não está vinculado a nenhuma conta.")
+    if not account.is_active:
+        return _deny(403, "A conta não está ativa.", "account_inactive")
+    request.account = account
+    request.profile = profile
+    allowed = profile.allowed_store_ids() if profile is not None else None
+    if allowed is not None and not allowed:
+        return _deny(403, "Seu usuário não tem acesso a nenhuma filial. Peça ao administrador.", "no_store_access")
+    request.allowed_store_ids = allowed
+    set_current_account(account, allowed)
+    return _resolve_store(request, profile, allowed)
 
-    def _resolve_store(self, request, profile, allowed):
-        """Loja ATIVA: o header, senão a padrão do usuário, senão a única que ele tem.
 
-        `X-Store-ID: *` pede a visão de TODAS as lojas permitidas (sem loja ativa).
+def _account_for(request):
+    from starrp.models import Account, UserProfile
 
-        Já com o contexto fixado, `Store.objects` só acha loja permitida: pedir
-        uma loja de fora dá 403, e não "achei" — nem a existência dela vaza.
-        """
-        from starrp.models import Store
+    user = request.user
+    if user.is_superuser and request.headers.get("X-Account-ID"):
+        return Account.objects.filter(id=request.headers["X-Account-ID"]).first(), None
+    profile = (
+        UserProfile.alive_objects.select_related("account", "role", "default_store")
+        .filter(user=user, is_active=True)
+        .first()
+    )
+    return (profile.account, profile) if profile else (None, None)
 
-        requested = request.headers.get("X-Store-ID")
-        if requested == ALL_STORES:
-            return None  # visão consolidada das lojas permitidas, sem loja ativa
-        if requested:
-            try:
-                request.store = Store.objects.filter(id=requested).first()
-            except (ValueError, ValidationError):
-                request.store = None
-            if request.store is None:
-                return _deny(403, "Você não tem acesso à filial informada em X-Store-ID.", "store_forbidden")
-        elif profile is not None and profile.default_store_id and Store.objects.filter(
-            pk=profile.default_store_id
-        ).exists():
-            request.store = profile.default_store
-        else:
-            # Quem enxerga UMA loja só (restrito ou admin de conta com uma loja)
-            # não precisa escolher: ela é a ativa.
-            visible = list(Store.objects.filter(is_active=True).values_list("pk", flat=True)[:2])
-            if len(visible) == 1:
-                request.store = Store.objects.filter(pk=visible[0]).first()
-        return None
+
+def _resolve_store(request, profile, allowed):
+    """Loja ATIVA: o header, senão a padrão do usuário, senão a única que ele tem.
+
+    `X-Store-ID: *` pede a visão de TODAS as lojas permitidas (sem loja ativa).
+
+    Já com o contexto fixado, `Store.objects` só acha loja permitida: pedir
+    uma loja de fora dá 403, e não "achei" — nem a existência dela vaza.
+    """
+    from starrp.models import Store
+
+    requested = request.headers.get("X-Store-ID")
+    if requested == ALL_STORES:
+        return None  # visão consolidada das lojas permitidas, sem loja ativa
+    if requested:
+        try:
+            request.store = Store.objects.filter(id=requested).first()
+        except (ValueError, ValidationError):
+            request.store = None
+        if request.store is None:
+            return _deny(403, "Você não tem acesso à filial informada em X-Store-ID.", "store_forbidden")
+    elif profile is not None and profile.default_store_id and Store.objects.filter(
+        pk=profile.default_store_id
+    ).exists():
+        request.store = profile.default_store
+    else:
+        # Quem enxerga UMA loja só (restrito ou admin de conta com uma loja)
+        # não precisa escolher: ela é a ativa.
+        visible = list(Store.objects.filter(is_active=True).values_list("pk", flat=True)[:2])
+        if len(visible) == 1:
+            request.store = Store.objects.filter(pk=visible[0]).first()
+    return None

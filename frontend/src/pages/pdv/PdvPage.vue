@@ -12,7 +12,9 @@
  *   (F12 ou sozinha depois de `lock_minutes` parada; volta só com senha).
  *
  * Teclas: F1 venda · F2 pedidos · F3 cliente · F4 caixa · F5 preço · F6 desconto ·
- * F7 cupom · F8 sair · F9 guardar · F10 pagar/enviar · F12 bloquear.
+ * F7 cupom · F8 sair · F9 guardar · F10 pagar/enviar (na tela de pagamento: concluir) · F12 bloquear.
+ * O pagamento é uma tela do PDV (`PdvCheckout`), não um modal: conferência à esquerda e o
+ * recebimento no lugar do painel da venda. Esc volta para a venda.
  * Toda regra está em `usePdv` e no backend; aqui só se desenha.
  */
 import Button from "primevue/button";
@@ -20,19 +22,20 @@ import Dialog from "primevue/dialog";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
-import type { PaymentInput } from "@/api/sales";
+import type { OrderAddresses, PaymentInput } from "@/api/sales";
 import { salesApi } from "@/api/sales";
 import type { PdvProductView, SaleItem } from "@/api/types";
 import PromptDialog, { type PromptAnswer, type PromptSpec } from "@/components/common/PromptDialog.vue";
 import PdvCashDialog, { type CashMode } from "@/components/pdv/PdvCashDialog.vue";
+import PdvAddressConfirm from "@/components/pdv/PdvAddressConfirm.vue";
 import PdvCashPanel, { type CashAction } from "@/components/pdv/PdvCashPanel.vue";
 import PdvCatalog from "@/components/pdv/PdvCatalog.vue";
+import PdvCheckout, { type PaymentLine } from "@/components/pdv/PdvCheckout.vue";
 import PdvCustomers from "@/components/pdv/PdvCustomers.vue";
 import PdvDelivery from "@/components/pdv/PdvDelivery.vue";
 import PdvLock from "@/components/pdv/PdvLock.vue";
 import PdvOrder from "@/components/pdv/PdvOrder.vue";
 import PdvOrders from "@/components/pdv/PdvOrders.vue";
-import PdvPaymentDialog from "@/components/pdv/PdvPaymentDialog.vue";
 import PdvFreightDialog from "@/components/pdv/PdvFreightDialog.vue";
 import PdvPriceDialog from "@/components/pdv/PdvPriceDialog.vue";
 import PdvProductDialog from "@/components/pdv/PdvProductDialog.vue";
@@ -47,7 +50,7 @@ import { money } from "@/utils/format";
 import { openPrint } from "@/utils/print";
 import { CANCEL_SALE_REASONS, PARK_REASONS, REMOVE_ITEM_REASONS } from "@/utils/reasons";
 
-type View = "sale" | "orders" | "customer" | "cash" | "delivery";
+type View = "sale" | "orders" | "customer" | "cash" | "delivery" | "address" | "payment";
 
 const pdv = usePdv();
 const catalog = usePdvCatalog();
@@ -57,15 +60,20 @@ const notify = useNotify();
 
 const catalogRef = ref<InstanceType<typeof PdvCatalog>>();
 const view = ref<View>("sale");
-const paying = ref(false);
+const checkoutRef = ref<InstanceType<typeof PdvCheckout>>();
+/** Pagamentos lançados na tela de pagamento: ficam aqui para sobreviver à ida ao cliente ou à
+ *  entrega (F3/F11) e voltar; somem ao concluir ou quando a venda da tela muda. */
+const paymentLines = ref<PaymentLine[]>([]);
+/** Para onde voltar depois de escolher cliente/entrega: a venda ou a tela de pagamento. */
+const returnTo = ref<View>("sale");
+const paying = computed(() => view.value === "payment");
+watch(() => pdv.sale.value?.id, () => (paymentLines.value = []));
 const cashMode = ref<CashMode>("open");
 const cashOpen = ref(false);
 const priceOpen = ref(false);
 const freightOpen = ref(false);
 const viewing = ref<PdvProductView | null>(null);
 const opening = ref<string | null>(null);
-/** Venda recém-concluída: oferece o recibo (F9) ou segue para a próxima (Enter). */
-const finished = ref<{ id: string; number: number; change: string; total: string } | null>(null);
 const prompt = ref<PromptSpec | null>(null);
 let answerPrompt: (value: PromptAnswer | null) => void = () => undefined;
 
@@ -115,6 +123,7 @@ function focusSearch() {
 }
 
 function show(next: View) {
+  if ((next === "customer" || next === "delivery") && view.value !== next) returnTo.value = view.value === "payment" ? "payment" : "sale";
   view.value = next;
   if (next === "sale") setTimeout(focusSearch);
 }
@@ -191,16 +200,35 @@ async function send() {
   }, "Pedido não enviado");
 }
 
+/** Antes de pagar: com a config da filial ligada e o pedido COM endereço (herdado do cliente),
+ *  passa pela etapa de confirmar o endereço; sem endereço vai direto ao pagamento. */
 function openPayment() {
   if (seller.value || noCash.value || !pdv.sale.value || !Number(pdv.sale.value.total)) return;
-  paying.value = true;
+  const addresses = pdv.sale.value.addresses as unknown as OrderAddresses | undefined;
+  if (pdv.boot.value?.rules.confirm_address_at_checkout !== false && addresses?.delivery && view.value !== "address") {
+    show("address");
+    return;
+  }
+  show("payment");
+}
+function addressConfirmed(addresses: OrderAddresses) {
+  if (pdv.sale.value) pdv.sale.value = { ...pdv.sale.value, addresses } as typeof pdv.sale.value;
+  show("payment");
 }
 
+/** Sequência do PDV desktop do StarChef: concluiu, a tela JÁ é a próxima venda (sem modal
+ *  no meio da fila); o recibo sai sozinho se a filial imprime ao concluir (senão, F2 → Pedidos). */
 async function pay(payments: PaymentInput[]) {
   await guard(async () => {
     const done = await pdv.checkout(payments);
-    paying.value = false;
-    finished.value = { id: done.id, number: done.number, change: String(done.change_amount ?? 0), total: String(done.total) };
+    paymentLines.value = [];
+    show("sale");
+    const autoPrint = pdv.boot.value?.rules.auto_print_receipt !== false;
+    if (autoPrint) openPrint("venda", done.id, { auto: "1" }); // papel: o último escolhido nesta máquina
+    const change = Number(done.change_amount ?? 0);
+    notify.success(`Venda ${done.number} concluída · ${money(done.total)}`,
+                   [change ? `Troco ${money(change)}.` : "", autoPrint ? "Recibo na impressora." : "Recibo em Pedidos (F2)."]
+                     .filter(Boolean).join(" "));
     void catalog.refresh(); // saldo dos cartões
   }, "Pagamento não concluído");
 }
@@ -216,7 +244,7 @@ async function resume(id: string) {
 function pickCustomer(body: { customer?: string | null; customer_document?: string }) {
   void guard(async () => {
     await pdv.setCustomer(body);
-    show("sale");
+    show(returnTo.value);
   }, "Cliente não vinculado");
 }
 
@@ -224,13 +252,13 @@ function applyDelivery(address: string, table: string) {
   void guard(async () => {
     await pdv.setDelivery(address, table);
     notify.success("Entrega lançada", `Frete ${money(pdv.sale.value?.freight ?? 0)} no total.`);
-    show("sale");
+    show(returnTo.value);
   }, "Entrega não lançada");
 }
 function pickup() {
   void guard(async () => {
     await pdv.clearDelivery();
-    show("sale");
+    show(returnTo.value);
   }, "Não foi possível tirar a entrega");
 }
 
@@ -255,25 +283,31 @@ async function confirmCash(data: { register?: string; amount: string; reason: st
     }
     else if (cashMode.value === "close") {
       const closed = await pdv.closeCash(data.amount);
-      // Fechamento cego: o operador não vê a diferença; só se precisa do gerente.
-      notify.success("Caixa fechado", closed.status === "pending_approval"
-        ? (closed.difference != null ? `Diferença de ${money(closed.difference)}: ` : "Conferência enviada: ")
-          + "aguardando aprovação do gerente." : undefined);
+      cashOpen.value = false;
+      if (closed.status !== "pending_approval") return notify.success("Caixa fechado");
+      // Fechamento cego: o operador não vê a diferença; o gerente (ou a senha do caixa) aprova ali mesmo.
+      try {
+        await pdv.approveClosing(String(closed.id));
+        notify.success("Caixa fechado", "Diferença aprovada pelo gerente.");
+      } catch (error) {
+        if (!(error instanceof ApprovalCancelled)) throw error;
+        notify.warn("Caixa fechado", (closed.difference != null ? `Diferença de ${money(closed.difference)}: ` : "Conferência enviada: ")
+          + "aguardando aprovação do gerente.");
+      }
+      return;
     } else {
-      await pdv.cashMovement(cashMode.value, data.amount, data.reason);
-      notify.success(cashMode.value === "withdrawal" ? "Sangria lançada" : "Suprimento lançado", money(data.amount));
+      const label = cashMode.value === "withdrawal" ? "Sangria" : "Suprimento";
+      const movement = await pdv.cashMovement(cashMode.value, data.amount, data.reason);
+      if (movement.status === "pending") notify.warn(`${label} aguardando aprovação`,
+        `${money(data.amount)}: o gerente aprova depois em Caixa. O caixa só fecha com ela aprovada ou recusada.`);
+      else notify.success(cashMode.value === "withdrawal" ? "Sangria lançada" : "Suprimento lançado", money(data.amount));
     }
     cashOpen.value = false;
   }, "Operação de caixa não concluída");
 }
 
-function printReceipt(id = finished.value?.id) {
-  if (id) openPrint("venda", id, { auto: "1" }); // papel: o último escolhido nesta máquina (padrão A4)
-  if (finished.value) nextSale();
-}
-function nextSale() {
-  finished.value = null;
-  show("sale");
+function printReceipt(id: string) {
+  openPrint("venda", id, { auto: "1" }); // papel: o último escolhido nesta máquina (padrão A4)
 }
 
 async function logout() {
@@ -302,11 +336,11 @@ watch([() => pdv.boot.value, () => pdv.locked.value, paying], touch);
 function onKey(event: KeyboardEvent) {
   touch();
   if (screenLocked.value) return;
-  if (finished.value && (event.key === "F9" || event.key === "Enter")) {
-    event.preventDefault();
-    return event.key === "F9" ? printReceipt() : nextSale();
-  }
   const dialogOpen = Boolean(document.querySelector(".p-dialog"));
+  if (event.key === "Escape" && view.value === "payment" && !dialogOpen && !document.querySelector(".p-select-overlay")) {
+    event.preventDefault();
+    return show("sale");
+  }
   if (event.key === "Tab" && view.value === "sale" && !dialogOpen && document.activeElement?.id !== "pdv-scanner") {
     event.preventDefault();
     return focusSearch();
@@ -315,7 +349,8 @@ function onKey(event: KeyboardEvent) {
     F1: () => rail("sale"), F2: () => rail("orders"), F3: () => rail("customer"), F4: () => rail("cash"),
     F5: () => rail(event.shiftKey ? "freight" : "price"), F6: discount, F7: coupon, F8: () => rail("backoffice"), F9: park,
     F11: () => pdv.sale.value && show("delivery"),
-    F10: () => (seller.value ? send() : openPayment()), F12: () => !seller.value && pdv.lock(),
+    F10: () => (seller.value ? send() : view.value === "payment" ? checkoutRef.value?.finish() : openPayment()),
+    F12: () => !seller.value && pdv.lock(),
   };
   const action = actions[event.key];
   if (!action) return;
@@ -359,22 +394,32 @@ onBeforeUnmount(() => {
                   :operator="operator" :since="pdv.session.value?.opened_at ?? null" :seller="seller"
                   :terminal="pdv.boot.value?.terminal?.name ?? ''" @lock="pdv.lock()" @cash="closedAlert = true" />
     <div class="body">
-      <PdvRail :active="view === 'delivery' ? 'sale' : view" :seller="seller" :exit-label="session.pdvFirst ? 'Sair' : 'Retaguarda'" @select="rail" />
+      <PdvRail :active="view === 'delivery' || view === 'address' || view === 'payment' ? 'sale' : view" :seller="seller" :exit-label="session.pdvFirst ? 'Sair' : 'Retaguarda'" @select="rail" />
 
-      <PdvOrders v-if="view === 'orders'" :seller="seller" :busy="pdv.busy.value" @resume="resume"
+      <PdvCheckout v-if="view === 'payment' && pdv.sale.value" ref="checkoutRef" v-model:lines="paymentLines"
+                   :sale="pdv.sale.value" :items="pdv.items.value" :methods="pdv.boot.value?.payment_methods ?? []"
+                   :sellers="pdv.boot.value?.sellers ?? []" :operator="operator" :busy="pdv.busy.value"
+                   :require-reference="!!pdv.boot.value?.rules.require_payment_reference"
+                   :require-seller="!!pdv.boot.value?.rules.require_seller"
+                   @finish="pay" @back="show('sale')" @customer="show('customer')" @delivery="show('delivery')"
+                   @discount="discount" @coupon="coupon" @seller="(id) => guard(() => pdv.setCustomer({ seller: id }))" />
+      <PdvOrders v-else-if="view === 'orders'" :seller="seller" :busy="pdv.busy.value" @resume="resume"
                  @receipt="(id) => printReceipt(id)" @back="show('sale')" />
       <PdvCustomers v-else-if="view === 'customer'" :busy="pdv.busy.value" @pick="pickCustomer" @back="show('sale')"
                     :current="pdv.sale.value?.customer_name ? { name: pdv.sale.value.customer_name,
                               document: pdv.sale.value.customer_document ?? '' } : null" />
+      <PdvAddressConfirm v-else-if="view === 'address' && pdv.sale.value" :sale="pdv.sale.value"
+                         @confirmed="addressConfirmed" @back="show('sale')" />
       <PdvDelivery v-else-if="view === 'delivery'" :sale="pdv.sale.value" :busy="pdv.busy.value" @apply="applyDelivery"
                    @pickup="pickup" @customer="show('customer')" @back="show('sale')" />
       <PdvCashPanel v-else-if="view === 'cash' && !seller" :session="pdv.session.value" :operator="operator"
-                    :sees-drawer="!!pdv.boot.value?.sees_drawer"
+                    :sees-drawer="!!pdv.boot.value?.sees_drawer" :version="pdv.cashChanged.value"
+                    :register="pdv.boot.value?.my_register ?? null"
                     @action="cashAction" @back="show('sale')" />
       <PdvCatalog v-else ref="catalogRef" :catalog="catalog" :disabled="(!seller && noCash) || pdv.busy.value"
                   :opening="opening" @pick="pick" @code="scan" />
 
-      <PdvOrder :sale="pdv.sale.value" :items="pdv.items.value" :sellers="pdv.boot.value?.sellers ?? []" :busy="pdv.busy.value"
+      <PdvOrder v-if="view !== 'payment'" :sale="pdv.sale.value" :items="pdv.items.value" :sellers="pdv.boot.value?.sellers ?? []" :busy="pdv.busy.value"
                 :seller="seller" @customer="show('customer')" @seller="(id) => guard(() => pdv.setCustomer({ seller: id }))"
                 @quantity="(item, qty) => guard(() => pdv.setQuantity(item, qty))" @remove="removeItem"
                 @discount="discount" @coupon="coupon" @pay="openPayment" @cancel="cancelSale" @park="park" @send="send"
@@ -384,24 +429,10 @@ onBeforeUnmount(() => {
     <PdvProductDialog :product="viewing" :busy="pdv.busy.value" @confirm="confirmView" @close="viewing = null; focusSearch()" />
     <PdvPriceDialog :visible="priceOpen" @close="priceOpen = false" />
     <PdvFreightDialog :visible="freightOpen" @close="freightOpen = false; focusSearch()" />
-    <PdvPaymentDialog v-model:visible="paying" :total="String(pdv.sale.value?.balance_due ?? 0)" :sale="pdv.sale.value"
-                      :methods="pdv.boot.value?.payment_methods ?? []" :busy="pdv.busy.value"
-                      :has-customer="!!pdv.sale.value?.customer" @confirm="pay" />
     <PdvCashDialog v-model:visible="cashOpen" :mode="cashMode" :registers="pdv.boot.value?.cash_registers ?? []"
-                   :busy="pdv.busy.value" @confirm="confirmCash" />
-    <Dialog :visible="finished !== null" modal :closable="false" :style="{ width: 'min(420px, calc(100vw - 24px))' }"
-            :header="`Venda ${finished?.number} concluída`">
-      <div class="done">
-        <i class="pi pi-check-circle" />
-        <span>Total {{ money(finished?.total) }}</span>
-        <strong v-if="Number(finished?.change)">Troco {{ money(finished?.change) }}</strong>
-      </div>
-      <template #footer>
-        <Button severity="secondary" outlined @click="printReceipt()">
-          <i class="pi pi-print" /> Imprimir recibo <kbd class="kbd">F9</kbd></Button>
-        <Button @click="nextSale"><i class="pi pi-arrow-right" /> Nova venda <kbd class="kbd">Enter</kbd></Button>
-      </template>
-    </Dialog>
+                   :my-register="pdv.boot.value?.my_register"
+                   :busy="pdv.busy.value" :backoffice="!session.pdvFirst" @confirm="confirmCash"
+                   @backoffice="router.push('/')" />
     <Dialog :visible="closedAlert && noCash && !seller && !!pdv.boot.value" modal
             :header="pdv.pendingOpening.value ? 'Abertura aguardando o gerente' : 'Caixa fechado'"
             :style="{ width: 'min(400px, calc(100vw - 24px))' }" @update:visible="closedAlert = false">
@@ -418,6 +449,8 @@ onBeforeUnmount(() => {
           <b>Financeiro → Caixas</b>.</p>
       </div>
       <template #footer>
+        <Button v-if="!session.pdvFirst" label="Retaguarda" icon="pi pi-arrow-left" severity="secondary" text
+                class="closed__back" @click="router.push('/')" />
         <Button label="Agora não" severity="secondary" text @click="closedAlert = false" />
         <Button v-if="pdv.pendingOpening.value" label="Gerente aprova" icon="pi pi-verified" autofocus
                 :loading="pdv.busy.value" @click="managerApproves" />
@@ -426,7 +459,8 @@ onBeforeUnmount(() => {
     </Dialog>
     <PromptDialog :spec="prompt" @answer="answerPrompt" />
     <PdvLock v-if="screenLocked" :operator="operator" :unlock="pdv.unlock"
-             :manager-password="!!pdv.boot.value?.has_cash_action_password" @logout="logout" />
+             :manager-password="!!pdv.boot.value?.has_cash_action_password" :backoffice="!session.pdvFirst"
+             @logout="logout" @backoffice="router.push('/')" />
   </div>
 </template>
 
@@ -437,10 +471,7 @@ onBeforeUnmount(() => {
 .closed__icon { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; font-size: 22px;
                 background: var(--warning-subtle); color: var(--warning-text); }
 .closed p { margin: 0; color: var(--text-muted); font-size: 13.5px; }
-.done { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 8px 0; }
-.done i { font-size: 2.6rem; color: var(--success); }
-.done span { color: var(--text-muted); }
-.done strong { font-size: 1.8rem; color: var(--text-strong); }
+.closed__back { margin-right: auto; }
 :deep(.p-dialog-footer .p-button) { gap: 6px; }
 @media (max-width: 860px) { .body { flex-direction: column; } }
 </style>

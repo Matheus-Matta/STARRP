@@ -16,6 +16,12 @@ function add() {
   draft.value = "";
 }
 
+/** O tipo do código, pelo tamanho. Prefixo 2 é etiqueta interna da loja: a pesquisa de preço não usa. */
+function kind(code: string) {
+  if (!/^\d+$/.test(code) || code.startsWith("2")) return "Interno";
+  return ({ 8: "EAN-8", 12: "UPC", 13: "EAN-13", 14: "GTIN-14" } as Record<number, string>)[code.length] ?? "Interno";
+}
+
 function remove(code: string) {
   const rest = model.value.filter((b) => b.code !== code);
   if (rest.length && !rest.some((b) => b.is_primary)) rest[0]!.is_primary = true;
@@ -30,13 +36,15 @@ function makePrimary(code: string) {
 <template>
   <div class="barcodes">
     <div class="add">
-      <InputText v-model="draft" placeholder="Leia ou digite o código e tecle Enter" @keydown.enter.prevent="add" />
+      <InputText v-model="draft" placeholder="Leia ou digite o EAN ou GTIN e tecle Enter" aria-label="Código de barras"
+                 @keydown.enter.prevent="add" @blur="add" />
       <Button icon="pi pi-plus" severity="secondary" aria-label="Adicionar código" @click="add" />
     </div>
     <ul v-if="model.length">
       <li v-for="item in model" :key="item.code">
         <RadioButton :model-value="item.is_primary" :value="true" @update:model-value="makePrimary(item.code)" />
         <code>{{ item.code }}</code>
+        <span class="muted">{{ kind(item.code) }}</span>
         <span v-if="item.is_primary" class="muted">principal</span>
         <Button icon="pi pi-trash" text severity="danger" aria-label="Remover" @click="remove(item.code)" />
       </li>

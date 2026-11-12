@@ -5,9 +5,9 @@ from rest_framework.response import Response
 from starrp.core.errors import BusinessError
 from starrp.core.text import only_digits
 from starrp.core.viewsets import TenantViewSet
-from starrp.models import FreightTable, LogisticsSettings, MetafieldDefinition
+from starrp.models import FreightTable, MetafieldDefinition
 from starrp.serializers import logistics as s
-from starrp.services import freight, logistics_settings
+from starrp.services import freight
 
 
 class FreightTableViewSet(TenantViewSet):
@@ -58,21 +58,6 @@ class FreightTableViewSet(TenantViewSet):
         return Response({"zip_code": zip_code or None, "address": found,
                          "point": [str(point[0]), str(point[1])] if point else None,
                          "quotes": [q.as_dict() for q in results]})
-
-
-class LogisticsSettingsViewSet(TenantViewSet):
-    """Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui."""
-
-    model = LogisticsSettings
-    serializer_class = s.LogisticsSettingsSerializer
-    permission_code = "logistics"
-    http_method_names = ["get", "patch", "put", "head", "options"]
-    select_related = ("store",)
-    filterset_fields = ["store"]
-
-    def list(self, request, *args, **kwargs):
-        logistics_settings.ensure_all(request.account.pk)
-        return super().list(request, *args, **kwargs)
 
 
 class MetafieldDefinitionViewSet(TenantViewSet):

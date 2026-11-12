@@ -996,6 +996,217 @@ paths:
       responses:
         '200':
           description: No response body
+  /api/v1/background-tasks/:
+    get:
+      operationId: api_v1_background_tasks_list
+      parameters:
+      - in: query
+        name: kind
+        schema:
+          type: string
+          title: Tarefa
+          enum:
+          - price_read
+          - price_round
+          - seo_read
+          - seo_round
+        description: |-
+          * `price_round` - Precificação: leitura do mercado
+          * `seo_round` - Analítico de SEO: análise dos produtos
+          * `price_read` - Precificação: leitura de um produto
+          * `seo_read` - Analítico de SEO: análise de um produto
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          title: Situação
+          enum:
+          - completed
+          - failed
+          - running
+          - stopped
+        description: |-
+          * `running` - Em andamento
+          * `completed` - Concluída
+          * `failed` - Falha
+          * `stopped` - Parada
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBackgroundTaskList'
+          description: ''
+    post:
+      operationId: api_v1_background_tasks_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackgroundTask'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BackgroundTask'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BackgroundTask'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackgroundTask'
+          description: ''
+  /api/v1/background-tasks/{id}/:
+    get:
+      operationId: api_v1_background_tasks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this background task.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackgroundTask'
+          description: ''
+  /api/v1/background-tasks/{id}/history/:
+    get:
+      operationId: api_v1_background_tasks_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this background task.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackgroundTask'
+          description: ''
+  /api/v1/background-tasks/{id}/stop/:
+    post:
+      operationId: api_v1_background_tasks_stop_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this background task.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackgroundTask'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BackgroundTask'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BackgroundTask'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackgroundTask'
+          description: ''
+  /api/v1/background-tasks/bulk/:
+    get:
+      operationId: api_v1_background_tasks_bulk_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackgroundTask'
+          description: ''
+    post:
+      operationId: api_v1_background_tasks_bulk_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BackgroundTask'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BackgroundTask'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BackgroundTask'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BackgroundTask'
+          description: ''
   /api/v1/cash/discrepancies/:
     get:
       operationId: api_v1_cash_discrepancies_list
@@ -1402,6 +1613,8 @@ paths:
   /api/v1/cash/movements/{id}/approve/:
     post:
       operationId: api_v1_cash_movements_approve_create
+      description: 'Sangria/suprimento pendente: gerente direto, ou `approval` (gerente/senha
+        do caixa da filial).'
       parameters:
       - in: path
         name: id
@@ -1448,6 +1661,41 @@ paths:
         required: true
       tags:
       - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CashMovement'
+          description: ''
+  /api/v1/cash/movements/{id}/reject/:
+    post:
+      operationId: api_v1_cash_movements_reject_create
+      description: 'Gerente recusa, ou o operador desiste do que lançou: fica cancelado,
+        fora da gaveta.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this cash movement.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CashMovement'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CashMovement'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CashMovement'
       security:
       - jwtAuth: []
       responses:
@@ -1859,6 +2107,8 @@ paths:
   /api/v1/cash/sessions/{id}/approve/:
     post:
       operationId: api_v1_cash_sessions_approve_create
+      description: 'Fechamento com diferença: o gerente aprova (direto ou pelo `approval`
+        no corpo).'
       parameters:
       - in: path
         name: id
@@ -1985,6 +2235,9 @@ paths:
   /api/v1/cash/sessions/{id}/movements/:
     get:
       operationId: api_v1_cash_sessions_movements_retrieve
+      description: |-
+        GET: movimentos do turno. POST: sangria/suprimento (devolve o movimento criado, que pode
+        vir `pending` aguardando aprovação).
       parameters:
       - in: path
         name: id
@@ -2006,6 +2259,9 @@ paths:
           description: ''
     post:
       operationId: api_v1_cash_sessions_movements_create
+      description: |-
+        GET: movimentos do turno. POST: sangria/suprimento (devolve o movimento criado, que pode
+        vir `pending` aguardando aprovação).
       parameters:
       - in: path
         name: id
@@ -2646,6 +2902,11 @@ paths:
         description: A search term.
         schema:
           type: string
+      - in: query
+        name: supplier
+        schema:
+          type: string
+          format: uuid
       tags:
       - api
       security:
@@ -5152,6 +5413,717 @@ paths:
               schema:
                 $ref: '#/components/schemas/Commission'
           description: ''
+  /api/v1/competitor-prices/:
+    get:
+      operationId: api_v1_competitor_prices_list
+      description: Salvar ou apagar recalcula o processo do produto na hora, sem gastar
+        consulta de fonte paga.
+      parameters:
+      - in: query
+        name: competitor
+        schema:
+          type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: variant
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: variant__product
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCompetitorPriceList'
+          description: ''
+    post:
+      operationId: api_v1_competitor_prices_create
+      description: Salvar ou apagar recalcula o processo do produto na hora, sem gastar
+        consulta de fonte paga.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitorPrice'
+          description: ''
+  /api/v1/competitor-prices/{id}/:
+    get:
+      operationId: api_v1_competitor_prices_retrieve
+      description: Salvar ou apagar recalcula o processo do produto na hora, sem gastar
+        consulta de fonte paga.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this competitor price.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitorPrice'
+          description: ''
+    put:
+      operationId: api_v1_competitor_prices_update
+      description: Salvar ou apagar recalcula o processo do produto na hora, sem gastar
+        consulta de fonte paga.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this competitor price.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitorPrice'
+          description: ''
+    patch:
+      operationId: api_v1_competitor_prices_partial_update
+      description: Salvar ou apagar recalcula o processo do produto na hora, sem gastar
+        consulta de fonte paga.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this competitor price.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCompetitorPrice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCompetitorPrice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCompetitorPrice'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitorPrice'
+          description: ''
+    delete:
+      operationId: api_v1_competitor_prices_destroy
+      description: Salvar ou apagar recalcula o processo do produto na hora, sem gastar
+        consulta de fonte paga.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this competitor price.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/competitor-prices/{id}/history/:
+    get:
+      operationId: api_v1_competitor_prices_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this competitor price.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitorPrice'
+          description: ''
+  /api/v1/competitor-prices/bulk/:
+    get:
+      operationId: api_v1_competitor_prices_bulk_retrieve
+      description: Salvar ou apagar recalcula o processo do produto na hora, sem gastar
+        consulta de fonte paga.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitorPrice'
+          description: ''
+    post:
+      operationId: api_v1_competitor_prices_bulk_create
+      description: Salvar ou apagar recalcula o processo do produto na hora, sem gastar
+        consulta de fonte paga.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitorPrice'
+          description: ''
+  /api/v1/competitor-prices/import/:
+    post:
+      operationId: api_v1_competitor_prices_import_create
+      description: Salvar ou apagar recalcula o processo do produto na hora, sem gastar
+        consulta de fonte paga.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CompetitorPrice'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CompetitorPrice'
+          description: ''
+  /api/v1/cosmos/attachments/:
+    post:
+      operationId: api_v1_cosmos_attachments_create
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/cosmos/conversations/:
+    get:
+      operationId: api_v1_cosmos_conversations_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCosmosConversationList'
+          description: ''
+  /api/v1/cosmos/conversations/{id}/:
+    get:
+      operationId: api_v1_cosmos_conversations_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this cosmos conversation.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosConversation'
+          description: ''
+    patch:
+      operationId: api_v1_cosmos_conversations_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this cosmos conversation.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedCosmosConversation'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedCosmosConversation'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedCosmosConversation'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosConversation'
+          description: ''
+    delete:
+      operationId: api_v1_cosmos_conversations_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this cosmos conversation.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/cosmos/conversations/{id}/history/:
+    get:
+      operationId: api_v1_cosmos_conversations_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this cosmos conversation.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosConversation'
+          description: ''
+  /api/v1/cosmos/conversations/{id}/messages/:
+    get:
+      operationId: api_v1_cosmos_conversations_messages_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this cosmos conversation.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosConversation'
+          description: ''
+  /api/v1/cosmos/conversations/bulk/:
+    get:
+      operationId: api_v1_cosmos_conversations_bulk_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosConversation'
+          description: ''
+  /api/v1/cosmos/findings/:
+    get:
+      operationId: api_v1_cosmos_findings_list
+      parameters:
+      - in: query
+        name: actor
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: rule
+        schema:
+          type: string
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: severity
+        schema:
+          type: string
+          enum:
+          - critical
+          - info
+          - warning
+        description: |-
+          * `info` - Informação
+          * `warning` - Atenção
+          * `critical` - Grave
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - dismissed
+          - open
+          - resolved
+        description: |-
+          * `open` - Aberto
+          * `resolved` - Resolvido
+          * `dismissed` - Descartado
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedCosmosFindingList'
+          description: ''
+    post:
+      operationId: api_v1_cosmos_findings_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CosmosFinding'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CosmosFinding'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CosmosFinding'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosFinding'
+          description: ''
+  /api/v1/cosmos/findings/{id}/:
+    get:
+      operationId: api_v1_cosmos_findings_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this cosmos finding.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosFinding'
+          description: ''
+  /api/v1/cosmos/findings/{id}/history/:
+    get:
+      operationId: api_v1_cosmos_findings_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this cosmos finding.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosFinding'
+          description: ''
+  /api/v1/cosmos/findings/{id}/resolve/:
+    post:
+      operationId: api_v1_cosmos_findings_resolve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this cosmos finding.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CosmosFinding'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CosmosFinding'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CosmosFinding'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosFinding'
+          description: ''
+  /api/v1/cosmos/findings/bulk/:
+    get:
+      operationId: api_v1_cosmos_findings_bulk_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosFinding'
+          description: ''
+    post:
+      operationId: api_v1_cosmos_findings_bulk_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CosmosFinding'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CosmosFinding'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CosmosFinding'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CosmosFinding'
+          description: ''
+  /api/v1/cosmos/reports/{id}/export/:
+    get:
+      operationId: api_v1_cosmos_reports_export_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/cosmos/status/:
+    get:
+      operationId: api_v1_cosmos_status_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/customer-credits/:
     get:
       operationId: api_v1_customer_credits_list
@@ -8655,9 +9627,93 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedInvoiceList'
           description: ''
+    post:
+      operationId: api_v1_fiscal_invoices_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+          description: ''
   /api/v1/fiscal/invoices/{id}/:
     get:
       operationId: api_v1_fiscal_invoices_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this invoice.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+          description: ''
+  /api/v1/fiscal/invoices/{id}/cancel/:
+    post:
+      operationId: api_v1_fiscal_invoices_cancel_create
+      description: |-
+        POST {"reason", "with_sale": bool, "approval"}: cancela a nota na SEFAZ; com `with_sale`,
+        cancela também o pedido e reembolsa os pagamentos.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this invoice.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+          description: ''
+  /api/v1/fiscal/invoices/{id}/danfe/:
+    get:
+      operationId: api_v1_fiscal_invoices_danfe_retrieve
+      description: 'DANFE da nota (NF-e A4 / NFC-e 80 mm): dados completos + código
+        de barras + QR.'
       parameters:
       - in: path
         name: id
@@ -8707,6 +9763,30 @@ paths:
       operationId: api_v1_fiscal_invoices_bulk_retrieve
       tags:
       - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+          description: ''
+    post:
+      operationId: api_v1_fiscal_invoices_bulk_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Invoice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Invoice'
       security:
       - jwtAuth: []
       responses:
@@ -11057,12 +12137,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/FreightTable'
           description: ''
-  /api/v1/logistics/settings/:
+  /api/v1/logistics/rules/:
     get:
-      operationId: api_v1_logistics_settings_list
-      description: 'Uma configuração por filial: lista todas (nascem sozinhas) e edita;
-        não cria nem exclui.'
+      operationId: api_v1_logistics_rules_list
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       parameters:
+      - in: query
+        name: is_default
+        schema:
+          type: boolean
       - name: ordering
         required: false
         in: query
@@ -11087,11 +12172,6 @@ paths:
         description: A search term.
         schema:
           type: string
-      - in: query
-        name: store
-        schema:
-          type: string
-          format: uuid
       tags:
       - api
       security:
@@ -11101,20 +12181,49 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedLogisticsSettingsList'
+                $ref: '#/components/schemas/PaginatedLogisticsRuleList'
           description: ''
-  /api/v1/logistics/settings/{id}/:
+    post:
+      operationId: api_v1_logistics_rules_create
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogisticsRule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogisticsRule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogisticsRule'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogisticsRule'
+          description: ''
+  /api/v1/logistics/rules/{id}/:
     get:
-      operationId: api_v1_logistics_settings_retrieve
-      description: 'Uma configuração por filial: lista todas (nascem sozinhas) e edita;
-        não cria nem exclui.'
+      operationId: api_v1_logistics_rules_retrieve
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this logistics settings.
+        description: A UUID string identifying this logistics rule.
         required: true
       tags:
       - api
@@ -11125,19 +12234,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LogisticsSettings'
+                $ref: '#/components/schemas/LogisticsRule'
           description: ''
     put:
-      operationId: api_v1_logistics_settings_update
-      description: 'Uma configuração por filial: lista todas (nascem sozinhas) e edita;
-        não cria nem exclui.'
+      operationId: api_v1_logistics_rules_update
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this logistics settings.
+        description: A UUID string identifying this logistics rule.
         required: true
       tags:
       - api
@@ -11145,13 +12255,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/LogisticsSettings'
+              $ref: '#/components/schemas/LogisticsRule'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/LogisticsSettings'
+              $ref: '#/components/schemas/LogisticsRule'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/LogisticsSettings'
+              $ref: '#/components/schemas/LogisticsRule'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -11159,19 +12270,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LogisticsSettings'
+                $ref: '#/components/schemas/LogisticsRule'
           description: ''
     patch:
-      operationId: api_v1_logistics_settings_partial_update
-      description: 'Uma configuração por filial: lista todas (nascem sozinhas) e edita;
-        não cria nem exclui.'
+      operationId: api_v1_logistics_rules_partial_update
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this logistics settings.
+        description: A UUID string identifying this logistics rule.
         required: true
       tags:
       - api
@@ -11179,13 +12291,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedLogisticsSettings'
+              $ref: '#/components/schemas/PatchedLogisticsRule'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedLogisticsSettings'
+              $ref: '#/components/schemas/PatchedLogisticsRule'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedLogisticsSettings'
+              $ref: '#/components/schemas/PatchedLogisticsRule'
       security:
       - jwtAuth: []
       responses:
@@ -11193,11 +12305,31 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LogisticsSettings'
+                $ref: '#/components/schemas/LogisticsRule'
           description: ''
-  /api/v1/logistics/settings/{id}/history/:
+    delete:
+      operationId: api_v1_logistics_rules_destroy
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this logistics rule.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/logistics/rules/{id}/history/:
     get:
-      operationId: api_v1_logistics_settings_history_retrieve
+      operationId: api_v1_logistics_rules_history_retrieve
       description: |-
         Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
         do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
@@ -11207,7 +12339,7 @@ paths:
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this logistics settings.
+        description: A UUID string identifying this logistics rule.
         required: true
       tags:
       - api
@@ -11218,13 +12350,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LogisticsSettings'
+                $ref: '#/components/schemas/LogisticsRule'
           description: ''
-  /api/v1/logistics/settings/bulk/:
+  /api/v1/logistics/rules/bulk/:
     get:
-      operationId: api_v1_logistics_settings_bulk_retrieve
-      description: 'Uma configuração por filial: lista todas (nascem sozinhas) e edita;
-        não cria nem exclui.'
+      operationId: api_v1_logistics_rules_bulk_retrieve
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       tags:
       - api
       security:
@@ -11234,7 +12367,144 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LogisticsSettings'
+                $ref: '#/components/schemas/LogisticsRule'
+          description: ''
+    post:
+      operationId: api_v1_logistics_rules_bulk_create
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LogisticsRule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LogisticsRule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LogisticsRule'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LogisticsRule'
+          description: ''
+  /api/v1/market-offers/:
+    get:
+      operationId: api_v1_market_offers_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: price_check
+        schema:
+          type: string
+          format: uuid
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: used
+        schema:
+          type: boolean
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedMarketOfferList'
+          description: ''
+  /api/v1/market-offers/{id}/:
+    get:
+      operationId: api_v1_market_offers_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this market offer.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketOffer'
+          description: ''
+  /api/v1/market-offers/{id}/history/:
+    get:
+      operationId: api_v1_market_offers_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this market offer.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketOffer'
+          description: ''
+  /api/v1/market-offers/bulk/:
+    get:
+      operationId: api_v1_market_offers_bulk_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketOffer'
           description: ''
   /api/v1/me/:
     get:
@@ -12156,6 +13426,401 @@ paths:
               schema:
                 $ref: '#/components/schemas/Permission'
           description: ''
+  /api/v1/price-checks/:
+    get:
+      operationId: api_v1_price_checks_list
+      parameters:
+      - in: query
+        name: needs_review
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: position
+        schema:
+          type: string
+          enum:
+          - above
+          - below
+          - inside
+          - unknown
+        description: |-
+          * `above` - Acima do mercado
+          * `inside` - No preço do mercado
+          * `below` - Abaixo do mercado
+          * `unknown` - Sem dados suficientes
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - applied
+          - none
+          - pending
+          - rejected
+        description: |-
+          * `none` - Sem sugestão
+          * `pending` - Aguardando aprovação
+          * `applied` - Preço aplicado
+          * `rejected` - Recusada
+      - in: query
+        name: variant
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: variant__product
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: worth_it
+        schema:
+          type: boolean
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPriceCheckList'
+          description: ''
+    post:
+      operationId: api_v1_price_checks_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/{id}/:
+    get:
+      operationId: api_v1_price_checks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this price check.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/{id}/approve/:
+    post:
+      operationId: api_v1_price_checks_approve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this price check.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/{id}/history/:
+    get:
+      operationId: api_v1_price_checks_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this price check.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/{id}/refresh/:
+    post:
+      operationId: api_v1_price_checks_refresh_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this price check.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/{id}/reject/:
+    post:
+      operationId: api_v1_price_checks_reject_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this price check.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/bulk/:
+    get:
+      operationId: api_v1_price_checks_bulk_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+    post:
+      operationId: api_v1_price_checks_bulk_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/product/:
+    post:
+      operationId: api_v1_price_checks_product_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/rules/:
+    get:
+      operationId: api_v1_price_checks_rules_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+    post:
+      operationId: api_v1_price_checks_rules_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/run/:
+    post:
+      operationId: api_v1_price_checks_run_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PriceCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
+  /api/v1/price-checks/run-status/:
+    get:
+      operationId: api_v1_price_checks_run_status_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceCheckDetail'
+          description: ''
   /api/v1/promotions/coupons/:
     get:
       operationId: api_v1_promotions_coupons_list
@@ -12231,7 +13896,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Coupon'
-        required: true
       security:
       - jwtAuth: []
       responses:
@@ -12286,7 +13950,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Coupon'
-        required: true
       security:
       - jwtAuth: []
       responses:
@@ -12399,7 +14062,6 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/Coupon'
-        required: true
       security:
       - jwtAuth: []
       responses:
@@ -13147,6 +14809,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/DiscountTable'
           description: ''
+  /api/v1/public/reviews/{token}/:
+    get:
+      operationId: api_v1_public_reviews_retrieve
+      description: 'O cliente avalia pelo link (sem login): só o tipo do link, uma
+        vez, até a data limite.'
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: api_v1_public_reviews_create
+      description: 'O cliente avalia pelo link (sem login): só o tipo do link, uma
+        vez, até a data limite.'
+      parameters:
+      - in: path
+        name: token
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
   /api/v1/reports/{name}/:
     get:
       operationId: api_v1_reports_retrieve
@@ -13154,6 +14851,46 @@ paths:
         GET /reports/<nome>/?date_from=AAAA-MM-DD&date_to=...&seller=<id>
 
         A loja vem do header `X-Store-ID` (sem ele, a rede inteira).
+      parameters:
+      - in: path
+        name: name
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/book/{name}/:
+    get:
+      operationId: api_v1_reports_book_retrieve
+      description: |-
+        GET /reports/book/<slug>/?date_from=&date_to= — um relatório do livro (Movimento, Mercadorias,
+        Contábil, Relacionamento) no formato padrão (indicadores + blocos), ver `services/report_book`.
+      parameters:
+      - in: path
+        name: name
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/reports/book/{name}/export/:
+    get:
+      operationId: api_v1_reports_book_export_retrieve
+      description: |-
+        GET /reports/book/<slug>/export/?formato=xlsx|csv[&bloco=<índice>][&aba=<valor>] + os filtros da tela.
+
+        Excel: resumo + uma aba por bloco (e uma por classe na Curva ABC). CSV: um bloco só
+        (o pedido ou a primeira tabela). Mesmas permissões do relatório.
       parameters:
       - in: path
         name: name
@@ -13423,6 +15160,349 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SaleReturn'
+          description: ''
+  /api/v1/reviews/:
+    get:
+      operationId: api_v1_reviews_list
+      parameters:
+      - in: query
+        name: created_at__gte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: created_at__lte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: customer
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - delivery
+          - product
+        description: |-
+          * `product` - Produto
+          * `delivery` - Entrega
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: string
+          format: uuid
+      - in: query
+        name: rating
+        schema:
+          type: integer
+      - in: query
+        name: rating__gte
+        schema:
+          type: integer
+      - in: query
+        name: rating__lte
+        schema:
+          type: integer
+      - in: query
+        name: sale
+        schema:
+          type: string
+          format: uuid
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - approved
+          - pending
+          - rejected
+        description: |-
+          * `pending` - Pendente
+          * `approved` - Aprovada
+          * `rejected` - Rejeitada
+      - in: query
+        name: verified_purchase
+        schema:
+          type: boolean
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedReviewList'
+          description: ''
+    post:
+      operationId: api_v1_reviews_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Review'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Review'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+  /api/v1/reviews/{id}/:
+    get:
+      operationId: api_v1_reviews_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this review.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+    delete:
+      operationId: api_v1_reviews_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this review.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/reviews/{id}/approve/:
+    post:
+      operationId: api_v1_reviews_approve_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this review.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Review'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Review'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+  /api/v1/reviews/{id}/history/:
+    get:
+      operationId: api_v1_reviews_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this review.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+  /api/v1/reviews/{id}/reject/:
+    post:
+      operationId: api_v1_reviews_reject_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this review.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Review'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Review'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+  /api/v1/reviews/bulk/:
+    get:
+      operationId: api_v1_reviews_bulk_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+    post:
+      operationId: api_v1_reviews_bulk_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Review'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Review'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+  /api/v1/reviews/links/:
+    get:
+      operationId: api_v1_reviews_links_retrieve
+      description: |-
+        GET: um item por tipo que a venda pode avaliar, com o link atual (se houver).
+        POST {sale, kind, days}: gera o link do tipo (ou devolve o que ainda vale).
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+          description: ''
+    post:
+      operationId: api_v1_reviews_links_create
+      description: |-
+        GET: um item por tipo que a venda pode avaliar, com o link atual (se houver).
+        POST {sale, kind, days}: gera o link do tipo (ou devolve o que ainda vale).
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Review'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Review'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Review'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
           description: ''
   /api/v1/roles/:
     get:
@@ -13999,6 +16079,66 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/sales/{id}/addresses/:
+    get:
+      operationId: api_v1_sales_addresses_retrieve
+      description: |-
+        Endereços do pedido: GET; POST {delivery, billing, billing_same_as_delivery} corrige só o pedido
+        (o cadastro do cliente fica como está). `inherit: true` copia de novo do cliente.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this sale.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+          description: ''
+    post:
+      operationId: api_v1_sales_addresses_create
+      description: |-
+        Endereços do pedido: GET; POST {delivery, billing, billing_same_as_delivery} corrige só o pedido
+        (o cadastro do cliente fica como está). `inherit: true` copia de novo do cliente.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this sale.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sale'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Sale'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Sale'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+          description: ''
   /api/v1/sales/{id}/cancel/:
     post:
       operationId: api_v1_sales_cancel_create
@@ -14268,6 +16408,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Sale'
           description: ''
+  /api/v1/sales/{id}/edit-delivery/:
+    post:
+      operationId: api_v1_sales_edit_delivery_create
+      description: 'Venda concluída: {"reason", "pickup": true} ou {"reason", "address",
+        "table"}. O frete cobrado fica.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this sale.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sale'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Sale'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Sale'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+          description: ''
   /api/v1/sales/{id}/fulfillment/:
     post:
       operationId: api_v1_sales_fulfillment_create
@@ -14316,6 +16491,36 @@ paths:
           type: string
           format: uuid
         description: A UUID string identifying this sale.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+          description: ''
+  /api/v1/sales/{id}/invoices/{invoice_id}/danfe/:
+    get:
+      operationId: api_v1_sales_invoices_danfe_retrieve
+      description: |-
+        A nota do pedido para imprimir: quem vê o pedido imprime a nota dele (sem precisar do módulo
+        fiscal). Código de barras da chave (Code 128) e QR da consulta (NFC-e) já em SVG.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this sale.
+        required: true
+      - in: path
+        name: invoice_id
+        schema:
+          type: string
         required: true
       tags:
       - api
@@ -14566,6 +16771,46 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/sales/{id}/payments/{payment_id}/change/:
+    post:
+      operationId: api_v1_sales_payments_change_create
+      description: 'Venda concluída: {"method", "reason", "installments"?, "nsu"?,
+        "authorization_code"?}, mesmo valor.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this sale.
+        required: true
+      - in: path
+        name: payment_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Sale'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Sale'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Sale'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sale'
+          description: ''
   /api/v1/sales/{id}/resume/:
     post:
       operationId: api_v1_sales_resume_create
@@ -14838,6 +17083,713 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SaleItemReport'
+          description: ''
+  /api/v1/seo-checks/:
+    get:
+      operationId: api_v1_seo_checks_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - in: query
+        name: product
+        schema:
+          type: string
+          format: uuid
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          title: Situação
+          enum:
+          - applied
+          - none
+          - pending
+          - rejected
+        description: |-
+          * `none` - Sem sugestão
+          * `pending` - Aguardando aprovação
+          * `applied` - Sugestões aplicadas
+          * `rejected` - Recusada
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSeoCheckList'
+          description: ''
+    post:
+      operationId: api_v1_seo_checks_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/{id}/:
+    get:
+      operationId: api_v1_seo_checks_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this seo check.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/{id}/apply/:
+    post:
+      operationId: api_v1_seo_checks_apply_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this seo check.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/{id}/history/:
+    get:
+      operationId: api_v1_seo_checks_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this seo check.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/{id}/refresh/:
+    post:
+      operationId: api_v1_seo_checks_refresh_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this seo check.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/{id}/reject/:
+    post:
+      operationId: api_v1_seo_checks_reject_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this seo check.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/bulk/:
+    get:
+      operationId: api_v1_seo_checks_bulk_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+    post:
+      operationId: api_v1_seo_checks_bulk_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/product/:
+    post:
+      operationId: api_v1_seo_checks_product_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/rules/:
+    get:
+      operationId: api_v1_seo_checks_rules_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+    post:
+      operationId: api_v1_seo_checks_rules_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/run/:
+    post:
+      operationId: api_v1_seo_checks_run_create
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SeoCheckDetail'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/seo-checks/run-status/:
+    get:
+      operationId: api_v1_seo_checks_run_status_retrieve
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SeoCheckDetail'
+          description: ''
+  /api/v1/stock/advices/:
+    get:
+      operationId: api_v1_stock_advices_list
+      description: |-
+        Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+
+        POST /stock/advices/run/          analisa agora
+        POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+        POST /stock/advices/<id>/dismiss/ recusa
+
+        Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+      parameters:
+      - in: query
+        name: kind
+        schema:
+          type: string
+          enum:
+          - dock
+          - fast
+          - idle
+          - scattered
+          - together
+        description: |-
+          * `dock` - Parado na doca
+          * `together` - Saem juntos
+          * `fast` - Sai muito
+          * `scattered` - Espalhado
+          * `idle` - Não sai
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      - in: query
+        name: status
+        schema:
+          type: string
+          enum:
+          - applied
+          - dismissed
+          - expired
+          - open
+        description: |-
+          * `open` - Para decidir
+          * `applied` - Aceita
+          * `dismissed` - Recusada
+          * `expired` - Não vale mais
+      - in: query
+        name: warehouse
+        schema:
+          type: string
+          format: uuid
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStockAdviceList'
+          description: ''
+    post:
+      operationId: api_v1_stock_advices_create
+      description: |-
+        Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+
+        POST /stock/advices/run/          analisa agora
+        POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+        POST /stock/advices/<id>/dismiss/ recusa
+
+        Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockAdvice'
+          description: ''
+  /api/v1/stock/advices/{id}/:
+    get:
+      operationId: api_v1_stock_advices_retrieve
+      description: |-
+        Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+
+        POST /stock/advices/run/          analisa agora
+        POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+        POST /stock/advices/<id>/dismiss/ recusa
+
+        Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this stock advice.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockAdvice'
+          description: ''
+  /api/v1/stock/advices/{id}/apply/:
+    post:
+      operationId: api_v1_stock_advices_apply_create
+      description: |-
+        Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+
+        POST /stock/advices/run/          analisa agora
+        POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+        POST /stock/advices/<id>/dismiss/ recusa
+
+        Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this stock advice.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockAdvice'
+          description: ''
+  /api/v1/stock/advices/{id}/dismiss/:
+    post:
+      operationId: api_v1_stock_advices_dismiss_create
+      description: |-
+        Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+
+        POST /stock/advices/run/          analisa agora
+        POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+        POST /stock/advices/<id>/dismiss/ recusa
+
+        Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this stock advice.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockAdvice'
+          description: ''
+  /api/v1/stock/advices/{id}/history/:
+    get:
+      operationId: api_v1_stock_advices_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this stock advice.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockAdvice'
+          description: ''
+  /api/v1/stock/advices/bulk/:
+    get:
+      operationId: api_v1_stock_advices_bulk_retrieve
+      description: |-
+        Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+
+        POST /stock/advices/run/          analisa agora
+        POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+        POST /stock/advices/<id>/dismiss/ recusa
+
+        Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockAdvice'
+          description: ''
+    post:
+      operationId: api_v1_stock_advices_bulk_create
+      description: |-
+        Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+
+        POST /stock/advices/run/          analisa agora
+        POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+        POST /stock/advices/<id>/dismiss/ recusa
+
+        Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockAdvice'
+          description: ''
+  /api/v1/stock/advices/run/:
+    post:
+      operationId: api_v1_stock_advices_run_create
+      description: |-
+        Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+
+        POST /stock/advices/run/          analisa agora
+        POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+        POST /stock/advices/<id>/dismiss/ recusa
+
+        Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StockAdvice'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockAdvice'
           description: ''
   /api/v1/stock/balances/:
     get:
@@ -15896,13 +18848,38 @@ paths:
               schema:
                 $ref: '#/components/schemas/StockDocument'
           description: ''
+  /api/v1/stock/documents/{id}/label-options/:
+    get:
+      operationId: api_v1_stock_documents_label_options_retrieve
+      description: O que dá para imprimir e o modelo sugerido (o padrão do sistema
+        para lote, senão o de produto).
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this stock document.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockDocument'
+          description: ''
   /api/v1/stock/documents/{id}/labels/:
     get:
       operationId: api_v1_stock_documents_labels_retrieve
       description: |-
-        Etiquetas do que entrou: ?template=<id>. Produto: uma por unidade
-        (vendido por peso: uma por linha). Lote: uma por lote gerado.
-        Volume: uma por caixa de cada unidade (2 guarda-roupas em 3 caixas = 6).
+        Etiquetas do que entrou: ?template=<id>, ou ?stage=entry|conference (o modelo da etapa na regra
+        de logística da filial; vazio = entrada). Produto: uma por unidade (vendido por peso: uma por linha),
+        com a data de entrada. Lote: uma por lote gerado, com a data de entrada e a validade. Volume: uma por
+        caixa de cada unidade (2 guarda-roupas em 3 caixas = 6). Etapa sem nada para imprimir: 204.
       parameters:
       - in: path
         name: id
@@ -16072,6 +19049,15 @@ paths:
           * `lot` - Lote (validade)
           * `bin` - Endereço de armazenagem
           * `volume` - Volume (caixa do produto)
+      - in: query
+        name: subject__in
+        schema:
+          type: array
+          items:
+            type: string
+        description: Valores múltiplos podem ser separados por vírgulas.
+        explode: false
+        style: form
       tags:
       - api
       security:
@@ -16630,10 +19616,17 @@ paths:
               schema:
                 $ref: '#/components/schemas/StockMovement'
           description: ''
-  /api/v1/stock/settings/:
+  /api/v1/stock/rules/:
     get:
-      operationId: api_v1_stock_settings_list
+      operationId: api_v1_stock_rules_list
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       parameters:
+      - in: query
+        name: is_default
+        schema:
+          type: boolean
       - name: ordering
         required: false
         in: query
@@ -16667,23 +19660,27 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedStockSettingsList'
+                $ref: '#/components/schemas/PaginatedStockRuleList'
           description: ''
     post:
-      operationId: api_v1_stock_settings_create
+      operationId: api_v1_stock_rules_create
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       tags:
       - api
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StockSettings'
+              $ref: '#/components/schemas/StockRule'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/StockSettings'
+              $ref: '#/components/schemas/StockRule'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/StockSettings'
+              $ref: '#/components/schemas/StockRule'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -16691,18 +19688,21 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockSettings'
+                $ref: '#/components/schemas/StockRule'
           description: ''
-  /api/v1/stock/settings/{id}/:
+  /api/v1/stock/rules/{id}/:
     get:
-      operationId: api_v1_stock_settings_retrieve
+      operationId: api_v1_stock_rules_retrieve
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this stock settings.
+        description: A UUID string identifying this stock rule.
         required: true
       tags:
       - api
@@ -16713,17 +19713,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockSettings'
+                $ref: '#/components/schemas/StockRule'
           description: ''
     put:
-      operationId: api_v1_stock_settings_update
+      operationId: api_v1_stock_rules_update
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this stock settings.
+        description: A UUID string identifying this stock rule.
         required: true
       tags:
       - api
@@ -16731,13 +19734,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StockSettings'
+              $ref: '#/components/schemas/StockRule'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/StockSettings'
+              $ref: '#/components/schemas/StockRule'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/StockSettings'
+              $ref: '#/components/schemas/StockRule'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -16745,17 +19749,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockSettings'
+                $ref: '#/components/schemas/StockRule'
           description: ''
     patch:
-      operationId: api_v1_stock_settings_partial_update
+      operationId: api_v1_stock_rules_partial_update
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this stock settings.
+        description: A UUID string identifying this stock rule.
         required: true
       tags:
       - api
@@ -16763,13 +19770,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedStockSettings'
+              $ref: '#/components/schemas/PatchedStockRule'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/PatchedStockSettings'
+              $ref: '#/components/schemas/PatchedStockRule'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/PatchedStockSettings'
+              $ref: '#/components/schemas/PatchedStockRule'
       security:
       - jwtAuth: []
       responses:
@@ -16777,17 +19784,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockSettings'
+                $ref: '#/components/schemas/StockRule'
           description: ''
     delete:
-      operationId: api_v1_stock_settings_destroy
+      operationId: api_v1_stock_rules_destroy
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       parameters:
       - in: path
         name: id
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this stock settings.
+        description: A UUID string identifying this stock rule.
         required: true
       tags:
       - api
@@ -16796,9 +19806,9 @@ paths:
       responses:
         '204':
           description: No response body
-  /api/v1/stock/settings/{id}/history/:
+  /api/v1/stock/rules/{id}/history/:
     get:
-      operationId: api_v1_stock_settings_history_retrieve
+      operationId: api_v1_stock_rules_history_retrieve
       description: |-
         Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
         do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
@@ -16808,7 +19818,7 @@ paths:
         schema:
           type: string
           format: uuid
-        description: A UUID string identifying this stock settings.
+        description: A UUID string identifying this stock rule.
         required: true
       tags:
       - api
@@ -16819,11 +19829,14 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockSettings'
+                $ref: '#/components/schemas/StockRule'
           description: ''
-  /api/v1/stock/settings/bulk/:
+  /api/v1/stock/rules/bulk/:
     get:
-      operationId: api_v1_stock_settings_bulk_retrieve
+      operationId: api_v1_stock_rules_bulk_retrieve
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       tags:
       - api
       security:
@@ -16833,23 +19846,27 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockSettings'
+                $ref: '#/components/schemas/StockRule'
           description: ''
     post:
-      operationId: api_v1_stock_settings_bulk_create
+      operationId: api_v1_stock_rules_bulk_create
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
       tags:
       - api
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/StockSettings'
+              $ref: '#/components/schemas/StockRule'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/StockSettings'
+              $ref: '#/components/schemas/StockRule'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/StockSettings'
+              $ref: '#/components/schemas/StockRule'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -16857,7 +19874,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StockSettings'
+                $ref: '#/components/schemas/StockRule'
           description: ''
   /api/v1/stock/warehouses/:
     get:
@@ -17377,6 +20394,266 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Store'
+          description: ''
+  /api/v1/stores/rules/:
+    get:
+      operationId: api_v1_stores_rules_list
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      parameters:
+      - in: query
+        name: is_default
+        schema:
+          type: boolean
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedStoreRuleList'
+          description: ''
+    post:
+      operationId: api_v1_stores_rules_create
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreRule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StoreRule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoreRule'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreRule'
+          description: ''
+  /api/v1/stores/rules/{id}/:
+    get:
+      operationId: api_v1_stores_rules_retrieve
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this store rule.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreRule'
+          description: ''
+    put:
+      operationId: api_v1_stores_rules_update
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this store rule.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreRule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StoreRule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoreRule'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreRule'
+          description: ''
+    patch:
+      operationId: api_v1_stores_rules_partial_update
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this store rule.
+        required: true
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedStoreRule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedStoreRule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedStoreRule'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreRule'
+          description: ''
+    delete:
+      operationId: api_v1_stores_rules_destroy
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this store rule.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/stores/rules/{id}/history/:
+    get:
+      operationId: api_v1_stores_rules_history_retrieve
+      description: |-
+        Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+        do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this store rule.
+        required: true
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreRule'
+          description: ''
+  /api/v1/stores/rules/bulk/:
+    get:
+      operationId: api_v1_stores_rules_bulk_retrieve
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      tags:
+      - api
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreRule'
+          description: ''
+    post:
+      operationId: api_v1_stores_rules_bulk_create
+      description: |-
+        Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+        a padrão, a última e a regra em uso por filial ficam.
+      tags:
+      - api
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreRule'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/StoreRule'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/StoreRule'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StoreRule'
           description: ''
   /api/v1/suppliers/:
     get:
@@ -18605,7 +21882,8 @@ components:
           nullable: true
         code:
           type: string
-          description: Código patrimonial impresso na plaqueta.
+          description: Código patrimonial impresso na plaqueta. Vazio = o próximo
+            PAT-000001.
           maxLength: 40
         description:
           type: string
@@ -18694,7 +21972,6 @@ components:
           nullable: true
       required:
       - account
-      - code
       - created_at
       - created_by
       - deleted_at
@@ -19037,6 +22314,104 @@ components:
       - object_id
       - updated_at
       - updated_by
+    BackgroundTask:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/BackgroundTaskKindEnum'
+          readOnly: true
+          title: Tarefa
+        kind_display:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BackgroundTaskStatusEnum'
+          readOnly: true
+          title: Situação
+        status_display:
+          type: string
+          readOnly: true
+        done:
+          type: integer
+          readOnly: true
+          title: Feitos
+        total:
+          type: integer
+          readOnly: true
+        percent:
+          type: integer
+          readOnly: true
+        error:
+          type: string
+          readOnly: true
+          title: Motivo
+          description: 'Vai para a tela: nunca nome de API, chave ou detalhe técnico.'
+        can_stop:
+          type: boolean
+          readOnly: true
+        started_by_name:
+          type: string
+          readOnly: true
+        started_at:
+          type: string
+          format: date-time
+          readOnly: true
+          title: Início
+        finished_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          title: Fim
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - can_stop
+      - done
+      - error
+      - finished_at
+      - id
+      - kind
+      - kind_display
+      - percent
+      - started_at
+      - started_by_name
+      - status
+      - status_display
+      - total
+      - updated_at
+    BackgroundTaskKindEnum:
+      enum:
+      - price_round
+      - seo_round
+      - price_read
+      - seo_read
+      type: string
+      description: |-
+        * `price_round` - Precificação: leitura do mercado
+        * `seo_round` - Analítico de SEO: análise dos produtos
+        * `price_read` - Precificação: leitura de um produto
+        * `seo_read` - Analítico de SEO: análise de um produto
+    BackgroundTaskStatusEnum:
+      enum:
+      - running
+      - completed
+      - failed
+      - stopped
+      type: string
+      description: |-
+        * `running` - Em andamento
+        * `completed` - Concluída
+        * `failed` - Falha
+        * `stopped` - Parada
     Barcode:
       type: object
       properties:
@@ -19113,6 +22488,9 @@ components:
           type: string
           format: uuid
           readOnly: true
+        supplier_name:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -19143,6 +22521,11 @@ components:
           type: integer
           readOnly: true
           nullable: true
+        supplier:
+          type: string
+          format: uuid
+          nullable: true
+          description: De quem a loja compra esta marca.
       required:
       - account
       - created_at
@@ -19150,6 +22533,7 @@ components:
       - deleted_at
       - id
       - name
+      - supplier_name
       - updated_at
       - updated_by
     CashDiscrepancy:
@@ -19247,6 +22631,9 @@ components:
         operator_name:
           type: string
           readOnly: true
+        approved_by_name:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -19278,6 +22665,13 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        authorized_by_password:
+          type: boolean
+          readOnly: true
+        approval_reason:
+          type: string
+          readOnly: true
+          description: Justificativa de quem aprovou ou recusou.
         reason:
           type: string
           readOnly: true
@@ -19325,8 +22719,11 @@ components:
       required:
       - account
       - amount
+      - approval_reason
       - approved_at
       - approved_by
+      - approved_by_name
+      - authorized_by_password
       - created_at
       - created_by
       - deleted_at
@@ -19369,14 +22766,15 @@ components:
         * `cancelled` - Cancelado
     CashRegister:
       type: object
-      description: 'Caixa e QUEM opera (`operators`, ids de usuário): só eles abrem,
-        movimentam e fecham.'
+      description: |-
+        Caixa e QUEM opera (`operator`, id do usuário): só ele abre, movimenta e fecha. Um operador
+        por caixa e um caixa por usuário.
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
-        operator_names:
+        operator_name:
           type: string
           readOnly: true
         in_use_by:
@@ -19401,6 +22799,7 @@ components:
           maxLength: 120
         code:
           type: string
+          description: Vazio = gerado pelo nome (CAIXA-01).
           maxLength: 40
         is_active:
           type: boolean
@@ -19419,20 +22818,18 @@ components:
         store:
           type: string
           format: uuid
-        operators:
-          type: array
-          items:
-            type: integer
+        operator:
+          type: integer
+          nullable: true
       required:
       - account
-      - code
       - created_at
       - created_by
       - deleted_at
       - id
       - in_use_by
       - name
-      - operator_names
+      - operator_name
       - updated_at
       - updated_by
     CashSession:
@@ -19450,6 +22847,11 @@ components:
           readOnly: true
         expected_now:
           type: string
+          readOnly: true
+        pending_movements:
+          type: integer
+          description: Sangrias/suprimentos aguardando aprovação (o fechamento espera
+            por eles).
           readOnly: true
         created_at:
           type: string
@@ -19611,6 +23013,7 @@ components:
       - opening_expected
       - opening_is_initial
       - opening_notes
+      - pending_movements
       - register
       - register_name
       - status
@@ -19860,6 +23263,62 @@ components:
         * `pending` - A pagar
         * `paid` - Paga
         * `cancelled` - Cancelada
+    CompetitorPrice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        variant:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+          readOnly: true
+        sku:
+          type: string
+          readOnly: true
+        competitor:
+          type: string
+          description: Loja ou site concorrente.
+          maxLength: 120
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        observed_on:
+          type: string
+          format: date
+          description: Dia em que o preço foi visto.
+        url:
+          type: string
+          format: uri
+          maxLength: 500
+        notes:
+          type: string
+          maxLength: 200
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - competitor
+      - created_at
+      - id
+      - product_name
+      - sku
+      - variant
+    ConferenceLabelsEnum:
+      enum:
+      - auto
+      - ask
+      - 'off'
+      type: string
+      description: |-
+        * `auto` - Imprime sozinho
+        * `ask` - Pergunta o modelo
+        * `off` - Não imprime
     ConferenceModeEnum:
       enum:
       - scan
@@ -19882,6 +23341,133 @@ components:
         * `network` - Rede (TCP 9100)
         * `serial` - Serial
         * `usb` - USB
+    CosmosConversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 120
+        last_message_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        store:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: Filial ativa quando a conversa começou.
+        finding:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        digest_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+      required:
+      - created_at
+      - digest_day
+      - finding
+      - id
+      - last_message_at
+      - store
+    CosmosFinding:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        rule:
+          type: string
+          readOnly: true
+        severity:
+          allOf:
+          - $ref: '#/components/schemas/SeverityEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        detail:
+          type: string
+          readOnly: true
+        entity:
+          type: string
+          readOnly: true
+        object_id:
+          type: string
+          readOnly: true
+        endpoint:
+          type: string
+          readOnly: true
+          description: Recurso da API (a tela abre o cadastro).
+        status:
+          allOf:
+          - $ref: '#/components/schemas/CosmosFindingStatusEnum'
+          readOnly: true
+        actor:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Quem fez o que foi apontado.
+        actor_name:
+          type: string
+          readOnly: true
+        store:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        store_name:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        resolved_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - actor
+      - actor_name
+      - created_at
+      - detail
+      - endpoint
+      - entity
+      - id
+      - object_id
+      - resolved_at
+      - rule
+      - severity
+      - status
+      - store
+      - store_name
+      - title
+    CosmosFindingStatusEnum:
+      enum:
+      - open
+      - resolved
+      - dismissed
+      type: string
+      description: |-
+        * `open` - Aberto
+        * `resolved` - Resolvido
+        * `dismissed` - Descartado
     Coupon:
       type: object
       properties:
@@ -19914,7 +23500,8 @@ components:
           nullable: true
         code:
           type: string
-          description: Guardado em MAIÚSCULAS.
+          description: Guardado em MAIÚSCULAS. Vazio = gerado pelo nome (BLACKFRIDAY)
+            ou aleatório.
           maxLength: 40
         name:
           type: string
@@ -19986,7 +23573,6 @@ components:
             format: uuid
       required:
       - account
-      - code
       - created_at
       - created_by
       - deleted_at
@@ -20084,6 +23670,8 @@ components:
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
           description: Limite do crediário. 0 = não vende a prazo.
+        billing_same_as_delivery:
+          type: boolean
         metafields:
           description: 'Metacampos {chave: valor}.'
         account:
@@ -20162,6 +23750,9 @@ components:
           maxLength: 255
         is_default:
           type: boolean
+        is_billing:
+          type: boolean
+          description: Endereço de cobrança (quando difere da entrega).
         customer:
           type: string
           format: uuid
@@ -20425,6 +24016,16 @@ components:
       description: |-
         * `1` - Normal
         * `9` - Contingência offline
+    EntryLabelsEnum:
+      enum:
+      - auto
+      - ask
+      - 'off'
+      type: string
+      description: |-
+        * `auto` - Imprime sozinho
+        * `ask` - Pergunta o modelo
+        * `off` - Não imprime
     Environment656Enum:
       enum:
       - '1'
@@ -21108,6 +24709,14 @@ components:
         is_system:
           type: boolean
           description: 'Pré-pronto do sistema: ajusta, mas não exclui.'
+        ncm:
+          type: string
+          description: Vale para o produto do perfil que não tiver NCM próprio.
+          maxLength: 8
+        cest:
+          type: string
+          description: Vale para o produto do perfil que não tiver CEST próprio.
+          maxLength: 7
         cfop:
           type: string
           maxLength: 4
@@ -21199,7 +24808,7 @@ components:
           minimum: 0
           format: int64
         origin:
-          $ref: '#/components/schemas/OriginEnum'
+          $ref: '#/components/schemas/FiscalSeriesOriginEnum'
         next_number:
           type: integer
           maximum: 9223372036854775807
@@ -21231,6 +24840,14 @@ components:
       - id
       - updated_at
       - updated_by
+    FiscalSeriesOriginEnum:
+      enum:
+      - store
+      - cloud
+      type: string
+      description: |-
+        * `store` - Loja / terminal
+        * `cloud` - Nuvem
     FiscalStatusEnum:
       enum:
       - unknown
@@ -22558,14 +26175,26 @@ components:
         * `success` - Sucesso
         * `warning` - Atenção
         * `error` - Erro
-    LogisticsSettings:
+    LogisticsRule:
       type: object
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
-        store_name:
+        store_names:
+          type: string
+          readOnly: true
+        store_count:
+          type: string
+          readOnly: true
+        entry_lot_label_name:
+          type: string
+          readOnly: true
+        entry_product_label_name:
+          type: string
+          readOnly: true
+        conference_label_name:
           type: string
           readOnly: true
         created_at:
@@ -22581,9 +26210,35 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        is_default:
+          type: boolean
+          description: Filial nova (ou sem escolha) fica com esta.
         allow_manual_conference:
           type: boolean
           description: Permite conferir o recebimento manualmente, sem ler os códigos.
+        entry_labels:
+          allOf:
+          - $ref: '#/components/schemas/EntryLabelsEnum'
+          description: |-
+            Ao confirmar ou aprovar a entrada.
+
+            * `auto` - Imprime sozinho
+            * `ask` - Pergunta o modelo
+            * `off` - Não imprime
+        conference_labels:
+          allOf:
+          - $ref: '#/components/schemas/ConferenceLabelsEnum'
+          description: |-
+            Ao concluir a conferência do recebimento.
+
+            * `auto` - Imprime sozinho
+            * `ask` - Pergunta o modelo
+            * `off` - Não imprime
         account:
           type: string
           format: uuid
@@ -22596,18 +26251,33 @@ components:
           type: integer
           readOnly: true
           nullable: true
-        store:
+        entry_lot_label:
           type: string
           format: uuid
-          readOnly: true
+          nullable: true
+          description: Entrada que gera lote (validade ou data de entrada).
+        entry_product_label:
+          type: string
+          format: uuid
+          nullable: true
+          description: 'Entrada sem lote: etiqueta de produto, uma por unidade.'
+        conference_label:
+          type: string
+          format: uuid
+          nullable: true
+          description: Caixa (volume) ou produto, para identificar o que chegou.
       required:
       - account
+      - conference_label_name
       - created_at
       - created_by
       - deleted_at
+      - entry_lot_label_name
+      - entry_product_label_name
       - id
-      - store
-      - store_name
+      - name
+      - store_count
+      - store_names
       - updated_at
       - updated_by
     ManifestationEnum:
@@ -22626,6 +26296,79 @@ components:
         * `unknown` - Desconhecimento
         * `not_performed` - Operação não realizada
         * `error` - Erro na manifestação
+    MarketOffer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        price_check:
+          type: string
+          format: uuid
+          readOnly: true
+        source:
+          type: string
+          readOnly: true
+        query:
+          type: string
+          readOnly: true
+          description: A busca que trouxe esta oferta.
+        observed_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+          description: Quando a fonte trouxe esta oferta.
+        external_id:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        url:
+          type: string
+          format: uri
+          readOnly: true
+        seller:
+          type: string
+          readOnly: true
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        free_shipping:
+          type: boolean
+          readOnly: true
+        match_score:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          readOnly: true
+          description: Nota do pareamento (0 a 100).
+        match_reason:
+          type: string
+          readOnly: true
+        used:
+          type: boolean
+          readOnly: true
+          description: Entrou na referência (pareada e dentro da curva).
+      required:
+      - external_id
+      - free_shipping
+      - id
+      - match_reason
+      - match_score
+      - observed_at
+      - price
+      - price_check
+      - query
+      - seller
+      - source
+      - title
+      - url
+      - used
     MetafieldDefinition:
       type: object
       properties:
@@ -23017,14 +26760,6 @@ components:
         * `DELETE` - Exclusão
         * `UPSERT` - Upsert
         * `SNAPSHOT` - Snapshot
-    OriginEnum:
-      enum:
-      - store
-      - cloud
-      type: string
-      description: |-
-        * `store` - Loja / terminal
-        * `cloud` - Nuvem
     OverallStatusEnum:
       enum:
       - draft
@@ -23195,6 +26930,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/AuditLog'
+    PaginatedBackgroundTaskList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BackgroundTask'
     PaginatedBinBalanceList:
       type: object
       required:
@@ -23379,6 +27137,75 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Commission'
+    PaginatedCompetitorPriceList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompetitorPrice'
+    PaginatedCosmosConversationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CosmosConversation'
+    PaginatedCosmosFindingList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/CosmosFinding'
     PaginatedCouponList:
       type: object
       required:
@@ -23908,7 +27735,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/LabelTemplate'
-    PaginatedLogisticsSettingsList:
+    PaginatedLogisticsRuleList:
       type: object
       required:
       - count
@@ -23930,7 +27757,30 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/LogisticsSettings'
+            $ref: '#/components/schemas/LogisticsRule'
+    PaginatedMarketOfferList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarketOffer'
     PaginatedMetafieldDefinitionList:
       type: object
       required:
@@ -24069,6 +27919,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Permission'
+    PaginatedPriceCheckList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceCheck'
     PaginatedPrintJobList:
       type: object
       required:
@@ -24230,6 +28103,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ReceivingDivergence'
+    PaginatedReviewList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Review'
     PaginatedRoleList:
       type: object
       required:
@@ -24368,6 +28264,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ScaleReading'
+    PaginatedSeoCheckList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/SeoCheck'
     PaginatedServiceRuleList:
       type: object
       required:
@@ -24391,6 +28310,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ServiceRule'
+    PaginatedStockAdviceList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StockAdvice'
     PaginatedStockBalanceList:
       type: object
       required:
@@ -24483,7 +28425,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/StockMovement'
-    PaginatedStockSettingsList:
+    PaginatedStockRuleList:
       type: object
       required:
       - count
@@ -24505,7 +28447,7 @@ components:
         results:
           type: array
           items:
-            $ref: '#/components/schemas/StockSettings'
+            $ref: '#/components/schemas/StockRule'
     PaginatedStorageBinList:
       type: object
       required:
@@ -24552,6 +28494,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Store'
+    PaginatedStoreRuleList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/StoreRule'
     PaginatedSupplierList:
       type: object
       required:
@@ -24850,7 +28815,8 @@ components:
           nullable: true
         code:
           type: string
-          description: Código patrimonial impresso na plaqueta.
+          description: Código patrimonial impresso na plaqueta. Vazio = o próximo
+            PAT-000001.
           maxLength: 40
         description:
           type: string
@@ -25136,6 +29102,9 @@ components:
           type: string
           format: uuid
           readOnly: true
+        supplier_name:
+          type: string
+          readOnly: true
         created_at:
           type: string
           format: date-time
@@ -25166,6 +29135,11 @@ components:
           type: integer
           readOnly: true
           nullable: true
+        supplier:
+          type: string
+          format: uuid
+          nullable: true
+          description: De quem a loja compra esta marca.
     PatchedCashDiscrepancy:
       type: object
       properties:
@@ -25228,14 +29202,15 @@ components:
           nullable: true
     PatchedCashRegister:
       type: object
-      description: 'Caixa e QUEM opera (`operators`, ids de usuário): só eles abrem,
-        movimentam e fecham.'
+      description: |-
+        Caixa e QUEM opera (`operator`, id do usuário): só ele abre, movimenta e fecha. Um operador
+        por caixa e um caixa por usuário.
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
-        operator_names:
+        operator_name:
           type: string
           readOnly: true
         in_use_by:
@@ -25260,6 +29235,7 @@ components:
           maxLength: 120
         code:
           type: string
+          description: Vazio = gerado pelo nome (CAIXA-01).
           maxLength: 40
         is_active:
           type: boolean
@@ -25278,10 +29254,9 @@ components:
         store:
           type: string
           format: uuid
-        operators:
-          type: array
-          items:
-            type: integer
+        operator:
+          type: integer
+          nullable: true
     PatchedCategory:
       type: object
       description: |-
@@ -25433,6 +29408,80 @@ components:
           format: uuid
           readOnly: true
           nullable: true
+    PatchedCompetitorPrice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        variant:
+          type: string
+          format: uuid
+        product_name:
+          type: string
+          readOnly: true
+        sku:
+          type: string
+          readOnly: true
+        competitor:
+          type: string
+          description: Loja ou site concorrente.
+          maxLength: 120
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+        observed_on:
+          type: string
+          format: date
+          description: Dia em que o preço foi visto.
+        url:
+          type: string
+          format: uri
+          maxLength: 500
+        notes:
+          type: string
+          maxLength: 200
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+    PatchedCosmosConversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 120
+        last_message_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        store:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: Filial ativa quando a conversa começou.
+        finding:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        digest_day:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
     PatchedCoupon:
       type: object
       properties:
@@ -25465,7 +29514,8 @@ components:
           nullable: true
         code:
           type: string
-          description: Guardado em MAIÚSCULAS.
+          description: Guardado em MAIÚSCULAS. Vazio = gerado pelo nome (BLACKFRIDAY)
+            ou aleatório.
           maxLength: 40
         name:
           type: string
@@ -25606,6 +29656,8 @@ components:
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
           description: Limite do crediário. 0 = não vende a prazo.
+        billing_same_as_delivery:
+          type: boolean
         metafields:
           description: 'Metacampos {chave: valor}.'
         account:
@@ -25674,6 +29726,9 @@ components:
           maxLength: 255
         is_default:
           type: boolean
+        is_billing:
+          type: boolean
+          description: Endereço de cobrança (quando difere da entrega).
         customer:
           type: string
           format: uuid
@@ -26223,6 +30278,14 @@ components:
         is_system:
           type: boolean
           description: 'Pré-pronto do sistema: ajusta, mas não exclui.'
+        ncm:
+          type: string
+          description: Vale para o produto do perfil que não tiver NCM próprio.
+          maxLength: 8
+        cest:
+          type: string
+          description: Vale para o produto do perfil que não tiver CEST próprio.
+          maxLength: 7
         cfop:
           type: string
           maxLength: 4
@@ -26305,7 +30368,7 @@ components:
           minimum: 0
           format: int64
         origin:
-          $ref: '#/components/schemas/OriginEnum'
+          $ref: '#/components/schemas/FiscalSeriesOriginEnum'
         next_number:
           type: integer
           maximum: 9223372036854775807
@@ -26749,14 +30812,26 @@ components:
           type: integer
           readOnly: true
           nullable: true
-    PatchedLogisticsSettings:
+    PatchedLogisticsRule:
       type: object
       properties:
         id:
           type: string
           format: uuid
           readOnly: true
-        store_name:
+        store_names:
+          type: string
+          readOnly: true
+        store_count:
+          type: string
+          readOnly: true
+        entry_lot_label_name:
+          type: string
+          readOnly: true
+        entry_product_label_name:
+          type: string
+          readOnly: true
+        conference_label_name:
           type: string
           readOnly: true
         created_at:
@@ -26772,9 +30847,35 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        is_default:
+          type: boolean
+          description: Filial nova (ou sem escolha) fica com esta.
         allow_manual_conference:
           type: boolean
           description: Permite conferir o recebimento manualmente, sem ler os códigos.
+        entry_labels:
+          allOf:
+          - $ref: '#/components/schemas/EntryLabelsEnum'
+          description: |-
+            Ao confirmar ou aprovar a entrada.
+
+            * `auto` - Imprime sozinho
+            * `ask` - Pergunta o modelo
+            * `off` - Não imprime
+        conference_labels:
+          allOf:
+          - $ref: '#/components/schemas/ConferenceLabelsEnum'
+          description: |-
+            Ao concluir a conferência do recebimento.
+
+            * `auto` - Imprime sozinho
+            * `ask` - Pergunta o modelo
+            * `off` - Não imprime
         account:
           type: string
           format: uuid
@@ -26787,10 +30888,21 @@ components:
           type: integer
           readOnly: true
           nullable: true
-        store:
+        entry_lot_label:
           type: string
           format: uuid
-          readOnly: true
+          nullable: true
+          description: Entrada que gera lote (validade ou data de entrada).
+        entry_product_label:
+          type: string
+          format: uuid
+          nullable: true
+          description: 'Entrada sem lote: etiqueta de produto, uma por unidade.'
+        conference_label:
+          type: string
+          format: uuid
+          nullable: true
+          description: Caixa (volume) ou produto, para identificar o que chegou.
     PatchedMetafieldDefinition:
       type: object
       properties:
@@ -27220,6 +31332,31 @@ components:
           format: decimal
           pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
           readOnly: true
+        initial_stock:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          writeOnly: true
+          nullable: true
+        initial_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,4})?$
+          writeOnly: true
+          nullable: true
+        initial_warehouse:
+          type: string
+          format: uuid
+          writeOnly: true
+          nullable: true
+        fiscal_ncm:
+          type: string
+          readOnly: true
+          description: 'O NCM que vale: o do produto ou, sem ele, o do perfil.'
+        fiscal_cest:
+          type: string
+          readOnly: true
+          description: 'O CEST que vale: o do produto ou, sem ele, o do perfil.'
         created_at:
           type: string
           format: date-time
@@ -27246,6 +31383,11 @@ components:
           type: string
           description: Referência do modelo; base do SKU das variantes.
           maxLength: 60
+        model_name:
+          type: string
+          title: Modelo
+          description: 'Modelo do fabricante (ex.: Tune 510BT).'
+          maxLength: 80
         description:
           type: string
           description: Texto rico (HTML limpo).
@@ -27272,9 +31414,11 @@ components:
           description: Vazio = comissão do vendedor.
         ncm:
           type: string
+          description: Vazio = o do perfil fiscal.
           maxLength: 8
         cest:
           type: string
+          description: Vazio = o do perfil fiscal.
           maxLength: 7
         origin:
           type: string
@@ -27590,6 +31734,11 @@ components:
         shipping_address_detail:
           type: string
           readOnly: true
+        addresses:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: 'Endereços do pedido: entrega e cobrança (herdados do cliente).'
         invoices:
           type: string
           readOnly: true
@@ -27630,6 +31779,9 @@ components:
           readOnly: true
         customer_name:
           type: string
+          readOnly: true
+        billing_same_as_delivery:
+          type: boolean
           readOnly: true
         subtotal:
           type: string
@@ -28129,6 +32281,12 @@ components:
           type: string
           format: date
           nullable: true
+        received_at:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: Data de entrada no estoque.
         initial_quantity:
           type: string
           format: decimal
@@ -28166,12 +32324,18 @@ components:
           type: string
           format: uuid
           readOnly: true
-    PatchedStockSettings:
+    PatchedStockRule:
       type: object
       properties:
         id:
           type: string
           format: uuid
+          readOnly: true
+        store_names:
+          type: string
+          readOnly: true
+        store_count:
+          type: string
           readOnly: true
         created_at:
           type: string
@@ -28186,6 +32350,14 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        is_default:
+          type: boolean
+          description: Filial nova (ou sem escolha) fica com esta.
         picking_strategy:
           $ref: '#/components/schemas/PickingStrategyEnum'
         expiry_warning_days:
@@ -28197,6 +32369,10 @@ components:
           type: boolean
         allow_negative_stock:
           type: boolean
+        fifo_by_entry:
+          type: boolean
+          description: 'Sem validade: guarda a data de entrada e dá saída no mais
+            antigo primeiro.'
         account:
           type: string
           format: uuid
@@ -28355,28 +32531,6 @@ components:
           type: string
           format: email
           maxLength: 254
-        require_open_cash_session:
-          type: boolean
-        cash_closing_tolerance:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
-        require_seller:
-          type: boolean
-          description: Exige vendedor em toda venda.
-        auto_print_receipt:
-          type: boolean
-        ask_print_danfe:
-          type: boolean
-        print_cancellation_receipt:
-          type: boolean
-        scale_barcode_mode:
-          oneOf:
-          - $ref: '#/components/schemas/ScaleBarcodeModeEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-        scale_barcode_prefix:
-          type: string
-          maxLength: 2
         local_server_url:
           type: string
           maxLength: 255
@@ -28411,6 +32565,102 @@ components:
           format: uuid
           nullable: true
           title: Dados fiscais
+        rule:
+          type: string
+          format: uuid
+          title: Regras da filial
+          description: PDV, caixa e venda. Vazio = a padrão.
+        logistics_rule:
+          type: string
+          format: uuid
+          title: Regras de logística
+        stock_rule:
+          type: string
+          format: uuid
+          title: Regras de estoque
+    PatchedStoreRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        store_names:
+          type: string
+          readOnly: true
+        store_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        is_default:
+          type: boolean
+          description: Filial nova (ou sem escolha) fica com esta.
+        require_open_cash_session:
+          type: boolean
+        cash_closing_tolerance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        pdv_auto_lock:
+          type: boolean
+          description: Bloqueia a tela do caixa parado.
+        pdv_lock_minutes:
+          type: integer
+          maximum: 120
+          minimum: 1
+          description: Minutos parado até bloquear.
+        require_seller:
+          type: boolean
+          description: Exige vendedor em toda venda.
+        auto_print_receipt:
+          type: boolean
+        confirm_address_at_checkout:
+          type: boolean
+          description: No PDV, antes de pagar, confirma o endereço de entrega e de
+            cobrança do pedido.
+        ask_print_danfe:
+          type: boolean
+        require_payment_reference:
+          type: boolean
+          description: Só lança cartão/PIX com o NSU/autorização do comprovante.
+        print_cancellation_receipt:
+          type: boolean
+        scale_barcode_mode:
+          oneOf:
+          - $ref: '#/components/schemas/ScaleBarcodeModeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        scale_barcode_prefix:
+          type: string
+          maxLength: 2
+        account:
+          type: string
+          format: uuid
+          readOnly: true
+        created_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        updated_by:
+          type: integer
+          readOnly: true
+          nullable: true
     PatchedSupplier:
       type: object
       properties:
@@ -29024,6 +33274,544 @@ components:
       description: |-
         * `fifo` - FIFO - primeiro a entrar
         * `fefo` - FEFO - primeiro a vencer
+    PositionEnum:
+      enum:
+      - above
+      - inside
+      - below
+      - unknown
+      type: string
+      description: |-
+        * `above` - Acima do mercado
+        * `inside` - No preço do mercado
+        * `below` - Abaixo do mercado
+        * `unknown` - Sem dados suficientes
+    PriceCheck:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        variant:
+          type: string
+          format: uuid
+          readOnly: true
+        product:
+          type: string
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        sku:
+          type: string
+          readOnly: true
+        shelf_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        checked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reading:
+          type: boolean
+          readOnly: true
+          description: 'A leitura está no worker: a tela espera e relê.'
+        reading_stalled:
+          type: boolean
+          readOnly: true
+          description: Pediu a leitura e ela não terminou.
+        source:
+          type: string
+          readOnly: true
+        error:
+          type: string
+          readOnly: true
+        ai_note:
+          type: string
+          readOnly: true
+          description: O que a Cosmos mudou no pareamento da última leitura.
+        current_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,4})?$
+          readOnly: true
+          description: Custo médio (ou o último, sem média) usado na conta.
+        current_margin:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        competitors:
+          type: integer
+          readOnly: true
+        offers_found:
+          type: integer
+          readOnly: true
+        market_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_p25:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_median:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_p75:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_avg:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_rank:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Nosso lugar do mais barato ao mais caro, entre os concorrentes
+            (1 = o mais barato).
+        standing:
+          type: string
+          readOnly: true
+          description: 'Nosso lugar entre os concorrentes: 2º de 6.'
+        price_index:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,3})?$
+          readOnly: true
+          nullable: true
+          description: Seu preço ÷ mediana do mercado (1,000 = igual).
+        dispersion:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+          description: Espalhamento do mercado (P75 − P25) ÷ mediana.
+        confidence:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+          description: Nota média do pareamento.
+        position:
+          allOf:
+          - $ref: '#/components/schemas/PositionEnum'
+          readOnly: true
+        position_display:
+          type: string
+          readOnly: true
+        suggested_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        suggested_margin:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        floor_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+          description: Menor preço que ainda dá a margem mínima com este custo.
+        worth_it:
+          type: boolean
+          readOnly: true
+          nullable: true
+          description: Vale a pena aderir? Vazio = sem custo para decidir.
+        needs_review:
+          type: boolean
+          readOnly: true
+          description: Mercado muito espalhado ou pareamento fraco.
+        reason:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2c2Enum'
+          readOnly: true
+        status_display:
+          type: string
+          readOnly: true
+        decided_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        decided_by_name:
+          type: string
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        applied_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        previous_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - ai_note
+      - applied_price
+      - checked_at
+      - competitors
+      - confidence
+      - cost
+      - current_margin
+      - current_price
+      - decided_at
+      - decided_by
+      - decided_by_name
+      - dispersion
+      - error
+      - floor_price
+      - id
+      - market_avg
+      - market_max
+      - market_median
+      - market_min
+      - market_p25
+      - market_p75
+      - market_rank
+      - needs_review
+      - offers_found
+      - position
+      - position_display
+      - previous_price
+      - price_index
+      - product
+      - product_name
+      - reading
+      - reading_stalled
+      - reason
+      - shelf_price
+      - sku
+      - source
+      - standing
+      - status
+      - status_display
+      - suggested_margin
+      - suggested_price
+      - updated_at
+      - variant
+      - worth_it
+    PriceCheckDetail:
+      type: object
+      description: 'O processo aberto: com o que foi achado no mercado, para conferir
+        oferta por oferta.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        variant:
+          type: string
+          format: uuid
+          readOnly: true
+        product:
+          type: string
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        sku:
+          type: string
+          readOnly: true
+        shelf_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+          readOnly: true
+        checked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reading:
+          type: boolean
+          readOnly: true
+          description: 'A leitura está no worker: a tela espera e relê.'
+        reading_stalled:
+          type: boolean
+          readOnly: true
+          description: Pediu a leitura e ela não terminou.
+        source:
+          type: string
+          readOnly: true
+        error:
+          type: string
+          readOnly: true
+        ai_note:
+          type: string
+          readOnly: true
+          description: O que a Cosmos mudou no pareamento da última leitura.
+        current_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+        cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,4})?$
+          readOnly: true
+          description: Custo médio (ou o último, sem média) usado na conta.
+        current_margin:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        competitors:
+          type: integer
+          readOnly: true
+        offers_found:
+          type: integer
+          readOnly: true
+        market_min:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_p25:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_median:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_p75:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_avg:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_max:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        market_rank:
+          type: integer
+          readOnly: true
+          nullable: true
+          description: Nosso lugar do mais barato ao mais caro, entre os concorrentes
+            (1 = o mais barato).
+        standing:
+          type: string
+          readOnly: true
+          description: 'Nosso lugar entre os concorrentes: 2º de 6.'
+        price_index:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,3})?$
+          readOnly: true
+          nullable: true
+          description: Seu preço ÷ mediana do mercado (1,000 = igual).
+        dispersion:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+          description: Espalhamento do mercado (P75 − P25) ÷ mediana.
+        confidence:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,4}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+          description: Nota média do pareamento.
+        position:
+          allOf:
+          - $ref: '#/components/schemas/PositionEnum'
+          readOnly: true
+        position_display:
+          type: string
+          readOnly: true
+        suggested_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        suggested_margin:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,5}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        floor_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+          description: Menor preço que ainda dá a margem mínima com este custo.
+        worth_it:
+          type: boolean
+          readOnly: true
+          nullable: true
+          description: Vale a pena aderir? Vazio = sem custo para decidir.
+        needs_review:
+          type: boolean
+          readOnly: true
+          description: Mercado muito espalhado ou pareamento fraco.
+        reason:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status2c2Enum'
+          readOnly: true
+        status_display:
+          type: string
+          readOnly: true
+        decided_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        decided_by_name:
+          type: string
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        applied_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        previous_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
+          readOnly: true
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        searches:
+          type: array
+          items:
+            type: object
+          readOnly: true
+        offers:
+          type: array
+          items:
+            $ref: '#/components/schemas/MarketOffer'
+          readOnly: true
+      required:
+      - ai_note
+      - applied_price
+      - checked_at
+      - competitors
+      - confidence
+      - cost
+      - current_margin
+      - current_price
+      - decided_at
+      - decided_by
+      - decided_by_name
+      - dispersion
+      - error
+      - floor_price
+      - id
+      - market_avg
+      - market_max
+      - market_median
+      - market_min
+      - market_p25
+      - market_p75
+      - market_rank
+      - needs_review
+      - offers
+      - offers_found
+      - position
+      - position_display
+      - previous_price
+      - price_index
+      - product
+      - product_name
+      - reading
+      - reading_stalled
+      - reason
+      - searches
+      - shelf_price
+      - sku
+      - source
+      - standing
+      - status
+      - status_display
+      - suggested_margin
+      - suggested_price
+      - updated_at
+      - variant
+      - worth_it
     PrintJob:
       type: object
       properties:
@@ -29318,6 +34106,31 @@ components:
           format: decimal
           pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
           readOnly: true
+        initial_stock:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,11}(?:\.\d{0,3})?$
+          writeOnly: true
+          nullable: true
+        initial_cost:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,12}(?:\.\d{0,4})?$
+          writeOnly: true
+          nullable: true
+        initial_warehouse:
+          type: string
+          format: uuid
+          writeOnly: true
+          nullable: true
+        fiscal_ncm:
+          type: string
+          readOnly: true
+          description: 'O NCM que vale: o do produto ou, sem ele, o do perfil.'
+        fiscal_cest:
+          type: string
+          readOnly: true
+          description: 'O CEST que vale: o do produto ou, sem ele, o do perfil.'
         created_at:
           type: string
           format: date-time
@@ -29344,6 +34157,11 @@ components:
           type: string
           description: Referência do modelo; base do SKU das variantes.
           maxLength: 60
+        model_name:
+          type: string
+          title: Modelo
+          description: 'Modelo do fabricante (ex.: Tune 510BT).'
+          maxLength: 80
         description:
           type: string
           description: Texto rico (HTML limpo).
@@ -29370,9 +34188,11 @@ components:
           description: Vazio = comissão do vendedor.
         ncm:
           type: string
+          description: Vazio = o do perfil fiscal.
           maxLength: 8
         cest:
           type: string
+          description: Vazio = o do perfil fiscal.
           maxLength: 7
         origin:
           type: string
@@ -29421,6 +34241,8 @@ components:
       - created_at
       - created_by
       - deleted_at
+      - fiscal_cest
+      - fiscal_ncm
       - id
       - name
       - price
@@ -29854,6 +34676,161 @@ components:
         * `LAST_VERSION` - Maior versão vence
         * `MANUAL` - Revisão manual
         * `IGNORED` - Ignorado
+    Review:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        customer_name:
+          type: string
+          readOnly: true
+        sale_number:
+          type: integer
+          readOnly: true
+        store_name:
+          type: string
+          readOnly: true
+        moderated_by_name:
+          type: string
+          readOnly: true
+        photo_urls:
+          type: string
+          readOnly: true
+        product:
+          type: string
+          format: uuid
+          nullable: true
+        sale:
+          type: string
+          format: uuid
+          nullable: true
+        customer:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        kind:
+          $ref: '#/components/schemas/ReviewKindEnum'
+        public_name:
+          type: string
+          readOnly: true
+        rating:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+        comment:
+          type: string
+          maxLength: 1500
+        status:
+          allOf:
+          - $ref: '#/components/schemas/ReviewStatusEnum'
+          readOnly: true
+        rejection_reason:
+          type: string
+          readOnly: true
+        moderated_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        verified_purchase:
+          type: boolean
+          readOnly: true
+        origin:
+          allOf:
+          - $ref: '#/components/schemas/ReviewOriginEnum'
+          readOnly: true
+        account:
+          type: string
+          format: uuid
+          readOnly: true
+        created_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        updated_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        store:
+          type: string
+          format: uuid
+          readOnly: true
+        moderated_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        link:
+          type: string
+          format: uuid
+          nullable: true
+      required:
+      - account
+      - created_at
+      - created_by
+      - customer_name
+      - deleted_at
+      - id
+      - moderated_at
+      - moderated_by
+      - moderated_by_name
+      - origin
+      - photo_urls
+      - product_name
+      - public_name
+      - rating
+      - rejection_reason
+      - sale_number
+      - status
+      - store
+      - store_name
+      - updated_at
+      - updated_by
+      - verified_purchase
+    ReviewKindEnum:
+      enum:
+      - product
+      - delivery
+      type: string
+      description: |-
+        * `product` - Produto
+        * `delivery` - Entrega
+    ReviewOriginEnum:
+      enum:
+      - link
+      - backoffice
+      type: string
+      description: |-
+        * `link` - Link enviado ao cliente
+        * `backoffice` - Registrada na retaguarda
+    ReviewStatusEnum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      type: string
+      description: |-
+        * `pending` - Pendente
+        * `approved` - Aprovada
+        * `rejected` - Rejeitada
     Role:
       type: object
       description: |-
@@ -30055,6 +35032,11 @@ components:
         shipping_address_detail:
           type: string
           readOnly: true
+        addresses:
+          type: object
+          additionalProperties: {}
+          readOnly: true
+          description: 'Endereços do pedido: entrega e cobrança (herdados do cliente).'
         invoices:
           type: string
           readOnly: true
@@ -30095,6 +35077,9 @@ components:
           readOnly: true
         customer_name:
           type: string
+          readOnly: true
+        billing_same_as_delivery:
+          type: boolean
           readOnly: true
         subtotal:
           type: string
@@ -30269,7 +35254,9 @@ components:
           nullable: true
       required:
       - account
+      - addresses
       - balance_due
+      - billing_same_as_delivery
       - cancel_approved_by
       - cancel_reason
       - cancelled_at
@@ -30940,6 +35927,185 @@ components:
       description: |-
         * `product` - Produto
         * `customer` - Cliente
+    SeoCheck:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        product:
+          type: string
+          format: uuid
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        checked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reading:
+          type: boolean
+          readOnly: true
+          description: 'A análise está no worker: a tela espera e relê.'
+        reading_stalled:
+          type: boolean
+          readOnly: true
+          description: Pediu a análise e ela não terminou.
+        error:
+          type: string
+          readOnly: true
+          description: Falha na última consulta dos dados de busca.
+        score:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Nota
+          description: '0 a 100: qualidade do cadastro.'
+        has_search_data:
+          type: boolean
+          readOnly: true
+          description: A nota considerou o volume de busca do Google.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status4f7Enum'
+          readOnly: true
+          title: Situação
+        status_display:
+          type: string
+          readOnly: true
+        issues_count:
+          type: integer
+          readOnly: true
+        suggestions_count:
+          type: integer
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - checked_at
+      - error
+      - has_search_data
+      - id
+      - issues_count
+      - product
+      - product_name
+      - reading
+      - reading_stalled
+      - score
+      - status
+      - status_display
+      - suggestions_count
+      - updated_at
+    SeoCheckDetail:
+      type: object
+      description: 'A análise aberta: de onde veio a nota, o que melhorar, o antes
+        e depois e os termos pesquisados.'
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        product:
+          type: string
+          format: uuid
+          readOnly: true
+        product_name:
+          type: string
+          readOnly: true
+        checked_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        reading:
+          type: boolean
+          readOnly: true
+          description: 'A análise está no worker: a tela espera e relê.'
+        reading_stalled:
+          type: boolean
+          readOnly: true
+          description: Pediu a análise e ela não terminou.
+        error:
+          type: string
+          readOnly: true
+          description: Falha na última consulta dos dados de busca.
+        score:
+          type: integer
+          readOnly: true
+          nullable: true
+          title: Nota
+          description: '0 a 100: qualidade do cadastro.'
+        has_search_data:
+          type: boolean
+          readOnly: true
+          description: A nota considerou o volume de busca do Google.
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status4f7Enum'
+          readOnly: true
+          title: Situação
+        status_display:
+          type: string
+          readOnly: true
+        issues_count:
+          type: integer
+          readOnly: true
+        suggestions_count:
+          type: integer
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        breakdown:
+          readOnly: true
+          description: '[{key, label, points, max}]'
+        issues:
+          readOnly: true
+          description: '[{field, severity, message, origin}]'
+        keywords:
+          readOnly: true
+          description: '[{term, avg_monthly_searches, competition, origin}]'
+        suggestions:
+          type: array
+          items:
+            type: object
+          readOnly: true
+        decided_by_name:
+          type: string
+          nullable: true
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - breakdown
+      - checked_at
+      - decided_at
+      - decided_by_name
+      - error
+      - has_search_data
+      - id
+      - issues
+      - issues_count
+      - keywords
+      - product
+      - product_name
+      - reading
+      - reading_stalled
+      - score
+      - status
+      - status_display
+      - suggestions
+      - suggestions_count
+      - updated_at
     ServiceRule:
       type: object
       description: 'Regra do serviço: a quais produtos ele vale e por quanto (padrão
@@ -31043,6 +36209,16 @@ components:
       description: |-
         * `category` - Por categoria
         * `product` - Por produto
+    SeverityEnum:
+      enum:
+      - info
+      - warning
+      - critical
+      type: string
+      description: |-
+        * `info` - Informação
+        * `warning` - Atenção
+        * `critical` - Grave
     SourceEnum:
       enum:
       - agent
@@ -31051,6 +36227,30 @@ components:
       description: |-
         * `agent` - Agente da balança
         * `manual` - Digitado
+    Status2c2Enum:
+      enum:
+      - none
+      - pending
+      - applied
+      - rejected
+      type: string
+      description: |-
+        * `none` - Sem sugestão
+        * `pending` - Aguardando aprovação
+        * `applied` - Preço aplicado
+        * `rejected` - Recusada
+    Status4f7Enum:
+      enum:
+      - none
+      - pending
+      - applied
+      - rejected
+      type: string
+      description: |-
+        * `none` - Sem sugestão
+        * `pending` - Aguardando aprovação
+        * `applied` - Sugestões aplicadas
+        * `rejected` - Recusada
     Status685Enum:
       enum:
       - open
@@ -31083,6 +36283,112 @@ components:
       description: |-
         * `active` - Ativo
         * `cancelled` - Cancelado
+    StockAdvice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        store:
+          type: string
+          format: uuid
+          readOnly: true
+        warehouse:
+          type: string
+          format: uuid
+          readOnly: true
+        warehouse_name:
+          type: string
+          readOnly: true
+        kind:
+          allOf:
+          - $ref: '#/components/schemas/StockAdviceKindEnum'
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StockAdviceStatusEnum'
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        detail:
+          type: string
+          readOnly: true
+        impact:
+          type: integer
+          readOnly: true
+          description: 'Ordena a lista: quanto maior, mais urgente.'
+        moves:
+          readOnly: true
+          description: O que mover, de onde e para onde, no momento da análise.
+        checked_at:
+          type: string
+          format: date-time
+          readOnly: true
+        document:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+        document_number:
+          type: integer
+          readOnly: true
+        decided_by_name:
+          type: string
+          readOnly: true
+        decided_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - checked_at
+      - decided_at
+      - decided_by_name
+      - detail
+      - document
+      - document_number
+      - id
+      - impact
+      - kind
+      - moves
+      - status
+      - store
+      - title
+      - updated_at
+      - warehouse
+      - warehouse_name
+    StockAdviceKindEnum:
+      enum:
+      - dock
+      - together
+      - fast
+      - scattered
+      - idle
+      type: string
+      description: |-
+        * `dock` - Parado na doca
+        * `together` - Saem juntos
+        * `fast` - Sai muito
+        * `scattered` - Espalhado
+        * `idle` - Não sai
+    StockAdviceStatusEnum:
+      enum:
+      - open
+      - applied
+      - dismissed
+      - expired
+      type: string
+      description: |-
+        * `open` - Para decidir
+        * `applied` - Aceita
+        * `dismissed` - Recusada
+        * `expired` - Não vale mais
     StockBalance:
       type: object
       properties:
@@ -31451,6 +36757,12 @@ components:
           type: string
           format: date
           nullable: true
+        received_at:
+          type: string
+          format: date
+          readOnly: true
+          nullable: true
+          description: Data de entrada no estoque.
         initial_quantity:
           type: string
           format: decimal
@@ -31497,6 +36809,7 @@ components:
       - id
       - initial_quantity
       - quantity
+      - received_at
       - sku
       - unit_cost
       - updated_at
@@ -31673,12 +36986,18 @@ components:
         * `asset_disposal` - Baixa patrimonial
         * `relocation` - Movimentação entre endereços
         * `reversal` - Estorno
-    StockSettings:
+    StockRule:
       type: object
       properties:
         id:
           type: string
           format: uuid
+          readOnly: true
+        store_names:
+          type: string
+          readOnly: true
+        store_count:
+          type: string
           readOnly: true
         created_at:
           type: string
@@ -31693,6 +37012,14 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        is_default:
+          type: boolean
+          description: Filial nova (ou sem escolha) fica com esta.
         picking_strategy:
           $ref: '#/components/schemas/PickingStrategyEnum'
         expiry_warning_days:
@@ -31704,6 +37031,10 @@ components:
           type: boolean
         allow_negative_stock:
           type: boolean
+        fifo_by_entry:
+          type: boolean
+          description: 'Sem validade: guarda a data de entrada e dá saída no mais
+            antigo primeiro.'
         account:
           type: string
           format: uuid
@@ -31722,6 +37053,9 @@ components:
       - created_by
       - deleted_at
       - id
+      - name
+      - store_count
+      - store_names
       - updated_at
       - updated_by
     StorageBin:
@@ -31892,28 +37226,6 @@ components:
           type: string
           format: email
           maxLength: 254
-        require_open_cash_session:
-          type: boolean
-        cash_closing_tolerance:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
-        require_seller:
-          type: boolean
-          description: Exige vendedor em toda venda.
-        auto_print_receipt:
-          type: boolean
-        ask_print_danfe:
-          type: boolean
-        print_cancellation_receipt:
-          type: boolean
-        scale_barcode_mode:
-          oneOf:
-          - $ref: '#/components/schemas/ScaleBarcodeModeEnum'
-          - $ref: '#/components/schemas/BlankEnum'
-        scale_barcode_prefix:
-          type: string
-          maxLength: 2
         local_server_url:
           type: string
           maxLength: 255
@@ -31948,6 +37260,19 @@ components:
           format: uuid
           nullable: true
           title: Dados fiscais
+        rule:
+          type: string
+          format: uuid
+          title: Regras da filial
+          description: PDV, caixa e venda. Vazio = a padrão.
+        logistics_rule:
+          type: string
+          format: uuid
+          title: Regras de logística
+        stock_rule:
+          type: string
+          format: uuid
+          title: Regras de estoque
       required:
       - account
       - children_count
@@ -31972,6 +37297,100 @@ components:
         * `regional` - Regional
         * `branch` - Filial
         * `distribution` - Centro de distribuição
+    StoreRule:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        store_names:
+          type: string
+          readOnly: true
+        store_count:
+          type: string
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        deleted_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+        name:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+        is_default:
+          type: boolean
+          description: Filial nova (ou sem escolha) fica com esta.
+        require_open_cash_session:
+          type: boolean
+        cash_closing_tolerance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,6}(?:\.\d{0,2})?$
+        pdv_auto_lock:
+          type: boolean
+          description: Bloqueia a tela do caixa parado.
+        pdv_lock_minutes:
+          type: integer
+          maximum: 120
+          minimum: 1
+          description: Minutos parado até bloquear.
+        require_seller:
+          type: boolean
+          description: Exige vendedor em toda venda.
+        auto_print_receipt:
+          type: boolean
+        confirm_address_at_checkout:
+          type: boolean
+          description: No PDV, antes de pagar, confirma o endereço de entrega e de
+            cobrança do pedido.
+        ask_print_danfe:
+          type: boolean
+        require_payment_reference:
+          type: boolean
+          description: Só lança cartão/PIX com o NSU/autorização do comprovante.
+        print_cancellation_receipt:
+          type: boolean
+        scale_barcode_mode:
+          oneOf:
+          - $ref: '#/components/schemas/ScaleBarcodeModeEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+        scale_barcode_prefix:
+          type: string
+          maxLength: 2
+        account:
+          type: string
+          format: uuid
+          readOnly: true
+        created_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        updated_by:
+          type: integer
+          readOnly: true
+          nullable: true
+      required:
+      - account
+      - created_at
+      - created_by
+      - deleted_at
+      - id
+      - name
+      - store_count
+      - store_names
+      - updated_at
+      - updated_by
     SubjectEnum:
       enum:
       - product

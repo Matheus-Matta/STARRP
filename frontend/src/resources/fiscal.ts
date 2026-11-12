@@ -10,6 +10,7 @@ import { defineAsyncComponent } from "vue";
 import { fiscalApi } from "@/api/fiscal";
 import { resourceApi } from "@/api/resource";
 import { money, quantity } from "@/utils/format";
+import { openPrint } from "@/utils/print";
 
 import { choices, type ColumnDef, defineResource, linkTo, rowsOf, type Tone, UFS, yesNo } from "./types";
 
@@ -17,6 +18,11 @@ const CertificateDialog = defineAsyncComponent(() => import("@/components/fiscal
 const SefazSyncDialog = defineAsyncComponent(() => import("@/components/fiscal/SefazSyncDialog.vue"));
 const NfeImportDialog = defineAsyncComponent(() => import("@/components/fiscal/NfeImportDialog.vue"));
 const NfeDetail = defineAsyncComponent(() => import("@/components/fiscal/NfeDetail.vue"));
+const CancelOrderDialog = defineAsyncComponent(() => import("@/components/sales/CancelOrderDialog.vue"));
+
+/** DANFE da nota: NFC-e na bobina, NF-e na folha A4. `auto`: já abre a impressão. */
+const danfe = (auto: boolean) => async ({ id, values }: { id: string; values: Record<string, unknown> }) =>
+  openPrint("danfe", id, { formato: values.document_model === "65" ? "80mm" : "a4", auto: auto ? "1" : null });
 
 export const environment = choices({ "1": "Produção", "2": "Homologação" });
 export const provider = choices({ manual: "Manual (sem transmissão)", focus_nfe: "Focus NFe", acbrlib: "ACBrLib" });
@@ -129,14 +135,14 @@ export const fiscalConfigs = defineResource({
     { name: "district", label: "Bairro", type: "text", section: "Endereço" },
     { name: "city", label: "Cidade", type: "text", section: "Endereço" },
     { name: "state", label: "UF", type: "select", options: UFS, required: true, section: "Endereço" },
-    { name: "city_ibge", label: "Código IBGE", type: "text", mask: "9999999", section: "Endereço" },
+    { name: "city_ibge", label: "Código IBGE", type: "text", format: "ibge", section: "Endereço" },
     { name: "stores", label: "Filiais vinculadas", type: "multirelation", relation: { endpoint: "/stores/" }, full: true,
       default: [], section: "Filiais" },
     { name: "environment", label: "Ambiente", type: "segmented", options: environment.options, default: "2", section: "Emissão" },
     { name: "provider", label: "Provedor", type: "select", options: provider.options, default: "manual", section: "Emissão" },
     { name: "default_profile", label: "Perfil fiscal padrão", type: "relation", relation: { endpoint: "/fiscal/profiles/" },
       section: "Emissão" },
-    { name: "csc_id", label: "ID do CSC", type: "text", maxLength: 6, section: "Emissão" },
+    { name: "csc_id", label: "ID do CSC", type: "text", format: "digits6", section: "Emissão" },
     { name: "csc_token", label: "CSC (token)", type: "password", hint: "Fica guardado e não aparece de novo.", section: "Emissão" },
     { name: "dfe_enabled", label: "Buscar notas na SEFAZ", type: "boolean", default: true,
       hint: "A cada hora, as notas emitidas para este CNPJ", section: "Notas de entrada" },
@@ -173,6 +179,16 @@ export const invoices = defineResource({
   readOnly: true,
   creatable: false,
   ordering: "-created_at",
+  formActions: [
+    { label: "Ver DANFE", icon: "pi pi-file", run: danfe(false) },
+    { label: "Imprimir DANFE", icon: "pi pi-print", run: danfe(true) },
+    { label: "Cancelar nota", icon: "pi pi-times-circle", severity: "danger", permission: "fiscal.manage",
+      visible: (v) => v.status === "authorized", dialog: CancelOrderDialog },
+  ],
+  rowActions: [
+    { label: "DANFE", icon: "pi pi-print", run: async (row) => openPrint("danfe", String(row.id),
+      { formato: row.document_model === "65" ? "80mm" : "a4" }) },
+  ],
   columns: invoiceColumns,
   tree: {
     hasChildren: () => true,
@@ -185,6 +201,7 @@ export const invoices = defineResource({
       { label: documentModel.map[String(v.document_model)] ?? "", icon: "pi pi-file" },
       { label: invoiceStatus.map[String(v.status)] ?? "", tone: invoiceTones[String(v.status)] },
       v.environment === "2" && { label: "Homologação", tone: "warning" },
+      v.emission_type === "9" && { label: "Contingência", tone: "warning" },
     ],
     stats: [
       { label: "Total", icon: "pi pi-wallet", type: "money", value: (v) => v.total },
@@ -210,6 +227,12 @@ export const invoices = defineResource({
       { title: "Retorno da SEFAZ", icon: "pi pi-exclamation-triangle", description: "Motivo da rejeição ou erro de comunicação.",
         visible: (v) => Boolean(v.error_message), items: [{ label: "Mensagem", key: "error_message", type: "textarea", span: "full",
                                                             tone: () => "danger" }] },
+      { title: "Cancelamento", icon: "pi pi-times-circle", description: "Evento de cancelamento enviado à SEFAZ.",
+        visible: (v) => v.status === "cancelled", items: [
+          { label: "Cancelada em", key: "cancelled_at", type: "datetime" },
+          { label: "Protocolo do cancelamento", key: "cancel_protocol" },
+          { label: "Justificativa", key: "cancel_reason", span: "full", tone: () => "danger" },
+        ] },
       { title: "Itens da nota", icon: "pi pi-list", description: "Produtos e a tributação de cada linha.",
         table: { rows: (v) => rowsOf(v, "items"), empty: "Nota sem itens.", columns: [
           { key: "line_number", label: "#" }, { key: "description", label: "Produto", title: true },
@@ -245,11 +268,11 @@ export const invoices = defineResource({
     { name: "status", label: "Situação", type: "select", options: invoiceStatus.options, section: "Nota" },
     { name: "environment", label: "Ambiente", type: "select", options: environment.options, section: "Nota" },
     { name: "fiscal_config_name", label: "Emitente", type: "text", section: "Nota" },
-    { name: "access_key", label: "Chave de acesso", type: "text", span: 4, section: "Nota" },
+    { name: "access_key", label: "Chave de acesso", type: "text", format: "access-key", span: 4, section: "Nota" },
     { name: "protocol", label: "Protocolo", type: "text", section: "Nota" },
     { name: "authorized_at", label: "Autorizada em", type: "datetime", section: "Nota" },
     { name: "recipient_name", label: "Destinatário", type: "text", section: "Nota" },
-    { name: "recipient_document", label: "CPF/CNPJ do destinatário", type: "text", section: "Nota" },
+    { name: "recipient_document", label: "CPF/CNPJ do destinatário", type: "document", section: "Nota" },
     { name: "error_message", label: "Retorno / erro", type: "textarea", section: "Nota" },
     { name: "products_total", label: "Produtos", type: "money", section: "Valores" },
     { name: "discount_total", label: "Desconto", type: "money", section: "Valores" },

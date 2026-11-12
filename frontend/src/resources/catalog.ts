@@ -1,7 +1,10 @@
+import { pricingApi } from "@/api/pricing";
 import { resourceApi } from "@/api/resource";
-import { MASKS } from "@/utils/masks";
+import { seoApi } from "@/api/seo";
 
+import { ORIGINS } from "./fiscalCodes";
 import { choices, defineResource, yesNo } from "./types";
+import { reviewColumns, reviewLink } from "./reviews";
 import { saleItemColumns, saleLink } from "./sales";
 import { balanceColumns, lotColumns, movementColumns, stockLinks } from "./stock";
 
@@ -21,6 +24,9 @@ export const units = choices({
 });
 
 const stocks = (v: Record<string, unknown>) => !["kit", "service"].includes(String(v.type ?? "simple"));
+/** Estoque inicial: lote e série pedem dados que só a entrada tem. */
+const seedsStock = (v: Record<string, unknown>) => stocks(v) && v.track_stock !== false && !v.track_lots && !v.track_serial;
+const seedField = { section: "Estoque", createOnly: true, visible: seedsStock, permission: "stock.manage", module: "stock" };
 
 export const products = defineResource({
   name: "produtos",
@@ -36,6 +42,11 @@ export const products = defineResource({
       description: "Cada venda concluída que levou este produto, com cliente, vendedor e margem.",
       list: { endpoint: "/sales/items/", params: (id) => ({ variant__product: id, sale__status: "completed" }),
               columns: saleItemColumns, ordering: "-completed_at", rowLink: saleLink } },
+    { name: "avaliacoes", label: "Avaliações", icon: "pi pi-star", permission: "sales.view",
+      description: "Todas as avaliações deste produto, de todas as vendas. Clique para moderar.",
+      list: { endpoint: "/reviews/", params: (id) => ({ product: id }), ordering: "-created_at",
+              columns: reviewColumns.filter((c) => !["kind", "product_name"].includes(c.key)), rowLink: reviewLink,
+              openAll: { label: "Abrir na lista de avaliações", to: (id) => `/cadastros/avaliacoes?product=${id}` } } },
     { name: "lotes", label: "Lotes", icon: "pi pi-calendar-clock", permission: "stock.view", module: "stock",
       list: { endpoint: "/stock/lots/", params: (id) => ({ variant__product: id }), columns: lotColumns, ordering: "expires_at" } },
   ],
@@ -56,8 +67,8 @@ export const products = defineResource({
   },
   columns: [
     { key: "cover", label: "", type: "image", sortable: false },
-    { key: "sku", label: "SKU" },
     { key: "name", label: "Produto", sortable: true, title: true },
+    { key: "sku", label: "SKU" },
     { key: "type", label: "Tipo", type: "tag", map: productType.map },
     { key: "category_name", label: "Categoria" },
     { key: "variant_count", label: "Variantes" },
@@ -76,14 +87,15 @@ export const products = defineResource({
                description: "Fotos do produto. Arraste para mudar a ordem: a 1ª é a capa (lista, PDV e loja virtual)." },
     Grade: { icon: "pi pi-th-large",
              description: "Eixos e valores. A grade manda: combinação nova é criada e o que sair (eixo ou valor) sai das variantes." },
-    Venda: { icon: "pi pi-shopping-cart", description: "SKU, preço, códigos de barras e caixas. Com grade, uma linha por variação." },
+    Venda: { icon: "pi pi-shopping-cart", description: "SKU, preço, EAN, medidas e caixas. Com grade, uma linha por variação: o botão Detalhes abre o resto." },
     Descrição: { icon: "pi pi-align-left", description: "Texto do produto para o cliente: o que é, para que serve, medidas." },
     "Ficha técnica": { icon: "pi pi-list-check",
                        description: "Campos personalizados (tempo de montagem, garantia, material...) e metacampos livres. "
                          + "Os marcados com ✓ aparecem na ficha técnica do PDV." },
     "SEO e loja virtual": { icon: "pi pi-globe", description: "Como o produto aparece no Google e o endereço dele na loja virtual." },
-    Fiscal: { icon: "pi pi-file", description: "NCM, CEST e origem vão para a nota. O perfil traz CFOP e alíquotas." },
-    Estoque: { icon: "pi pi-box", description: "Controle de saldo, lote e série, e a comissão do vendedor." },
+    Fiscal: { icon: "pi pi-file", description: "O perfil traz CFOP, alíquotas e, se tiver, NCM e CEST. Preencher NCM ou CEST aqui sobrescreve o do perfil." },
+    Estoque: { icon: "pi pi-box", description: "Controle de saldo, lote e série, o estoque inicial e a comissão do vendedor. "
+      + "Com lote ou série, o saldo inicial entra por uma entrada de estoque." },
   },
   fields: [
     { name: "name", label: "Nome", type: "text", required: true, section: "Identificação", maxLength: 180, span: 4,
@@ -95,7 +107,9 @@ export const products = defineResource({
       section: "Identificação" },
     { name: "brand", label: "Marca", type: "relation", relation: { endpoint: "/catalog/brands/" }, creatable: true,
       section: "Identificação" },
-    { name: "unit", label: "Unidade", type: "select", options: units.options, default: "UN", section: "Identificação" },
+    { name: "model_name", label: "Modelo", type: "text", maxLength: 80, section: "Identificação",
+      placeholder: "Ex.: Tune 510BT" },
+    { name: "unit",label: "Unidade", type: "select", options: units.options, default: "UN", section: "Identificação" },
     { name: "sale_method", label: "Como vende", type: "segmented", options: saleMethod.options, default: "unit",
       section: "Identificação", span: 4 },
     { name: "purpose", label: "Finalidade (SPED)", type: "select", options: productPurpose.options, default: "00",
@@ -118,15 +132,36 @@ export const products = defineResource({
     { name: "seo_preview", label: "Como aparece no Google", type: "seo-preview", full: true, section: "SEO e loja virtual" },
     { name: "fiscal_profile", label: "Perfil fiscal", type: "relation", relation: { endpoint: "/fiscal/profiles/" },
       section: "Fiscal", span: 3 },
-    { name: "ncm", label: "NCM", type: "text", mask: MASKS.ncm, section: "Fiscal", span: 1 },
-    { name: "cest", label: "CEST", type: "text", mask: MASKS.cest, section: "Fiscal", span: 1 },
-    { name: "origin", label: "Origem", type: "text", default: "0", maxLength: 1, section: "Fiscal", span: 1 },
+    { name: "ncm", label: "NCM", type: "text", format: "ncm", section: "Fiscal", span: 1, hint: "Vazio = o do perfil." },
+    { name: "cest", label: "CEST", type: "text", format: "cest", section: "Fiscal", span: 1, hint: "Vazio = o do perfil." },
+    { name: "origin", label: "Origem", type: "select", options: ORIGINS, default: "0", section: "Fiscal", span: 1 },
     { name: "track_stock", label: "Controla estoque", type: "boolean", default: true, section: "Estoque", visible: stocks },
     { name: "track_lots", label: "Lote e validade", type: "boolean", section: "Estoque", visible: stocks },
     { name: "track_serial", label: "Número de série", type: "boolean", section: "Estoque", visible: stocks },
+    { ...seedField, name: "initial_stock", label: "Estoque inicial", type: "quantity",
+      hint: "Com grade, cada variação começa com esta quantidade." },
+    { ...seedField, name: "initial_cost", label: "Custo unitário", type: "money", hint: "Vira o custo médio do produto." },
+    { ...seedField, name: "initial_warehouse", label: "Depósito", type: "relation", relation: { endpoint: "/stock/warehouses/" },
+      hint: "Vazio = o depósito padrão da loja." },
     { name: "commission_percent", label: "Comissão (%)", type: "percent", section: "Estoque",
       hint: "Vazio = usa a comissão do vendedor." },
     { name: "is_active", label: "Ativo", type: "boolean", default: true, section: "Estoque" },
+  ],
+  formActions: [
+    { label: "Precificar", icon: "pi pi-chart-scatter", severity: "secondary", permission: "catalog.manage", module: "pricing",
+      visible: stocks, success: "Item da precificação criado. Aguarde a leitura do mercado",
+      run: async ({ id }) => {
+        const { ids } = await pricingApi.product(id);
+        const { router } = await import("@/router");
+        await router.push(ids.length === 1 ? `/cadastros/precificacao/${ids[0]}` : `/cadastros/precificacao?variant__product=${id}`);
+      } },
+    { label: "Analisar SEO", icon: "pi pi-search-plus", severity: "secondary", permission: "catalog.manage", module: "seo",
+      success: "Análise de SEO criada. Aguarde o resultado",
+      run: async ({ id }) => {
+        const check = await seoApi.product(id);
+        const { router } = await import("@/router");
+        await router.push(`/cadastros/analitico-seo/${check.id}`);
+      } },
   ],
 });
 
@@ -164,7 +199,7 @@ export const categories = defineResource({
     "SEO e loja virtual": { icon: "pi pi-globe", description: "Como a categoria aparece no Google e o endereço dela na loja." },
   },
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true, section: "Categoria" },
+    { name: "name", label: "Nome", type: "text", required: true, section: "Categoria", placeholder: "Ex.: Bebidas" },
     { name: "parent", label: "Categoria pai", type: "relation", relation: { endpoint: "/catalog/categories/" }, section: "Categoria" },
     { name: "position", label: "Ordem de exibição", type: "number", default: 0, section: "Categoria" },
     { name: "is_active", label: "Ativa", type: "boolean", default: true, section: "Categoria" },
@@ -200,13 +235,17 @@ export const brands = defineResource({
   searchable: true,
   columns: [
     { key: "name", label: "Nome" },
+    { key: "supplier_name", label: "Fornecedor" },
     { key: "is_active", label: "Ativa", type: "boolean" },
   ],
   filters: [
+    { name: "supplier", label: "Fornecedor", type: "relation", relation: { endpoint: "/suppliers/" } },
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true },
+    { name: "name", label: "Nome", type: "text", required: true, placeholder: "Ex.: Nike" },
+    { name: "supplier", label: "Fornecedor", type: "relation", relation: { endpoint: "/suppliers/" },
+      hint: "De quem a loja compra esta marca." },
     { name: "is_active", label: "Ativa", type: "boolean", default: true },
   ],
 });

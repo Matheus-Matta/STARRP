@@ -8,14 +8,14 @@ import secrets
 
 from django.db import models
 
-from starrp.models.base import MoneyField, StoreModel, TenantModel, alive, user_fk
+from starrp.models.base import AutoCodeMixin, MoneyField, StoreModel, TenantModel, alive, user_fk
 
 
 def new_qr_token():
     return secrets.token_urlsafe(24)
 
 
-class Asset(StoreModel):
+class Asset(AutoCodeMixin, StoreModel):
     class Status(models.TextChoices):
         IN_STOCK = "in_stock", "Em estoque"
         IN_USE = "in_use", "Em uso"
@@ -25,7 +25,8 @@ class Asset(StoreModel):
         DISPOSED = "disposed", "Baixado"
         LOST = "lost", "Extraviado"
 
-    code = models.CharField(max_length=40, help_text="Código patrimonial impresso na plaqueta.")
+    code = models.CharField(max_length=40, blank=True,
+                            help_text="Código patrimonial impresso na plaqueta. Vazio = o próximo PAT-000001.")
     description = models.CharField(max_length=180)
     product = models.ForeignKey("starrp.Product", null=True, blank=True, related_name="assets", on_delete=models.PROTECT)
     serial_number = models.CharField(max_length=120, blank=True, db_index=True)
@@ -58,6 +59,13 @@ class Asset(StoreModel):
 
     def __str__(self):
         return f"{self.code} - {self.description}"
+
+    def code_base(self):
+        """Patrimônio em sequência na conta: PAT-000001, PAT-000002..."""
+        number = type(self).all_objects.filter(account_id=self.account_id).count() + 1
+        while type(self).all_objects.filter(account_id=self.account_id, code=f"PAT-{number:06d}").exists():
+            number += 1
+        return f"PAT-{number:06d}"
 
 
 class AssetMovement(TenantModel):

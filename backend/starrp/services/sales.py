@@ -66,7 +66,9 @@ def resume(sale, user, cash_session=None):
 @transaction.atomic
 def create(store, user, *, channel=SaleChannel.POS, terminal=None, seller=None, customer=None,
            customer_document="", customer_name="", cash_session=None):
-    return Sale.all_objects.create(
+    from starrp.services import sale_addresses
+
+    sale = Sale.all_objects.create(
         account_id=store.account_id,
         store=store,
         number=numbering.next_number(store, "sale"),
@@ -80,6 +82,9 @@ def create(store, user, *, channel=SaleChannel.POS, terminal=None, seller=None, 
         customer_name=customer_name or (customer.name if customer else ""),
         created_by=user,
     )
+    if customer is not None:
+        sale_addresses.inherit(sale, user)  # o pedido nasce com o endereço do cliente
+    return sale
 
 
 def _check_sellable(variant):
@@ -241,27 +246,51 @@ def advance_fulfillment(sale, user, to, note=""):
 
 
 DELIVERY_KEY = "_entrega"  # metacampo do sistema (prefixo "_": a tela de metacampos não edita)
+# Retirada ESCOLHIDA pelo operador. Venda nova não tem nenhum dos dois: o PDV mostra "a escolher"
+# em vez de assumir retirada por padrão.
+PICKUP_KEY = "_retirada"
 
 
-@transaction.atomic
-def set_delivery(sale, user, address, table):
-    """Entrega no endereço do cliente pela tabela escolhida: o frete entra no total."""
+def quote_delivery(sale, address, table):
+    """Cotação da tabela para o endereço DO CLIENTE da venda (o que a entrega exige)."""
     from starrp.services import freight
 
-    sale = lock_open(sale)
     if sale.customer_id is None:
         raise BusinessError("Identifique o cliente antes de lançar a entrega.", code="customer_required")
     if address.customer_id != sale.customer_id:
         raise BusinessError("Esse endereço não é do cliente da venda.", code="address_mismatch")
     try:
-        found = freight.quote(table, address.zip_code)
+        return freight.quote(table, address.zip_code)
     except freight.FreightUnavailable as error:
         raise BusinessError(str(error), code="freight_unavailable") from error
-    sale.shipping_address, sale.freight = address, found.value
-    sale.metafields = {**(sale.metafields or {}), DELIVERY_KEY: {
+
+
+def apply_delivery_info(sale, user, address, table, found):
+    """Endereço de entrega do pedido + o metacampo `_entrega` (sem salvar a venda)."""
+    from starrp.services import sale_addresses
+
+    sale.shipping_address = address
+    sale_addresses.follow_delivery(sale, address, user)  # a entrega do pedido vai para este endereço
+    others = {k: v for k, v in (sale.metafields or {}).items() if k != PICKUP_KEY}
+    sale.metafields = {**others, DELIVERY_KEY: {
         "table": str(table.pk), "table_name": table.name, "lead_days": found.lead_days,
         "distance_km": None if found.distance_km is None else str(found.distance_km), "detail": found.detail,
         "zip_code": address.zip_code, "address_label": address.label}}
+
+
+def mark_pickup(sale):
+    """Retirada na loja escolhida (sem salvar a venda): sai o endereço e o `_entrega`."""
+    sale.shipping_address = None
+    sale.metafields = {**{k: v for k, v in (sale.metafields or {}).items() if k != DELIVERY_KEY}, PICKUP_KEY: True}
+
+
+@transaction.atomic
+def set_delivery(sale, user, address, table):
+    """Entrega no endereço do cliente pela tabela escolhida: o frete entra no total."""
+    sale = lock_open(sale)
+    found = quote_delivery(sale, address, table)
+    sale.shipping_address, sale.freight = address, found.value
+    apply_delivery_info(sale, user, address, table, found)
     sale.updated_by = user
     sale.save(update_fields=["shipping_address", "freight", "metafields", "updated_by", "updated_at"])
     return recalculate(sale)
@@ -269,10 +298,10 @@ def set_delivery(sale, user, address, table):
 
 @transaction.atomic
 def clear_delivery(sale, user):
-    """Volta para retirada na loja: sem endereço e sem frete."""
+    """Retirada na loja (escolhida): sem endereço e sem frete."""
     sale = lock_open(sale)
-    sale.shipping_address, sale.freight = None, Decimal("0")
-    sale.metafields = {k: v for k, v in (sale.metafields or {}).items() if k != DELIVERY_KEY}
+    mark_pickup(sale)
+    sale.freight = Decimal("0")
     sale.updated_by = user
     sale.save(update_fields=["shipping_address", "freight", "metafields", "updated_by", "updated_at"])
     return recalculate(sale)

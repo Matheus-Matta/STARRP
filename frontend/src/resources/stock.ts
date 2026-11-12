@@ -7,6 +7,7 @@ import { defineAsyncComponent } from "vue";
 import { stockApi } from "@/api/operations";
 import { resourceApi } from "@/api/resource";
 import { quantity } from "@/utils/format";
+import { autoPrintLabels, openLabelsHtml } from "@/utils/labels";
 import { openPrint } from "@/utils/print";
 
 // Diálogos só baixam quando abertos.
@@ -83,6 +84,16 @@ const is = (...kinds: string[]) => (v: Record<string, unknown>) => kinds.include
 const draft = (v: Record<string, unknown>) => v.status === "draft";
 /** Entrada que veio de NF-e: conferência → aprovação. */
 const fromNfe = (v: Record<string, unknown>) => Boolean(v.inbound_nfe);
+/** Entrada ou transferência confirmada: tem o que etiquetar (com a data de entrada). */
+const labelable = (v: Record<string, unknown>) => v.status === "posted" && is("entry", "transfer")(v);
+/** Confirmou / aprovou a entrada: imprime direto com o modelo da regra de logística (ou pergunta, se ela
+ *  mandar perguntar). */
+const labelsAfterPost = { label: "Imprimir etiquetas", dialog: LabelsDialog, visible: labelable,
+                          auto: ({ id }: { id: string }) => autoPrintLabels(id, "entry") };
+/** Concluiu a conferência: etiquetas das caixas (ou dos produtos) que chegaram, pela regra de logística. */
+const labelsAfterConference = { label: "Etiquetas da conferência", dialog: LabelsDialog,
+                                visible: (v: Record<string, unknown>) => Boolean(v.checked_at) && v.status !== "cancelled",
+                                auto: ({ id }: { id: string }) => autoPrintLabels(id, "conference") };
 
 const statusTone: Record<string, Tone> = { draft: "warning", posted: "success", cancelled: "danger" };
 /** Linhas do documento com a diferença contado − esperado (nota / sistema). */
@@ -232,20 +243,21 @@ export const stockDocuments = defineResource({
     { label: "Confirmar", icon: "pi pi-check", severity: "success", visible: (v) => draft(v) && !fromNfe(v),
       success: "Lançamento confirmado",
       confirm: "Confirmar o lançamento? O estoque é movimentado e o lançamento não poderá mais ser editado.",
-      run: ({ id }) => stockApi.post(id) },
+      run: ({ id }) => stockApi.post(id), then: labelsAfterPost },
     { label: "Aprovar entrada", icon: "pi pi-check", severity: "success", visible: (v) => draft(v) && fromNfe(v) && Boolean(v.checked_at),
       success: "Entrada aprovada: estoque e contas a pagar lançados",
       confirm: "Aprovar a entrada? O estoque entra com as quantidades conferidas e as duplicatas da nota viram contas a pagar.",
-      run: ({ id }) => stockApi.post(id) },
+      run: ({ id }) => stockApi.post(id), then: labelsAfterPost },
     { label: "Ver nota", icon: "pi pi-inbox", visible: fromNfe,
       // Router importado na hora: no topo do arquivo fecharia um ciclo (router → páginas → recursos).
       run: async ({ values }) => (await import("@/router")).router.push(`/cadastros/notas-de-entrada/${values.inbound_nfe}`) },
     { label: "Separação", icon: "pi pi-map", dialog: PickingDialog,
       visible: (v) => draft(v) && is("exit", "transfer", "supplier_return", "relocation")(v) },
-    { label: "Conferência", icon: "pi pi-qrcode", dialog: ConferenceDialog, visible: (v) => v.status !== "cancelled" },
+    { label: "Conferência", icon: "pi pi-qrcode", dialog: ConferenceDialog, visible: (v) => v.status !== "cancelled",
+      then: labelsAfterConference },
     { label: "Erros de entrada", icon: "pi pi-exclamation-triangle", visible: (v) => v.status === "posted" && fromNfe(v),
       run: async ({ id }) => (await import("@/router")).router.push(`/cadastros/erros-de-entrada?document=${id}`) },
-    { label: "Etiquetas", icon: "pi pi-tags", dialog: LabelsDialog, visible: (v) => v.status === "posted" && is("entry")(v) },
+    { label: "Etiquetas", icon: "pi pi-tags", dialog: LabelsDialog, visible: labelable },
     { label: "Cancelar", icon: "pi pi-times", severity: "danger", visible: (v) => v.status !== "cancelled",
       confirm: "Cancelar o lançamento? Se já foi confirmado, cada movimento ganha um estorno.",
       success: "Lançamento cancelado", run: ({ id }) => stockApi.cancel(id) },
@@ -331,7 +343,7 @@ export const stockMovements = defineResource({
     { name: "variant_name", label: "Produto", type: "text", span: 4 },
     { name: "kind", label: "Tipo", type: "select", options: movementKind.options },
     { name: "quantity", label: "Quantidade", type: "quantity" },
-    { name: "balance_after", label: "Saldo depois", type: "quantity" },
+    { name: "balance_after", label: "Saldo depois", type: "quantity", signed: true },
     { name: "unit_cost", label: "Custo unitário", type: "money" },
     { name: "total_cost", label: "Custo total", type: "money" },
     { name: "warehouse_name", label: "Depósito", type: "text" },
@@ -354,10 +366,19 @@ export const stockLots = defineResource({
     { key: "code", label: "Código" },
     { key: "variant_name", label: "Produto", title: true },
     { key: "lot_number", label: "Lote do fabricante" },
+    { key: "received_at", label: "Entrada", type: "date" },
     { key: "expires_at", label: "Validade", type: "date" },
     { key: "quantity", label: "Saldo", type: "quantity", total: true },
     { key: "status", label: "Situação", type: "tag", map: lotStatus.map },
     { key: "warehouse_name", label: "Depósito" },
+  ],
+  rowActions: [
+    { label: "Imprimir etiqueta", icon: "pi pi-tags", run: async (row) =>
+      openLabelsHtml(await stockApi.printLabels({ subject: "lot", items: [{ id: String(row.id) }] })) },
+  ],
+  formActions: [
+    { label: "Imprimir etiqueta", icon: "pi pi-tags", run: async ({ id }) =>
+      openLabelsHtml(await stockApi.printLabels({ subject: "lot", items: [{ id }] })) },
   ],
   filters: [
     { name: "status", label: "Situação", type: "select", options: lotStatus.options },
@@ -366,10 +387,12 @@ export const stockLots = defineResource({
   ],
   fields: [
     { name: "variant_name", label: "Produto", type: "text", span: 4 },
-    { name: "code", label: "Código interno", type: "text" },
+    { name: "code", label: "Código interno", type: "text", placeholder: "Gerado sozinho", hint: "Vazio = gerado (L + 8 caracteres)." },
     { name: "lot_number", label: "Lote do fabricante", type: "text" },
     { name: "manufactured_at", label: "Fabricação", type: "date" },
     { name: "expires_at", label: "Validade", type: "date" },
+    { name: "received_at", label: "Entrada no estoque", type: "date", readOnly: true,
+      hint: "Não muda: sem validade, a saída tira do lote que entrou primeiro." },
     { name: "status", label: "Situação", type: "select", options: lotStatus.options,
       hint: "Bloqueado não sai na venda nem na separação." },
   ],
@@ -431,7 +454,7 @@ export const labelTemplates = defineResource({
     { name: "is_system", label: "Pré-pronto do sistema", type: "boolean", options: yesNo },
   ],
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true, span: 3 },
+    { name: "name", label: "Nome", type: "text", required: true, span: 3, placeholder: "Ex.: Gôndola 60×40" },
     { name: "subject", label: "Para", type: "segmented", options: labelSubject.options, default: "product", span: 3 },
     { name: "width_mm", label: "Largura (mm)", type: "measure", default: "60.0", span: 1 },
     { name: "height_mm", label: "Altura (mm)", type: "measure", default: "40.0", span: 1 },
@@ -493,7 +516,7 @@ export const receivingDivergences = defineResource({
     { name: "expected_quantity", label: "Na nota", type: "quantity" },
     { name: "arrived_quantity", label: "Chegaram", type: "quantity" },
     { name: "accepted_quantity", label: "Entraram no estoque", type: "quantity" },
-    { name: "difference", label: "Diferença (chegou − nota)", type: "quantity" },
+    { name: "difference", label: "Diferença (chegou − nota)", type: "quantity", signed: true },
     { name: "checked_by_name", label: "Conferido por", type: "text" },
     { name: "notes", label: "Observação", type: "textarea" },
   ],

@@ -19,6 +19,7 @@ from django.conf import settings
 from django.db import models
 
 from starrp.models.base import MoneyField, PercentField, QuantityField, StoreModel, TenantModel, UnitCostField, user_fk
+from starrp.models.company import AddressFields
 
 
 class SaleChannel(models.TextChoices):
@@ -135,6 +136,8 @@ class Sale(StoreModel):
     shipping_address = models.ForeignKey(
         "starrp.CustomerAddress", null=True, blank=True, related_name="+", on_delete=models.SET_NULL
     )
+    # O pedido tem endereço PRÓPRIO (`SaleAddress`, entrega e cobrança), herdado do cliente.
+    billing_same_as_delivery = models.BooleanField(default=True)
 
     subtotal = MoneyField(help_text="Soma dos itens ativos, já com promoção e desconto de item.")
     discount = MoneyField(help_text="Desconto manual no total.")
@@ -269,3 +272,25 @@ class Commission(StoreModel):
 
     class Meta:
         indexes = [models.Index(fields=["seller", "status", "created_at"])]
+
+
+class SaleAddress(AddressFields, TenantModel):
+    """Endereço do PEDIDO (entrega ou cobrança): cópia do endereço do cliente ao vincular, que
+    pode ser corrigida no próprio pedido sem mexer no cadastro. `source` = de onde veio."""
+
+    class Kind(models.TextChoices):
+        DELIVERY = "delivery", "Entrega"
+        BILLING = "billing", "Cobrança"
+
+    sale = models.ForeignKey(Sale, related_name="addresses", on_delete=models.CASCADE)
+    kind = models.CharField(max_length=10, choices=Kind.choices)
+    recipient = models.CharField(max_length=180, blank=True, help_text="Quem recebe (vazio = o cliente).")
+    reference = models.CharField(max_length=255, blank=True)
+    source = models.ForeignKey("starrp.CustomerAddress", null=True, blank=True, related_name="+",
+                               on_delete=models.SET_NULL)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["sale", "kind"], name="uniq_sale_address_kind")]
+
+    def __str__(self):
+        return f"{self.get_kind_display()} - venda {self.sale_id}"

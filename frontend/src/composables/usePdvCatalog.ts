@@ -1,6 +1,7 @@
 /**
- * Catálogo do PDV: 20 produtos por vez, do servidor, e mais 20 quando a grade
- * rola até o fim. Busca (nome, SKU, código) e categoria vão para o servidor —
+ * Catálogo do PDV: os produtos vêm do servidor em páginas do tamanho da TELA (`fit`: quantas
+ * linhas cheias de cartões cabem na grade, e um pouco mais), e mais uma página quando a grade
+ * rola até o fim — tela grande não fica com a grade pela metade nem sem rolagem para pedir mais. Busca (nome, SKU, código) e categoria vão para o servidor —
  * o PDV abre rápido mesmo com milhares de produtos.
  *
  * Um cartão = um PRODUTO (a camiseta, não "camiseta P", "camiseta M"...); as
@@ -38,6 +39,7 @@ type ProductRow = Record<string, any>; // eslint-disable-line @typescript-eslint
 export type CatalogCategory = { id: string; name: string; parent: string | null };
 
 const PAGE = 20;
+const MAX_PAGE = 120;
 
 function toCard(p: ProductRow): CatalogProduct {
   const variants = ((p.variants ?? []) as ProductRow[]).filter((v) => v.is_active !== false);
@@ -65,17 +67,30 @@ export function usePdvCatalog() {
     timer = setTimeout(() => (term.value = value.trim()), 250);
   });
 
+  /** Tamanho da página, medido pela grade (`fit`). A busca só começa depois da 1ª medida
+   *  — senão sairiam 20 e logo depois a página certa. Só cresce: encolher a janela não recarrega. */
+  const pageSize = ref(PAGE);
+  const sized = ref(false);
+  function fit(columns: number, rows: number) {
+    const cols = Math.max(1, columns);
+    // Uma tela e meia, arredondada para linhas cheias (sem buraco no fim da grade).
+    const wanted = Math.min(Math.ceil(Math.max(PAGE, cols * Math.ceil(rows * 1.5)) / cols) * cols, MAX_PAGE);
+    if (wanted > pageSize.value) pageSize.value = wanted;
+    sized.value = true;
+  }
+
   const query = useInfiniteQuery({
-    queryKey: computed(() => ["pdv-catalog", session.activeStoreId, term.value, category.value]),
+    queryKey: computed(() => ["pdv-catalog", session.activeStoreId, term.value, category.value, pageSize.value]),
     queryFn: ({ pageParam }) => resourceApi.list<ProductRow>("/catalog/products/", {
       // Serviço (montagem, garantia) não é vendido sozinho pela grade: aparece na vitrine do produto.
-      is_active: true, with_stock: 1, ordering: "name", page: pageParam, page_size: PAGE, type__in: "simple,variable,kit",
+      is_active: true, with_stock: 1, ordering: "name", page: pageParam, page_size: pageSize.value, type__in: "simple,variable,kit",
       search: term.value, category: category.value ?? undefined,
     }),
     initialPageParam: 1,
     getNextPageParam: (last, pages) => (last.next ? pages.length + 1 : undefined),
     placeholderData: keepPreviousData,
     staleTime: 60_000,
+    enabled: sized,
   });
   const visible = computed(() => (query.data.value?.pages ?? []).flatMap((page) => page.results.map(toCard)));
   const total = computed(() => query.data.value?.pages[0]?.count ?? 0);
@@ -102,6 +117,6 @@ export function usePdvCatalog() {
 
   /** Variações de um produto (com preço vigente e saldo da loja), só quando o operador clica. */
 
-  return { query, visible, total, more, search, category, roots, children, activeRoot,
+  return { query, visible, total, more, fit, search, category, roots, children, activeRoot,
            refresh: () => query.refetch() };
 }

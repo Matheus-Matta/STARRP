@@ -1,15 +1,15 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import serializers
 
 from starrp.core.errors import StateConflict
 from starrp.core.serializers import TenantSerializer, tenant_serializer
 from starrp.models import (
     LabelTemplate, ReceivingDivergence, StockBalance, StockDocument, StockDocumentItem, StockLot, StockMovement,
-    StockSettings, Warehouse,
+    Warehouse,
 )
 from starrp.services import numbering
 
-StockSettingsSerializer = tenant_serializer(StockSettings)
 WarehouseSerializer = tenant_serializer(Warehouse)
 LabelTemplateSerializer = tenant_serializer(LabelTemplate)
 
@@ -30,7 +30,16 @@ class StockLotSerializer(TenantSerializer):
     class Meta:
         model = StockLot
         fields = "__all__"
-        read_only_fields = ["quantity", "initial_quantity", "code", "variant", "warehouse", "unit_cost"]
+        # Data de entrada não se edita: é ela que decide o que sai primeiro (FIFO).
+        read_only_fields = ["quantity", "initial_quantity", "code", "variant", "warehouse", "unit_cost", "received_at"]
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        made = attrs.get("manufactured_at", getattr(self.instance, "manufactured_at", None))
+        expires = attrs.get("expires_at", getattr(self.instance, "expires_at", None))
+        if made and expires and made > expires:
+            raise serializers.ValidationError({"expires_at": "A validade é antes da fabricação. Confira as datas."})
+        return attrs
 
 
 class StockBalanceSerializer(TenantSerializer):
@@ -93,16 +102,27 @@ class StockDocumentSerializer(TenantSerializer):
         return len(obj.items.all())
 
     def get_manual_conference(self, obj):
-        from starrp.services import logistics_settings
+        from starrp.services import rules
 
-        return logistics_settings.for_store(obj.store_id).allow_manual_conference
+        return rules.of_store("logistics_rule", obj.store_id, obj.account_id).allow_manual_conference
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
         kind = attrs.get("kind") or getattr(self.instance, "kind", None)
-        for row in attrs.get("items", []):
+        today = timezone.localdate()
+        for index, row in enumerate(attrs.get("items", [])):
             if kind != StockDocument.Kind.ADJUSTMENT and row.get("quantity", 0) < 0:
                 raise serializers.ValidationError({"items": "Quantidade negativa só em ajuste."})
+            if kind == StockDocument.Kind.ENTRY:
+                # As mesmas checagens da confirmação, já no rascunho: o erro aparece na linha certa.
+                expires, made = row.get("expires_at"), row.get("manufactured_at")
+                name = getattr(row.get("variant"), "display_name", f"Item {index + 1}")
+                if expires and expires < today:
+                    raise serializers.ValidationError({"items": f"{name}: validade já passou. Vencido não entra no estoque."})
+                if made and made > today:
+                    raise serializers.ValidationError({"items": f"{name}: fabricação no futuro."})
+                if made and expires and made > expires:
+                    raise serializers.ValidationError({"items": f"{name}: fabricação depois da validade."})
         return attrs
 
     def to_internal_value(self, data):

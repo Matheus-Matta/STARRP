@@ -155,7 +155,7 @@ class MeSerializer(serializers.Serializer):
             "email": user.email,
             "is_superuser": user.is_superuser,
             "account": {"id": str(request.account.id), "name": request.account.name,
-                        "modules": sorted(request.account.active_modules()),
+                        "modules": request.account.session_modules(),
                         # Logo da empresa (impressões); sem ele, a tela usa o do Starrp.
                         "logo_url": request.account.logo.file.url if request.account.logo_id else None}
             if request.account else None,

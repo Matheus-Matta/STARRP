@@ -4,10 +4,10 @@ from django.db import transaction
 from django.utils.text import slugify
 
 from starrp.models import (
-    Account, CashRegister, Permission, Role, StockSettings, Store,
+    Account, CashRegister, Permission, Role, Store,
     UserProfile, Warehouse,
 )
-from starrp.services import fiscal_data
+from starrp.services import fiscal_data, rules
 from starrp.services.access_catalog import SYSTEM_ROLES, permission_rows
 from starrp.services.finance_setup import ensure_defaults, vault_for
 
@@ -66,8 +66,8 @@ def create_account(*, name, admin_username, admin_password, admin_email="", stor
         slug = f"{base_slug}-{n}"
     account = Account.objects.create(name=name, slug=slug, document=document)
     roles = ensure_system_roles(account)
+    rules.ensure_defaults(account.pk)  # regras padrão (filial, logística, estoque): toda filial nasce com elas
     store = create_store(account, store_name or name)
-    StockSettings.all_objects.create(account=account)
     # Formas de pagamento e perfis fiscais: o sinal de Account já criou (services/system_data.py).
     ensure_defaults(account)
     user = get_user_model().objects.create_user(admin_username, email=admin_email, password=admin_password)

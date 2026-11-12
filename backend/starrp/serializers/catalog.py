@@ -1,16 +1,20 @@
+from decimal import Decimal
+
 from django.db import transaction
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
+from rest_framework.exceptions import PermissionDenied
 
+from starrp.core.permissions import has_permission_code
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, tenant_serializer
 from starrp.models import (
-    Attribute, AttributeValue, Brand, Category, Image, KitComponent, Product, ProductBarcode, ProductImage,
-    ProductVariant, ProductVolume, ServiceRule, SupplierProduct, Tag,
+    Attribute, AttributeValue, Brand, Category, Image, KitComponent, Module, Product, ProductBarcode, ProductImage,
+    ProductVariant, ProductVolume, ServiceRule, SupplierProduct, Tag, Warehouse,
 )
 from starrp.serializers.tags import TaggedSerializerMixin
 from starrp.core.text import clean_html
-from starrp.services import catalog, media, variant_grid
+from starrp.services import catalog, media, stock, variant_grid
 
 
 
@@ -37,7 +41,14 @@ class CategorySerializer(RichSeoMixin, TenantSerializer):
         fields = "__all__"
 
 
-BrandSerializer = tenant_serializer(Brand)
+class BrandSerializer(TenantSerializer):
+    supplier_name = serializers.CharField(source="supplier.name", read_only=True, default=None)
+
+    class Meta:
+        model = Brand
+        fields = "__all__"
+
+
 AttributeValueSerializer = tenant_serializer(AttributeValue, read_only=("normalized",))
 KitComponentSerializer = tenant_serializer(KitComponent)
 ProductImageSerializer = tenant_serializer(ProductImage)
@@ -178,6 +189,14 @@ class ProductSerializer(RichSeoMixin, TaggedSerializerMixin, TenantSerializer):
     price_max = serializers.SerializerMethodField(help_text="Maior preço (igual ao `price` sem grade).")
     variant_count = serializers.SerializerMethodField()
     stock_quantity = serializers.DecimalField(max_digits=14, decimal_places=3, read_only=True, required=False)
+    # Só ao criar: o saldo com que o produto nasce (com grade, em cada variação). Vira movimento "Implantação de saldo".
+    initial_stock = serializers.DecimalField(max_digits=14, decimal_places=3, min_value=Decimal("0"), write_only=True,
+                                             required=False, allow_null=True)
+    initial_cost = serializers.DecimalField(max_digits=16, decimal_places=4, min_value=Decimal("0"), write_only=True,
+                                            required=False, allow_null=True)
+    initial_warehouse = TenantPrimaryKeyField(Warehouse, write_only=True, required=False, allow_null=True)
+    fiscal_ncm = serializers.CharField(read_only=True, help_text="O NCM que vale: o do produto ou, sem ele, o do perfil.")
+    fiscal_cest = serializers.CharField(read_only=True, help_text="O CEST que vale: o do produto ou, sem ele, o do perfil.")
 
     class Meta:
         model = Product
@@ -219,13 +238,40 @@ class ProductSerializer(RichSeoMixin, TaggedSerializerMixin, TenantSerializer):
             category = attrs.get("category", getattr(self.instance, "category", None))
             attrs["metafields"] = metafields.clean(self.context["request"].account.pk, "product",
                                                    attrs["metafields"], category=category)
+        self._initial = self._initial_stock(attrs)
         return attrs
+
+    def _initial_stock(self, attrs):
+        """Confere o estoque inicial. Lançar estoque pede o módulo e a permissão de estoque, não só a de cadastro."""
+        quantity, cost = attrs.pop("initial_stock", None), attrs.pop("initial_cost", None)
+        warehouse = attrs.pop("initial_warehouse", None)
+        if not quantity:
+            return None
+        if self.instance is not None:
+            raise serializers.ValidationError({"initial_stock": "Estoque inicial é só ao criar. Depois, lance uma entrada."})
+        request = self.context["request"]
+        if not request.user.is_superuser and not (request.account.has_module(Module.STOCK)
+                                                  and has_permission_code(request.user, "stock.manage")):
+            raise PermissionDenied("Você não tem permissão para lançar estoque.")
+        if attrs.get("type") in (Product.Type.KIT, Product.Type.SERVICE) or not attrs.get("track_stock", True):
+            raise serializers.ValidationError({"initial_stock": "Este produto não controla estoque."})
+        if attrs.get("track_lots") or attrs.get("track_serial"):
+            raise serializers.ValidationError({"initial_stock": "Com lote ou número de série, o saldo inicial entra por uma "
+                                                                "entrada de estoque, com a validade ou os números."})
+        warehouse = warehouse or (stock.default_warehouse(request.store) if request.store else None)
+        if warehouse is None:
+            raise serializers.ValidationError({"initial_warehouse": "Escolha o depósito do estoque inicial."})
+        return {"quantity": quantity, "unit_cost": cost, "warehouse": warehouse}
 
     @transaction.atomic
     def create(self, validated_data):
         rows, grid = validated_data.pop("variants", None), validated_data.pop("grid", None)
         images = validated_data.pop("gallery", None)
-        return self._save_children(super().create(validated_data), rows, grid, images)
+        product = self._save_children(super().create(validated_data), rows, grid, images)
+        if self._initial:
+            alive = [v for v in product.variants.all() if v.deleted_at is None]
+            stock.seed(alive, operator=self.context["request"].user, **self._initial)
+        return product
 
     @transaction.atomic
     def update(self, instance, validated_data):

@@ -98,6 +98,8 @@ defineExpose({ refetch: () => query.refetch() });
       </IconField>
       <slot name="toolbar" />
       <span class="count">{{ total.toLocaleString("pt-BR") }} {{ total === 1 ? "registro" : "registros" }}</span>
+      <Button v-if="view.openAll && !compact" :label="view.openAll.label" icon="pi pi-external-link" size="small"
+              severity="secondary" text @click="router.push(view.openAll.to(id, values))" />
       <Button v-if="!compact" label="Imprimir" icon="pi pi-print" size="small" severity="secondary" text :disabled="!total"
               @click="openPrint('lista', resourceName, { view: viewName, registro: id, titulo: title, search: state.search, ordering: state.ordering })" />
       <Button v-if="!compact" label="Exportar CSV" icon="pi pi-file-export" size="small" severity="secondary" text :loading="exporting"

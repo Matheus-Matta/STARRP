@@ -26,7 +26,7 @@ def _session_for(sale, user, method):
     turno ABERTO do operador (qualquer forma); fora do PDV, só o dinheiro exige o turno."""
     session = sale.cash_session or cash.session_for_user(sale.store, user)
     at_counter = sale.channel in (SaleChannel.POS, SaleChannel.MOBILE)
-    if session is None and sale.store.require_open_cash_session and (at_counter or method.kind == Kind.CASH):
+    if session is None and sale.store.rule.require_open_cash_session and (at_counter or method.kind == Kind.CASH):
         raise StateConflict("Abra o caixa antes de receber (o turno também pode estar esperando o gerente conferir "
                             "a abertura).", code="cash_session_required")
     return session
@@ -68,7 +68,8 @@ def add_payment(sale, method, amount, user, *, tendered=None, installments=1, id
     elif amount > sale.balance_due:
         raise BusinessError("Pagamento maior que o saldo da venda (troco só em dinheiro).")
     _check_method(sale, method, amount, installments)
-    if method.requires_reference and not (details.get("nsu") or details.get("authorization_code")):
+    if (method.requires_reference and sale.store.rule.require_payment_reference
+            and not (details.get("nsu") or details.get("authorization_code"))):
         raise BusinessError(f"{method.name}: informe o NSU/autorização do comprovante.", code="reference_required")
     session = _session_for(sale, user, method)
     payment = Payment.all_objects.create(
@@ -146,8 +147,12 @@ def complete(sale, user):
         raise BusinessError("A venda não tem itens.")
     if sale.paid_amount < sale.total:
         raise BusinessError(f"Falta receber R$ {sale.balance_due}.", code="payment_pending")
-    if sale.store.require_seller and sale.seller_id is None:
-        raise BusinessError("Informe o vendedor da venda.", code="seller_required")
+    # Sem vendedor: com a regra da filial "exige vendedor" ligada, não conclui; com ela desligada
+    # (vendedor opcional), a venda fica com quem concluiu — o caixa — e toda venda tem um responsável.
+    if sale.seller_id is None:
+        if sale.store.rule.require_seller:
+            raise BusinessError("Informe o vendedor da venda.", code="seller_required")
+        sale.seller = user
     warehouse = stock.default_warehouse(sale.store)
     for item in items:
         if warehouse is not None:
@@ -159,7 +164,7 @@ def complete(sale, user):
         if payment.method.generates_receivable:
             finance.receivable_from_payment(payment, user)
     sale.status, sale.completed_at, sale.updated_by = Sale.Status.COMPLETED, timezone.now(), user
-    sale.save(update_fields=["status", "completed_at", "updated_by", "updated_at"])
+    sale.save(update_fields=["status", "seller", "completed_at", "updated_by", "updated_at"])
     ledger.sale_completed(sale, user)
     return sale
 

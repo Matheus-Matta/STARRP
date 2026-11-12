@@ -1,4 +1,8 @@
+import { defineAsyncComponent } from "vue";
+
 import { choices, defineResource, UFS, yesNo } from "./types";
+
+const CashShiftHistory = defineAsyncComponent(() => import("@/components/finance/CashShiftHistory.vue"));
 
 export const paymentKind = choices({
   cash: "Dinheiro", credit_card: "Crédito", debit_card: "Débito", pix: "PIX", voucher: "Vale-refeição",
@@ -34,8 +38,12 @@ export const stores = defineResource({
     { name: "state", label: "UF", type: "select", options: UFS },
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
+  sections: {
+    Regras: { icon: "pi pi-sitemap", description: "Como esta filial trabalha. As regras são compartilhadas: várias filiais "
+      + "usam a mesma e a filial diferente escolhe outra. Vazio = a padrão da conta." },
+  },
   fields: [
-    { name: "name", label: "Nome fantasia", type: "text", required: true, section: "Empresa" },
+    { name: "name", label: "Nome fantasia", type: "text", required: true, section: "Empresa", placeholder: "Ex.: Loja Centro" },
     { name: "kind", label: "Tipo de unidade", type: "segmented", options: storeKind.options, default: "branch",
       section: "Hierarquia", full: true },
     { name: "parent", label: "Responde a", type: "relation", relation: { endpoint: "/stores/" }, section: "Hierarquia",
@@ -52,16 +60,17 @@ export const stores = defineResource({
     { name: "number", label: "Número", type: "text", section: "Endereço" },
     { name: "district", label: "Bairro", type: "text", section: "Endereço" },
     { name: "city", label: "Cidade", type: "text", section: "Endereço" },
-    { name: "state", label: "UF", type: "text", maxLength: 2, section: "Endereço" },
-    { name: "city_ibge", label: "Código IBGE", type: "text", mask: "9999999", section: "Endereço" },
-    { name: "require_open_cash_session", label: "Exige caixa aberto", type: "boolean", default: true, section: "Operação" },
-    { name: "cash_closing_tolerance", label: "Tolerância no fechamento (R$)", type: "money", section: "Operação" },
-    { name: "cash_action_password", label: "Senha de ações do caixa", type: "password", section: "Operação",
-      hint: "Autoriza sangria/desconto no PDV sem gerente presente. Em branco mantém a atual." },
-    { name: "require_seller", label: "Exige vendedor na venda", type: "boolean", section: "Operação" },
-    { name: "auto_print_receipt", label: "Imprime recibo ao concluir", type: "boolean", default: true, section: "Operação" },
-    { name: "scale_barcode_mode", label: "Etiqueta de balança", type: "select", section: "Operação",
-      options: [{ label: "Não usa", value: "" }, { label: "Traz o preço", value: "price" }, { label: "Traz o peso", value: "weight" }] },
+    { name: "state", label: "UF", type: "select", options: UFS, section: "Endereço" },
+    { name: "city_ibge", label: "Código IBGE", type: "text", format: "ibge", section: "Endereço" },
+    { name: "rule", label: "Regras da filial", type: "relation", relation: { endpoint: "/stores/rules/" }, section: "Regras",
+      span: 3, hint: "PDV, caixa e venda. Vazio = a padrão." },
+    { name: "logistics_rule", label: "Regras de logística", type: "relation", relation: { endpoint: "/logistics/rules/" },
+      section: "Regras", span: 3, hint: "Recebimento e conferência. Vazio = a padrão." },
+    { name: "stock_rule", label: "Regras de estoque", type: "relation", relation: { endpoint: "/stock/rules/" },
+      section: "Regras", span: 3, hint: "Lotes, vencidos e saldo negativo. Vazio = a padrão." },
+    { name: "cash_action_password", label: "Senha de aprovação do caixa", type: "password", section: "Operação",
+      hint: "Aprova sangria, suprimento, abertura e fechamento com diferença, desconto e cancelamento no PDV "
+        + "sem o gerente presente. Em branco mantém a atual." },
     { name: "is_active", label: "Ativa", type: "boolean", default: true, section: "Operação" },
   ],
 });
@@ -184,7 +193,7 @@ export const paymentMethods = defineResource({
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true },
+    { name: "name", label: "Nome", type: "text", required: true, placeholder: "Ex.: Pix, Crédito Visa" },
     { name: "kind", label: "Tipo", type: "select", required: true, options: paymentKind.options },
     { name: "max_installments", label: "Máximo de parcelas", type: "number", default: 1 },
     { name: "fee_percent", label: "Taxa da adquirente (%)", type: "percent" },
@@ -199,14 +208,8 @@ export const paymentMethods = defineResource({
 export const cashRegisters = defineResource({
   name: "caixas",
   views: [
-    { name: "turnos", label: "Turnos", icon: "pi pi-inbox",
-      list: { endpoint: "/cash/sessions/", params: (id) => ({ register: id }), ordering: "-opened_at", searchable: false,
-              rowLink: (row) => `/cadastros/turnos-de-caixa/${row.id}/extrato`,
-              columns: [{ key: "opened_at", label: "Abertura", type: "datetime" }, { key: "opened_by_name", label: "Operador" },
-                        { key: "status", label: "Situação", type: "tag", map: { open: "Aberto", pending_approval: "Aguardando gerente",
-                          closed: "Fechado", cancelled: "Cancelado" } },
-                        { key: "expected_amount", label: "Esperado", type: "money" }, { key: "counted_amount", label: "Contado", type: "money" },
-                        { key: "difference", label: "Diferença", type: "money" }] } },
+    { name: "turnos", label: "Extratos dos turnos", icon: "pi pi-inbox", component: CashShiftHistory,
+      description: "Cada abertura → fechamento do caixa, por dia. Clique para abrir o extrato do turno." },
   ],
   title: "Caixas",
   singular: "caixa",
@@ -217,7 +220,7 @@ export const cashRegisters = defineResource({
   columns: [
     { key: "code", label: "Código" },
     { key: "name", label: "Nome" },
-    { key: "operator_names", label: "Operadores", sortable: false },
+    { key: "operator_name", label: "Operador", sortable: false },
     { key: "is_active", label: "Ativo", type: "boolean" },
   ],
   filters: [
@@ -226,16 +229,17 @@ export const cashRegisters = defineResource({
   ],
   sections: {
     Caixa: { icon: "pi pi-wallet", description: "O caixa físico da filial (a gaveta)." },
-    Operadores: { icon: "pi pi-users", description: "Só eles abrem, fazem sangria/suprimento e fecham este caixa. "
-      + "Gerente e supervisor (quem aprova) assumem qualquer caixa da filial." },
+    Operador: { icon: "pi pi-user", description: "Só ele abre, faz sangria/suprimento e fecha este caixa; o PDV já abre "
+      + "nele. Um operador por caixa e um caixa por usuário. Gerente e supervisor (quem aprova) assumem qualquer caixa." },
   },
   fields: [
-    { name: "code", label: "Código", type: "text", required: true, section: "Caixa", span: 2 },
-    { name: "name", label: "Nome", type: "text", required: true, section: "Caixa", span: 3 },
+    { name: "code", label: "Código", type: "text", section: "Caixa", span: 2, placeholder: "Gerado pelo nome",
+      hint: "Vazio = gerado pelo nome (Caixa 03 → CAIXA-03)." },
+    { name: "name", label: "Nome", type: "text", required: true, section: "Caixa", span: 3, placeholder: "Ex.: Caixa 01" },
     { name: "is_active", label: "Ativo", type: "boolean", default: true, section: "Caixa", span: 2 },
-    { name: "operators", label: "Operadores do caixa", type: "multirelation", default: [], section: "Operadores", full: true,
+    { name: "operator", label: "Operador do caixa", type: "relation", section: "Operador", span: 4,
       relation: { endpoint: "/users/", valueKey: "user_id", labelKey: "full_name", params: { is_active: "true" } },
-      hint: "Quem não está aqui não vê este caixa no PDV." },
+      hint: "Quem não é o operador não vê este caixa no PDV. Quem já opera outro caixa não pode ser escolhido." },
   ],
 });
 
@@ -347,34 +351,5 @@ export const metafieldDefinitions = defineResource({
     { name: "is_active", label: "Ativo", type: "boolean", default: true, section: "Onde", span: 1 },
     { name: "categories", label: "Só nas categorias", type: "multirelation", relation: { endpoint: "/catalog/categories/" },
       section: "Onde", full: true, visible: (v) => v.owner === "product", hint: "Vazio = todos os produtos. As de dentro entram." },
-  ],
-});
-
-/** Logística de cada filial: uma linha por filial (nasce sozinha); só edita. */
-export const logisticsSettings = defineResource({
-  name: "configuracoes-de-logistica",
-  title: "Configurações de logística",
-  singular: "configuração de logística",
-  feminine: true,
-  endpoint: "/logistics/settings/",
-  permission: "logistics",
-  icon: "pi pi-sliders-h",
-  group: "Logística",
-  creatable: false,
-  deletable: false,
-  searchable: false,
-  columns: [
-    { key: "store_name", label: "Filial", title: true },
-    { key: "allow_manual_conference", label: "Conferência manual", type: "boolean" },
-  ],
-  sections: {
-    Recebimento: { icon: "pi pi-inbox", description: "Como a mercadoria que chega (entrada da NF-e) é conferida nesta filial." },
-  },
-  fields: [
-    { name: "store_name", label: "Filial", type: "text", readOnly: true, section: "Recebimento" },
-    { name: "allow_manual_conference", label: "Permitir conferência manual no recebimento", type: "boolean",
-      section: "Recebimento", full: true,
-      hint: "Marca item a item se a quantidade está correta, sem ler os códigos com leitor ou câmera. "
-        + "Desligado, a entrada da nota só é conferida lendo cada item." },
   ],
 });

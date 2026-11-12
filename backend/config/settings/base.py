@@ -3,6 +3,7 @@ DEBUG: no StarChef `DJANGO_ENV` e `DJANGO_DEBUG` divergiam e quebravam o login."
 from datetime import timedelta
 from pathlib import Path
 
+from celery.schedules import crontab
 from corsheaders.defaults import default_headers
 from decouple import Csv, config
 
@@ -107,12 +108,23 @@ else:
     CELERY_BROKER_URL = "memory://"
     CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+# Sem Redis não há worker: a leitura de preço pedida pela tela roda numa thread, para não travar a requisição.
+PRICE_READ_IN_THREAD = not REDIS_URL
+# Rodadas (precificação e SEO): o tamanho do lote e os segundos de pausa entre um lote e outro.
+PRICE_BATCH_SIZE = config("PRICE_BATCH_SIZE", default=10, cast=int)
+PRICE_BATCH_PAUSE = config("PRICE_BATCH_PAUSE", default=30, cast=int)
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_TIMEZONE = "America/Sao_Paulo"
 CELERY_BEAT_SCHEDULE = {
     # Notas de entrada (DF-e): a SEFAZ bloqueia quem consulta antes de 1 hora sem novidade.
     "sync-dfe": {"task": "starrp.sync_dfe", "schedule": 60 * 65},
+    # Cosmos: varredura da supervisão (cadastros com erro, descontos e cancelamentos fora do padrão).
+    "cosmos-supervision": {"task": "starrp.cosmos_supervision", "schedule": 60 * 30},
+    # Cosmos: resumo do dia anterior para quem supervisiona (não gasta tokens).
+    "cosmos-daily-digest": {"task": "starrp.cosmos_daily_digest", "schedule": crontab(hour=7, minute=0)},
+    # Precificação: de hora em hora lê a próxima leva de cada conta (a frequência por produto é da conta).
+    "price-tracking": {"task": "starrp.price_tracking", "schedule": crontab(minute=20)},
 }
 
 REST_FRAMEWORK = {
@@ -177,6 +189,9 @@ USE_I18N = True
 USE_TZ = True
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+# Reutiliza a identidade oficial do frontend no admin (logos e favicons),
+# evitando manter duas cópias da marca em lugares diferentes.
+STATICFILES_DIRS = [BASE_DIR.parent / "frontend" / "public"]
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
@@ -191,6 +206,51 @@ ACBRLIB_TIMEOUT = config("ACBRLIB_TIMEOUT", default=40, cast=int)
 SYNC_NODE_TYPE = config("SYNC_NODE_TYPE", default="")  # "LOCAL" | "CLOUD"
 SYNC_ENVIRONMENT = config("SYNC_ENVIRONMENT", default="development")
 
+# Cosmos (assistente de IA): OpenAI pela API. Sem a chave, o widget avisa que está desligada.
+OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
+OPENAI_BASE_URL = config("OPENAI_BASE_URL", default="") or None
+OPENAI_MODEL = config("OPENAI_MODEL", default="gpt-5-mini")
+OPENAI_TIMEOUT = config("OPENAI_TIMEOUT", default=90, cast=int)
+# Roteamento por custo (services/cosmos/router.py): turno simples (saudação, comentar o resultado de uma
+# confirmação, resumir o histórico) vai ao modelo leve; planilha/lote vai ao forte (vazio = OPENAI_MODEL).
+OPENAI_MODEL_LIGHT = config("OPENAI_MODEL_LIGHT", default="gpt-5-nano")
+OPENAI_MODEL_HEAVY = config("OPENAI_MODEL_HEAVY", default="")
+# Modelos de raciocínio (gpt-5, o-series): minimal | low | medium | high. "low" = mais rápido e barato.
+OPENAI_REASONING_EFFORT = config("OPENAI_REASONING_EFFORT", default="low")
+# Voltas modelo ⇄ ferramentas por mensagem (cada consulta à API é uma volta).
+COSMOS_MAX_STEPS = config("COSMOS_MAX_STEPS", default=12, cast=int)
+# Mensagens por minuto de um mesmo usuário (segura clique repetido e uso abusivo).
+COSMOS_MESSAGES_PER_MINUTE = config("COSMOS_MESSAGES_PER_MINUTE", default=20, cast=int)
+# Teto de saída por chamada (inclui o raciocínio). O modelo leve usa um terço.
+COSMOS_MAX_OUTPUT_TOKENS = config("COSMOS_MAX_OUTPUT_TOKENS", default=4000, cast=int)
+# Janela do histórico: as últimas N falas do usuário vão inteiras; o que é mais antigo vira um resumo curto.
+COSMOS_HISTORY_TURNS = config("COSMOS_HISTORY_TURNS", default=8, cast=int)
+
+# Precificação (preço comparado com o mercado): chaves da PLATAFORMA das fontes com cadastro.
+# Vazio = a fonte fica indisponível; pesquisa da equipe e Open Prices não precisam de chave.
+# Teto de consultas por dia, somando todas as contas (o plano gratuito da SerpApi tem 250 por mês).
+SERPAPI_KEY = config("SERPAPI_KEY", default="")
+BLUESOFT_COSMOS_TOKEN = config("BLUESOFT_COSMOS_TOKEN", default="")
+# Ferramenta própria de busca no Google Shopping (projeto search-shop): a fonte precisa dos dois.
+SHOPPING_SEARCH_URL = config("SHOPPING_SEARCH_URL", default="")
+SHOPPING_SEARCH_TOKEN = config("SHOPPING_SEARCH_TOKEN", default="")
+# SERP API da Bright Data: a chave e o nome da zona. A conta pode ter os dela (admin do Django).
+BRIGHTDATA_API_KEY = config("BRIGHTDATA_API_KEY", default="")
+BRIGHTDATA_ZONE = config("BRIGHTDATA_ZONE", default="")
+PRICE_DAILY_LIMITS = {"serpapi": config("PRICE_SERPAPI_DAILY", default=8, cast=int),
+                      "google_shopping": config("PRICE_SHOPPING_SEARCH_DAILY", default=500, cast=int),
+                      "brightdata": config("PRICE_BRIGHTDATA_DAILY", default=100, cast=int),
+                      "cosmos": config("PRICE_COSMOS_DAILY", default=20, cast=int)}
+# Analítico de SEO: volume de busca pelo Google Ads (KeywordPlanIdeaService). A conta pode ter as dela (admin do Django).
+GOOGLE_ADS_API_VERSION = config("GOOGLE_ADS_API_VERSION", default="v26")
+GOOGLE_ADS_CLIENT_ID = config("GOOGLE_ADS_CLIENT_ID", default="")
+GOOGLE_ADS_CLIENT_SECRET = config("GOOGLE_ADS_CLIENT_SECRET", default="")
+GOOGLE_ADS_REFRESH_TOKEN = config("GOOGLE_ADS_REFRESH_TOKEN", default="")
+GOOGLE_ADS_CUSTOMER_ID = config("GOOGLE_ADS_CUSTOMER_ID", default="")
+GOOGLE_ADS_LOGIN_CUSTOMER_ID = config("GOOGLE_ADS_LOGIN_CUSTOMER_ID", default="")
+GOOGLE_ADS_DEVELOPER_TOKEN = config("GOOGLE_ADS_DEVELOPER_TOKEN", default="")  # só projeto antigo: descontinuado em 09/2026
+PRICE_TRACKING_BATCH = config("PRICE_TRACKING_BATCH", default=200, cast=int)
+
 EMAIL_BACKEND = config("DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = config("DJANGO_DEFAULT_FROM_EMAIL", default="Starrp <no-reply@localhost>")
 PASSWORD_RESET_TIMEOUT_MINUTES = 30
@@ -200,4 +260,8 @@ LOGGING = {
     "disable_existing_loggers": False,
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": config("LOG_LEVEL", default="INFO")},
+    # O Django já tem um handler de console no logger "django"; sem isto cada linha (ex.: o acesso
+    # HTTP do runserver/Daphne) saía duas vezes — a dele e a da raiz.
+    "loggers": {"django": {"handlers": ["console"], "level": config("LOG_LEVEL", default="INFO"),
+                           "propagate": False}},
 }

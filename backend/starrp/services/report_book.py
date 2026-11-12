@@ -28,7 +28,7 @@ from starrp.models import (
     UserProfile, Warehouse,
 )
 from starrp.services import cash_flow, dre, reports
-from starrp.services.store_access import scope_to_allowed
+from starrp.services.store_access import include_empty, scope_to_allowed, visible_stores
 
 ZERO = Decimal("0")
 OTHERS = "Outros"
@@ -227,6 +227,8 @@ def _item_q(params, prefix="variant__product__"):
         q &= Q(**{f"{prefix}category_id": params["category"]})
     if params.get("brand"):
         q &= Q(**{f"{prefix}brand_id": params["brand"]})
+    if params.get("product"):
+        q &= Q(**{f"{prefix}id": params["product"]})
     return q
 
 
@@ -250,6 +252,79 @@ def _by_day(qs, field, value="total", date_field="completed_at"):
 
 
 SALES_FILTERS = ("channel", "method", "seller", "category", "brand", "customer_group")
+
+
+def f_products(account, reviewed=False):
+    """Produtos para o filtro; `reviewed` = só os que têm avaliação (a lista fica curta)."""
+    from starrp.models import Product, Review
+
+    qs = Product.all_objects.filter(account=account, deleted_at__isnull=True)
+    if reviewed:
+        qs = qs.filter(pk__in=Review.all_objects.filter(account=account, kind="product", deleted_at__isnull=True)
+                       .values("product_id"))
+    return _choice("product", "Produto", qs.order_by("name").values_list("pk", "name")[:1000])
+
+
+def product_reviews(account, store, product_ids=None):
+    """Notas de cada produto (avaliações ativas de qualquer data): {id: n, avg, stars 5→1, satisfied,
+    pending, last}. Serve à curva ABC, às vendas e às avaliações."""
+    from starrp.models import Review
+
+    qs = _scoped(Review.all_objects.filter(account=account, kind="product", deleted_at__isnull=True), store).exclude(
+        status=Review.Status.REJECTED)
+    if product_ids is not None:
+        qs = qs.filter(product_id__in=list(product_ids))
+    out = {}
+    for pid, rating, status, comment in qs.order_by("created_at").values_list("product_id", "rating", "status", "comment"):
+        row = out.setdefault(pid, {"n": 0, "total": 0, "stars": [0] * 5, "pending": 0, "last": ""})
+        row["n"] += 1
+        row["total"] += rating
+        row["stars"][5 - rating] += 1
+        row["pending"] += status == Review.Status.PENDING
+        row["last"] = comment or row["last"]
+    for row in out.values():
+        row["avg"] = (Decimal(row["total"]) / row["n"]).quantize(Decimal("0.1"))
+        row["satisfied"] = _pct(row["stars"][0] + row["stars"][1], row["n"])
+    return out
+
+
+def sale_reviews(account, store, sale_ids):
+    """Nota de cada venda: média dos produtos avaliados nela e a nota da entrega."""
+    from starrp.models import Review
+
+    qs = _scoped(Review.all_objects.filter(account=account, sale_id__in=list(sale_ids), deleted_at__isnull=True),
+                 store).exclude(status=Review.Status.REJECTED)
+    products, delivery = defaultdict(list), {}
+    for sid, kind, rating in qs.values_list("sale_id", "kind", "rating"):
+        if kind == "delivery":
+            delivery[sid] = rating
+        else:
+            products[sid].append(rating)
+    return {sid: (Decimal(sum(v)) / len(v)).quantize(Decimal("0.1")) for sid, v in products.items()}, delivery
+
+
+REVIEW_COLUMNS = [{"key": "rating", "label": "Nota média", "format": "decimal"},
+                  {"key": "reviews", "label": "Avaliações", "format": "number"}]
+
+
+def _products_with_reviews(account, store, sales, params):
+    """Os produtos vendidos (um por produto, somando as variações) com os dados do cadastro e a nota."""
+    rows = list(_items(sales, params).values(
+        "variant__product_id", "variant__product__name", "variant__product__reference",
+        "variant__product__category__name", "variant__product__brand__name").annotate(
+        sold_quantity=Sum("quantity"), revenue=Sum("total"), cost=Sum(COST), sales=Count("sale_id", distinct=True))
+        .order_by("-revenue"))
+    notes = product_reviews(account, store, {r["variant__product_id"] for r in rows})
+    out = []
+    for r in rows:
+        note = notes.get(r["variant__product_id"], {})
+        revenue = r["revenue"] or ZERO
+        out.append({"product": r["variant__product__name"], "reference": r["variant__product__reference"] or "",
+                    "category": r["variant__product__category__name"] or "—",
+                    "brand": r["variant__product__brand__name"] or "—", "sales": r["sales"],
+                    "sold_quantity": r["sold_quantity"], "revenue": revenue, "margin": revenue - (r["cost"] or ZERO),
+                    "rating": note.get("avg"), "reviews": note.get("n", 0)})
+    return out
 
 
 def _sales_filters(account, store, *names):
@@ -302,7 +377,39 @@ def movement_sales(account, store, params):
                                   "previous": p}
                                  for k, c, r, p in zip(keys, now_count, now_rev, then_rev + [ZERO] * len(keys),
                                                        strict=False) if c][::-1]},
-                   ], _sales_filters(account, store, *SALES_FILTERS))
+                       {"type": "table", "title": "Produtos vendidos e a nota deles", "span": "full",
+                        "description": "Cada produto (somando as variações) com o cadastro, o que vendeu no período e a "
+                                       "nota média de todas as avaliações dele.",
+                        "columns": [
+                            {"key": "product", "label": "Produto"}, {"key": "reference", "label": "Referência"},
+                            {"key": "category", "label": "Categoria"}, {"key": "brand", "label": "Marca"},
+                            {"key": "sales", "label": "Vendas", "format": "number"},
+                            {"key": "sold_quantity", "label": "Qtd.", "format": "quantity"},
+                            {"key": "revenue", "label": "Faturamento", "format": "money"},
+                            {"key": "margin", "label": "Margem", "format": "money"}, *REVIEW_COLUMNS],
+                        "rows": _products_with_reviews(account, store, sales, params)[:TABLE_MAX]},
+                       _sales_list(account, store, sales),
+                   ], _sales_filters(account, store, *SALES_FILTERS) + [f_products(account)])
+
+
+def _sales_list(account, store, sales):
+    """Cada venda do período com a nota que o cliente deu ao pedido e à entrega."""
+    rows = list(sales.order_by("-completed_at").values(
+        "pk", "number", "completed_at", "customer__name", "customer_name", "seller__first_name", "total",
+        "shipping_address_id")[:TABLE_MAX])
+    order, delivery = sale_reviews(account, store, [r["pk"] for r in rows])
+    return {"type": "table", "title": "Vendas do período e a nota do cliente", "span": "full",
+            "description": "Nota do pedido = média das notas que o cliente deu aos produtos daquela compra.",
+            "columns": [
+                {"key": "number", "label": "Venda", "format": "number"}, {"key": "date", "label": "Data", "format": "date"},
+                {"key": "customer", "label": "Cliente"}, {"key": "seller", "label": "Vendedor"},
+                {"key": "total", "label": "Total", "format": "money"},
+                {"key": "order_rating", "label": "Nota do pedido", "format": "decimal"},
+                {"key": "delivery_rating", "label": "Nota da entrega", "format": "decimal"}],
+            "rows": [{"number": r["number"], "date": timezone.localtime(r["completed_at"]).date(),
+                      "customer": r["customer__name"] or r["customer_name"] or "—", "seller": r["seller__first_name"] or "—",
+                      "total": r["total"], "order_rating": order.get(r["pk"]),
+                      "delivery_rating": delivery.get(r["pk"]) if r["shipping_address_id"] else None} for r in rows]}
 
 
 def movement_hours(account, store, params):
@@ -452,18 +559,25 @@ def movement_branches(account, store, params):
     margins = {r["sale__store_id"]: (r["revenue"] or 0) - (r["cost"] or 0) for r in _items(sales, params).values(
         "sale__store_id").annotate(revenue=Sum("total"), cost=Sum(COST))}
     prev = dict(_sales(account, None, _previous(params)).values_list("store_id").annotate(t=Sum("total")))
-    total = sum((r["revenue"] for r in rows), ZERO)
+    if include_empty(params):  # filial sem venda também aparece, zerada (ausência também é informação)
+        seen = {r["store_id"] for r in rows}
+        rows += [{"store_id": s.pk, "store__name": s.name, "count": 0, "revenue": ZERO}
+                 for s in visible_stores(account) if s.pk not in seen]
+    total = sum((r["revenue"] or ZERO for r in rows), ZERO)
     for r in rows:
+        r["revenue"] = r["revenue"] or ZERO
         r["name"], r["margin"] = r["store__name"], margins.get(r["store_id"], ZERO)
         r["ticket"], r["margin_pct"] = _ticket(r["revenue"], r["count"]), _pct(r["margin"], r["revenue"])
         r["growth"] = _delta(r["revenue"], prev.get(r["store_id"])) or ZERO
-    best = rows[0] if rows else None
+    selling = [r for r in rows if r["count"]]
+    best = selling[0] if selling else None
     return _report("Comparativo de filiais", "Faturamento, ticket, margem e crescimento de cada filial lado a lado.", params, [
         kpi("Faturamento da rede", total, previous=sum(prev.values(), ZERO)),
-        kpi("Filiais com venda", len(rows), "number"),
+        kpi("Filiais com venda", len(selling), "number",
+            hint=f"{len(rows) - len(selling)} sem venda no período" if len(rows) > len(selling) else ""),
         kpi("Filial destaque", best["name"] if best else "—", "text",
             hint=f"{pt(_pct(best['revenue'], total))}% da rede" if best else ""),
-        kpi("Ticket médio da rede", _ticket(total, sum(r["count"] for r in rows))),
+        kpi("Ticket médio da rede", _ticket(total, sum(r["count"] for r in selling))),
     ], [
         {"type": "ranking", "title": "Faturamento por filial", "span": "half", "format": "money",
          "rows": [{"label": r["name"], "value": r["revenue"], "sub": f"{r['count']} venda(s)"} for r in rows]},
@@ -486,7 +600,7 @@ def movement_branches(account, store, params):
 # ── Mercadorias ─────────────────────────────────────────────────────────────
 def _products(sales, params):
     # `sold_quantity`, e não `quantity`: o campo seria sombreado (agregado dentro de agregado).
-    rows = (_items(sales, params).values("variant_id", "description", "sku").annotate(
+    rows = (_items(sales, params).values("variant_id", "variant__product_id", "description", "sku").annotate(
         sold_quantity=Sum("quantity"), revenue=Sum("total"), cost=Sum(COST)).order_by("-revenue"))
     return [{**r, "margin": (r["revenue"] or 0) - (r["cost"] or 0)} for r in rows]
 
@@ -505,6 +619,10 @@ def goods_abc(account, store, params):
         r["position"], r["share"], r["cumulative"] = index, _pct(r[key], total), _pct(running, total)
         r["abc"] = "A" if r["cumulative"] <= 80 or index == 1 else "B" if r["cumulative"] <= 95 else "C"
         classes[r["abc"]].append(r)
+    notes = product_reviews(account, store, {r["variant__product_id"] for r in rows})
+    for r in rows:
+        note = notes.get(r["variant__product_id"], {})
+        r["rating"], r["reviews"] = note.get("avg"), note.get("n", 0)
     fmt = "quantity" if measure == "quantity" else "money"
     word = {"revenue": "faturamento", "margin": "margem", "quantity": "quantidade vendida"}[measure]
     share = [{"label": f"Classe {k}", "value": sum((Decimal(r[key] or 0) for r in v), ZERO)} for k, v in classes.items()]
@@ -536,11 +654,12 @@ def goods_abc(account, store, params):
                            {"key": "revenue", "label": "Faturamento", "format": "money"},
                            {"key": "margin", "label": "Margem", "format": "money"},
                            {"key": "share", "label": "%", "format": "percent"},
-                           {"key": "cumulative", "label": "% acum.", "format": "percent"}, {"key": "abc", "label": "Classe"}],
+                           {"key": "cumulative", "label": "% acum.", "format": "percent"}, {"key": "abc", "label": "Classe"},
+                           *REVIEW_COLUMNS],
                         "rows": rows[:TABLE_MAX]},
                    ], [_choice("measure", "Classificar por", [("revenue", "Faturamento"), ("margin", "Margem bruta"),
                                                                ("quantity", "Quantidade vendida")]),
-                       *_sales_filters(account, store, "category", "brand", "channel")])
+                       *_sales_filters(account, store, "category", "brand", "channel"), f_products(account)])
 
 
 def goods_categories(account, store, params):
@@ -1021,6 +1140,10 @@ def relationship_reviews(account, store, params):
         base = base.filter(kind=params["kind"])
     if params.get("category"):
         base = base.filter(product__category_id=params["category"])
+    if params.get("brand"):
+        base = base.filter(product__brand_id=params["brand"])
+    if params.get("product"):
+        base = base.filter(product_id=params["product"])
     status = params.get("status")
     counted = base.filter(status=status) if status else base.exclude(status=Review.Status.REJECTED)
     period = counted.filter(created_at__date__range=(start, end))
@@ -1047,8 +1170,9 @@ def relationship_reviews(account, store, params):
         r["avg"] = (Decimal(r["total"]) / r["n"]).quantize(Decimal("0.1"))
     best = sorted(by_product, key=lambda r: (-r["avg"], -r["n"]))[:10]
     worst = sorted(by_product, key=lambda r: (r["avg"], -r["n"]))[:10]
-    rows = list(period.select_related("product", "sale", "customer").order_by("-created_at")[:TABLE_MAX])
+    rows = list(period.select_related("product__category", "sale", "customer").order_by("-created_at")[:TABLE_MAX])
     labels_status = dict(Review.Status.choices)
+    per_product = _reviewed_products(account, store, products, params)
     return _report("Avaliações", "O que os clientes acharam dos produtos e da entrega (nota de 1 a 5 estrelas).", params, [
         kpi("Nota média dos produtos", avg(products), "decimal", previous=avg(before.filter(kind="product")) or None,
             hint=f"{products.count()} avaliação(ões)"),
@@ -1079,18 +1203,69 @@ def relationship_reviews(account, store, params):
         rx.compare("Nota: entrega no prazo × com atraso", [m for m in rx.DELIVERY_METRICS if m["key"] in
                                                          ("deliveries", "delivery_rating", "rating")],
                    rx.delivery_rows(account, store, params), "O atraso derruba a nota?", span="half"),
+        {"type": "table", "title": "Produtos e as avaliações deles", "span": "full",
+         "description": "Cada produto avaliado no período: cadastro, notas estrela a estrela, o que vendeu e quantas "
+                        "vendas viraram avaliação (cobertura).",
+         "empty": "Nenhum produto avaliado no período.",
+         "columns": [
+             {"key": "product", "label": "Produto"}, {"key": "reference", "label": "Referência"},
+             {"key": "category", "label": "Categoria"}, {"key": "brand", "label": "Marca"},
+             {"key": "rating", "label": "Nota média", "format": "decimal"},
+             {"key": "reviews", "label": "Avaliações", "format": "number"},
+             {"key": "s5", "label": "5★", "format": "number"}, {"key": "s4", "label": "4★", "format": "number"},
+             {"key": "s3", "label": "3★", "format": "number"}, {"key": "s2", "label": "2★", "format": "number"},
+             {"key": "s1", "label": "1★", "format": "number"},
+             {"key": "satisfied", "label": "Satisfeitos", "format": "percent"},
+             {"key": "pending", "label": "Pendentes", "format": "number"},
+             {"key": "sales", "label": "Vendas", "format": "number"},
+             {"key": "sold_quantity", "label": "Qtd. vendida", "format": "quantity"},
+             {"key": "revenue", "label": "Faturamento", "format": "money"},
+             {"key": "coverage", "label": "Cobertura", "format": "percent"},
+             {"key": "last", "label": "Último comentário"}],
+         "rows": per_product},
         {"type": "table", "title": "Avaliações do período", "span": "full", "columns": [
             {"key": "date", "label": "Quando", "format": "date"}, {"key": "kind", "label": "Tipo"},
-            {"key": "what", "label": "Produto / venda"}, {"key": "name", "label": "Cliente"},
+            {"key": "what", "label": "Produto / venda"}, {"key": "category", "label": "Categoria"},
+            {"key": "sale", "label": "Venda", "format": "number"}, {"key": "name", "label": "Cliente"},
             {"key": "rating", "label": "Nota", "format": "number"}, {"key": "comment", "label": "Comentário"},
             {"key": "verified", "label": "Compra verificada"}, {"key": "status", "label": "Situação"}],
          "rows": [{"date": timezone.localtime(r.created_at).date(), "kind": r.get_kind_display(),
                    "what": r.product.name if r.product_id else f"Venda {r.sale.number}" if r.sale_id else "—",
+                   "category": r.product.category.name if r.product_id and r.product.category_id else "—",
+                   "sale": r.sale.number if r.sale_id else None,
                    "name": r.public_name, "rating": r.rating, "comment": r.comment,
                    "verified": "Sim" if r.verified_purchase else "Não", "status": labels_status.get(r.status, r.status)}
                   for r in rows]},
     ], [_choice("kind", "Tipo", Review.Kind.choices), _choice("status", "Situação", Review.Status.choices),
-        f_categories(account)])
+        f_categories(account), f_brands(account), f_products(account, reviewed=True)])
+
+
+def _reviewed_products(account, store, reviews, params):
+    """Um por produto avaliado no período: o cadastro, as notas (estrela a estrela) e o que vendeu."""
+    rows = list(reviews.values("product_id", "product__name", "product__reference", "product__category__name",
+                               "product__brand__name").annotate(n=Count("id"), total=Sum("rating"),
+                                                                pending=Count("id", filter=Q(status="pending"))))
+    stars = defaultdict(lambda: [0] * 5)
+    last = {}
+    for pid, rating, comment in reviews.order_by("created_at").values_list("product_id", "rating", "comment"):
+        stars[pid][5 - rating] += 1
+        last[pid] = comment or last.get(pid, "")
+    sold = {r["variant__product_id"]: r for r in _items(_sales(account, store, params), {}).filter(
+        variant__product_id__in=[r["product_id"] for r in rows]).values("variant__product_id").annotate(
+        q=Sum("quantity"), revenue=Sum("total"), sales=Count("sale_id", distinct=True))}
+    out = []
+    for r in rows:
+        s5, s4, s3, s2, s1 = stars[r["product_id"]]
+        sale = sold.get(r["product_id"], {})
+        out.append({"product": r["product__name"], "reference": r["product__reference"] or "",
+                    "category": r["product__category__name"] or "—", "brand": r["product__brand__name"] or "—",
+                    "rating": (Decimal(r["total"]) / r["n"]).quantize(Decimal("0.1")), "reviews": r["n"],
+                    "s5": s5, "s4": s4, "s3": s3, "s2": s2, "s1": s1, "satisfied": _pct(s5 + s4, r["n"]),
+                    "pending": r["pending"], "sales": sale.get("sales", 0), "sold_quantity": sale.get("q") or ZERO,
+                    "revenue": sale.get("revenue") or ZERO,
+                    "coverage": _pct(r["n"], sale.get("sales", 0)) if sale.get("sales") else None,
+                    "last": last.get(r["product_id"], "")})
+    return sorted(out, key=lambda r: (-r["reviews"], -r["rating"]))
 
 
 # ── Logística: entregas ─────────────────────────────────────────────────────

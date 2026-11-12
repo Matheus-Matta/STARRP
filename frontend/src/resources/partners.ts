@@ -1,4 +1,4 @@
-import { choices, defineResource, type FieldDef, type SectionDef, yesNo } from "./types";
+import { choices, defineResource, type FieldDef, type SectionDef, UFS, yesNo } from "./types";
 import { installmentColumns } from "./finance";
 import { saleColumns, saleItemColumns, saleLink } from "./sales";
 import { documentColumns, stockLinks } from "./stock";
@@ -10,7 +10,7 @@ const party: FieldDef[] = [
   { name: "person_type", label: "Tipo", type: "segmented", options: personType.options, default: "F", section: "Identificação",
     span: 3 },
   { name: "document", label: "CPF / CNPJ", type: "document", section: "Identificação", span: 3 },
-  { name: "name", label: "Nome / nome fantasia", type: "text", required: true, section: "Identificação", span: 6 },
+  { name: "name", label: "Nome / nome fantasia", type: "text", required: true, section: "Identificação", span: 6, placeholder: "Nome completo ou nome fantasia" },
   { name: "legal_name", label: "Razão social", type: "text", section: "Identificação", visible: isCompany, span: 4 },
   { name: "state_registration", label: "Inscrição estadual", type: "text", section: "Identificação", visible: isCompany },
   { name: "phone", label: "Telefone", type: "phone", section: "Contato", span: 3 },
@@ -26,8 +26,8 @@ const address: FieldDef[] = [
   { name: "complement", label: "Complemento", type: "text", section: "Endereço" },
   { name: "district", label: "Bairro", type: "text", section: "Endereço", span: 3 },
   { name: "city", label: "Cidade", type: "text", section: "Endereço", span: 3 },
-  { name: "state", label: "UF", type: "text", maxLength: 2, section: "Endereço", span: 1 },
-  { name: "city_ibge", label: "Código IBGE", type: "text", mask: "9999999", section: "Endereço" },
+  { name: "state", label: "UF", type: "select", options: UFS, section: "Endereço", span: 1 },
+  { name: "city_ibge", label: "Código IBGE", type: "text", format: "ibge", section: "Endereço" },
 ];
 
 const sections: Record<string, SectionDef> = {
@@ -91,6 +91,9 @@ export const customers = defineResource({
       hint: "0 = não vende a prazo." },
     { name: "tags", label: "Tags", type: "tags", section: "Crédito", full: true,
       tagSource: { endpoint: "/tags/", params: { scope: "customer" } }, placeholder: "vip, atacado… (Enter para adicionar)" },
+    { name: "billing_same_as_delivery", label: "Cobrança no mesmo endereço da entrega", type: "boolean", default: true,
+      section: "Endereços", full: true,
+      hint: "Desligado: marque abaixo o endereço de cobrança. O pedido herda os dois ao vincular o cliente." },
     { name: "addresses", label: "Endereços", type: "addresses", default: [], section: "Endereços" },
     { name: "metafields", label: "Metacampos", type: "metafields", owner: "customer", default: {}, section: "Metacampos" },
   ],
@@ -114,8 +117,8 @@ export const customerGroups = defineResource({
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
   ],
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true },
-    { name: "description", label: "Descrição", type: "text" },
+    { name: "name", label: "Nome", type: "text", required: true, placeholder: "Ex.: Atacado, Clientes VIP" },
+    { name: "description", label: "Descrição", type: "text", placeholder: "Quem entra neste grupo" },
     { name: "color", label: "Cor do selo", type: "color", default: "#64748b" },
     { name: "is_active", label: "Ativo", type: "boolean", default: true },
   ],
@@ -124,6 +127,11 @@ export const customerGroups = defineResource({
 export const suppliers = defineResource({
   name: "fornecedores",
   views: [
+    { name: "marcas", label: "Marcas", icon: "pi pi-tag", permission: "catalog.view",
+      description: "As marcas que a loja compra deste fornecedor. O vínculo fica no cadastro da marca.",
+      list: { endpoint: "/catalog/brands/", params: (id) => ({ supplier: id }), ordering: "name",
+              rowLink: (row) => `/cadastros/marcas/${row.id}`,
+              columns: [{ key: "name", label: "Marca" }, { key: "is_active", label: "Ativa", type: "boolean" }] } },
     { name: "entradas", label: "Entradas de estoque", icon: "pi pi-download", permission: "stock.view", module: "stock",
       list: { endpoint: "/stock/documents/", params: (id) => ({ supplier: id }), columns: documentColumns, ordering: "-number",
               rowLink: stockLinks.documentLink } },

@@ -11,9 +11,18 @@ import { http } from "@/api/http";
 import { resourceApi } from "@/api/resource";
 import { money, quantity } from "@/utils/format";
 
+import { reviewColumns, reviewLink } from "./reviews";
 import { choices, type ColumnDef, defineResource, linkTo, rowsOf, type Tone } from "./types";
 
 const ReviewLinkDialog = defineAsyncComponent(() => import("@/components/reviews/ReviewLinkDialog.vue"));
+const OrderAddressesDialog = defineAsyncComponent(() => import("@/components/sales/OrderAddressesDialog.vue"));
+const OrderDeliveryDialog = defineAsyncComponent(() => import("@/components/sales/OrderDeliveryDialog.vue"));
+const OrderPaymentDialog = defineAsyncComponent(() => import("@/components/sales/OrderPaymentDialog.vue"));
+const CancelOrderDialog = defineAsyncComponent(() => import("@/components/sales/CancelOrderDialog.vue"));
+type OrderAddr = { text?: string; recipient?: string; reference?: string } | null;
+/** Endereços do pedido (entrega e cobrança), herdados do cliente e corrigíveis no pedido. */
+const addr = (v: Record<string, unknown>) =>
+  (v.addresses ?? {}) as { delivery?: OrderAddr; billing?: OrderAddr; billing_same_as_delivery?: boolean };
 
 export const saleStatus = choices({ open: "Aberta", draft: "Pedido guardado", completed: "Concluída", cancelled: "Cancelada" });
 /**
@@ -91,6 +100,14 @@ const INVOICE_TONES: Record<string, Tone> = {
   authorized: "success", processing: "info", draft: "warning", error: "danger", rejected: "danger", cancelled: "neutral",
 };
 const accessKey = (key: string) => key.replace(/(\d{4})(?=\d)/g, "$1 ");
+/** DANFE da nota principal: NFC-e na bobina, NF-e na folha A4. `auto`: já abre a impressão. */
+const printInvoice = (auto: boolean) => async ({ id, values }: { id: string; values: Record<string, unknown> }) => {
+  const invoice = mainInvoice(values)!;
+  openPrint("danfe", invoice.id, { venda: id, formato: invoice.model_label === "NFC-e" ? "80mm" : "a4", auto: auto ? "1" : null });
+};
+/** A entrega da venda concluída ainda muda enquanto não chegou no cliente. */
+const deliveryEditable = (v: Record<string, unknown>) => v.status === "completed"
+  && !["delivered", "returned", "cancelled"].includes(String(v.fulfillment_status));
 
 /** Entrega lançada no pedido (metacampo do sistema `_entrega`). */
 type Delivery = { table_name: string; lead_days: number | null; detail: string };
@@ -207,9 +224,19 @@ export const sales = defineResource({
           { key: "status", label: "Situação", type: "tag", map: { approved: "Aprovado", cancelled: "Cancelado", refunded: "Estornado" },
             tones: { approved: "success", cancelled: "danger", refunded: "warning" } },
         ] } },
-      { title: "Entrega", icon: "pi pi-truck", description: "Endereço do cliente e o frete cobrado (vazio = retirada na loja).",
+      { title: "Endereços do pedido", icon: "pi pi-map-marker",
+        description: "Copiados do cliente ao vincular; corrigir em \"Endereços\" muda só este pedido.",
+        visible: (v) => Boolean(addr(v).delivery), items: [
+          { label: "Entrega", span: "full", value: (v) => addr(v).delivery?.text ?? null },
+          { label: "Quem recebe", value: (v) => addr(v).delivery?.recipient || null,
+            visible: (v) => Boolean(addr(v).delivery?.recipient) },
+          { label: "Cobrança", span: "full",
+            value: (v) => (addr(v).billing_same_as_delivery ? "A mesma da entrega" : addr(v).billing?.text ?? null) },
+        ] },
+      { title: "Entrega", icon: "pi pi-truck", description: "Endereço do pedido e o frete cobrado (vazio = retirada na loja).",
         visible: (v) => Boolean(v.shipping_address), items: [
-          { label: "Endereço", span: "full", value: (v) => (v.shipping_address_detail as Record<string, string> | null)?.text ?? null },
+          { label: "Endereço", span: "full", value: (v) => addr(v).delivery?.text
+            ?? (v.shipping_address_detail as Record<string, string> | null)?.text ?? null },
           { label: "Referência", span: "full", value: (v) => (v.shipping_address_detail as Record<string, string> | null)?.reference || null,
             visible: (v) => Boolean((v.shipping_address_detail as Record<string, string> | null)?.reference) },
           { label: "Tabela de frete", value: (v) => delivery(v)?.table_name ?? null },
@@ -259,7 +286,7 @@ export const sales = defineResource({
     { name: "status", label: "Situação", type: "select", options: saleStatus.options, section: "Venda" },
     { name: "channel", label: "Canal", type: "select", options: channel.options, section: "Venda" },
     { name: "customer_name", label: "Cliente", type: "text", section: "Venda" },
-    { name: "customer_document", label: "CPF/CNPJ", type: "text", section: "Venda" },
+    { name: "customer_document", label: "CPF/CNPJ", type: "document", section: "Venda" },
     { name: "seller_name", label: "Vendedor", type: "text", section: "Venda" },
     { name: "created_at", label: "Aberta em", type: "datetime", section: "Venda" },
     { name: "completed_at", label: "Concluída em", type: "datetime", section: "Venda" },
@@ -282,8 +309,20 @@ export const sales = defineResource({
       permission: "logistics.manage",
       confirm: "Confirmar que o pedido chegou no cliente? O status geral vira Concluído.",
       visible: (v) => isDelivery(v) && step(v) >= 0 && step(v) < 3 },
+    { label: "Endereços", icon: "pi pi-map-marker", visible: (v) => v.status !== "cancelled", dialog: OrderAddressesDialog },
+    // Correções da venda concluída: cada uma com a permissão própria do cargo (o motivo vai no histórico).
+    { label: "Alterar entrega", icon: "pi pi-truck", permission: "sales.edit_delivery", visible: deliveryEditable,
+      dialog: OrderDeliveryDialog },
+    { label: "Trocar pagamento", icon: "pi pi-credit-card", permission: "sales.edit_payment",
+      visible: (v) => v.status === "completed" && rowsOf(v, "payments").some((p) => p.status === "approved"),
+      dialog: OrderPaymentDialog },
+    // A nota do pedido: ver na tela (DANFE) e imprimir. Quem vê o pedido imprime a nota dele.
+    { label: "Ver nota fiscal", icon: "pi pi-file", visible: (v) => Boolean(mainInvoice(v)), run: printInvoice(false) },
+    { label: "Imprimir nota", icon: "pi pi-print", visible: (v) => Boolean(mainInvoice(v)), run: printInvoice(true) },
     // O cliente avalia os produtos e a entrega pelo celular (sem login): link + mensagem pronta para o WhatsApp.
-    { label: "Link de avaliação", icon: "pi pi-star", visible: (v) => v.status === "completed", dialog: ReviewLinkDialog },
+    { label: "Cancelar pedido", icon: "pi pi-times-circle", severity: "danger", dialog: CancelOrderDialog,
+      visible: (v) => v.status !== "cancelled" && !["returned"].includes(String(v.fulfillment_status)) },
+    { label: "Gerar link de avaliação", icon: "pi pi-star", visible: (v) => v.status === "completed", dialog: ReviewLinkDialog },
     { label: "Recibo (bobina)", icon: "pi pi-receipt", run: async ({ id }) => openPrint("venda", id, { formato: "80mm" }) },
     { label: "Imprimir A4", icon: "pi pi-print", run: async ({ id }) => openPrint("venda", id, { formato: "a4" }) },
   ],
@@ -300,5 +339,10 @@ export const sales = defineResource({
                 { key: "margin", label: "Margem", type: "money", sortable: false, total: true },
                 { key: "status", label: "Situação", type: "tag", map: { active: "Ativo", cancelled: "Cancelado" } },
               ] } },
+    { name: "avaliacoes", label: "Avaliações", icon: "pi pi-star",
+      description: "O que o cliente achou dos produtos e da entrega deste pedido. Clique para moderar.",
+      list: { endpoint: "/reviews/", params: (id) => ({ sale: id }), ordering: "-created_at", searchable: false,
+              columns: reviewColumns, rowLink: reviewLink,
+              openAll: { label: "Abrir na lista de avaliações", to: (id) => `/cadastros/avaliacoes?sale=${id}` } } },
   ],
 });

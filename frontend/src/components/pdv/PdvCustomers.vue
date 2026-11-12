@@ -17,6 +17,7 @@ import { useNotify } from "@/composables/useNotify";
 import type { FieldDef, ListViewDef } from "@/resources/types";
 import { documentError } from "@/utils/documents";
 import { formatDocument } from "@/utils/documents";
+import { validate, validateField, withError } from "@/utils/validation";
 
 defineProps<{ current: { name: string; document: string } | null; busy: boolean }>();
 const emit = defineEmits<{ pick: [body: { customer?: string | null; customer_document?: string }]; back: [] }>();
@@ -71,10 +72,17 @@ function useDocument() {
   mode.value = "list";
 }
 
+const errors = ref<Record<string, string>>({});
+function check(field: FieldDef) {
+  const message = validateField(field, draft.value);
+  // Vazio não ganha "obrigatório" só por passar pelo campo (mas o aviso do "Cadastrar" fica).
+  errors.value = withError(errors.value, field.name, draft.value[field.name] ? message : message && errors.value[field.name]);
+}
+
 async function create() {
-  if (!String(draft.value.name ?? "").trim()) return notify.warn("Informe o nome do cliente.");
-  const doc = String(draft.value.document ?? "");
-  if (doc && documentError(doc)) return notify.warn(documentError(doc)!);
+  // CPF/CNPJ, telefone, e-mail: conferidos aqui, antes de enviar.
+  errors.value = validate(FIELDS, draft.value);
+  if (Object.keys(errors.value).length) return notify.warn("Confira os campos destacados.");
   const incomplete = addressRows.value.find((a) => a.zip_code.length !== 8 || !a.street || !a.number);
   if (incomplete) return notify.warn("Endereço incompleto: CEP, logradouro e número são obrigatórios para entregar.");
   saving.value = true;
@@ -115,7 +123,8 @@ async function create() {
     </div>
     <div v-else-if="mode === 'new'" class="quick">
       <div class="grid-form">
-        <FormField v-for="field in visibleFields" :key="field.name" v-model="draft[field.name]" :field="field" :context="draft" />
+        <FormField v-for="field in visibleFields" :key="field.name" v-model="draft[field.name]" :field="field" :context="draft"
+                   :error="errors[field.name]" @check="check(field)" />
       </div>
       <div class="quick__addr">
         <span class="quick__label"><i class="pi pi-map-marker" /> Endereço de entrega <small>(opcional; o CEP preenche o resto)</small></span>

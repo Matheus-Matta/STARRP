@@ -7,7 +7,7 @@ from rest_framework import serializers
 
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer
 from starrp.core.text import only_digits
-from starrp.models import Category, FreightTable, FreightZipRange, LogisticsSettings, MetafieldDefinition
+from starrp.models import Category, FreightTable, FreightZipRange, MetafieldDefinition
 
 
 def _zip(value):
@@ -122,12 +122,3 @@ class MetafieldDefinitionSerializer(TenantSerializer):
         if owner != MetafieldDefinition.Owner.PRODUCT:
             attrs["categories"] = []
         return attrs
-
-
-class LogisticsSettingsSerializer(TenantSerializer):
-    store_name = serializers.CharField(source="store.name", read_only=True)
-
-    class Meta:
-        model = LogisticsSettings
-        fields = "__all__"
-        read_only_fields = ["store"]

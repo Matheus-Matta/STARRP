@@ -48,7 +48,8 @@ class BrandViewSet(TenantViewSet):
     model = Brand
     serializer_class = s.BrandSerializer
     permission_code = "catalog"
-    filterset_fields = ["is_active"]
+    select_related = ("supplier",)
+    filterset_fields = ["is_active", "supplier"]
     search_fields = ["name"]
 
 
@@ -81,7 +82,7 @@ class ProductViewSet(TenantViewSet):
     prefetch_related = (*VARIANT_PREFETCH, "tags")
     filterset_fields = {"type": ["exact", "in"], "purpose": ["exact"], "sale_method": ["exact"], "brand": ["exact"],
                         "is_active": ["exact"], "track_stock": ["exact"]}
-    search_fields = ["name", "reference", "variants__sku", "variants__barcodes__code"]
+    search_fields = ["name", "reference", "model_name", "variants__sku", "variants__barcodes__code"]
     # Colunas que vêm das variantes: ordenam por um valor calculado (ver core/ordering.py).
     ordering_annotations = {
         "sku": Max("variants__sku", filter=ALIVE_VARIANT & Q(variants__is_default=True)),

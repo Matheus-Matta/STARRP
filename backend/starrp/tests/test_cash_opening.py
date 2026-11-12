@@ -19,7 +19,7 @@ def test_abertura_confere_com_o_que_o_ultimo_fechamento_deixou(ctx):
     ctx.store.save()
     variant = ctx.product(name="Bala", price="10.00", track_stock=False)
     cashier = ctx.user("caixa1", "cashier")
-    ctx.register.operators.add(cashier)
+    ctx.link(cashier)
     api = ctx.client(cashier)
     url = "/api/v1/cash/sessions/"
     body = {"register": str(ctx.register.pk)}
@@ -49,7 +49,7 @@ def test_abertura_confere_com_o_que_o_ultimo_fechamento_deixou(ctx):
 def test_abertura_que_bate_abre_direto_e_o_gerente_ve_a_diferenca(ctx):
     manager = ctx.user("gerente1", "manager")
     cashier = ctx.user("caixa1", "cashier")
-    ctx.register.operators.add(cashier)
+    ctx.link(cashier)
     first = cash.open_session(ctx.register, cashier, Decimal("200"))
     cash.close_session(first, cashier, Decimal("200"))
     same = cash.open_session(ctx.register, cashier, Decimal("200"))

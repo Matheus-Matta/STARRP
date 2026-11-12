@@ -5,12 +5,11 @@ configurações de caixa ("campos espelhados"). Os dados do emitente (CNPJ, IE,
 regime, certificado) ficam em `FiscalConfig` ("Dados fiscais"), cadastro próprio
 ao qual a loja se vincula: dá para trocar o emitente sem mexer na loja.
 """
-from decimal import Decimal
 
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 
-from starrp.models.base import MoneyField, StoreModel, TenantModel, alive
+from starrp.models.base import StoreModel, TenantModel, alive
 
 
 class AddressFields(models.Model):
@@ -38,11 +37,6 @@ class Store(AddressFields, TenantModel):
         BRANCH = "branch", "Filial"
         DISTRIBUTION = "distribution", "Centro de distribuição"
 
-    class ScaleBarcode(models.TextChoices):
-        DISABLED = "", "Não usa etiqueta de balança"
-        PRICE = "price", "Etiqueta traz o preço"
-        WEIGHT = "weight", "Etiqueta traz o peso"
-
     name = models.CharField(max_length=160, help_text="Nome fantasia.")
     # Hierarquia: a quem esta unidade responde (filial → regional → matriz).
     kind = models.CharField(max_length=14, choices=Kind.choices, default=Kind.BRANCH)
@@ -61,21 +55,16 @@ class Store(AddressFields, TenantModel):
         verbose_name="Dados fiscais",
     )
 
-    # Caixa
-    require_open_cash_session = models.BooleanField(default=True)
-    # Diferença de gaveta que o fechamento aceita sem gerente (moeda caída).
-    cash_closing_tolerance = MoneyField(max_digits=8, default=Decimal("0.50"))
-    # Hash PBKDF2 — nunca em claro, nunca exposto na API.
+    # Hash PBKDF2 — nunca em claro, nunca exposto na API. É da filial (a gaveta é dela), não da regra.
     cash_action_password = models.CharField(max_length=255, blank=True)
 
-    # Venda
-    require_seller = models.BooleanField(default=False, help_text="Exige vendedor em toda venda.")
-    auto_print_receipt = models.BooleanField(default=True)
-    ask_print_danfe = models.BooleanField(default=False)
-    print_cancellation_receipt = models.BooleanField(default=False)
-    # Etiqueta de balança (EAN-13 iniciado em 2): PLU + preço ou peso.
-    scale_barcode_mode = models.CharField(max_length=10, choices=ScaleBarcode.choices, blank=True)
-    scale_barcode_prefix = models.CharField(max_length=2, default="2")
+    # Regras COMPARTILHADAS (models/rules.py): várias filiais usam a mesma; sem escolha, a padrão da conta.
+    rule = models.ForeignKey("starrp.StoreRule", blank=True, related_name="stores", on_delete=models.PROTECT,
+                             verbose_name="Regras da filial", help_text="PDV, caixa e venda. Vazio = a padrão.")
+    logistics_rule = models.ForeignKey("starrp.LogisticsRule", blank=True, related_name="stores",
+                                       on_delete=models.PROTECT, verbose_name="Regras de logística")
+    stock_rule = models.ForeignKey("starrp.StockRule", blank=True, related_name="stores",
+                                   on_delete=models.PROTECT, verbose_name="Regras de estoque")
 
     # Servidor local (módulo de sincronização): endereço que os PDVs usam na
     # loja. `cloud_only` ignora o endereço sem precisar apagá-lo.
@@ -96,6 +85,17 @@ class Store(AddressFields, TenantModel):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if self.deleted_at is None:
+            from starrp.services import rules
+
+            for field, model in rules.store_rule_fields().items():  # sempre com uma regra: a padrão
+                if getattr(self, f"{field}_id") is None:
+                    setattr(self, field, rules.default(model, self.account_id))
+                    if kwargs.get("update_fields") is not None:
+                        kwargs["update_fields"] = {*kwargs["update_fields"], field}
+        super().save(*args, **kwargs)
 
     def set_cash_action_password(self, raw):
         self.cash_action_password = make_password(raw) if raw else ""

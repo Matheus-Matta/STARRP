@@ -21,15 +21,16 @@ const emit = defineEmits<{ resume: [id: string]; receipt: [id: string]; back: []
 /** Pedido aberto na página de leitura (null = a lista). */
 const opened = ref<string | null>(null);
 
-type Filter = "draft" | "open" | "deliveries" | "completed" | "cancelled";
-const filter = ref<Filter>("draft");
+type Filter = "all" | "draft" | "open" | "deliveries" | "completed" | "cancelled";
+const filter = ref<Filter>("all");
 const OPTIONS = [
-  { label: "Guardados", value: "draft" }, { label: "Em aberto", value: "open" },
+  { label: "Todos", value: "all" }, { label: "Guardados", value: "draft" }, { label: "Em aberto", value: "open" },
   { label: "Entregas", value: "deliveries" },
   { label: "Concluídos hoje", value: "completed" }, { label: "Cancelados hoje", value: "cancelled" },
 ];
 /** Filtro → parâmetros: "Entregas" são as pagas que ainda não chegaram no cliente (qualquer dia). */
 const PARAMS: Record<Filter, Record<string, string>> = {
+  all: {},
   draft: { status: "draft" },
   open: { status: "open" },
   deliveries: { status: "completed", fulfillment_status__in: "pending,ready,shipped" },
@@ -57,6 +58,7 @@ const view = computed<ListViewDef>(() => ({
 }));
 
 const hint = computed(() => ({
+  all: "Todos os pedidos da filial, os mais recentes primeiro. Use os filtros para achar guardados, entregas...",
   draft: props.seller ? "Pedidos guardados da filial. Abra um para ver e continuar editando." : "Abra um pedido para conferir, retomar e cobrar.",
   open: "Vendas em andamento agora nos caixas da filial.",
   deliveries: "Pagas e ainda não entregues (as mais antigas primeiro). Abra para separar, despachar e dar baixa.",

@@ -6,6 +6,11 @@ from starrp.models import (
     FinancialTransaction, FiscalConfig, FiscalProfile, InboundNFe, Invoice, LabelTemplate, PaymentMethod, Product,
     Promotion, Role, Sale, StockDocument, StorageBin, Store, Supplier, UserProfile,
 )
+from starrp.models import (
+    Asset, CashDiscrepancy, CustomerCredit, DFeDocument, NFeEvent, NFeIssue, Notification, Printer, PrintJob,
+    ProductImage, ProductVolume, PromotionProduct, ReceivingDivergence, ReviewLink, SaleReturn, ScaleReading,
+    StockRule, SupplierProduct, Tag,
+)
 
 
 def test_demo_enche_cada_cadastro_com_pelo_menos_10(ctx, settings, tmp_path):
@@ -23,3 +28,12 @@ def test_demo_enche_cada_cadastro_com_pelo_menos_10(ctx, settings, tmp_path):
     assert count(FinancialTitle, kind="payable") >= 10 and count(FinancialTitle, kind="receivable") >= 10
     assert count(Sale, status="completed") >= 30
     assert Brand.all_objects.filter(account=ctx.account, name="Aurora").count() == 1
+    # seed_extras: os cadastros que a demo principal não cobre também ficam com dados.
+    for model in (Tag, ProductImage, ProductVolume, SupplierProduct, PromotionProduct, SaleReturn, CustomerCredit,
+                  CashDiscrepancy, DFeDocument, NFeEvent, NFeIssue, ReceivingDivergence, Asset, Printer, ScaleReading,
+                  PrintJob, Notification, ReviewLink):
+        assert count(model) >= 1, model.__name__
+    assert count(StockRule) == 2 and count(SaleReturn, status="completed") >= 3
+    # Produtos reais, para a precificação achar preço no mercado.
+    assert Product.all_objects.filter(account=ctx.account, name="Coca-Cola 2L").exists()
+    assert not Product.all_objects.filter(account=ctx.account, name="Refrigerante Cola 2L").exists()

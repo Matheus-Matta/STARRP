@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
- * Página que o cliente abre pelo link da venda (sem login, pensada para o celular):
- * estrelas para a entrega (quando teve entrega) e para cada produto, comentário e até 3
- * fotos por produto. Item já avaliado aparece como "Avaliado". No fim, um obrigado.
+ * Página que o cliente abre pelo link (sem login, pensada para o celular). Cada link é de UM
+ * tipo: o pedido (estrelas, comentário e até 3 fotos por produto) ou a entrega. O link vale
+ * uma vez e até a data limite: depois de enviado ou vencido, a página explica o porquê.
  */
 import { useQuery } from "@tanstack/vue-query";
 import Button from "primevue/button";
@@ -29,6 +29,8 @@ const error = ref("");
 const done = ref(false);
 
 const pending = computed(() => (view.value?.products ?? []).filter((p) => !p.done));
+const failure = computed(() => (query.isError.value ? toApiError(query.error.value) : null));
+const used = computed(() => failure.value?.code === "link_used");
 const canSend = computed(() => Boolean(delivery.rating) || pending.value.some((p) => answer(p.id).rating));
 
 function addPhotos(id: string, event: Event) {
@@ -85,10 +87,15 @@ async function send() {
       </header>
 
       <p v-if="query.isPending.value" class="rv__muted">Carregando…</p>
-      <div v-else-if="query.isError.value" class="rv__state">
-        <i class="pi pi-link" />
-        <h2>Link indisponível</h2>
-        <p>{{ toApiError(query.error.value).message }}</p>
+      <div v-else-if="used" class="rv__state rv__state--ok">
+        <i class="pi pi-check-circle" />
+        <h2>Avaliação já enviada</h2>
+        <p>Este link já foi usado. Obrigado por contar o que achou!</p>
+      </div>
+      <div v-else-if="failure" class="rv__state">
+        <i :class="failure.code === 'link_expired' ? 'pi pi-clock' : 'pi pi-link'" />
+        <h2>{{ failure.code === "link_expired" ? "Link expirado" : "Link indisponível" }}</h2>
+        <p>{{ failure.message }}</p>
       </div>
       <div v-else-if="done" class="rv__state rv__state--ok">
         <i class="pi pi-heart-fill" />
@@ -101,7 +108,8 @@ async function send() {
         <p>Você já avaliou esta compra. Obrigado!</p>
       </div>
       <template v-else-if="view">
-        <p class="rv__hello">Oi, <b>{{ view.customer }}</b>! Conta pra gente o que achou. Leva menos de 1 minuto.</p>
+        <p class="rv__hello">Oi, <b>{{ view.customer }}</b>! Conta pra gente o que achou
+          {{ view.kind === "delivery" ? "da entrega" : "dos produtos" }}. Leva menos de 1 minuto.</p>
 
         <section v-if="view.delivery.available && !view.delivery.done" class="rv__item">
           <div class="rv__item-head"><span class="rv__icon"><i class="pi pi-truck" /></span><strong>Como foi a entrega?</strong></div>
@@ -139,6 +147,7 @@ async function send() {
         <p v-if="error" class="rv__error"><i class="pi pi-exclamation-circle" /> {{ error }}</p>
         <Button label="Enviar avaliação" icon="pi pi-send" size="large" class="rv__send" :loading="sending"
                 :disabled="!canSend" @click="send" />
+        <p class="rv__muted rv__valid">Dá para enviar uma vez · link válido até {{ date(view.expires_at) }}</p>
       </template>
     </div>
     <p class="rv__foot">Avaliação segura · Starrp</p>
@@ -176,6 +185,7 @@ async function send() {
 .rv__send { width: 100%; justify-content: center; }
 .rv__error { margin: 0; color: var(--danger-text); font-size: 13.5px; font-weight: 600; display: flex; gap: 6px; }
 .rv__muted { color: var(--text-muted); }
+.rv__valid { margin: 0; text-align: center; font-size: 12px; }
 .rv__state { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 18px 6px; }
 .rv__state i { font-size: 36px; color: var(--text-muted); }
 .rv__state--ok i { color: #e11d48; }

@@ -3,19 +3,24 @@
  * Caixa DENTRO do PDV (só no modo caixa): o turno aberto, quanto deve haver na gaveta
  * agora, as vendas do turno e as ações — sangria, suprimento, bloquear a tela,
  * relatório (Z) e fechar o caixa. Os valores pedem confirmação no diálogo próprio.
+ * Embaixo, os extratos de cada turno (abertura → fechamento) do caixa, por dia.
  */
 import { useQuery } from "@tanstack/vue-query";
 import Button from "primevue/button";
 import { computed } from "vue";
 
 import { resourceApi } from "@/api/resource";
+import CashPendingList from "@/components/finance/CashPendingList.vue";
+import CashShiftHistory from "@/components/finance/CashShiftHistory.vue";
 import type { CashSession } from "@/api/types";
 import { dateTime, money } from "@/utils/format";
 
 export type CashAction = "open" | "withdrawal" | "supply" | "close" | "lock" | "report";
 
 /** `seesDrawer`: só quem aprova vê o esperado na gaveta (o operador fecha às cegas). */
-const props = defineProps<{ session: CashSession | null; operator: string; seesDrawer?: boolean }>();
+/** `register`: o caixa do usuário, para listar os extratos mesmo sem turno aberto. */
+const props = defineProps<{ session: CashSession | null; operator: string; seesDrawer?: boolean; version?: number;
+                           register?: string | null }>();
 const emit = defineEmits<{ action: [action: CashAction]; back: [] }>();
 
 type Row = Record<string, unknown>;
@@ -55,6 +60,8 @@ const expected = computed(() => detail.data.value?.expected_now ?? detail.data.v
       <div class="stat"><span>Vendas no turno</span><strong>{{ sales.data.value?.count ?? "—" }}</strong></div>
     </div>
 
+    <CashPendingList v-if="session" :session-id="String(session.id)" :version="version" @changed="detail.refetch()" />
+
     <div v-if="session" class="actions">
       <button type="button" class="action" @click="emit('action', 'withdrawal')">
         <i class="pi pi-arrow-up-right" /><strong>Sangria</strong><small>Retirar dinheiro da gaveta</small>
@@ -77,6 +84,8 @@ const expected = computed(() => detail.data.value?.expected_now ?? detail.data.v
       <p>Abra o caixa com o troco inicial para começar a vender.</p>
       <Button label="Abrir caixa" icon="pi pi-lock-open" @click="emit('action', 'open')" />
     </div>
+
+    <CashShiftHistory :register="session?.register ?? register ?? null" :current="session?.id ?? null" />
   </section>
 </template>
 

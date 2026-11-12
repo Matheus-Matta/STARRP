@@ -99,12 +99,12 @@ async function settle() {
           <RelationSelect v-model="form.financial_account" :relation="{ endpoint: '/finance/accounts/', params: { is_active: 'true' } }" />
         </div>
         <div class="field span-3"><label>Valor</label>
-          <InputNumber v-model="form.amount" mode="currency" currency="BRL" locale="pt-BR" fluid /></div>
+          <InputNumber v-model="form.amount" mode="currency" currency="BRL" locale="pt-BR" :min="0" highlight-on-focus placeholder="R$ 0,00" fluid /></div>
         <div class="field span-3"><label>Data</label>
           <DatePicker v-model="form.date" date-format="dd/mm/yy" show-icon fluid /></div>
-        <div class="field"><label>Juros</label><InputNumber v-model="form.interest" mode="currency" currency="BRL" locale="pt-BR" fluid /></div>
-        <div class="field"><label>Multa</label><InputNumber v-model="form.fine" mode="currency" currency="BRL" locale="pt-BR" fluid /></div>
-        <div class="field"><label>Desconto</label><InputNumber v-model="form.discount" mode="currency" currency="BRL" locale="pt-BR" fluid /></div>
+        <div class="field"><label>Juros</label><InputNumber v-model="form.interest" mode="currency" currency="BRL" locale="pt-BR" :min="0" highlight-on-focus placeholder="R$ 0,00" fluid /></div>
+        <div class="field"><label>Multa</label><InputNumber v-model="form.fine" mode="currency" currency="BRL" locale="pt-BR" :min="0" highlight-on-focus placeholder="R$ 0,00" fluid /></div>
+        <div class="field"><label>Desconto</label><InputNumber v-model="form.discount" mode="currency" currency="BRL" locale="pt-BR" :min="0" highlight-on-focus placeholder="R$ 0,00" fluid /></div>
       </div>
       <p class="hint muted">Saldo da parcela: {{ settling ? money(balanceOf(settling)) : "" }} · menos que o saldo deixa a parcela parcial.</p>
       <template #footer>

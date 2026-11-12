@@ -1,3 +1,12 @@
+<script lang="ts">
+import { shallowRef as pendingRef } from "vue";
+
+import type { FormAction as PendingAction } from "@/resources/types";
+
+/** Diálogo `then` esperando o registro recarregar (sobrevive à troca formulário → leitura). */
+const pendingThen = pendingRef<{ id: string; then: NonNullable<PendingAction["then"]> } | null>(null);
+</script>
+
 <script setup lang="ts">
 /**
  * Botões extras do formulário (`ResourceDef.formActions`): confirmar documento,
@@ -7,7 +16,7 @@
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
 import { useConfirm } from "primevue/useconfirm";
-import { computed, ref, shallowRef } from "vue";
+import { computed, nextTick, onMounted, ref, shallowRef, watch } from "vue";
 
 import { useNotify } from "@/composables/useNotify";
 import type { FormAction, FormActionContext } from "@/resources/types";
@@ -17,18 +26,42 @@ const props = defineProps<{ actions: FormAction[]; ctx: FormActionContext }>();
 const notify = useNotify();
 const confirm = useConfirm();
 const running = ref<string | null>(null);
-const open = shallowRef<FormAction | null>(null);
+const open = shallowRef<{ label: string; dialog?: FormAction["dialog"]; then?: FormAction["then"] } | null>(null);
 
 const session = useSession();
+
+async function openPending() {
+  const pending = pendingThen.value;
+  if (!pending || pending.id !== props.ctx.id) return;
+  if (pending.then.visible && !pending.then.visible(props.ctx.values)) return;
+  pendingThen.value = null;
+  // `auto` resolve sozinho (ex.: a regra de logística manda imprimir direto): sem diálogo.
+  if (pending.then.auto) {
+    try {
+      if (await pending.then.auto(props.ctx)) return;
+    } catch (error) {
+      notify.error(error, `Não foi possível: ${pending.then.label.toLowerCase()}`);
+      return;
+    }
+  }
+  open.value = pending.then;
+}
+onMounted(openPending);
+watch(() => props.ctx.values, openPending);
 const shown = computed(() => props.actions.filter((a) => (!a.permission || session.can(a.permission))
-  && (!a.visible || a.visible(props.ctx.values))));
+  && session.hasModule(a.module) && (!a.visible || a.visible(props.ctx.values))));
 
 async function execute(action: FormAction) {
   running.value = action.label;
   try {
     await action.run!(props.ctx);
     if (action.success) notify.success(action.success);
+    // O diálogo seguinte (ex.: imprimir etiquetas) fica pendente FORA do componente: depois de
+    // confirmar, a página troca para a leitura e recria estes botões.
+    if (action.then) pendingThen.value = { id: props.ctx.id, then: action.then };
     await props.ctx.reload();
+    await nextTick();
+    await openPending();
   } catch (error) {
     notify.error(error, `Não foi possível: ${action.label.toLowerCase()}`);
   } finally {
@@ -51,8 +84,12 @@ function start(action: FormAction) {
 }
 
 async function onDone() {
+  const then = open.value?.then;
   open.value = null;
+  if (then) pendingThen.value = { id: props.ctx.id, then };
   await props.ctx.reload();
+  await nextTick();
+  await openPending();
 }
 </script>
 

@@ -13,19 +13,11 @@ import Skeleton from "primevue/skeleton";
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
-import { type BookBlock, reportsApi } from "@/api/reports";
+import { reportsApi } from "@/api/reports";
 import EmptyState from "@/components/common/EmptyState.vue";
-import BarsChart from "@/components/report/BarsChart.vue";
-import CompareChart from "@/components/report/CompareChart.vue";
-import InsightsBlock from "@/components/report/InsightsBlock.vue";
 import type { Format } from "@/components/report/chart";
-import HeatmapChart from "@/components/report/HeatmapChart.vue";
 import KpiTile from "@/components/report/KpiTile.vue";
-import LineChart from "@/components/report/LineChart.vue";
-import RankingChart from "@/components/report/RankingChart.vue";
-import ReportTable from "@/components/report/ReportTable.vue";
-import ShareChart from "@/components/report/ShareChart.vue";
-import WaterfallChart from "@/components/report/WaterfallChart.vue";
+import ReportBlock from "@/components/report/ReportBlock.vue";
 import { findReport, visibleGroups } from "@/reports/catalog";
 import { useSession } from "@/stores/session";
 import { useNotify } from "@/composables/useNotify";
@@ -86,8 +78,6 @@ const report = computed(() => query.data.value);
 const scope = computed(() => (slug.value === "filiais" ? "Todas as filiais que você acessa"
   : session.activeStore?.name ?? "Todas as minhas filiais"));
 const f = (value: unknown) => (value ?? "number") as Format;
-/** Mensagem de lista vazia que o relatório manda ("Nenhuma promoção deu prejuízo no período."). */
-const emptyOf = (block: BookBlock) => (typeof block.empty === "string" ? block.empty : undefined);
 /** Impressão própria (folha do relatório, não a tela), com os mesmos filtros e período. */
 const print = () => openPrint("relatorio", slug.value, params.value);
 const exporting = ref<"xlsx" | "csv" | null>(null);
@@ -181,21 +171,7 @@ async function exportReport(format: "xlsx" | "csv", extra: { bloco?: number; aba
             <h2>{{ block.title }}</h2>
             <p v-if="block.description">{{ block.description }}</p>
           </header>
-          <LineChart v-if="block.type === 'line'" :x="block.x as string[]" :series="block.series as never" :format="f(block.format)"
-                     :zero="block.zero !== false" :grain="block.grain as never" />
-          <BarsChart v-else-if="block.type === 'bars'" :x="block.x as string[]" :series="block.series as never"
-                     :format="f(block.format)" :stacked="block.stacked" :grain="block.grain as never" />
-          <RankingChart v-else-if="block.type === 'ranking'" :rows="block.rows as never" :format="f(block.format)"
-                        :limit="(block.limit as number | undefined) ?? (block.span === 'half' ? 8 : 12)"
-                        :ordered="block.ordered !== false" :empty="emptyOf(block)" />
-          <ShareChart v-else-if="block.type === 'share'" :rows="block.rows as never" :format="f(block.format)" />
-          <HeatmapChart v-else-if="block.type === 'heatmap'" :rows="block.rows as string[]" :cols="block.cols as string[]"
-                        :values="block.values as never" :format="f(block.format)" />
-          <WaterfallChart v-else-if="block.type === 'waterfall'" :steps="block.steps as never" :format="f(block.format)" />
-          <CompareChart v-else-if="block.type === 'compare'" :metrics="block.metrics as never" :rows="block.rows as never" />
-          <InsightsBlock v-else-if="block.type === 'insights'" :items="block.items as never" />
-          <ReportTable v-else-if="block.type === 'table'" :columns="block.columns as never" :rows="block.rows as never"
-                       :title="`${report.title} ${block.title}`" :tabs="block.tabs as never" :empty="emptyOf(block)"
+          <ReportBlock :block="block" :table-title="`${report.title} ${block.title}`"
                        :on-export="(format, aba) => exportReport(format, { bloco: i, aba })" />
         </section>
       </div>

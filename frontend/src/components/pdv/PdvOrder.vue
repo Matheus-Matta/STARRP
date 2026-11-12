@@ -16,12 +16,14 @@ const emit = defineEmits<{
   customer: []; seller: [id: number | null]; quantity: [item: SaleItem, value: string]; remove: [item: SaleItem];
   discount: []; coupon: []; pay: []; cancel: []; park: []; send: []; delivery: [];
 }>();
-/** Entrega lançada (metacampo do sistema `_entrega`) ou retirada na loja. */
+/** Entrega lançada (metacampo do sistema `_entrega`), retirada ESCOLHIDA (`_retirada`) ou nada
+ *  ainda: a venda não assume retirada por padrão. */
 const delivery = computed(() => {
   const info = ((props.sale?.metafields ?? {}) as Record<string, unknown>)._entrega as
     { table_name: string; lead_days: number | null; address_label: string } | undefined;
   return props.sale?.shipping_address && info ? info : null;
 });
+const pickup = computed(() => !delivery.value && Boolean(((props.sale?.metafields ?? {}) as Record<string, unknown>)._retirada));
 
 const customerLabel = computed(() => props.sale?.customer_name || (props.sale?.customer_document ? `CPF ${props.sale.customer_document}` : ""));
 const step = (item: SaleItem, delta: number) => {
@@ -59,11 +61,12 @@ const ordered = computed(() => {
       <span>{{ customerLabel || "Vincular cliente (opcional)" }}</span>
       <kbd>F3</kbd>
     </button>
-    <button type="button" class="customer delivery" :class="{ set: delivery }" :disabled="!sale" @click="emit('delivery')">
-      <i :class="delivery ? 'pi pi-truck' : 'pi pi-shop'" />
+    <button type="button" class="customer delivery" :class="{ set: delivery || pickup }" :disabled="!sale" @click="emit('delivery')">
+      <i :class="delivery ? 'pi pi-truck' : pickup ? 'pi pi-shop' : 'pi pi-map-marker'" />
       <span v-if="delivery">{{ delivery.table_name }} · {{ delivery.address_label }} ·
         {{ delivery.lead_days ? `${delivery.lead_days} dia(s)` : "hoje" }}</span>
-      <span v-else>Retirada na loja (entregar?)</span>
+      <span v-else-if="pickup">Retirada na loja</span>
+      <span v-else>Entrega ou retirada?</span>
       <kbd>F11</kbd>
     </button>
     <Select v-if="sellers.length" :model-value="sale?.seller ?? null" :options="sellers" option-label="name" option-value="user_id"

@@ -35,9 +35,9 @@ export const coupons = defineResource({
     { name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" } },
   ],
   fields: [
-    { name: "code", label: "Código", type: "text", required: true, maxLength: 40, section: "Desconto",
-      hint: "Guardado em MAIÚSCULAS: o cliente dita e o caixa digita." },
-    { name: "name", label: "Nome interno", type: "text", section: "Desconto" },
+    { name: "code", label: "Código", type: "text", maxLength: 40, section: "Desconto", placeholder: "Gerado pelo nome",
+      hint: "Guardado em MAIÚSCULAS: o cliente dita e o caixa digita. Vazio = gerado pelo nome (Black Friday → BLACKFRIDAY)." },
+    { name: "name", label: "Nome interno", type: "text", section: "Desconto", placeholder: "Ex.: Black Friday 2026" },
     { name: "kind", label: "Tipo", type: "select", options: couponKind.options, default: "percent", section: "Desconto" },
     { name: "value", label: "Valor (% ou R$)", type: "money", required: true, section: "Desconto" },
     { name: "max_discount", label: "Teto do desconto (R$)", type: "money", section: "Desconto" },
@@ -80,8 +80,8 @@ export const discountTables = defineResource({
       + "a 1ª regra que pega o produto vale." },
   },
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true, section: "Validade" },
-    { name: "description", label: "Descrição", type: "text", section: "Validade" },
+    { name: "name", label: "Nome", type: "text", required: true, section: "Validade", placeholder: "Ex.: Liquidação de verão" },
+    { name: "description", label: "Descrição", type: "text", section: "Validade", placeholder: "O que a tabela faz, para a equipe" },
     ...window,
     storeScope,
     { name: "rules", label: "Regras", type: "promotion-rules", default: [], section: "Regras" },

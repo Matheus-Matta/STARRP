@@ -1,7 +1,8 @@
-from starrp.views import modules, registry
+from starrp.views import modules, registry, rules
 
 
 def register(router):
+    router.register("stores/rules", rules.StoreRuleViewSet, basename="store-rules")  # antes de stores/{id}
     router.register("stores", registry.StoreViewSet, basename="stores")
     router.register("terminals", registry.TerminalViewSet, basename="terminals")
     router.register("users", registry.UserProfileViewSet, basename="users")

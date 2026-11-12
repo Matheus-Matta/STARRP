@@ -15,7 +15,20 @@ export type PaymentInput = {
   card_brand?: string;
 };
 
+/** Endereço do pedido (entrega ou cobrança): cópia do cliente, corrigível só no pedido. */
+export type OrderAddress = {
+  zip_code: string; street: string; number: string; complement: string; district: string; city: string; state: string;
+  city_ibge: string; reference: string; recipient: string; text?: string; from_customer?: boolean;
+};
+export type OrderAddresses = { delivery: OrderAddress | null; billing: OrderAddress | null; billing_same_as_delivery: boolean };
+export const blankAddress = (): OrderAddress => ({ zip_code: "", street: "", number: "", complement: "", district: "",
+                                                   city: "", state: "", city_ibge: "", reference: "", recipient: "" });
+
 export const salesApi = {
+  addresses: (id: string) => data(http.get<OrderAddresses>(`${base(id)}/addresses/`)),
+  /** Corrige os endereços do pedido (o cadastro do cliente não muda). `inherit` copia de novo do cliente. */
+  saveAddresses: (id: string, body: Partial<OrderAddresses> & { inherit?: boolean }) =>
+    data(http.post<OrderAddresses>(`${base(id)}/addresses/`, body)),
   bootstrap: (installation_id: string, name: string) =>
     data(http.post<PdvBootstrap>("/pdv/bootstrap/", { installation_id, name, device_type: "web" })),
   create: (body: { seller?: number | null; customer?: string | null } = {}) => data(http.post<Sale>("/sales/", body)),

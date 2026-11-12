@@ -54,6 +54,9 @@ class Customer(PartyFields, TenantModel):
     groups = models.ManyToManyField(CustomerGroup, related_name="customers", blank=True)
     tags = models.ManyToManyField("starrp.Tag", related_name="customers", blank=True)
     credit_limit = MoneyField(help_text="Limite do crediário. 0 = não vende a prazo.")
+    # Cobrança no mesmo endereço da entrega (o padrão). Desligado: a cobrança vai para o
+    # endereço marcado `is_billing`. O pedido herda as duas coisas ao vincular o cliente.
+    billing_same_as_delivery = models.BooleanField(default=True)
     metafields = models.JSONField(default=dict, blank=True, help_text="Metacampos {chave: valor}.")
 
     class Meta:
@@ -70,6 +73,7 @@ class CustomerAddress(AddressFields, TenantModel):
     label = models.CharField(max_length=80, default="Principal")
     reference = models.CharField(max_length=255, blank=True)
     is_default = models.BooleanField(default=False)
+    is_billing = models.BooleanField(default=False, help_text="Endereço de cobrança (quando difere da entrega).")
 
     class Meta:
         ordering = ["-is_default", "label"]

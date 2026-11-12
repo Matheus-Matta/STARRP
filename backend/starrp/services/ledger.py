@@ -102,15 +102,27 @@ NO_LEDGER = {PaymentMethod.Kind.CASH, PaymentMethod.Kind.STORE_CREDIT}
 
 def sale_completed(sale, user=None):
     for payment in sale.payments.filter(status="approved").select_related("method__financial_account"):
-        method = payment.method
-        if method.kind in NO_LEDGER or method.generates_receivable or method.financial_account is None:
-            continue
-        account = method.financial_account
-        post(account, IN, payment.amount, description=f"Venda {sale.number} - {method.name}", category_key="sales",
-             source_key=f"payment:{payment.pk}", sale=sale, payment=payment, user=user)
-        fee = payment.amount * method.fee_percent / 100
-        post(account, OUT, fee, description=f"Taxa {method.name} - venda {sale.number}", category_key="card_fees",
-             source_key=f"payment_fee:{payment.pk}", sale=sale, payment=payment, user=user)
+        payment_received(payment, user)
+
+
+def payment_received(payment, user=None):
+    """Entrada do pagamento na conta da forma (e a taxa dela). Dinheiro/vale-troca e o que vira
+    título a receber não lançam aqui."""
+    method, sale = payment.method, payment.sale
+    if method.kind in NO_LEDGER or method.generates_receivable or method.financial_account is None:
+        return
+    account = method.financial_account
+    post(account, IN, payment.amount, description=f"Venda {sale.number} - {method.name}", category_key="sales",
+         source_key=f"payment:{payment.pk}", sale=sale, payment=payment, user=user)
+    fee = payment.amount * method.fee_percent / 100
+    post(account, OUT, fee, description=f"Taxa {method.name} - venda {sale.number}", category_key="card_fees",
+         source_key=f"payment_fee:{payment.pk}", sale=sale, payment=payment, user=user)
+
+
+def payment_undone(payment, description, user=None):
+    """Estorna o que `payment_received` lançou para este pagamento."""
+    for tx in FinancialTransaction.all_objects.filter(payment=payment, reversal_of__isnull=True, deleted_at__isnull=True):
+        reverse(tx, description=f"{description}: {tx.description}", user=user)
 
 
 def sale_cancelled(sale, user=None):

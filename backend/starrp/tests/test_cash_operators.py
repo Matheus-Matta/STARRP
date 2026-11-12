@@ -10,7 +10,7 @@ def test_so_quem_esta_vinculado_abre_e_o_gerente_assume_qualquer_caixa(ctx):
     body = {"register": str(ctx.register.pk), "opening_amount": "100"}
 
     blocked = ctx.client(cashier).post(url, body, format="json")
-    ctx.register.operators.add(cashier)
+    ctx.link(cashier)
     boot_cashier = ctx.client(cashier).post("/api/v1/pdv/bootstrap/", {"installation_id": "t1"}, format="json").json()
     boot_other = ctx.client(other).post("/api/v1/pdv/bootstrap/", {"installation_id": "t2"}, format="json").json()
     opened = ctx.client(cashier).post(url, body, format="json")
@@ -25,17 +25,21 @@ def test_so_quem_esta_vinculado_abre_e_o_gerente_assume_qualquer_caixa(ctx):
     assert boot_cashier["mode"] == "cashier" and boot_other["mode"] == "seller"
     assert boot_other["cash_session"] is None
     assert opened.status_code == 201 and stranger_close.status_code == 403
-    assert manager_move.status_code == 200  # gerente assume qualquer caixa
+    # gerente assume qualquer caixa e o suprimento dele já sai aprovado
+    assert manager_move.status_code == 201 and manager_move.json()["status"] == "approved"
 
 
 def test_fechamento_cego_o_operador_nao_ve_a_gaveta(ctx):
     cashier = ctx.user("caixa1", "cashier")
     manager = ctx.user("gerente1", "manager")
-    ctx.register.operators.add(cashier)
+    ctx.link(cashier)
     api = ctx.client(cashier)
     sid = api.post("/api/v1/cash/sessions/", {"register": str(ctx.register.pk), "opening_amount": "100"},
                    format="json").json()["id"]
-    api.post(f"/api/v1/cash/sessions/{sid}/movements/", {"kind": "supply", "amount": "50"}, format="json")
+    ctx.store.set_cash_action_password("4321")
+    ctx.store.save(update_fields=["cash_action_password"])
+    api.post(f"/api/v1/cash/sessions/{sid}/movements/", {"kind": "supply", "amount": "50",
+                                                         "approval": {"cash_password": "4321"}}, format="json")
 
     mine = api.get(f"/api/v1/cash/sessions/{sid}/").json()
     report = api.get(f"/api/v1/cash/sessions/{sid}/report/").json()
@@ -59,3 +63,20 @@ def test_sem_caixa_vinculado_ainda_cria_e_guarda_pedido(ctx):
 
     assert boot["mode"] == "seller" and boot["cash_registers"] == []
     assert parked.status_code == 200 and parked.json()["status"] == "draft"
+
+
+def test_um_caixa_por_usuario_e_o_pdv_ja_abre_no_dele(ctx):
+    from starrp.models import CashRegister
+
+    cashier = ctx.user("caixa1", "cashier")
+    other = CashRegister.all_objects.create(account=ctx.account, store=ctx.store, name="Caixa 02", code="CX02")
+    api = ctx.client()
+    url = "/api/v1/cash/registers/"
+    first = api.patch(f"{url}{ctx.register.pk}/", {"operator": cashier.pk}, format="json")
+    second = api.patch(f"{url}{other.pk}/", {"operator": cashier.pk}, format="json")  # já opera outro caixa
+    boot = ctx.client(cashier).post("/api/v1/pdv/bootstrap/", {"installation_id": "t1"}, format="json").json()
+
+    assert first.status_code == 200 and first.json()["operator_name"]
+    assert second.status_code == 400 and "um caixa só" in str(second.json())
+    assert boot["my_register"] == str(ctx.register.pk)
+    assert [r["id"] for r in boot["cash_registers"]] == [str(ctx.register.pk)]

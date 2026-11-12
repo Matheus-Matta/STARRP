@@ -18,7 +18,7 @@ import { idempotencyKey } from "@/api/http";
 import { salesApi, type PaymentInput } from "@/api/sales";
 import type { CashSession, PdvBootstrap, Sale, SaleItem } from "@/api/types";
 
-import { withApproval } from "./useApproval";
+import { ApprovalCancelled, withApproval } from "./useApproval";
 
 const SALE_KEY = "starrp.pdv.sale";
 const LOCK_KEY = "starrp.pdv.locked";
@@ -47,7 +47,7 @@ export function usePdv() {
   const isSeller = computed(() => mode.value === "seller");
   /** Só o caixa precisa de turno aberto; o vendedor monta pedidos sem caixa. */
   /** Só vende com o turno ABERTO (a abertura com diferença espera o gerente). */
-  const needsCash = computed(() => !isSeller.value && Boolean(boot.value?.store.require_open_cash_session)
+  const needsCash = computed(() => !isSeller.value && Boolean(boot.value?.rules.require_open_cash_session)
     && session.value?.status !== "open");
   const pendingOpening = computed(() => session.value?.status === "pending_opening");
 
@@ -188,11 +188,34 @@ export function usePdv() {
     return closed;
   });
 
+  /** Sobe a cada sangria/suprimento: o painel do caixa recarrega as pendências. */
+  const cashChanged = ref(0);
+  /** Sangria/suprimento: lança e, se ficou pendente, já pede a autorização (gerente ou senha do
+   *  caixa da filial). Cancelar o pedido deixa pendente: o gerente aprova depois. */
   const cashMovement = (kind: "withdrawal" | "supply", amount: string, reason: string) =>
-    run(() => cashApi.movement(session.value!.id, kind, amount, reason));
+    run(async () => {
+      const movement = await cashApi.movement(session.value!.id, kind, amount, reason);
+      cashChanged.value++;
+      if (movement.status !== "pending") return movement;
+      try {
+        const approved = await withApproval((approval) => cashApi.approveMovement(String(movement.id), "", approval));
+        cashChanged.value++;
+        return approved;
+      } catch (error) {
+        if (error instanceof ApprovalCancelled) return movement;
+        throw error;
+      }
+    });
+
+  /** Fechamento com diferença: o gerente (ou a senha do caixa) aprova ali mesmo, com justificativa. */
+  const approveClosing = (id: string) =>
+    run(() => withApproval((approval, reason) => cashApi.approveClosing(id, reason ?? "", approval), {
+      reason: "Justificativa da diferença (ex.: troco dado errado)",
+      message: "A gaveta não bateu com o esperado. O gerente confere e aprova o fechamento.",
+    }));
 
   return { boot, session, sale, items, busy, needsCash, mode, isSeller, locked, init, setUser, scan, addVariant, setQuantity,
-    removeItem, pendingOpening, approveOpening, setCustomer, setDelivery, clearDelivery, discount, coupon, checkout, cancel, park, resume, lock, unlock, openCash, closeCash, cashMovement };
+    removeItem, pendingOpening, approveOpening, setCustomer, setDelivery, clearDelivery, discount, coupon, checkout, cancel, park, resume, lock, unlock, openCash, closeCash, cashMovement, cashChanged, approveClosing };
 }
 
 export type Pdv = ReturnType<typeof usePdv>;

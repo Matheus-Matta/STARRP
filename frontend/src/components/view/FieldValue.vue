@@ -8,6 +8,7 @@ import { computed } from "vue";
 
 import type { ColumnDef, FieldDef, Tone } from "@/resources/types";
 import { formatDocument } from "@/utils/documents";
+import { formatOf } from "@/utils/formats";
 import { applyMask, formatPhone, MASKS } from "@/utils/masks";
 import { date, dateTime, money, percent, quantity } from "@/utils/format";
 
@@ -130,7 +131,10 @@ const text = computed(() => {
     case "cep": return applyMask(v, MASKS.cep);
     case "select": case "segmented": return option.value ?? String(v);
     case "multiselect": return (v as unknown[]).map((x) => props.field.options?.find((o) => o.value === x)?.label ?? x).join(", ");
-    default: return props.field.mask ? applyMask(v, props.field.mask) : String(v);
+    default: {
+      const mask = props.field.mask ?? formatOf(props.field)?.mask;
+      return mask ? applyMask(v, mask) : String(v);
+    }
   }
 });
 </script>

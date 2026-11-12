@@ -1,7 +1,8 @@
 <script setup lang="ts">
 /**
  * Configurações da conta — uma página só, do administrador:
- * empresa · PDV e caixa (vale para TODAS as lojas) · estoque · plano e módulos (leitura).
+ * empresa · PDV e caixa (vale para TODAS as lojas) · estoque · Cosmos (resumo diário e precificação)
+ * · plano e módulos (leitura).
  * Ajuste fino de uma loja continua em Configurações → Lojas. Ctrl+S salva.
  */
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
@@ -15,12 +16,14 @@ import FormField from "@/components/resource/FormField.vue";
 import { useNotify } from "@/composables/useNotify";
 import { useSession } from "@/stores/session";
 import { choices, type FieldDef } from "@/resources/types";
+import { validate, validateField, withError } from "@/utils/validation";
 
 type Settings = {
   account: Record<string, unknown>; pdv: Record<string, unknown>; stock: Record<string, unknown>;
+  cosmos: Record<string, unknown>;
   plan: { name: string; status: string; modules: string[]; stores: number };
 };
-type Section = "account" | "pdv" | "stock";
+type Section = "account" | "pdv" | "stock" | "cosmos";
 
 const notify = useNotify();
 const client = useQueryClient();
@@ -28,7 +31,7 @@ const query = useQuery({
   queryKey: ["account-settings"],
   queryFn: async () => (await http.get<Settings>("/account/settings/")).data,
 });
-const values = ref<Record<Section, Record<string, unknown>>>({ account: {}, pdv: {}, stock: {} });
+const values = ref<Record<Section, Record<string, unknown>>>({ account: {}, pdv: {}, stock: {}, cosmos: {} });
 const original = ref("");
 const errors = ref<Record<string, string>>({});
 const saving = ref(false);
@@ -70,11 +73,17 @@ async function removeLogo() {
 
 watch(() => query.data.value, (data) => {
   if (!data) return;
-  values.value = { account: { ...data.account }, pdv: { ...data.pdv }, stock: { ...data.stock } };
+  values.value = { account: { ...data.account }, pdv: { ...data.pdv }, stock: { ...data.stock },
+                   cosmos: { ...data.cosmos } };
   original.value = JSON.stringify(values.value);
 }, { immediate: true });
 const dirty = computed(() => original.value !== "" && JSON.stringify(values.value) !== original.value);
 
+const pricing = session.hasModule("pricing");
+const cosmosOn = session.hasModule("cosmos");
+const seoOn = session.hasModule("seo");
+const stockOn = session.hasModule("stock");
+const tracking = (v: Record<string, unknown>) => pricing && v.price_tracking_enabled === true;
 const picking = choices({ fefo: "FEFO (vence primeiro, sai primeiro)", fifo: "FIFO (entrou primeiro, sai primeiro)" });
 const SECTIONS: { key: Section; title: string; icon: string; description: string; fields: FieldDef[] }[] = [
   { key: "account", title: "Empresa", icon: "pi pi-building",
@@ -89,29 +98,66 @@ const SECTIONS: { key: Section; title: string; icon: string; description: string
         { label: "Fernando de Noronha", value: "America/Noronha" }] },
     ] },
   { key: "pdv", title: "PDV e caixa", icon: "pi pi-shopping-cart",
-    description: "Vale para TODAS as filiais ao salvar. Uma filial diferente das outras se ajusta em Filiais.", fields: [
+    description: "Edita a regra PADRÃO das filiais. Filial que trabalha diferente usa outra regra (Configurações › "
+      + "Regras das filiais).", fields: [
       { name: "require_open_cash_session", label: "Exige caixa aberto para vender", type: "boolean", span: 3 },
       { name: "cash_closing_tolerance", label: "Tolerância no fechamento (R$)", type: "money", span: 3,
         hint: "Diferença até este valor fecha direto; acima, vai para o gerente aprovar." },
       { name: "require_seller", label: "Exige vendedor em toda venda", type: "boolean", span: 3 },
-      { name: "pdv_lock_minutes", label: "Bloquear a tela do caixa parado (min)", type: "number", span: 3,
-        hint: "0 = não bloqueia sozinho. Volta com a senha do operador." },
+      { name: "pdv_auto_lock", label: "Bloquear a tela do caixa parado", type: "boolean", span: 3,
+        hint: "Tela do PDV se bloqueia sozinha" },
+      { name: "pdv_lock_minutes", label: "Bloquear depois de (min)", type: "number", span: 3,
+        hint: "De 1 a 120 min sem uso. Volta com a senha do operador; o F12 bloqueia sempre.", visible: (v) => v.pdv_auto_lock !== false },
       { name: "auto_print_receipt", label: "Imprimir o recibo ao concluir a venda", type: "boolean", span: 3 },
       { name: "print_cancellation_receipt", label: "Imprimir comprovante de cancelamento", type: "boolean", span: 3 },
+      { name: "require_payment_reference", label: "Exigir NSU/autorização no cartão e PIX", type: "boolean", span: 3,
+        hint: "Desligado, o campo aparece no pagamento mas é opcional" },
     ] },
   { key: "stock", title: "Estoque", icon: "pi pi-box",
-    description: "Como o estoque sai e o que acontece com vencidos e saldo negativo.", fields: [
+    description: "Edita a regra de estoque PADRÃO. Filial diferente usa outra (Estoque › Regras de estoque).", fields: [
       { name: "picking_strategy", label: "Ordem de saída", type: "select", options: picking.options, span: 3 },
       { name: "expiry_warning_days", label: "Avisar vencimento com (dias)", type: "number", span: 3 },
       { name: "block_expired", label: "Bloquear venda de lote vencido", type: "boolean", span: 3 },
       { name: "allow_negative_stock", label: "Permitir vender sem saldo (estoque negativo)", type: "boolean", span: 3 },
+      { name: "fifo_by_entry", label: "Sem validade: sai o mais antigo", type: "boolean", span: 3,
+        hint: "Guarda a data de entrada (FIFO)" },
+    ] },
+  { key: "cosmos", title: cosmosOn ? "Cosmos" : "Precificação", icon: "pi pi-sparkles",
+    description: pricing
+      ? "Precificação: compara o preço de cada produto com o mercado, "
+        + "olha o custo e deixa o novo preço esperando aprovação em Vendas › Precificação. Nada muda sem aprovação."
+      : "A assistente de IA.", fields: [
+      { name: "cosmos_daily_digest", label: "Resumo diário da equipe", type: "boolean", span: 6, visible: () => cosmosOn,
+        hint: "Quem supervisiona recebe toda manhã o resumo do dia anterior (não gasta tokens)" },
+      { name: "cosmos_seo_ai", label: "Cosmos no Analítico de SEO", type: "boolean", span: 3, visible: () => cosmosOn && seoOn,
+        hint: "Sugere o texto e avisa nos alertas. Gasta tokens" },
+      { name: "cosmos_stock_advice", label: "Cosmos no estoque", type: "boolean", span: 6, visible: () => cosmosOn && stockOn,
+        hint: "Recomenda como organizar os endereços e avisa de entregas e recebimentos parados (não gasta tokens)" },
+      { name: "cosmos_pricing_ai", label: "Cosmos na Precificação", type: "boolean", span: 3, visible: () => cosmosOn && pricing,
+        hint: "Confere se a oferta é o mesmo produto. Gasta tokens" },
+      { name: "price_tracking_enabled", label: "Rastrear preços no mercado (precificação)", type: "boolean", span: 6,
+        visible: () => pricing, hint: "Compara o título com marca e modelo, parte por parte. Sem nenhuma oferta aceita, procura pelo código de barras (EAN)" },
+      { name: "price_tracking_hours", label: "Reler cada produto a cada", type: "select", span: 2, visible: tracking,
+        options: [{ label: "6 horas", value: "6" }, { label: "12 horas", value: "12" }, { label: "Dia", value: "24" },
+                  { label: "3 dias", value: "72" }, { label: "Semana", value: "168" }] },
+      { name: "price_min_margin", label: "Margem mínima", type: "percent", span: 2, visible: tracking, max: 95,
+        hint: "Sobre o preço de venda. Sugestão de baixar nunca passa disto" },
+      { name: "price_band", label: "Faixa do mercado", type: "percent", span: 2, visible: tracking, max: 50,
+        hint: "Até esta distância da mediana o preço está no mercado" },
+      { name: "price_min_competitors", label: "Mínimo de concorrentes", type: "number", span: 3, visible: tracking,
+        min: 1, max: 20, hint: "Menos ofertas do mesmo produto: só informa, não sugere" },
+      { name: "price_match_min", label: "Confiança mínima do pareamento", type: "percent", span: 3, visible: tracking,
+        min: 60, hint: "Oferta abaixo desta nota não conta como o mesmo produto" },
     ] },
 ];
 
 async function save() {
   if (!dirty.value || saving.value) return;
+  // Conferido aqui antes (CNPJ, telefone, CEP...): só vai ao servidor o que está no formato certo.
+  errors.value = Object.fromEntries(SECTIONS.flatMap((section) => Object.entries(validate(section.fields, values.value[section.key]))
+    .map(([name, message]) => [`${section.key}.${name}`, message])));
+  if (Object.keys(errors.value).length) return notify.warn("Confira os campos destacados.");
   saving.value = true;
-  errors.value = {};
   try {
     const { data } = await http.patch<Settings>("/account/settings/", values.value);
     client.setQueryData(["account-settings"], data);
@@ -129,6 +175,12 @@ async function save() {
     saving.value = false;
   }
 }
+/** Saiu do campo: confere o que foi digitado (corrigido, o aviso some). */
+function check(section: Section, field: FieldDef) {
+  const key = `${section}.${field.name}`;
+  const message = validateField(field, values.value[section]);
+  errors.value = withError(errors.value, key, values.value[section][field.name] ? message : message && errors.value[key]);
+}
 function discard() {
   if (original.value) values.value = JSON.parse(original.value);
 }
@@ -143,7 +195,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
 
 const MODULES: Record<string, string> = {
   stock: "Estoque e compras", finance: "Financeiro", fiscal: "Fiscal (NFC-e/NF-e)", inbound_nfe: "NF-e de entrada",
-  assets: "Patrimônio", sync: "Servidor local", base: "Base (PDV, vendas, produtos, clientes)",
+  assets: "Patrimônio", sync: "Servidor local", pricing: "Precificação", seo: "Analítico de SEO", cosmos: "Cosmos (assistente de IA)", base: "Base (PDV, vendas, produtos, clientes)",
 };
 </script>
 
@@ -153,7 +205,7 @@ const MODULES: Record<string, string> = {
                 subtitle="Tudo que vale para a empresa inteira, num lugar só. Só o administrador vê esta página." />
     <div v-if="query.isPending.value" class="muted"><i class="pi pi-spin pi-spinner" /> Carregando…</div>
     <template v-else-if="query.data.value">
-      <SectionCard v-for="section in SECTIONS" :key="section.key" :title="section.title" :icon="section.icon"
+      <SectionCard v-for="section in SECTIONS.filter((s) => s.key !== 'cosmos' || cosmosOn || pricing)" :key="section.key" :title="section.title" :icon="section.icon"
                    :description="section.description">
         <div v-if="section.key === 'account'" class="logo">
           <span class="logo__box" :class="{ 'logo__box--empty': !logoUrl }">
@@ -173,8 +225,11 @@ const MODULES: Record<string, string> = {
           </div>
         </div>
         <div class="grid-form">
-          <FormField v-for="field in section.fields" :key="field.name" v-model="values[section.key][field.name]" :field="field"
-                     :context="values[section.key]" :error="errors[`${section.key}.${field.name}`]" />
+          <template v-for="field in section.fields" :key="field.name">
+          <FormField v-if="!field.visible || field.visible(values[section.key])" v-model="values[section.key][field.name]" :field="field"
+                     :context="values[section.key]" :error="errors[`${section.key}.${field.name}`]"
+                     @check="check(section.key, field)" />
+          </template>
         </div>
       </SectionCard>
       <SectionCard title="Plano e módulos" icon="pi pi-star" description="O que a sua assinatura inclui. Para mudar, fale com o suporte.">
@@ -209,6 +264,8 @@ const MODULES: Record<string, string> = {
 .logo__text strong { color: var(--text-strong); font-size: 14px; }
 .logo__text small { color: var(--text-muted); font-size: 12.5px; max-width: 520px; }
 .logo__actions { display: flex; gap: 6px; }
+.notice { margin: 0 0 14px; padding: 8px 12px; border-radius: 8px; font-size: 12.5px; background: var(--warning-subtle);
+          color: var(--warning-text); }
 .plan { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 18px; margin: 0; }
 .plan .wide { grid-column: 1 / -1; }
 .plan dt { font-size: 12px; font-weight: 600; color: var(--text-muted); }

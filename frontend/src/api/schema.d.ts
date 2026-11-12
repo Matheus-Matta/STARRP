@@ -394,6 +394,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/background-tasks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_background_tasks_list"];
+        put?: never;
+        post: operations["api_v1_background_tasks_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/background-tasks/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_background_tasks_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/background-tasks/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_background_tasks_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/background-tasks/{id}/stop/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_background_tasks_stop_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/background-tasks/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_background_tasks_bulk_retrieve"];
+        put?: never;
+        post: operations["api_v1_background_tasks_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/cash/discrepancies/": {
         parameters: {
             query?: never;
@@ -519,6 +603,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Sangria/suprimento pendente: gerente direto, ou `approval` (gerente/senha do caixa da filial). */
         post: operations["api_v1_cash_movements_approve_create"];
         delete?: never;
         options?: never;
@@ -540,6 +625,23 @@ export interface paths {
         get: operations["api_v1_cash_movements_history_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cash/movements/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Gerente recusa, ou o operador desiste do que lançou: fica cancelado, fora da gaveta. */
+        post: operations["api_v1_cash_movements_reject_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -671,6 +773,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
+        /** @description Fechamento com diferença: o gerente aprova (direto ou pelo `approval` no corpo). */
         post: operations["api_v1_cash_sessions_approve_create"];
         delete?: never;
         options?: never;
@@ -738,8 +841,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * @description GET: movimentos do turno. POST: sangria/suprimento (devolve o movimento criado, que pode
+         *     vir `pending` aguardando aprovação).
+         */
         get: operations["api_v1_cash_sessions_movements_retrieve"];
         put?: never;
+        /**
+         * @description GET: movimentos do turno. POST: sangria/suprimento (devolve o movimento criado, que pode
+         *     vir `pending` aguardando aprovação).
+         */
         post: operations["api_v1_cash_sessions_movements_create"];
         delete?: never;
         options?: never;
@@ -1771,6 +1882,315 @@ export interface paths {
         put?: never;
         /** @description Paga as comissões pendentes de um vendedor até `until` (padrão: hoje). */
         post: operations["api_v1_commissions_payout_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/competitor-prices/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
+        get: operations["api_v1_competitor_prices_list"];
+        put?: never;
+        /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
+        post: operations["api_v1_competitor_prices_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/competitor-prices/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
+        get: operations["api_v1_competitor_prices_retrieve"];
+        /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
+        put: operations["api_v1_competitor_prices_update"];
+        post?: never;
+        /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
+        delete: operations["api_v1_competitor_prices_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
+        patch: operations["api_v1_competitor_prices_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/competitor-prices/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_competitor_prices_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/competitor-prices/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
+        get: operations["api_v1_competitor_prices_bulk_retrieve"];
+        put?: never;
+        /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
+        post: operations["api_v1_competitor_prices_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/competitor-prices/import/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
+        post: operations["api_v1_competitor_prices_import_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/attachments/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_cosmos_attachments_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/conversations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_cosmos_conversations_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/conversations/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_cosmos_conversations_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["api_v1_cosmos_conversations_destroy"];
+        options?: never;
+        head?: never;
+        patch: operations["api_v1_cosmos_conversations_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/cosmos/conversations/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_cosmos_conversations_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/conversations/{id}/messages/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_cosmos_conversations_messages_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/conversations/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_cosmos_conversations_bulk_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/findings/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_cosmos_findings_list"];
+        put?: never;
+        post: operations["api_v1_cosmos_findings_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/findings/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_cosmos_findings_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/findings/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_cosmos_findings_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/findings/{id}/resolve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_cosmos_findings_resolve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/findings/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_cosmos_findings_bulk_retrieve"];
+        put?: never;
+        post: operations["api_v1_cosmos_findings_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/reports/{id}/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_cosmos_reports_export_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_cosmos_status_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2856,7 +3276,7 @@ export interface paths {
         };
         get: operations["api_v1_fiscal_invoices_list"];
         put?: never;
-        post?: never;
+        post: operations["api_v1_fiscal_invoices_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2871,6 +3291,43 @@ export interface paths {
             cookie?: never;
         };
         get: operations["api_v1_fiscal_invoices_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fiscal/invoices/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST {"reason", "with_sale": bool, "approval"}: cancela a nota na SEFAZ; com `with_sale`,
+         *     cancela também o pedido e reembolsa os pagamentos.
+         */
+        post: operations["api_v1_fiscal_invoices_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fiscal/invoices/{id}/danfe/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description DANFE da nota (NF-e A4 / NFC-e 80 mm): dados completos + código de barras + QR. */
+        get: operations["api_v1_fiscal_invoices_danfe_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2908,7 +3365,7 @@ export interface paths {
         };
         get: operations["api_v1_fiscal_invoices_bulk_retrieve"];
         put?: never;
-        post?: never;
+        post: operations["api_v1_fiscal_invoices_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3805,43 +4262,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/logistics/settings/": {
+    "/api/v1/logistics/rules/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
-        get: operations["api_v1_logistics_settings_list"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        get: operations["api_v1_logistics_rules_list"];
         put?: never;
-        post?: never;
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        post: operations["api_v1_logistics_rules_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/logistics/settings/{id}/": {
+    "/api/v1/logistics/rules/{id}/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
-        get: operations["api_v1_logistics_settings_retrieve"];
-        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
-        put: operations["api_v1_logistics_settings_update"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        get: operations["api_v1_logistics_rules_retrieve"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        put: operations["api_v1_logistics_rules_update"];
         post?: never;
-        delete?: never;
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        delete: operations["api_v1_logistics_rules_destroy"];
         options?: never;
         head?: never;
-        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
-        patch: operations["api_v1_logistics_settings_partial_update"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        patch: operations["api_v1_logistics_rules_partial_update"];
         trace?: never;
     };
-    "/api/v1/logistics/settings/{id}/history/": {
+    "/api/v1/logistics/rules/{id}/history/": {
         parameters: {
             query?: never;
             header?: never;
@@ -3852,7 +4329,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_logistics_settings_history_retrieve"];
+        get: operations["api_v1_logistics_rules_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3861,15 +4338,90 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/logistics/settings/bulk/": {
+    "/api/v1/logistics/rules/bulk/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** @description Uma configuração por filial: lista todas (nascem sozinhas) e edita; não cria nem exclui. */
-        get: operations["api_v1_logistics_settings_bulk_retrieve"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        get: operations["api_v1_logistics_rules_bulk_retrieve"];
+        put?: never;
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        post: operations["api_v1_logistics_rules_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/market-offers/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_market_offers_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/market-offers/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_market_offers_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/market-offers/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_market_offers_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/market-offers/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_market_offers_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4290,6 +4842,186 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/price-checks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_price_checks_list"];
+        put?: never;
+        post: operations["api_v1_price_checks_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_price_checks_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/{id}/approve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_price_checks_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_price_checks_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/{id}/refresh/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_price_checks_refresh_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_price_checks_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_price_checks_bulk_retrieve"];
+        put?: never;
+        post: operations["api_v1_price_checks_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/product/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_price_checks_product_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/rules/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_price_checks_rules_retrieve"];
+        put?: never;
+        post: operations["api_v1_price_checks_rules_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/run/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_price_checks_run_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/price-checks/run-status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_price_checks_run_status_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/promotions/coupons/": {
         parameters: {
             query?: never;
@@ -4562,6 +5294,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/public/reviews/{token}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description O cliente avalia pelo link (sem login): só o tipo do link, uma vez, até a data limite. */
+        get: operations["api_v1_public_reviews_retrieve"];
+        put?: never;
+        /** @description O cliente avalia pelo link (sem login): só o tipo do link, uma vez, até a data limite. */
+        post: operations["api_v1_public_reviews_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/reports/{name}/": {
         parameters: {
             query?: never;
@@ -4575,6 +5325,48 @@ export interface paths {
          *     A loja vem do header `X-Store-ID` (sem ele, a rede inteira).
          */
         get: operations["api_v1_reports_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/book/{name}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /reports/book/<slug>/?date_from=&date_to= — um relatório do livro (Movimento, Mercadorias,
+         *     Contábil, Relacionamento) no formato padrão (indicadores + blocos), ver `services/report_book`.
+         */
+        get: operations["api_v1_reports_book_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/book/{name}/export/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /reports/book/<slug>/export/?formato=xlsx|csv[&bloco=<índice>][&aba=<valor>] + os filtros da tela.
+         *
+         *     Excel: resumo + uma aba por bloco (e uma por classe na Curva ABC). CSV: um bloco só
+         *     (o pedido ou a primeira tabela). Mesmas permissões do relatório.
+         */
+        get: operations["api_v1_reports_book_export_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4684,6 +5476,130 @@ export interface paths {
         put?: never;
         /** @description Devolução nasce em POST /sales/{id}/returns/; aqui se lê e conclui. */
         post: operations["api_v1_returns_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_reviews_list"];
+        put?: never;
+        post: operations["api_v1_reviews_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_reviews_retrieve"];
+        put?: never;
+        post?: never;
+        delete: operations["api_v1_reviews_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/approve/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_reviews_approve_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_reviews_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_reviews_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_reviews_bulk_retrieve"];
+        put?: never;
+        post: operations["api_v1_reviews_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reviews/links/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET: um item por tipo que a venda pode avaliar, com o link atual (se houver).
+         *     POST {sale, kind, days}: gera o link do tipo (ou devolve o que ainda vale).
+         */
+        get: operations["api_v1_reviews_links_retrieve"];
+        put?: never;
+        /**
+         * @description GET: um item por tipo que a venda pode avaliar, com o link atual (se houver).
+         *     POST {sale, kind, days}: gera o link do tipo (ou devolve o que ainda vale).
+         */
+        post: operations["api_v1_reviews_links_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4822,6 +5738,30 @@ export interface paths {
         patch: operations["api_v1_sales_partial_update"];
         trace?: never;
     };
+    "/api/v1/sales/{id}/addresses/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Endereços do pedido: GET; POST {delivery, billing, billing_same_as_delivery} corrige só o pedido
+         *     (o cadastro do cliente fica como está). `inherit: true` copia de novo do cliente.
+         */
+        get: operations["api_v1_sales_addresses_retrieve"];
+        put?: never;
+        /**
+         * @description Endereços do pedido: GET; POST {delivery, billing, billing_same_as_delivery} corrige só o pedido
+         *     (o cadastro do cliente fica como está). `inherit: true` copia de novo do cliente.
+         */
+        post: operations["api_v1_sales_addresses_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sales/{id}/cancel/": {
         parameters: {
             query?: never;
@@ -4936,6 +5876,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/sales/{id}/edit-delivery/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Venda concluída: {"reason", "pickup": true} ou {"reason", "address", "table"}. O frete cobrado fica. */
+        post: operations["api_v1_sales_edit_delivery_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sales/{id}/fulfillment/": {
         parameters: {
             query?: never;
@@ -4965,6 +5922,26 @@ export interface paths {
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
         get: operations["api_v1_sales_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales/{id}/invoices/{invoice_id}/danfe/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description A nota do pedido para imprimir: quem vê o pedido imprime a nota dele (sem precisar do módulo
+         *     fiscal). Código de barras da chave (Code 128) e QR da consulta (NFC-e) já em SVG.
+         */
+        get: operations["api_v1_sales_invoices_danfe_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5065,6 +6042,23 @@ export interface paths {
         put?: never;
         post?: never;
         delete: operations["api_v1_sales_payments_destroy"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales/{id}/payments/{payment_id}/change/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Venda concluída: {"method", "reason", "installments"?, "nsu"?, "authorization_code"?}, mesmo valor. */
+        post: operations["api_v1_sales_payments_change_create"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -5193,6 +6187,374 @@ export interface paths {
         get: operations["api_v1_sales_items_bulk_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_seo_checks_list"];
+        put?: never;
+        post: operations["api_v1_seo_checks_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_seo_checks_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/{id}/apply/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_seo_checks_apply_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_seo_checks_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/{id}/refresh/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_seo_checks_refresh_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/{id}/reject/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_seo_checks_reject_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_seo_checks_bulk_retrieve"];
+        put?: never;
+        post: operations["api_v1_seo_checks_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/product/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_seo_checks_product_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/rules/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_seo_checks_rules_retrieve"];
+        put?: never;
+        post: operations["api_v1_seo_checks_rules_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/run/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["api_v1_seo_checks_run_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/seo-checks/run-status/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["api_v1_seo_checks_run_status_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/advices/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+         *
+         *     POST /stock/advices/run/          analisa agora
+         *     POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+         *     POST /stock/advices/<id>/dismiss/ recusa
+         *
+         *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+         */
+        get: operations["api_v1_stock_advices_list"];
+        put?: never;
+        /**
+         * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+         *
+         *     POST /stock/advices/run/          analisa agora
+         *     POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+         *     POST /stock/advices/<id>/dismiss/ recusa
+         *
+         *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+         */
+        post: operations["api_v1_stock_advices_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/advices/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+         *
+         *     POST /stock/advices/run/          analisa agora
+         *     POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+         *     POST /stock/advices/<id>/dismiss/ recusa
+         *
+         *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+         */
+        get: operations["api_v1_stock_advices_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/advices/{id}/apply/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+         *
+         *     POST /stock/advices/run/          analisa agora
+         *     POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+         *     POST /stock/advices/<id>/dismiss/ recusa
+         *
+         *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+         */
+        post: operations["api_v1_stock_advices_apply_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/advices/{id}/dismiss/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+         *
+         *     POST /stock/advices/run/          analisa agora
+         *     POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+         *     POST /stock/advices/<id>/dismiss/ recusa
+         *
+         *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+         */
+        post: operations["api_v1_stock_advices_dismiss_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/advices/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_stock_advices_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/advices/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+         *
+         *     POST /stock/advices/run/          analisa agora
+         *     POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+         *     POST /stock/advices/<id>/dismiss/ recusa
+         *
+         *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+         */
+        get: operations["api_v1_stock_advices_bulk_retrieve"];
+        put?: never;
+        /**
+         * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+         *
+         *     POST /stock/advices/run/          analisa agora
+         *     POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+         *     POST /stock/advices/<id>/dismiss/ recusa
+         *
+         *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+         */
+        post: operations["api_v1_stock_advices_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stock/advices/run/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
+         *
+         *     POST /stock/advices/run/          analisa agora
+         *     POST /stock/advices/<id>/apply/   cria a movimentação em rascunho (o estoque só muda quando ela for confirmada)
+         *     POST /stock/advices/<id>/dismiss/ recusa
+         *
+         *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
+         */
+        post: operations["api_v1_stock_advices_run_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5620,6 +6982,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/stock/documents/{id}/label-options/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description O que dá para imprimir e o modelo sugerido (o padrão do sistema para lote, senão o de produto). */
+        get: operations["api_v1_stock_documents_label_options_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/stock/documents/{id}/labels/": {
         parameters: {
             query?: never;
@@ -5628,9 +7007,10 @@ export interface paths {
             cookie?: never;
         };
         /**
-         * @description Etiquetas do que entrou: ?template=<id>. Produto: uma por unidade
-         *     (vendido por peso: uma por linha). Lote: uma por lote gerado.
-         *     Volume: uma por caixa de cada unidade (2 guarda-roupas em 3 caixas = 6).
+         * @description Etiquetas do que entrou: ?template=<id>, ou ?stage=entry|conference (o modelo da etapa na regra
+         *     de logística da filial; vazio = entrada). Produto: uma por unidade (vendido por peso: uma por linha),
+         *     com a data de entrada. Lote: uma por lote gerado, com a data de entrada e a validade. Volume: uma por
+         *     caixa de cada unidade (2 guarda-roupas em 3 caixas = 6). Etapa sem nada para imprimir: 204.
          */
         get: operations["api_v1_stock_documents_labels_retrieve"];
         put?: never;
@@ -5918,39 +7298,63 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/stock/settings/": {
+    "/api/v1/stock/rules/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_settings_list"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        get: operations["api_v1_stock_rules_list"];
         put?: never;
-        post: operations["api_v1_stock_settings_create"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        post: operations["api_v1_stock_rules_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v1/stock/settings/{id}/": {
+    "/api/v1/stock/rules/{id}/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_settings_retrieve"];
-        put: operations["api_v1_stock_settings_update"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        get: operations["api_v1_stock_rules_retrieve"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        put: operations["api_v1_stock_rules_update"];
         post?: never;
-        delete: operations["api_v1_stock_settings_destroy"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        delete: operations["api_v1_stock_rules_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_stock_settings_partial_update"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        patch: operations["api_v1_stock_rules_partial_update"];
         trace?: never;
     };
-    "/api/v1/stock/settings/{id}/history/": {
+    "/api/v1/stock/rules/{id}/history/": {
         parameters: {
             query?: never;
             header?: never;
@@ -5961,7 +7365,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_settings_history_retrieve"];
+        get: operations["api_v1_stock_rules_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5970,16 +7374,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/stock/settings/bulk/": {
+    "/api/v1/stock/rules/bulk/": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_settings_bulk_retrieve"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        get: operations["api_v1_stock_rules_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_stock_settings_bulk_create"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        post: operations["api_v1_stock_rules_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6116,6 +7528,106 @@ export interface paths {
         get: operations["api_v1_stores_bulk_retrieve"];
         put?: never;
         post: operations["api_v1_stores_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stores/rules/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        get: operations["api_v1_stores_rules_list"];
+        put?: never;
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        post: operations["api_v1_stores_rules_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stores/rules/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        get: operations["api_v1_stores_rules_retrieve"];
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        put: operations["api_v1_stores_rules_update"];
+        post?: never;
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        delete: operations["api_v1_stores_rules_destroy"];
+        options?: never;
+        head?: never;
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        patch: operations["api_v1_stores_rules_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/stores/rules/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["api_v1_stores_rules_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stores/rules/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        get: operations["api_v1_stores_rules_bulk_retrieve"];
+        put?: never;
+        /**
+         * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
+         *     a padrão, a última e a regra em uso por filial ficam.
+         */
+        post: operations["api_v1_stores_rules_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6581,8 +8093,8 @@ export interface components {
             readonly updated_at: string;
             /** Format: date-time */
             readonly deleted_at: string | null;
-            /** @description Código patrimonial impresso na plaqueta. */
-            code: string;
+            /** @description Código patrimonial impresso na plaqueta. Vazio = o próximo PAT-000001. */
+            code?: string;
             description: string;
             serial_number?: string;
             brand?: string;
@@ -6749,6 +8261,55 @@ export interface components {
             store?: string | null;
             actor?: number | null;
         };
+        BackgroundTask: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Tarefa */
+            readonly kind: components["schemas"]["BackgroundTaskKindEnum"];
+            readonly kind_display: string;
+            /** Situação */
+            readonly status: components["schemas"]["BackgroundTaskStatusEnum"];
+            readonly status_display: string;
+            /** Feitos */
+            readonly done: number;
+            readonly total: number;
+            readonly percent: number;
+            /**
+             * Motivo
+             * @description Vai para a tela: nunca nome de API, chave ou detalhe técnico.
+             */
+            readonly error: string;
+            readonly can_stop: boolean;
+            readonly started_by_name: string;
+            /**
+             * Início
+             * Format: date-time
+             */
+            readonly started_at: string;
+            /**
+             * Fim
+             * Format: date-time
+             */
+            readonly finished_at: string | null;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `price_round` - Precificação: leitura do mercado
+         *     * `seo_round` - Analítico de SEO: análise dos produtos
+         *     * `price_read` - Precificação: leitura de um produto
+         *     * `seo_read` - Analítico de SEO: análise de um produto
+         * @enum {string}
+         */
+        BackgroundTaskKindEnum: "price_round" | "seo_round" | "price_read" | "seo_read";
+        /**
+         * @description * `running` - Em andamento
+         *     * `completed` - Concluída
+         *     * `failed` - Falha
+         *     * `stopped` - Parada
+         * @enum {string}
+         */
+        BackgroundTaskStatusEnum: "running" | "completed" | "failed" | "stopped";
         Barcode: {
             /** Format: uuid */
             readonly id: string;
@@ -6780,6 +8341,7 @@ export interface components {
         Brand: {
             /** Format: uuid */
             readonly id: string;
+            readonly supplier_name: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -6792,6 +8354,11 @@ export interface components {
             readonly account: string;
             readonly created_by: number | null;
             readonly updated_by: number | null;
+            /**
+             * Format: uuid
+             * @description De quem a loja compra esta marca.
+             */
+            supplier?: string | null;
         };
         CashDiscrepancy: {
             /** Format: uuid */
@@ -6832,6 +8399,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly operator_name: string;
+            readonly approved_by_name: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -6844,6 +8412,9 @@ export interface components {
             readonly status: components["schemas"]["CashMovementStatusEnum"];
             /** Format: date-time */
             readonly approved_at: string | null;
+            readonly authorized_by_password: boolean;
+            /** @description Justificativa de quem aprovou ou recusou. */
+            readonly approval_reason: string;
             readonly reason: string;
             /** @description Para onde foi a sangria. */
             readonly destination: string;
@@ -6878,11 +8449,14 @@ export interface components {
          * @enum {string}
          */
         CashMovementStatusEnum: "pending" | "approved" | "cancelled";
-        /** @description Caixa e QUEM opera (`operators`, ids de usuário): só eles abrem, movimentam e fecham. */
+        /**
+         * @description Caixa e QUEM opera (`operator`, id do usuário): só ele abre, movimenta e fecha. Um operador
+         *     por caixa e um caixa por usuário.
+         */
         CashRegister: {
             /** Format: uuid */
             readonly id: string;
-            readonly operator_names: string;
+            readonly operator_name: string;
             /** @description Quem está com o turno deste caixa agora (vazio = livre). */
             readonly in_use_by: string;
             /** Format: date-time */
@@ -6892,7 +8466,8 @@ export interface components {
             /** Format: date-time */
             readonly deleted_at: string | null;
             name: string;
-            code: string;
+            /** @description Vazio = gerado pelo nome (CAIXA-01). */
+            code?: string;
             is_active?: boolean;
             /** Format: uuid */
             readonly account: string;
@@ -6900,7 +8475,7 @@ export interface components {
             readonly updated_by: number | null;
             /** Format: uuid */
             store?: string;
-            operators?: number[];
+            operator?: number | null;
         };
         CashSession: {
             /** Format: uuid */
@@ -6908,6 +8483,8 @@ export interface components {
             readonly register_name: string;
             readonly opened_by_name: string;
             readonly expected_now: string;
+            /** @description Sangrias/suprimentos aguardando aprovação (o fechamento espera por eles). */
+            readonly pending_movements: number;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -7088,6 +8665,35 @@ export interface components {
          * @enum {string}
          */
         CommissionStatusEnum: "pending" | "paid" | "cancelled";
+        CompetitorPrice: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            variant: string;
+            readonly product_name: string;
+            readonly sku: string;
+            /** @description Loja ou site concorrente. */
+            competitor: string;
+            /** Format: decimal */
+            price?: string;
+            /**
+             * Format: date
+             * @description Dia em que o preço foi visto.
+             */
+            observed_on?: string;
+            /** Format: uri */
+            url?: string;
+            notes?: string;
+            /** Format: date-time */
+            readonly created_at: string;
+        };
+        /**
+         * @description * `auto` - Imprime sozinho
+         *     * `ask` - Pergunta o modelo
+         *     * `off` - Não imprime
+         * @enum {string}
+         */
+        ConferenceLabelsEnum: "auto" | "ask" | "off";
         /**
          * @description * `scan` - Leitura dos códigos
          *     * `manual` - Manual (item a item)
@@ -7103,6 +8709,54 @@ export interface components {
          * @enum {string}
          */
         ConnectionEnum: "windows" | "network" | "serial" | "usb";
+        CosmosConversation: {
+            /** Format: uuid */
+            readonly id: string;
+            title?: string;
+            /** Format: date-time */
+            readonly last_message_at: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /**
+             * Format: uuid
+             * @description Filial ativa quando a conversa começou.
+             */
+            readonly store: string | null;
+            /** Format: uuid */
+            readonly finding: string | null;
+            /** Format: date */
+            readonly digest_day: string | null;
+        };
+        CosmosFinding: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly rule: string;
+            readonly severity: components["schemas"]["SeverityEnum"];
+            readonly title: string;
+            readonly detail: string;
+            readonly entity: string;
+            readonly object_id: string;
+            /** @description Recurso da API (a tela abre o cadastro). */
+            readonly endpoint: string;
+            readonly status: components["schemas"]["CosmosFindingStatusEnum"];
+            /** @description Quem fez o que foi apontado. */
+            readonly actor: number | null;
+            readonly actor_name: string;
+            /** Format: uuid */
+            readonly store: string | null;
+            readonly store_name: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly resolved_at: string | null;
+        };
+        /**
+         * @description * `open` - Aberto
+         *     * `resolved` - Resolvido
+         *     * `dismissed` - Descartado
+         * @enum {string}
+         */
+        CosmosFindingStatusEnum: "open" | "resolved" | "dismissed";
         Coupon: {
             /** Format: uuid */
             readonly id: string;
@@ -7117,8 +8771,8 @@ export interface components {
             starts_at?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
-            /** @description Guardado em MAIÚSCULAS. */
-            code: string;
+            /** @description Guardado em MAIÚSCULAS. Vazio = gerado pelo nome (BLACKFRIDAY) ou aleatório. */
+            code?: string;
             name?: string;
             kind?: components["schemas"]["CouponKindEnum"];
             /** Format: decimal */
@@ -7210,6 +8864,7 @@ export interface components {
              * @description Limite do crediário. 0 = não vende a prazo.
              */
             credit_limit?: string;
+            billing_same_as_delivery?: boolean;
             /** @description Metacampos {chave: valor}. */
             metafields?: unknown;
             /** Format: uuid */
@@ -7238,6 +8893,8 @@ export interface components {
             label?: string;
             reference?: string;
             is_default?: boolean;
+            /** @description Endereço de cobrança (quando difere da entrega). */
+            is_billing?: boolean;
             /** Format: uuid */
             customer?: string;
         };
@@ -7365,6 +9022,13 @@ export interface components {
          * @enum {string}
          */
         EmissionTypeEnum: "1" | "9";
+        /**
+         * @description * `auto` - Imprime sozinho
+         *     * `ask` - Pergunta o modelo
+         *     * `off` - Não imprime
+         * @enum {string}
+         */
+        EntryLabelsEnum: "auto" | "ask" | "off";
         /**
          * @description * `1` - Produção
          *     * `2` - Homologação
@@ -7641,6 +9305,10 @@ export interface components {
             name: string;
             /** @description Pré-pronto do sistema: ajusta, mas não exclui. */
             is_system?: boolean;
+            /** @description Vale para o produto do perfil que não tiver NCM próprio. */
+            ncm?: string;
+            /** @description Vale para o produto do perfil que não tiver CEST próprio. */
+            cest?: string;
             cfop?: string;
             /** @description CFOP para outra UF (ex.: 6102). */
             cfop_interstate?: string;
@@ -7680,7 +9348,7 @@ export interface components {
             document_model?: components["schemas"]["DocumentModelEnum"];
             /** Format: int64 */
             series?: number;
-            origin?: components["schemas"]["OriginEnum"];
+            origin?: components["schemas"]["FiscalSeriesOriginEnum"];
             /** Format: int64 */
             next_number?: number;
             is_active?: boolean;
@@ -7691,6 +9359,12 @@ export interface components {
             /** Format: uuid */
             config: string;
         };
+        /**
+         * @description * `store` - Loja / terminal
+         *     * `cloud` - Nuvem
+         * @enum {string}
+         */
+        FiscalSeriesOriginEnum: "store" | "cloud";
         /**
          * @description * `unknown` - Desconhecida
          *     * `authorized` - Autorizada
@@ -8207,24 +9881,61 @@ export interface components {
          * @enum {string}
          */
         LevelEnum: "info" | "success" | "warning" | "error";
-        LogisticsSettings: {
+        LogisticsRule: {
             /** Format: uuid */
             readonly id: string;
-            readonly store_name: string;
+            readonly store_names: string;
+            readonly store_count: string;
+            readonly entry_lot_label_name: string;
+            readonly entry_product_label_name: string;
+            readonly conference_label_name: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
             /** Format: date-time */
             readonly deleted_at: string | null;
+            name: string;
+            description?: string;
+            /** @description Filial nova (ou sem escolha) fica com esta. */
+            is_default?: boolean;
             /** @description Permite conferir o recebimento manualmente, sem ler os códigos. */
             allow_manual_conference?: boolean;
+            /**
+             * @description Ao confirmar ou aprovar a entrada.
+             *
+             *     * `auto` - Imprime sozinho
+             *     * `ask` - Pergunta o modelo
+             *     * `off` - Não imprime
+             */
+            entry_labels?: components["schemas"]["EntryLabelsEnum"];
+            /**
+             * @description Ao concluir a conferência do recebimento.
+             *
+             *     * `auto` - Imprime sozinho
+             *     * `ask` - Pergunta o modelo
+             *     * `off` - Não imprime
+             */
+            conference_labels?: components["schemas"]["ConferenceLabelsEnum"];
             /** Format: uuid */
             readonly account: string;
             readonly created_by: number | null;
             readonly updated_by: number | null;
-            /** Format: uuid */
-            readonly store: string;
+            /**
+             * Format: uuid
+             * @description Entrada que gera lote (validade ou data de entrada).
+             */
+            entry_lot_label?: string | null;
+            /**
+             * Format: uuid
+             * @description Entrada sem lote: etiqueta de produto, uma por unidade.
+             */
+            entry_product_label?: string | null;
+            /**
+             * Format: uuid
+             * @description Caixa (volume) ou produto, para identificar o que chegou.
+             */
+            conference_label?: string | null;
         };
         /**
          * @description * `none` - Sem manifestação
@@ -8236,6 +9947,36 @@ export interface components {
          * @enum {string}
          */
         ManifestationEnum: "none" | "science" | "confirmed" | "unknown" | "not_performed" | "error";
+        MarketOffer: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly price_check: string;
+            readonly source: string;
+            /** @description A busca que trouxe esta oferta. */
+            readonly query: string;
+            /**
+             * Format: date-time
+             * @description Quando a fonte trouxe esta oferta.
+             */
+            readonly observed_at: string | null;
+            readonly external_id: string;
+            readonly title: string;
+            /** Format: uri */
+            readonly url: string;
+            readonly seller: string;
+            /** Format: decimal */
+            readonly price: string;
+            readonly free_shipping: boolean;
+            /**
+             * Format: decimal
+             * @description Nota do pareamento (0 a 100).
+             */
+            readonly match_score: string;
+            readonly match_reason: string;
+            /** @description Entrou na referência (pareada e dentro da curva). */
+            readonly used: boolean;
+        };
         MetafieldDefinition: {
             /** Format: uuid */
             readonly id: string;
@@ -8411,12 +10152,6 @@ export interface components {
          */
         OperationEnum: "CREATE" | "UPDATE" | "DELETE" | "UPSERT" | "SNAPSHOT";
         /**
-         * @description * `store` - Loja / terminal
-         *     * `cloud` - Nuvem
-         * @enum {string}
-         */
-        OriginEnum: "store" | "cloud";
-        /**
          * @description * `draft` - Pedido guardado
          *     * `open` - Em atendimento
          *     * `awaiting_payment` - Pagamento em andamento
@@ -8525,6 +10260,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["AuditLog"][];
+        };
+        PaginatedBackgroundTaskList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["BackgroundTask"][];
         };
         PaginatedBinBalanceList: {
             /** @example 123 */
@@ -8645,6 +10395,51 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Commission"][];
+        };
+        PaginatedCompetitorPriceList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["CompetitorPrice"][];
+        };
+        PaginatedCosmosConversationList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["CosmosConversation"][];
+        };
+        PaginatedCosmosFindingList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["CosmosFinding"][];
         };
         PaginatedCouponList: {
             /** @example 123 */
@@ -8991,7 +10786,7 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["LabelTemplate"][];
         };
-        PaginatedLogisticsSettingsList: {
+        PaginatedLogisticsRuleList: {
             /** @example 123 */
             count: number;
             /**
@@ -9004,7 +10799,22 @@ export interface components {
              * @example http://api.example.org/accounts/?page=2
              */
             previous?: string | null;
-            results: components["schemas"]["LogisticsSettings"][];
+            results: components["schemas"]["LogisticsRule"][];
+        };
+        PaginatedMarketOfferList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["MarketOffer"][];
         };
         PaginatedMetafieldDefinitionList: {
             /** @example 123 */
@@ -9095,6 +10905,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Permission"][];
+        };
+        PaginatedPriceCheckList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["PriceCheck"][];
         };
         PaginatedPrintJobList: {
             /** @example 123 */
@@ -9201,6 +11026,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["ReceivingDivergence"][];
         };
+        PaginatedReviewList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["Review"][];
+        };
         PaginatedRoleList: {
             /** @example 123 */
             count: number;
@@ -9291,6 +11131,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["ScaleReading"][];
         };
+        PaginatedSeoCheckList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["SeoCheck"][];
+        };
         PaginatedServiceRuleList: {
             /** @example 123 */
             count: number;
@@ -9305,6 +11160,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["ServiceRule"][];
+        };
+        PaginatedStockAdviceList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["StockAdvice"][];
         };
         PaginatedStockBalanceList: {
             /** @example 123 */
@@ -9366,7 +11236,7 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["StockMovement"][];
         };
-        PaginatedStockSettingsList: {
+        PaginatedStockRuleList: {
             /** @example 123 */
             count: number;
             /**
@@ -9379,7 +11249,7 @@ export interface components {
              * @example http://api.example.org/accounts/?page=2
              */
             previous?: string | null;
-            results: components["schemas"]["StockSettings"][];
+            results: components["schemas"]["StockRule"][];
         };
         PaginatedStorageBinList: {
             /** @example 123 */
@@ -9410,6 +11280,21 @@ export interface components {
              */
             previous?: string | null;
             results: components["schemas"]["Store"][];
+        };
+        PaginatedStoreRuleList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["StoreRule"][];
         };
         PaginatedSupplierList: {
             /** @example 123 */
@@ -9600,7 +11485,7 @@ export interface components {
             readonly updated_at?: string;
             /** Format: date-time */
             readonly deleted_at?: string | null;
-            /** @description Código patrimonial impresso na plaqueta. */
+            /** @description Código patrimonial impresso na plaqueta. Vazio = o próximo PAT-000001. */
             code?: string;
             description?: string;
             serial_number?: string;
@@ -9726,6 +11611,7 @@ export interface components {
         PatchedBrand: {
             /** Format: uuid */
             readonly id?: string;
+            readonly supplier_name?: string;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -9738,6 +11624,11 @@ export interface components {
             readonly account?: string;
             readonly created_by?: number | null;
             readonly updated_by?: number | null;
+            /**
+             * Format: uuid
+             * @description De quem a loja compra esta marca.
+             */
+            supplier?: string | null;
         };
         PatchedCashDiscrepancy: {
             /** Format: uuid */
@@ -9766,11 +11657,14 @@ export interface components {
             session?: string;
             readonly resolved_by?: number | null;
         };
-        /** @description Caixa e QUEM opera (`operators`, ids de usuário): só eles abrem, movimentam e fecham. */
+        /**
+         * @description Caixa e QUEM opera (`operator`, id do usuário): só ele abre, movimenta e fecha. Um operador
+         *     por caixa e um caixa por usuário.
+         */
         PatchedCashRegister: {
             /** Format: uuid */
             readonly id?: string;
-            readonly operator_names?: string;
+            readonly operator_name?: string;
             /** @description Quem está com o turno deste caixa agora (vazio = livre). */
             readonly in_use_by?: string;
             /** Format: date-time */
@@ -9780,6 +11674,7 @@ export interface components {
             /** Format: date-time */
             readonly deleted_at?: string | null;
             name?: string;
+            /** @description Vazio = gerado pelo nome (CAIXA-01). */
             code?: string;
             is_active?: boolean;
             /** Format: uuid */
@@ -9788,7 +11683,7 @@ export interface components {
             readonly updated_by?: number | null;
             /** Format: uuid */
             store?: string;
-            operators?: number[];
+            operator?: number | null;
         };
         /**
          * @description Descrição do editor chega limpa (sem script) e o slug sai do nome quando vazio.
@@ -9861,6 +11756,46 @@ export interface components {
             /** Format: uuid */
             readonly sale_return?: string | null;
         };
+        PatchedCompetitorPrice: {
+            /** Format: uuid */
+            readonly id?: string;
+            /** Format: uuid */
+            variant?: string;
+            readonly product_name?: string;
+            readonly sku?: string;
+            /** @description Loja ou site concorrente. */
+            competitor?: string;
+            /** Format: decimal */
+            price?: string;
+            /**
+             * Format: date
+             * @description Dia em que o preço foi visto.
+             */
+            observed_on?: string;
+            /** Format: uri */
+            url?: string;
+            notes?: string;
+            /** Format: date-time */
+            readonly created_at?: string;
+        };
+        PatchedCosmosConversation: {
+            /** Format: uuid */
+            readonly id?: string;
+            title?: string;
+            /** Format: date-time */
+            readonly last_message_at?: string | null;
+            /** Format: date-time */
+            readonly created_at?: string;
+            /**
+             * Format: uuid
+             * @description Filial ativa quando a conversa começou.
+             */
+            readonly store?: string | null;
+            /** Format: uuid */
+            readonly finding?: string | null;
+            /** Format: date */
+            readonly digest_day?: string | null;
+        };
         PatchedCoupon: {
             /** Format: uuid */
             readonly id?: string;
@@ -9875,7 +11810,7 @@ export interface components {
             starts_at?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
-            /** @description Guardado em MAIÚSCULAS. */
+            /** @description Guardado em MAIÚSCULAS. Vazio = gerado pelo nome (BLACKFRIDAY) ou aleatório. */
             code?: string;
             name?: string;
             kind?: components["schemas"]["CouponKindEnum"];
@@ -9954,6 +11889,7 @@ export interface components {
              * @description Limite do crediário. 0 = não vende a prazo.
              */
             credit_limit?: string;
+            billing_same_as_delivery?: boolean;
             /** @description Metacampos {chave: valor}. */
             metafields?: unknown;
             /** Format: uuid */
@@ -9982,6 +11918,8 @@ export interface components {
             label?: string;
             reference?: string;
             is_default?: boolean;
+            /** @description Endereço de cobrança (quando difere da entrega). */
+            is_billing?: boolean;
             /** Format: uuid */
             customer?: string;
         };
@@ -10225,6 +12163,10 @@ export interface components {
             name?: string;
             /** @description Pré-pronto do sistema: ajusta, mas não exclui. */
             is_system?: boolean;
+            /** @description Vale para o produto do perfil que não tiver NCM próprio. */
+            ncm?: string;
+            /** @description Vale para o produto do perfil que não tiver CEST próprio. */
+            cest?: string;
             cfop?: string;
             /** @description CFOP para outra UF (ex.: 6102). */
             cfop_interstate?: string;
@@ -10264,7 +12206,7 @@ export interface components {
             document_model?: components["schemas"]["DocumentModelEnum"];
             /** Format: int64 */
             series?: number;
-            origin?: components["schemas"]["OriginEnum"];
+            origin?: components["schemas"]["FiscalSeriesOriginEnum"];
             /** Format: int64 */
             next_number?: number;
             is_active?: boolean;
@@ -10469,24 +12411,61 @@ export interface components {
             readonly created_by?: number | null;
             readonly updated_by?: number | null;
         };
-        PatchedLogisticsSettings: {
+        PatchedLogisticsRule: {
             /** Format: uuid */
             readonly id?: string;
-            readonly store_name?: string;
+            readonly store_names?: string;
+            readonly store_count?: string;
+            readonly entry_lot_label_name?: string;
+            readonly entry_product_label_name?: string;
+            readonly conference_label_name?: string;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
             readonly updated_at?: string;
             /** Format: date-time */
             readonly deleted_at?: string | null;
+            name?: string;
+            description?: string;
+            /** @description Filial nova (ou sem escolha) fica com esta. */
+            is_default?: boolean;
             /** @description Permite conferir o recebimento manualmente, sem ler os códigos. */
             allow_manual_conference?: boolean;
+            /**
+             * @description Ao confirmar ou aprovar a entrada.
+             *
+             *     * `auto` - Imprime sozinho
+             *     * `ask` - Pergunta o modelo
+             *     * `off` - Não imprime
+             */
+            entry_labels?: components["schemas"]["EntryLabelsEnum"];
+            /**
+             * @description Ao concluir a conferência do recebimento.
+             *
+             *     * `auto` - Imprime sozinho
+             *     * `ask` - Pergunta o modelo
+             *     * `off` - Não imprime
+             */
+            conference_labels?: components["schemas"]["ConferenceLabelsEnum"];
             /** Format: uuid */
             readonly account?: string;
             readonly created_by?: number | null;
             readonly updated_by?: number | null;
-            /** Format: uuid */
-            readonly store?: string;
+            /**
+             * Format: uuid
+             * @description Entrada que gera lote (validade ou data de entrada).
+             */
+            entry_lot_label?: string | null;
+            /**
+             * Format: uuid
+             * @description Entrada sem lote: etiqueta de produto, uma por unidade.
+             */
+            entry_product_label?: string | null;
+            /**
+             * Format: uuid
+             * @description Caixa (volume) ou produto, para identificar o que chegou.
+             */
+            conference_label?: string | null;
         };
         PatchedMetafieldDefinition: {
             /** Format: uuid */
@@ -10698,6 +12677,16 @@ export interface components {
             readonly variant_count?: number;
             /** Format: decimal */
             readonly stock_quantity?: string;
+            /** Format: decimal */
+            initial_stock?: string | null;
+            /** Format: decimal */
+            initial_cost?: string | null;
+            /** Format: uuid */
+            initial_warehouse?: string | null;
+            /** @description O NCM que vale: o do produto ou, sem ele, o do perfil. */
+            readonly fiscal_ncm?: string;
+            /** @description O CEST que vale: o do produto ou, sem ele, o do perfil. */
+            readonly fiscal_cest?: string;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
@@ -10710,6 +12699,11 @@ export interface components {
             name?: string;
             /** @description Referência do modelo; base do SKU das variantes. */
             reference?: string;
+            /**
+             * Modelo
+             * @description Modelo do fabricante (ex.: Tune 510BT).
+             */
+            model_name?: string;
             /** @description Texto rico (HTML limpo). */
             description?: string;
             /** @description Endereço na loja virtual (gerado pelo nome). */
@@ -10724,7 +12718,9 @@ export interface components {
              * @description Vazio = comissão do vendedor.
              */
             commission_percent?: string | null;
+            /** @description Vazio = o do perfil fiscal. */
             ncm?: string;
+            /** @description Vazio = o do perfil fiscal. */
             cest?: string;
             /** @description Origem da mercadoria (0 = nacional). */
             origin?: string;
@@ -10874,6 +12870,10 @@ export interface components {
             readonly balance_due?: string;
             readonly seller_name?: string;
             readonly shipping_address_detail?: string;
+            /** @description Endereços do pedido: entrega e cobrança (herdados do cliente). */
+            readonly addresses?: {
+                [key: string]: unknown;
+            };
             /** @description Notas fiscais do pedido, a principal primeiro. */
             readonly invoices?: string;
             /** Format: date-time */
@@ -10893,6 +12893,7 @@ export interface components {
             readonly parked_at?: string | null;
             readonly customer_document?: string;
             readonly customer_name?: string;
+            readonly billing_same_as_delivery?: boolean;
             /**
              * Format: decimal
              * @description Soma dos itens ativos, já com promoção e desconto de item.
@@ -11117,6 +13118,11 @@ export interface components {
             manufactured_at?: string | null;
             /** Format: date */
             expires_at?: string | null;
+            /**
+             * Format: date
+             * @description Data de entrada no estoque.
+             */
+            readonly received_at?: string | null;
             /** Format: decimal */
             readonly initial_quantity?: string;
             /** Format: decimal */
@@ -11133,20 +13139,28 @@ export interface components {
             /** Format: uuid */
             readonly warehouse?: string;
         };
-        PatchedStockSettings: {
+        PatchedStockRule: {
             /** Format: uuid */
             readonly id?: string;
+            readonly store_names?: string;
+            readonly store_count?: string;
             /** Format: date-time */
             readonly created_at?: string;
             /** Format: date-time */
             readonly updated_at?: string;
             /** Format: date-time */
             readonly deleted_at?: string | null;
+            name?: string;
+            description?: string;
+            /** @description Filial nova (ou sem escolha) fica com esta. */
+            is_default?: boolean;
             picking_strategy?: components["schemas"]["PickingStrategyEnum"];
             /** Format: int64 */
             expiry_warning_days?: number;
             block_expired?: boolean;
             allow_negative_stock?: boolean;
+            /** @description Sem validade: guarda a data de entrada e dá saída no mais antigo primeiro. */
+            fifo_by_entry?: boolean;
             /** Format: uuid */
             readonly account?: string;
             readonly created_by?: number | null;
@@ -11214,16 +13228,6 @@ export interface components {
             phone?: string;
             /** Format: email */
             email?: string;
-            require_open_cash_session?: boolean;
-            /** Format: decimal */
-            cash_closing_tolerance?: string;
-            /** @description Exige vendedor em toda venda. */
-            require_seller?: boolean;
-            auto_print_receipt?: boolean;
-            ask_print_danfe?: boolean;
-            print_cancellation_receipt?: boolean;
-            scale_barcode_mode?: components["schemas"]["ScaleBarcodeModeEnum"] | components["schemas"]["BlankEnum"];
-            scale_barcode_prefix?: string;
             local_server_url?: string;
             cloud_only?: boolean;
             settings?: unknown;
@@ -11244,6 +13248,60 @@ export interface components {
              * Format: uuid
              */
             fiscal_config?: string | null;
+            /**
+             * Regras da filial
+             * Format: uuid
+             * @description PDV, caixa e venda. Vazio = a padrão.
+             */
+            rule?: string;
+            /**
+             * Regras de logística
+             * Format: uuid
+             */
+            logistics_rule?: string;
+            /**
+             * Regras de estoque
+             * Format: uuid
+             */
+            stock_rule?: string;
+        };
+        PatchedStoreRule: {
+            /** Format: uuid */
+            readonly id?: string;
+            readonly store_names?: string;
+            readonly store_count?: string;
+            /** Format: date-time */
+            readonly created_at?: string;
+            /** Format: date-time */
+            readonly updated_at?: string;
+            /** Format: date-time */
+            readonly deleted_at?: string | null;
+            name?: string;
+            description?: string;
+            /** @description Filial nova (ou sem escolha) fica com esta. */
+            is_default?: boolean;
+            require_open_cash_session?: boolean;
+            /** Format: decimal */
+            cash_closing_tolerance?: string;
+            /** @description Bloqueia a tela do caixa parado. */
+            pdv_auto_lock?: boolean;
+            /** @description Minutos parado até bloquear. */
+            pdv_lock_minutes?: number;
+            /** @description Exige vendedor em toda venda. */
+            require_seller?: boolean;
+            auto_print_receipt?: boolean;
+            /** @description No PDV, antes de pagar, confirma o endereço de entrega e de cobrança do pedido. */
+            confirm_address_at_checkout?: boolean;
+            ask_print_danfe?: boolean;
+            /** @description Só lança cartão/PIX com o NSU/autorização do comprovante. */
+            require_payment_reference?: boolean;
+            print_cancellation_receipt?: boolean;
+            scale_barcode_mode?: components["schemas"]["ScaleBarcodeModeEnum"] | components["schemas"]["BlankEnum"];
+            scale_barcode_prefix?: string;
+            /** Format: uuid */
+            readonly account?: string;
+            readonly created_by?: number | null;
+            readonly updated_by?: number | null;
         };
         PatchedSupplier: {
             /** Format: uuid */
@@ -11540,6 +13598,199 @@ export interface components {
          * @enum {string}
          */
         PickingStrategyEnum: "fifo" | "fefo";
+        /**
+         * @description * `above` - Acima do mercado
+         *     * `inside` - No preço do mercado
+         *     * `below` - Abaixo do mercado
+         *     * `unknown` - Sem dados suficientes
+         * @enum {string}
+         */
+        PositionEnum: "above" | "inside" | "below" | "unknown";
+        PriceCheck: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly variant: string;
+            readonly product: string;
+            readonly product_name: string;
+            readonly sku: string;
+            /** Format: decimal */
+            readonly shelf_price: string;
+            /** Format: date-time */
+            readonly checked_at: string | null;
+            /** @description A leitura está no worker: a tela espera e relê. */
+            readonly reading: boolean;
+            /** @description Pediu a leitura e ela não terminou. */
+            readonly reading_stalled: boolean;
+            readonly source: string;
+            readonly error: string;
+            /** @description O que a Cosmos mudou no pareamento da última leitura. */
+            readonly ai_note: string;
+            /** Format: decimal */
+            readonly current_price: string;
+            /**
+             * Format: decimal
+             * @description Custo médio (ou o último, sem média) usado na conta.
+             */
+            readonly cost: string;
+            /** Format: decimal */
+            readonly current_margin: string | null;
+            readonly competitors: number;
+            readonly offers_found: number;
+            /** Format: decimal */
+            readonly market_min: string | null;
+            /** Format: decimal */
+            readonly market_p25: string | null;
+            /** Format: decimal */
+            readonly market_median: string | null;
+            /** Format: decimal */
+            readonly market_p75: string | null;
+            /** Format: decimal */
+            readonly market_avg: string | null;
+            /** Format: decimal */
+            readonly market_max: string | null;
+            /** @description Nosso lugar do mais barato ao mais caro, entre os concorrentes (1 = o mais barato). */
+            readonly market_rank: number | null;
+            /** @description Nosso lugar entre os concorrentes: 2º de 6. */
+            readonly standing: string;
+            /**
+             * Format: decimal
+             * @description Seu preço ÷ mediana do mercado (1,000 = igual).
+             */
+            readonly price_index: string | null;
+            /**
+             * Format: decimal
+             * @description Espalhamento do mercado (P75 − P25) ÷ mediana.
+             */
+            readonly dispersion: string | null;
+            /**
+             * Format: decimal
+             * @description Nota média do pareamento.
+             */
+            readonly confidence: string | null;
+            readonly position: components["schemas"]["PositionEnum"];
+            readonly position_display: string;
+            /** Format: decimal */
+            readonly suggested_price: string | null;
+            /** Format: decimal */
+            readonly suggested_margin: string | null;
+            /**
+             * Format: decimal
+             * @description Menor preço que ainda dá a margem mínima com este custo.
+             */
+            readonly floor_price: string | null;
+            /** @description Vale a pena aderir? Vazio = sem custo para decidir. */
+            readonly worth_it: boolean | null;
+            /** @description Mercado muito espalhado ou pareamento fraco. */
+            readonly needs_review: boolean;
+            readonly reason: string;
+            readonly status: components["schemas"]["Status2c2Enum"];
+            readonly status_display: string;
+            readonly decided_by: number | null;
+            readonly decided_by_name: string;
+            /** Format: date-time */
+            readonly decided_at: string | null;
+            /** Format: decimal */
+            readonly applied_price: string | null;
+            /** Format: decimal */
+            readonly previous_price: string | null;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /** @description O processo aberto: com o que foi achado no mercado, para conferir oferta por oferta. */
+        PriceCheckDetail: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly variant: string;
+            readonly product: string;
+            readonly product_name: string;
+            readonly sku: string;
+            /** Format: decimal */
+            readonly shelf_price: string;
+            /** Format: date-time */
+            readonly checked_at: string | null;
+            /** @description A leitura está no worker: a tela espera e relê. */
+            readonly reading: boolean;
+            /** @description Pediu a leitura e ela não terminou. */
+            readonly reading_stalled: boolean;
+            readonly source: string;
+            readonly error: string;
+            /** @description O que a Cosmos mudou no pareamento da última leitura. */
+            readonly ai_note: string;
+            /** Format: decimal */
+            readonly current_price: string;
+            /**
+             * Format: decimal
+             * @description Custo médio (ou o último, sem média) usado na conta.
+             */
+            readonly cost: string;
+            /** Format: decimal */
+            readonly current_margin: string | null;
+            readonly competitors: number;
+            readonly offers_found: number;
+            /** Format: decimal */
+            readonly market_min: string | null;
+            /** Format: decimal */
+            readonly market_p25: string | null;
+            /** Format: decimal */
+            readonly market_median: string | null;
+            /** Format: decimal */
+            readonly market_p75: string | null;
+            /** Format: decimal */
+            readonly market_avg: string | null;
+            /** Format: decimal */
+            readonly market_max: string | null;
+            /** @description Nosso lugar do mais barato ao mais caro, entre os concorrentes (1 = o mais barato). */
+            readonly market_rank: number | null;
+            /** @description Nosso lugar entre os concorrentes: 2º de 6. */
+            readonly standing: string;
+            /**
+             * Format: decimal
+             * @description Seu preço ÷ mediana do mercado (1,000 = igual).
+             */
+            readonly price_index: string | null;
+            /**
+             * Format: decimal
+             * @description Espalhamento do mercado (P75 − P25) ÷ mediana.
+             */
+            readonly dispersion: string | null;
+            /**
+             * Format: decimal
+             * @description Nota média do pareamento.
+             */
+            readonly confidence: string | null;
+            readonly position: components["schemas"]["PositionEnum"];
+            readonly position_display: string;
+            /** Format: decimal */
+            readonly suggested_price: string | null;
+            /** Format: decimal */
+            readonly suggested_margin: string | null;
+            /**
+             * Format: decimal
+             * @description Menor preço que ainda dá a margem mínima com este custo.
+             */
+            readonly floor_price: string | null;
+            /** @description Vale a pena aderir? Vazio = sem custo para decidir. */
+            readonly worth_it: boolean | null;
+            /** @description Mercado muito espalhado ou pareamento fraco. */
+            readonly needs_review: boolean;
+            readonly reason: string;
+            readonly status: components["schemas"]["Status2c2Enum"];
+            readonly status_display: string;
+            readonly decided_by: number | null;
+            readonly decided_by_name: string;
+            /** Format: date-time */
+            readonly decided_at: string | null;
+            /** Format: decimal */
+            readonly applied_price: string | null;
+            /** Format: decimal */
+            readonly previous_price: string | null;
+            /** Format: date-time */
+            readonly updated_at: string;
+            readonly searches: Record<string, never>[];
+            readonly offers: components["schemas"]["MarketOffer"][];
+        };
         PrintJob: {
             /** Format: uuid */
             readonly id: string;
@@ -11682,6 +13933,16 @@ export interface components {
             readonly variant_count: number;
             /** Format: decimal */
             readonly stock_quantity: string;
+            /** Format: decimal */
+            initial_stock?: string | null;
+            /** Format: decimal */
+            initial_cost?: string | null;
+            /** Format: uuid */
+            initial_warehouse?: string | null;
+            /** @description O NCM que vale: o do produto ou, sem ele, o do perfil. */
+            readonly fiscal_ncm: string;
+            /** @description O CEST que vale: o do produto ou, sem ele, o do perfil. */
+            readonly fiscal_cest: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
@@ -11694,6 +13955,11 @@ export interface components {
             name: string;
             /** @description Referência do modelo; base do SKU das variantes. */
             reference?: string;
+            /**
+             * Modelo
+             * @description Modelo do fabricante (ex.: Tune 510BT).
+             */
+            model_name?: string;
             /** @description Texto rico (HTML limpo). */
             description?: string;
             /** @description Endereço na loja virtual (gerado pelo nome). */
@@ -11708,7 +13974,9 @@ export interface components {
              * @description Vazio = comissão do vendedor.
              */
             commission_percent?: string | null;
+            /** @description Vazio = o do perfil fiscal. */
             ncm?: string;
+            /** @description Vazio = o do perfil fiscal. */
             cest?: string;
             /** @description Origem da mercadoria (0 = nacional). */
             origin?: string;
@@ -11924,6 +14192,67 @@ export interface components {
          * @enum {string}
          */
         ResolutionEnum: "CLOUD_WINS" | "LOCAL_WINS" | "LAST_VERSION" | "MANUAL" | "IGNORED";
+        Review: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly product_name: string;
+            readonly customer_name: string;
+            readonly sale_number: number;
+            readonly store_name: string;
+            readonly moderated_by_name: string;
+            readonly photo_urls: string;
+            /** Format: uuid */
+            product?: string | null;
+            /** Format: uuid */
+            sale?: string | null;
+            /** Format: uuid */
+            customer?: string | null;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** Format: date-time */
+            readonly deleted_at: string | null;
+            kind?: components["schemas"]["ReviewKindEnum"];
+            readonly public_name: string;
+            /** Format: int64 */
+            rating: number;
+            comment?: string;
+            readonly status: components["schemas"]["ReviewStatusEnum"];
+            readonly rejection_reason: string;
+            /** Format: date-time */
+            readonly moderated_at: string | null;
+            readonly verified_purchase: boolean;
+            readonly origin: components["schemas"]["ReviewOriginEnum"];
+            /** Format: uuid */
+            readonly account: string;
+            readonly created_by: number | null;
+            readonly updated_by: number | null;
+            /** Format: uuid */
+            readonly store: string;
+            readonly moderated_by: number | null;
+            /** Format: uuid */
+            link?: string | null;
+        };
+        /**
+         * @description * `product` - Produto
+         *     * `delivery` - Entrega
+         * @enum {string}
+         */
+        ReviewKindEnum: "product" | "delivery";
+        /**
+         * @description * `link` - Link enviado ao cliente
+         *     * `backoffice` - Registrada na retaguarda
+         * @enum {string}
+         */
+        ReviewOriginEnum: "link" | "backoffice";
+        /**
+         * @description * `pending` - Pendente
+         *     * `approved` - Aprovada
+         *     * `rejected` - Rejeitada
+         * @enum {string}
+         */
+        ReviewStatusEnum: "pending" | "approved" | "rejected";
         /**
          * @description Cargo fixo: a conta só ajusta o desconto máximo e o "ativo"; o resto é do catálogo
          *     (`services/access_catalog.SYSTEM_ROLES`). O superusuário (suporte) mexe em tudo.
@@ -12009,6 +14338,10 @@ export interface components {
             readonly balance_due: string;
             readonly seller_name: string;
             readonly shipping_address_detail: string;
+            /** @description Endereços do pedido: entrega e cobrança (herdados do cliente). */
+            readonly addresses: {
+                [key: string]: unknown;
+            };
             /** @description Notas fiscais do pedido, a principal primeiro. */
             readonly invoices: string;
             /** Format: date-time */
@@ -12028,6 +14361,7 @@ export interface components {
             readonly parked_at: string | null;
             readonly customer_document: string;
             readonly customer_name: string;
+            readonly billing_same_as_delivery: boolean;
             /**
              * Format: decimal
              * @description Soma dos itens ativos, já com promoção e desconto de item.
@@ -12382,6 +14716,75 @@ export interface components {
          * @enum {string}
          */
         ScopeEnum: "product" | "customer";
+        SeoCheck: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly product: string;
+            readonly product_name: string;
+            /** Format: date-time */
+            readonly checked_at: string | null;
+            /** @description A análise está no worker: a tela espera e relê. */
+            readonly reading: boolean;
+            /** @description Pediu a análise e ela não terminou. */
+            readonly reading_stalled: boolean;
+            /** @description Falha na última consulta dos dados de busca. */
+            readonly error: string;
+            /**
+             * Nota
+             * @description 0 a 100: qualidade do cadastro.
+             */
+            readonly score: number | null;
+            /** @description A nota considerou o volume de busca do Google. */
+            readonly has_search_data: boolean;
+            /** Situação */
+            readonly status: components["schemas"]["Status4f7Enum"];
+            readonly status_display: string;
+            readonly issues_count: number;
+            readonly suggestions_count: number;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /** @description A análise aberta: de onde veio a nota, o que melhorar, o antes e depois e os termos pesquisados. */
+        SeoCheckDetail: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly product: string;
+            readonly product_name: string;
+            /** Format: date-time */
+            readonly checked_at: string | null;
+            /** @description A análise está no worker: a tela espera e relê. */
+            readonly reading: boolean;
+            /** @description Pediu a análise e ela não terminou. */
+            readonly reading_stalled: boolean;
+            /** @description Falha na última consulta dos dados de busca. */
+            readonly error: string;
+            /**
+             * Nota
+             * @description 0 a 100: qualidade do cadastro.
+             */
+            readonly score: number | null;
+            /** @description A nota considerou o volume de busca do Google. */
+            readonly has_search_data: boolean;
+            /** Situação */
+            readonly status: components["schemas"]["Status4f7Enum"];
+            readonly status_display: string;
+            readonly issues_count: number;
+            readonly suggestions_count: number;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** @description [{key, label, points, max}] */
+            readonly breakdown: unknown;
+            /** @description [{field, severity, message, origin}] */
+            readonly issues: unknown;
+            /** @description [{term, avg_monthly_searches, competition, origin}] */
+            readonly keywords: unknown;
+            readonly suggestions: Record<string, never>[];
+            readonly decided_by_name: string | null;
+            /** Format: date-time */
+            readonly decided_at: string | null;
+        };
         /** @description Regra do serviço: a quais produtos ele vale e por quanto (padrão do StarHub). */
         ServiceRule: {
             /** Format: uuid */
@@ -12436,11 +14839,34 @@ export interface components {
          */
         ServiceRuleKindEnum: "category" | "product";
         /**
+         * @description * `info` - Informação
+         *     * `warning` - Atenção
+         *     * `critical` - Grave
+         * @enum {string}
+         */
+        SeverityEnum: "info" | "warning" | "critical";
+        /**
          * @description * `agent` - Agente da balança
          *     * `manual` - Digitado
          * @enum {string}
          */
         SourceEnum: "agent" | "manual";
+        /**
+         * @description * `none` - Sem sugestão
+         *     * `pending` - Aguardando aprovação
+         *     * `applied` - Preço aplicado
+         *     * `rejected` - Recusada
+         * @enum {string}
+         */
+        Status2c2Enum: "none" | "pending" | "applied" | "rejected";
+        /**
+         * @description * `none` - Sem sugestão
+         *     * `pending` - Aguardando aprovação
+         *     * `applied` - Sugestões aplicadas
+         *     * `rejected` - Recusada
+         * @enum {string}
+         */
+        Status4f7Enum: "none" | "pending" | "applied" | "rejected";
         /**
          * @description * `open` - Aberta
          *     * `draft` - Pedido guardado
@@ -12463,6 +14889,50 @@ export interface components {
          * @enum {string}
          */
         StatusCe6Enum: "active" | "cancelled";
+        StockAdvice: {
+            /** Format: uuid */
+            readonly id: string;
+            /** Format: uuid */
+            readonly store: string;
+            /** Format: uuid */
+            readonly warehouse: string;
+            readonly warehouse_name: string;
+            readonly kind: components["schemas"]["StockAdviceKindEnum"];
+            readonly status: components["schemas"]["StockAdviceStatusEnum"];
+            readonly title: string;
+            readonly detail: string;
+            /** @description Ordena a lista: quanto maior, mais urgente. */
+            readonly impact: number;
+            /** @description O que mover, de onde e para onde, no momento da análise. */
+            readonly moves: unknown;
+            /** Format: date-time */
+            readonly checked_at: string;
+            /** Format: uuid */
+            readonly document: string | null;
+            readonly document_number: number;
+            readonly decided_by_name: string;
+            /** Format: date-time */
+            readonly decided_at: string | null;
+            /** Format: date-time */
+            readonly updated_at: string;
+        };
+        /**
+         * @description * `dock` - Parado na doca
+         *     * `together` - Saem juntos
+         *     * `fast` - Sai muito
+         *     * `scattered` - Espalhado
+         *     * `idle` - Não sai
+         * @enum {string}
+         */
+        StockAdviceKindEnum: "dock" | "together" | "fast" | "scattered" | "idle";
+        /**
+         * @description * `open` - Para decidir
+         *     * `applied` - Aceita
+         *     * `dismissed` - Recusada
+         *     * `expired` - Não vale mais
+         * @enum {string}
+         */
+        StockAdviceStatusEnum: "open" | "applied" | "dismissed" | "expired";
         StockBalance: {
             /** Format: uuid */
             readonly id: string;
@@ -12614,6 +15084,11 @@ export interface components {
             manufactured_at?: string | null;
             /** Format: date */
             expires_at?: string | null;
+            /**
+             * Format: date
+             * @description Data de entrada no estoque.
+             */
+            readonly received_at: string | null;
             /** Format: decimal */
             readonly initial_quantity: string;
             /** Format: decimal */
@@ -12711,20 +15186,28 @@ export interface components {
          * @enum {string}
          */
         StockMovementKindEnum: "initial" | "purchase" | "sale" | "sale_return" | "transfer_in" | "transfer_out" | "adjustment" | "consumption" | "loss" | "expiration" | "supplier_return" | "asset_disposal" | "relocation" | "reversal";
-        StockSettings: {
+        StockRule: {
             /** Format: uuid */
             readonly id: string;
+            readonly store_names: string;
+            readonly store_count: string;
             /** Format: date-time */
             readonly created_at: string;
             /** Format: date-time */
             readonly updated_at: string;
             /** Format: date-time */
             readonly deleted_at: string | null;
+            name: string;
+            description?: string;
+            /** @description Filial nova (ou sem escolha) fica com esta. */
+            is_default?: boolean;
             picking_strategy?: components["schemas"]["PickingStrategyEnum"];
             /** Format: int64 */
             expiry_warning_days?: number;
             block_expired?: boolean;
             allow_negative_stock?: boolean;
+            /** @description Sem validade: guarda a data de entrada e dá saída no mais antigo primeiro. */
+            fifo_by_entry?: boolean;
             /** Format: uuid */
             readonly account: string;
             readonly created_by: number | null;
@@ -12800,16 +15283,6 @@ export interface components {
             phone?: string;
             /** Format: email */
             email?: string;
-            require_open_cash_session?: boolean;
-            /** Format: decimal */
-            cash_closing_tolerance?: string;
-            /** @description Exige vendedor em toda venda. */
-            require_seller?: boolean;
-            auto_print_receipt?: boolean;
-            ask_print_danfe?: boolean;
-            print_cancellation_receipt?: boolean;
-            scale_barcode_mode?: components["schemas"]["ScaleBarcodeModeEnum"] | components["schemas"]["BlankEnum"];
-            scale_barcode_prefix?: string;
             local_server_url?: string;
             cloud_only?: boolean;
             settings?: unknown;
@@ -12830,6 +15303,22 @@ export interface components {
              * Format: uuid
              */
             fiscal_config?: string | null;
+            /**
+             * Regras da filial
+             * Format: uuid
+             * @description PDV, caixa e venda. Vazio = a padrão.
+             */
+            rule?: string;
+            /**
+             * Regras de logística
+             * Format: uuid
+             */
+            logistics_rule?: string;
+            /**
+             * Regras de estoque
+             * Format: uuid
+             */
+            stock_rule?: string;
         };
         /**
          * @description * `headquarters` - Matriz
@@ -12839,6 +15328,44 @@ export interface components {
          * @enum {string}
          */
         StoreKindEnum: "headquarters" | "regional" | "branch" | "distribution";
+        StoreRule: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly store_names: string;
+            readonly store_count: string;
+            /** Format: date-time */
+            readonly created_at: string;
+            /** Format: date-time */
+            readonly updated_at: string;
+            /** Format: date-time */
+            readonly deleted_at: string | null;
+            name: string;
+            description?: string;
+            /** @description Filial nova (ou sem escolha) fica com esta. */
+            is_default?: boolean;
+            require_open_cash_session?: boolean;
+            /** Format: decimal */
+            cash_closing_tolerance?: string;
+            /** @description Bloqueia a tela do caixa parado. */
+            pdv_auto_lock?: boolean;
+            /** @description Minutos parado até bloquear. */
+            pdv_lock_minutes?: number;
+            /** @description Exige vendedor em toda venda. */
+            require_seller?: boolean;
+            auto_print_receipt?: boolean;
+            /** @description No PDV, antes de pagar, confirma o endereço de entrega e de cobrança do pedido. */
+            confirm_address_at_checkout?: boolean;
+            ask_print_danfe?: boolean;
+            /** @description Só lança cartão/PIX com o NSU/autorização do comprovante. */
+            require_payment_reference?: boolean;
+            print_cancellation_receipt?: boolean;
+            scale_barcode_mode?: components["schemas"]["ScaleBarcodeModeEnum"] | components["schemas"]["BlankEnum"];
+            scale_barcode_prefix?: string;
+            /** Format: uuid */
+            readonly account: string;
+            readonly created_by: number | null;
+            readonly updated_by: number | null;
+        };
         /**
          * @description * `product` - Produto / gôndola
          *     * `lot` - Lote (validade)
@@ -14351,6 +16878,189 @@ export interface operations {
             };
         };
     };
+    api_v1_background_tasks_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `price_round` - Precificação: leitura do mercado
+                 *     * `seo_round` - Analítico de SEO: análise dos produtos
+                 *     * `price_read` - Precificação: leitura de um produto
+                 *     * `seo_read` - Analítico de SEO: análise de um produto
+                 */
+                kind?: "price_read" | "price_round" | "seo_read" | "seo_round";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+                /**
+                 * @description * `running` - Em andamento
+                 *     * `completed` - Concluída
+                 *     * `failed` - Falha
+                 *     * `stopped` - Parada
+                 */
+                status?: "completed" | "failed" | "running" | "stopped";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedBackgroundTaskList"];
+                };
+            };
+        };
+    };
+    api_v1_background_tasks_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BackgroundTask"];
+                "application/x-www-form-urlencoded": components["schemas"]["BackgroundTask"];
+                "multipart/form-data": components["schemas"]["BackgroundTask"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackgroundTask"];
+                };
+            };
+        };
+    };
+    api_v1_background_tasks_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this background task. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackgroundTask"];
+                };
+            };
+        };
+    };
+    api_v1_background_tasks_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this background task. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackgroundTask"];
+                };
+            };
+        };
+    };
+    api_v1_background_tasks_stop_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this background task. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BackgroundTask"];
+                "application/x-www-form-urlencoded": components["schemas"]["BackgroundTask"];
+                "multipart/form-data": components["schemas"]["BackgroundTask"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackgroundTask"];
+                };
+            };
+        };
+    };
+    api_v1_background_tasks_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackgroundTask"];
+                };
+            };
+        };
+    };
+    api_v1_background_tasks_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["BackgroundTask"];
+                "application/x-www-form-urlencoded": components["schemas"]["BackgroundTask"];
+                "multipart/form-data": components["schemas"]["BackgroundTask"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BackgroundTask"];
+                };
+            };
+        };
+    };
     api_v1_cash_discrepancies_list: {
         parameters: {
             query?: {
@@ -14734,6 +17444,34 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashMovement"];
+                };
+            };
+        };
+    };
+    api_v1_cash_movements_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cash movement. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CashMovement"];
+                "application/x-www-form-urlencoded": components["schemas"]["CashMovement"];
+                "multipart/form-data": components["schemas"]["CashMovement"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -15808,6 +18546,7 @@ export interface operations {
                 page_size?: number;
                 /** @description A search term. */
                 search?: string;
+                supplier?: string;
             };
             header?: never;
             path?: never;
@@ -18025,6 +20764,653 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["Commission"];
                 };
+            };
+        };
+    };
+    api_v1_competitor_prices_list: {
+        parameters: {
+            query?: {
+                competitor?: string;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+                variant?: string;
+                variant__product?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCompetitorPriceList"];
+                };
+            };
+        };
+    };
+    api_v1_competitor_prices_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompetitorPrice"];
+                "application/x-www-form-urlencoded": components["schemas"]["CompetitorPrice"];
+                "multipart/form-data": components["schemas"]["CompetitorPrice"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPrice"];
+                };
+            };
+        };
+    };
+    api_v1_competitor_prices_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this competitor price. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPrice"];
+                };
+            };
+        };
+    };
+    api_v1_competitor_prices_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this competitor price. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompetitorPrice"];
+                "application/x-www-form-urlencoded": components["schemas"]["CompetitorPrice"];
+                "multipart/form-data": components["schemas"]["CompetitorPrice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPrice"];
+                };
+            };
+        };
+    };
+    api_v1_competitor_prices_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this competitor price. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_competitor_prices_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this competitor price. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCompetitorPrice"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCompetitorPrice"];
+                "multipart/form-data": components["schemas"]["PatchedCompetitorPrice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPrice"];
+                };
+            };
+        };
+    };
+    api_v1_competitor_prices_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this competitor price. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPrice"];
+                };
+            };
+        };
+    };
+    api_v1_competitor_prices_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPrice"];
+                };
+            };
+        };
+    };
+    api_v1_competitor_prices_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompetitorPrice"];
+                "application/x-www-form-urlencoded": components["schemas"]["CompetitorPrice"];
+                "multipart/form-data": components["schemas"]["CompetitorPrice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPrice"];
+                };
+            };
+        };
+    };
+    api_v1_competitor_prices_import_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CompetitorPrice"];
+                "application/x-www-form-urlencoded": components["schemas"]["CompetitorPrice"];
+                "multipart/form-data": components["schemas"]["CompetitorPrice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CompetitorPrice"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_attachments_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_cosmos_conversations_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCosmosConversationList"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_conversations_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cosmos conversation. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosConversation"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_conversations_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cosmos conversation. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_cosmos_conversations_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cosmos conversation. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedCosmosConversation"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedCosmosConversation"];
+                "multipart/form-data": components["schemas"]["PatchedCosmosConversation"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosConversation"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_conversations_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cosmos conversation. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosConversation"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_conversations_messages_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cosmos conversation. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosConversation"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_conversations_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosConversation"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_findings_list: {
+        parameters: {
+            query?: {
+                actor?: number;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                rule?: string;
+                /** @description A search term. */
+                search?: string;
+                /**
+                 * @description * `info` - Informação
+                 *     * `warning` - Atenção
+                 *     * `critical` - Grave
+                 */
+                severity?: "critical" | "info" | "warning";
+                /**
+                 * @description * `open` - Aberto
+                 *     * `resolved` - Resolvido
+                 *     * `dismissed` - Descartado
+                 */
+                status?: "dismissed" | "open" | "resolved";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedCosmosFindingList"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_findings_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CosmosFinding"];
+                "application/x-www-form-urlencoded": components["schemas"]["CosmosFinding"];
+                "multipart/form-data": components["schemas"]["CosmosFinding"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosFinding"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_findings_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cosmos finding. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosFinding"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_findings_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cosmos finding. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosFinding"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_findings_resolve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this cosmos finding. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CosmosFinding"];
+                "application/x-www-form-urlencoded": components["schemas"]["CosmosFinding"];
+                "multipart/form-data": components["schemas"]["CosmosFinding"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosFinding"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_findings_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosFinding"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_findings_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["CosmosFinding"];
+                "application/x-www-form-urlencoded": components["schemas"]["CosmosFinding"];
+                "multipart/form-data": components["schemas"]["CosmosFinding"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CosmosFinding"];
+                };
+            };
+        };
+    };
+    api_v1_cosmos_reports_export_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_cosmos_status_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
@@ -21069,7 +24455,82 @@ export interface operations {
             };
         };
     };
+    api_v1_fiscal_invoices_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Invoice"];
+                "application/x-www-form-urlencoded": components["schemas"]["Invoice"];
+                "multipart/form-data": components["schemas"]["Invoice"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invoice"];
+                };
+            };
+        };
+    };
     api_v1_fiscal_invoices_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invoice"];
+                };
+            };
+        };
+    };
+    api_v1_fiscal_invoices_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this invoice. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Invoice"];
+                "application/x-www-form-urlencoded": components["schemas"]["Invoice"];
+                "multipart/form-data": components["schemas"]["Invoice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invoice"];
+                };
+            };
+        };
+    };
+    api_v1_fiscal_invoices_danfe_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -21121,6 +24582,31 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Invoice"];
+                };
+            };
+        };
+    };
+    api_v1_fiscal_invoices_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Invoice"];
+                "application/x-www-form-urlencoded": components["schemas"]["Invoice"];
+                "multipart/form-data": components["schemas"]["Invoice"];
+            };
+        };
         responses: {
             200: {
                 headers: {
@@ -23155,9 +26641,10 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_settings_list: {
+    api_v1_logistics_rules_list: {
         parameters: {
             query?: {
+                is_default?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -23166,7 +26653,6 @@ export interface operations {
                 page_size?: number;
                 /** @description A search term. */
                 search?: string;
-                store?: string;
             };
             header?: never;
             path?: never;
@@ -23179,17 +26665,42 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedLogisticsSettingsList"];
+                    "application/json": components["schemas"]["PaginatedLogisticsRuleList"];
                 };
             };
         };
     };
-    api_v1_logistics_settings_retrieve: {
+    api_v1_logistics_rules_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogisticsRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["LogisticsRule"];
+                "multipart/form-data": components["schemas"]["LogisticsRule"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogisticsRule"];
+                };
+            };
+        };
+    };
+    api_v1_logistics_rules_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this logistics settings. */
+                /** @description A UUID string identifying this logistics rule. */
                 id: string;
             };
             cookie?: never;
@@ -23201,26 +26712,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LogisticsSettings"];
+                    "application/json": components["schemas"]["LogisticsRule"];
                 };
             };
         };
     };
-    api_v1_logistics_settings_update: {
+    api_v1_logistics_rules_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this logistics settings. */
+                /** @description A UUID string identifying this logistics rule. */
                 id: string;
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
-                "application/json": components["schemas"]["LogisticsSettings"];
-                "application/x-www-form-urlencoded": components["schemas"]["LogisticsSettings"];
-                "multipart/form-data": components["schemas"]["LogisticsSettings"];
+                "application/json": components["schemas"]["LogisticsRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["LogisticsRule"];
+                "multipart/form-data": components["schemas"]["LogisticsRule"];
             };
         };
         responses: {
@@ -23229,26 +26740,47 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LogisticsSettings"];
+                    "application/json": components["schemas"]["LogisticsRule"];
                 };
             };
         };
     };
-    api_v1_logistics_settings_partial_update: {
+    api_v1_logistics_rules_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this logistics settings. */
+                /** @description A UUID string identifying this logistics rule. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_logistics_rules_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this logistics rule. */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedLogisticsSettings"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedLogisticsSettings"];
-                "multipart/form-data": components["schemas"]["PatchedLogisticsSettings"];
+                "application/json": components["schemas"]["PatchedLogisticsRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedLogisticsRule"];
+                "multipart/form-data": components["schemas"]["PatchedLogisticsRule"];
             };
         };
         responses: {
@@ -23257,17 +26789,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LogisticsSettings"];
+                    "application/json": components["schemas"]["LogisticsRule"];
                 };
             };
         };
     };
-    api_v1_logistics_settings_history_retrieve: {
+    api_v1_logistics_rules_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this logistics settings. */
+                /** @description A UUID string identifying this logistics rule. */
                 id: string;
             };
             cookie?: never;
@@ -23279,12 +26811,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LogisticsSettings"];
+                    "application/json": components["schemas"]["LogisticsRule"];
                 };
             };
         };
     };
-    api_v1_logistics_settings_bulk_retrieve: {
+    api_v1_logistics_rules_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -23298,7 +26830,125 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LogisticsSettings"];
+                    "application/json": components["schemas"]["LogisticsRule"];
+                };
+            };
+        };
+    };
+    api_v1_logistics_rules_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogisticsRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["LogisticsRule"];
+                "multipart/form-data": components["schemas"]["LogisticsRule"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LogisticsRule"];
+                };
+            };
+        };
+    };
+    api_v1_market_offers_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                price_check?: string;
+                /** @description A search term. */
+                search?: string;
+                used?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedMarketOfferList"];
+                };
+            };
+        };
+    };
+    api_v1_market_offers_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this market offer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketOffer"];
+                };
+            };
+        };
+    };
+    api_v1_market_offers_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this market offer. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketOffer"];
+                };
+            };
+        };
+    };
+    api_v1_market_offers_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MarketOffer"];
                 };
             };
         };
@@ -24103,6 +27753,362 @@ export interface operations {
             };
         };
     };
+    api_v1_price_checks_list: {
+        parameters: {
+            query?: {
+                needs_review?: boolean;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /**
+                 * @description * `above` - Acima do mercado
+                 *     * `inside` - No preço do mercado
+                 *     * `below` - Abaixo do mercado
+                 *     * `unknown` - Sem dados suficientes
+                 */
+                position?: "above" | "below" | "inside" | "unknown";
+                /** @description A search term. */
+                search?: string;
+                /**
+                 * @description * `none` - Sem sugestão
+                 *     * `pending` - Aguardando aprovação
+                 *     * `applied` - Preço aplicado
+                 *     * `rejected` - Recusada
+                 */
+                status?: "applied" | "none" | "pending" | "rejected";
+                variant?: string;
+                variant__product?: string;
+                worth_it?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedPriceCheckList"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PriceCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
+                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this price check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_approve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this price check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PriceCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
+                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this price check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_refresh_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this price check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PriceCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
+                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this price check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PriceCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
+                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PriceCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
+                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_product_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PriceCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
+                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_rules_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_rules_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PriceCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
+                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_run_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PriceCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
+                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_price_checks_run_status_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
     api_v1_promotions_coupons_list: {
         parameters: {
             query?: {
@@ -24146,7 +28152,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["Coupon"];
                 "application/x-www-form-urlencoded": components["schemas"]["Coupon"];
@@ -24196,7 +28202,7 @@ export interface operations {
             };
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["Coupon"];
                 "application/x-www-form-urlencoded": components["schemas"]["Coupon"];
@@ -24311,7 +28317,7 @@ export interface operations {
             path?: never;
             cookie?: never;
         };
-        requestBody: {
+        requestBody?: {
             content: {
                 "application/json": components["schemas"]["Coupon"];
                 "application/x-www-form-urlencoded": components["schemas"]["Coupon"];
@@ -24996,7 +29002,87 @@ export interface operations {
             };
         };
     };
+    api_v1_public_reviews_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_public_reviews_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     api_v1_reports_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_reports_book_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_reports_book_export_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -25224,6 +29310,288 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SaleReturn"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_list: {
+        parameters: {
+            query?: {
+                created_at__gte?: string;
+                created_at__lte?: string;
+                customer?: string;
+                /**
+                 * @description * `product` - Produto
+                 *     * `delivery` - Entrega
+                 */
+                kind?: "delivery" | "product";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                product?: string;
+                rating?: number;
+                rating__gte?: number;
+                rating__lte?: number;
+                sale?: string;
+                /** @description A search term. */
+                search?: string;
+                /**
+                 * @description * `pending` - Pendente
+                 *     * `approved` - Aprovada
+                 *     * `rejected` - Rejeitada
+                 */
+                status?: "approved" | "pending" | "rejected";
+                verified_purchase?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedReviewList"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Review"];
+                "application/x-www-form-urlencoded": components["schemas"]["Review"];
+                "multipart/form-data": components["schemas"]["Review"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this review. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this review. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_reviews_approve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this review. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Review"];
+                "application/x-www-form-urlencoded": components["schemas"]["Review"];
+                "multipart/form-data": components["schemas"]["Review"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this review. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this review. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Review"];
+                "application/x-www-form-urlencoded": components["schemas"]["Review"];
+                "multipart/form-data": components["schemas"]["Review"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Review"];
+                "application/x-www-form-urlencoded": components["schemas"]["Review"];
+                "multipart/form-data": components["schemas"]["Review"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_links_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
+                };
+            };
+        };
+    };
+    api_v1_reviews_links_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Review"];
+                "application/x-www-form-urlencoded": components["schemas"]["Review"];
+                "multipart/form-data": components["schemas"]["Review"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Review"];
                 };
             };
         };
@@ -25636,6 +30004,56 @@ export interface operations {
             };
         };
     };
+    api_v1_sales_addresses_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this sale. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
+    api_v1_sales_addresses_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this sale. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Sale"];
+                "application/x-www-form-urlencoded": components["schemas"]["Sale"];
+                "multipart/form-data": components["schemas"]["Sale"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
     api_v1_sales_cancel_create: {
         parameters: {
             query?: never;
@@ -25874,6 +30292,34 @@ export interface operations {
             };
         };
     };
+    api_v1_sales_edit_delivery_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this sale. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Sale"];
+                "application/x-www-form-urlencoded": components["schemas"]["Sale"];
+                "multipart/form-data": components["schemas"]["Sale"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
     api_v1_sales_fulfillment_create: {
         parameters: {
             query?: never;
@@ -25909,6 +30355,29 @@ export interface operations {
             path: {
                 /** @description A UUID string identifying this sale. */
                 id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
+    api_v1_sales_invoices_danfe_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this sale. */
+                id: string;
+                invoice_id: string;
             };
             cookie?: never;
         };
@@ -26131,6 +30600,35 @@ export interface operations {
             };
         };
     };
+    api_v1_sales_payments_change_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this sale. */
+                id: string;
+                payment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Sale"];
+                "application/x-www-form-urlencoded": components["schemas"]["Sale"];
+                "multipart/form-data": components["schemas"]["Sale"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
     api_v1_sales_resume_create: {
         parameters: {
             query?: never;
@@ -26337,6 +30835,590 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SaleItemReport"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_list: {
+        parameters: {
+            query?: {
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                product?: string;
+                /** @description A search term. */
+                search?: string;
+                /**
+                 * @description * `none` - Sem sugestão
+                 *     * `pending` - Aguardando aprovação
+                 *     * `applied` - Sugestões aplicadas
+                 *     * `rejected` - Recusada
+                 */
+                status?: "applied" | "none" | "pending" | "rejected";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedSeoCheckList"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SeoCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
+                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this seo check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_apply_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this seo check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SeoCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
+                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this seo check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_refresh_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this seo check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SeoCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
+                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this seo check. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SeoCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
+                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SeoCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
+                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_product_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SeoCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
+                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_rules_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_rules_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SeoCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
+                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_run_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SeoCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
+                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_seo_checks_run_status_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    api_v1_stock_advices_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `dock` - Parado na doca
+                 *     * `together` - Saem juntos
+                 *     * `fast` - Sai muito
+                 *     * `scattered` - Espalhado
+                 *     * `idle` - Não sai
+                 */
+                kind?: "dock" | "fast" | "idle" | "scattered" | "together";
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+                /**
+                 * @description * `open` - Para decidir
+                 *     * `applied` - Aceita
+                 *     * `dismissed` - Recusada
+                 *     * `expired` - Não vale mais
+                 */
+                status?: "applied" | "dismissed" | "expired" | "open";
+                warehouse?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedStockAdviceList"];
+                };
+            };
+        };
+    };
+    api_v1_stock_advices_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StockAdvice"];
+                "application/x-www-form-urlencoded": components["schemas"]["StockAdvice"];
+                "multipart/form-data": components["schemas"]["StockAdvice"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockAdvice"];
+                };
+            };
+        };
+    };
+    api_v1_stock_advices_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this stock advice. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockAdvice"];
+                };
+            };
+        };
+    };
+    api_v1_stock_advices_apply_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this stock advice. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StockAdvice"];
+                "application/x-www-form-urlencoded": components["schemas"]["StockAdvice"];
+                "multipart/form-data": components["schemas"]["StockAdvice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockAdvice"];
+                };
+            };
+        };
+    };
+    api_v1_stock_advices_dismiss_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this stock advice. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StockAdvice"];
+                "application/x-www-form-urlencoded": components["schemas"]["StockAdvice"];
+                "multipart/form-data": components["schemas"]["StockAdvice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockAdvice"];
+                };
+            };
+        };
+    };
+    api_v1_stock_advices_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this stock advice. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockAdvice"];
+                };
+            };
+        };
+    };
+    api_v1_stock_advices_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockAdvice"];
+                };
+            };
+        };
+    };
+    api_v1_stock_advices_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StockAdvice"];
+                "application/x-www-form-urlencoded": components["schemas"]["StockAdvice"];
+                "multipart/form-data": components["schemas"]["StockAdvice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockAdvice"];
+                };
+            };
+        };
+    };
+    api_v1_stock_advices_run_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StockAdvice"];
+                "application/x-www-form-urlencoded": components["schemas"]["StockAdvice"];
+                "multipart/form-data": components["schemas"]["StockAdvice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockAdvice"];
                 };
             };
         };
@@ -27188,6 +32270,28 @@ export interface operations {
             };
         };
     };
+    api_v1_stock_documents_label_options_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this stock document. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockDocument"];
+                };
+            };
+        };
+    };
     api_v1_stock_documents_labels_retrieve: {
         parameters: {
             query?: never;
@@ -27325,6 +32429,8 @@ export interface operations {
                  *     * `volume` - Volume (caixa do produto)
                  */
                 subject?: "bin" | "lot" | "product" | "volume";
+                /** @description Valores múltiplos podem ser separados por vírgulas. */
+                subject__in?: string[];
             };
             header?: never;
             path?: never;
@@ -27796,9 +32902,10 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_settings_list: {
+    api_v1_stock_rules_list: {
         parameters: {
             query?: {
+                is_default?: boolean;
                 /** @description Which field to use when ordering the results. */
                 ordering?: string;
                 /** @description A page number within the paginated result set. */
@@ -27819,23 +32926,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PaginatedStockSettingsList"];
+                    "application/json": components["schemas"]["PaginatedStockRuleList"];
                 };
             };
         };
     };
-    api_v1_stock_settings_create: {
+    api_v1_stock_rules_create: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
-                "application/json": components["schemas"]["StockSettings"];
-                "application/x-www-form-urlencoded": components["schemas"]["StockSettings"];
-                "multipart/form-data": components["schemas"]["StockSettings"];
+                "application/json": components["schemas"]["StockRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["StockRule"];
+                "multipart/form-data": components["schemas"]["StockRule"];
             };
         };
         responses: {
@@ -27844,17 +32951,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StockSettings"];
+                    "application/json": components["schemas"]["StockRule"];
                 };
             };
         };
     };
-    api_v1_stock_settings_retrieve: {
+    api_v1_stock_rules_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock settings. */
+                /** @description A UUID string identifying this stock rule. */
                 id: string;
             };
             cookie?: never;
@@ -27866,26 +32973,26 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StockSettings"];
+                    "application/json": components["schemas"]["StockRule"];
                 };
             };
         };
     };
-    api_v1_stock_settings_update: {
+    api_v1_stock_rules_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock settings. */
+                /** @description A UUID string identifying this stock rule. */
                 id: string;
             };
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
-                "application/json": components["schemas"]["StockSettings"];
-                "application/x-www-form-urlencoded": components["schemas"]["StockSettings"];
-                "multipart/form-data": components["schemas"]["StockSettings"];
+                "application/json": components["schemas"]["StockRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["StockRule"];
+                "multipart/form-data": components["schemas"]["StockRule"];
             };
         };
         responses: {
@@ -27894,17 +33001,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StockSettings"];
+                    "application/json": components["schemas"]["StockRule"];
                 };
             };
         };
     };
-    api_v1_stock_settings_destroy: {
+    api_v1_stock_rules_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock settings. */
+                /** @description A UUID string identifying this stock rule. */
                 id: string;
             };
             cookie?: never;
@@ -27920,21 +33027,21 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_settings_partial_update: {
+    api_v1_stock_rules_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock settings. */
+                /** @description A UUID string identifying this stock rule. */
                 id: string;
             };
             cookie?: never;
         };
         requestBody?: {
             content: {
-                "application/json": components["schemas"]["PatchedStockSettings"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedStockSettings"];
-                "multipart/form-data": components["schemas"]["PatchedStockSettings"];
+                "application/json": components["schemas"]["PatchedStockRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedStockRule"];
+                "multipart/form-data": components["schemas"]["PatchedStockRule"];
             };
         };
         responses: {
@@ -27943,17 +33050,17 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StockSettings"];
+                    "application/json": components["schemas"]["StockRule"];
                 };
             };
         };
     };
-    api_v1_stock_settings_history_retrieve: {
+    api_v1_stock_rules_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock settings. */
+                /** @description A UUID string identifying this stock rule. */
                 id: string;
             };
             cookie?: never;
@@ -27965,12 +33072,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StockSettings"];
+                    "application/json": components["schemas"]["StockRule"];
                 };
             };
         };
     };
-    api_v1_stock_settings_bulk_retrieve: {
+    api_v1_stock_rules_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -27984,23 +33091,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StockSettings"];
+                    "application/json": components["schemas"]["StockRule"];
                 };
             };
         };
     };
-    api_v1_stock_settings_bulk_create: {
+    api_v1_stock_rules_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: {
+        requestBody: {
             content: {
-                "application/json": components["schemas"]["StockSettings"];
-                "application/x-www-form-urlencoded": components["schemas"]["StockSettings"];
-                "multipart/form-data": components["schemas"]["StockSettings"];
+                "application/json": components["schemas"]["StockRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["StockRule"];
+                "multipart/form-data": components["schemas"]["StockRule"];
             };
         };
         responses: {
@@ -28009,7 +33116,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["StockSettings"];
+                    "application/json": components["schemas"]["StockRule"];
                 };
             };
         };
@@ -28467,6 +33574,225 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Store"];
+                };
+            };
+        };
+    };
+    api_v1_stores_rules_list: {
+        parameters: {
+            query?: {
+                is_default?: boolean;
+                /** @description Which field to use when ordering the results. */
+                ordering?: string;
+                /** @description A page number within the paginated result set. */
+                page?: number;
+                /** @description Number of results to return per page. */
+                page_size?: number;
+                /** @description A search term. */
+                search?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedStoreRuleList"];
+                };
+            };
+        };
+    };
+    api_v1_stores_rules_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["StoreRule"];
+                "multipart/form-data": components["schemas"]["StoreRule"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreRule"];
+                };
+            };
+        };
+    };
+    api_v1_stores_rules_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this store rule. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreRule"];
+                };
+            };
+        };
+    };
+    api_v1_stores_rules_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this store rule. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["StoreRule"];
+                "multipart/form-data": components["schemas"]["StoreRule"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreRule"];
+                };
+            };
+        };
+    };
+    api_v1_stores_rules_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this store rule. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    api_v1_stores_rules_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this store rule. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedStoreRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedStoreRule"];
+                "multipart/form-data": components["schemas"]["PatchedStoreRule"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreRule"];
+                };
+            };
+        };
+    };
+    api_v1_stores_rules_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description A UUID string identifying this store rule. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreRule"];
+                };
+            };
+        };
+    };
+    api_v1_stores_rules_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreRule"];
+                };
+            };
+        };
+    };
+    api_v1_stores_rules_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StoreRule"];
+                "application/x-www-form-urlencoded": components["schemas"]["StoreRule"];
+                "multipart/form-data": components["schemas"]["StoreRule"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StoreRule"];
                 };
             };
         };

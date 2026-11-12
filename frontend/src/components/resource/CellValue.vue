@@ -26,6 +26,8 @@ const booleanLabel = computed(() => {
   return active ? "Inativo" : "Não";
 });
 const numeric = computed(() => ["money", "quantity", "percent"].includes(props.column.type ?? ""));
+/** O endereço vem de fora (fonte de preço, cadastro): só abre http(s), nunca `javascript:`. */
+const href = computed(() => (props.column.type === "link" && /^https?:\/\//i.test(String(props.value ?? "")) ? String(props.value) : ""));
 </script>
 
 <template>
@@ -39,11 +41,17 @@ const numeric = computed(() => ["money", "quantity", "percent"].includes(props.c
     <i v-for="n in 5" :key="n" :class="n <= Number(value) ? 'on' : ''">★</i>
   </span>
   <span v-else-if="column.type === 'tag'" class="pill" :class="`pill--${column.tones?.[String(value)] ?? 'brand'}`">{{ text }}</span>
+  <a v-else-if="href" :href="href" target="_blank" rel="noopener noreferrer" class="link" @click.stop>
+    Abrir <i class="pi pi-external-link" />
+  </a>
+  <span v-else-if="column.type === 'link'" class="cell empty">—</span>
   <span v-else :class="{ num: numeric, cell: true, empty: text === '—' }">{{ text }}</span>
 </template>
 
 <style scoped>
 .cell { color: inherit; }
+.link { display: inline-flex; align-items: center; gap: 4px; color: var(--brand-text, var(--text-strong)); font-weight: 600; white-space: nowrap; }
+.link i { font-size: 11px; }
 .num { font-weight: 600; color: var(--text-strong); }
 .empty { color: var(--text-subtle); }
 .thumb {

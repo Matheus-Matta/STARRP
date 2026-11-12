@@ -7,7 +7,7 @@ from django.urls import path
 from rest_framework.routers import DefaultRouter
 
 from starrp.urls import catalog, finance, operations, platform, sales, stock, system
-from starrp.views import account, auth, pdv, reports, reviews, wms
+from starrp.views import account, auth, cosmos, pdv, reports, reviews, wms
 
 router = DefaultRouter()
 for module in (platform, catalog, sales, operations, stock, finance, system):
@@ -29,6 +29,9 @@ urlpatterns = [
     path("reports/book/<slug:name>/", reports.ReportBookView.as_view(), name="report-book"),
     path("reports/book/<slug:name>/export/", reports.ReportBookExportView.as_view(), name="report-book-export"),
     path("reports/<slug:name>/", reports.ReportView.as_view(), name="reports"),
+    path("cosmos/status/", cosmos.CosmosStatusView.as_view(), name="cosmos-status"),
+    path("cosmos/attachments/", cosmos.CosmosAttachmentView.as_view(), name="cosmos-attachments"),
+    path("cosmos/reports/<uuid:pk>/export/", cosmos.CosmosReportExportView.as_view(), name="cosmos-report-export"),
     path("stock/labels/print/", wms.LabelPrintView.as_view(), name="labels-print"),
     *router.urls,
 ]

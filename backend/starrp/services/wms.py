@@ -11,9 +11,10 @@ from django.db.models import F, Sum
 from django.utils import timezone
 
 from starrp.core.errors import BusinessError, InsufficientStock
-from starrp.models import BinBalance, StockSettings, StorageBin
+from starrp.models import BinBalance, StockRule, StorageBin
 
 FAR_FUTURE = timezone.datetime(9999, 12, 31).date()
+FAR_PAST = timezone.datetime(1900, 1, 1).date()
 
 
 @dataclass
@@ -65,11 +66,14 @@ def plan(variant, warehouse, quantity, settings, *, bin=None, lot=None):
     if settings.block_expired:
         rows = [r for r in rows if r.lot is None or not r.lot.expires_at or r.lot.expires_at >= today]
 
-    fefo = variant.track_lots and settings.picking_strategy == StockSettings.Picking.FEFO
+    fefo = variant.track_lots and settings.picking_strategy == StockRule.Picking.FEFO
+    fifo = variant.track_lots or settings.fifo_by_entry
 
     def order(row):
         expiry = (row.lot.expires_at or FAR_FUTURE) if (fefo and row.lot) else FAR_FUTURE
-        return (expiry, row.bin.sequence, row.bin.code)
+        # Mais antigo primeiro (FIFO pela entrada); sem lote = estoque de antes, o mais velho.
+        entered = (row.lot.received_at or FAR_PAST) if (fifo and row.lot) else FAR_PAST
+        return (expiry, entered, row.bin.sequence, row.bin.code)
 
     picks, needed = [], Decimal(quantity)
     for row in sorted(rows, key=order):

@@ -280,7 +280,7 @@ Caminho de uma nota que o fornecedor emitiu contra a loja:
 5. CONFERÊNCIA: POST /stock/documents/{id}/check/
    {"codes": [...]}  leitura (leitor ou câmera do navegador) grava o contado, ou
    {"lines": [...]}  manual item a item (só na filial com "Permitir conferência manual" em
-                     Logística › Configurações de logística — `LogisticsSettings`, uma por filial):
+                     Logística › Regras de logística — `LogisticsRule` da filial, `Store.logistics_rule`):
                      correto, ou incorreto com motivo + quantos chegaram + quantos entram
 6. APROVAÇÃO: POST /stock/documents/{id}/post/ (sem conferência devolve conference_required)
    → estoque entra AJUSTADO, duplicatas viram contas a pagar, nota "recebida" ou "com
@@ -325,10 +325,13 @@ junto de um acontecimento ("Confirmado", "Cancelado") vai dentro dele.
 
 ## Caixa: operadores vinculados e fechamento cego
 
-O caixa (`CashRegister`) tem os seus `operators`: só eles abrem o turno, fazem sangria e
-suprimento e fecham (`services/cash._require_operator`; quem abriu o turno também). Quem tem
-`cash.approve` (gerente, supervisor) assume qualquer caixa. O PDV só lista os caixas do
-usuário (`bootstrap.cash_registers`).
+O caixa (`CashRegister`) tem UM `operator` e cada usuário opera UM caixa (índice único
+`uniq_cash_register_operator`; o cadastro recusa com "já opera o Caixa X"). Só ele abre o turno,
+faz sangria e suprimento e fecha (`services/cash._require_operator`; quem abriu o turno também).
+Quem tem `cash.approve` (gerente, supervisor) assume qualquer caixa. O PDV abre direto no caixa
+do usuário (`bootstrap.my_register`), sem perguntar; só quem não tem caixa próprio (gerente
+assumindo) escolhe na lista. As migrações 0021–0023 trocaram a lista antiga (`operators`) pelo
+operador: fica o caixa do turno em andamento, senão o primeiro.
 
 **Abertura com conferência cega** (padrão do StarChef): o operador conta a gaveta e informa
 (`opening_amount`, com observação), sem ver o esperado. Bate com o que o último fechamento
@@ -342,7 +345,24 @@ num turno ABERTO do operador, em qualquer forma (fora do PDV, só o dinheiro exi
 **Fechamento cego**: sem `cash.approve`, a API não devolve o esperado na gaveta nem a diferença
 (`expected_now`, `expected_amount`, `difference` = `null`, `blind: true`), e o relatório e o
 extrato do turno saem só com troco inicial e contado (`cash.blind`). O operador conta e informa;
-a diferença fora da tolerância vai para o gerente aprovar.
+a diferença fora da tolerância vai para o gerente aprovar (`POST /cash/sessions/{id}/approve/`,
+justificativa OBRIGATÓRIA, mesmo `approval` da abertura).
+
+**Aprovações do caixa** (padrão do StarChef). Toda aprovação aceita três jeitos
+(`services/approvals.authorize`): o usuário logado com `cash.approve`; `approval:
+{"username", "password"}` de um gerente digitado no PDV; ou `approval: {"cash_password"}` = a
+**senha de aprovação do caixa da filial** (`Store.cash_action_password`, em hash; campo no
+cadastro da filial, seção Operação). Senha errada volta `approval_required` e o PDV pergunta de novo.
+- **Sangria e suprimento** (`add_movement`): quem tem `cash.approve` lança aprovado; o operador
+  lança `pending` e o PDV já abre o pedido de autorização. Cancelou → fica pendente: não entra
+  nem sai da gaveta, e o turno NÃO fecha (`movements_pending`) até aprovar ou recusar. Sangria
+  pendente já reserva o valor (`available_for_withdrawal`).
+- `POST /cash/movements/{id}/approve/` (`reason`, `approval`) e `/reject/` (gerente recusa ou o
+  próprio operador desiste). O movimento guarda `approved_by`, `approval_reason` e
+  `authorized_by_password` (aprovado pela senha da filial; `approved_by_name` = "Senha do caixa").
+- Telas: no PDV, o painel do caixa lista as pendências (Aprovar/Recusar); na retaguarda, o turno
+  mostra "N aguardando aprovação" e a ação **Aprovações** (abertura, fechamento e movimentos).
+- A demo usa a senha `1234` na Loja Demo.
 
 Modo do PDV (`bootstrap.mode`): **caixa** só para quem tem `cash.manage` E um caixa vinculado na
 loja (ou um turno dele ainda aberto); com acesso mas sem caixa vinculado, entra em modo **vendedor**
@@ -363,6 +383,38 @@ Modelos de etiqueta: 8 pré-prontos nascem com a conta (`system_data.LABEL_TEMPL
 oferta, tag de roupa, folha A4 3 colunas, lote, endereço e volume), marcados `is_system` — ajusta,
 não exclui; a conta cria os seus. Um pré-pronto só vira padrão se a conta ainda não tem padrão
 daquele tipo.
+
+### Etiqueta da entrada, data de entrada e saída do mais antigo
+
+- **Lote de entrada.** Toda entrada confirmada gera um lote por item (`StockLot.received_at` = data
+  do lançamento): o produto com validade (`track_lots`), sempre; o sem validade, quando a regra de
+  estoque liga `fifo_by_entry` (padrão: ligada). Transferência leva a validade e a DATA DE ENTRADA
+  original para o lote do destino: a idade não zera. A data de entrada não se edita.
+- **Saída.** FEFO: vence primeiro, depois o que entrou primeiro; FIFO: o que entrou primeiro
+  (`stock._age`). Sem validade, o saldo antigo sem lote (de antes da regra) sai antes dos lotes
+  novos (`stock._unlotted`). No WMS a ordem é validade → entrada → rota. Reenvio da mesma baixa
+  (`source_key`, inclusive dividida em lotes) não baixa de novo.
+- **Validação na entrada** (rascunho e confirmação): validade vencida não entra (`lot_expired`),
+  fabricação no futuro ou depois da validade é recusada; produto com lote exige lote ou validade.
+- **Etiquetas por etapa (regra de logística).** A `LogisticsRule` diz o que sai em cada etapa:
+  `entry_labels` (confirmar / aprovar a entrada) com `entry_lot_label` / `entry_product_label`, e
+  `conference_labels` (concluir a conferência) com `conference_label` (volume ou produto). Modo
+  `auto` (padrão) imprime direto num iframe escondido, sem perguntar; `ask` abre o diálogo com o
+  modelo da regra marcado; `off` não imprime. A regra nasce com os pré-prontos padrão
+  (`LogisticsRule.fill_label_defaults`, também em `ensure_system_data` e na migração 0029); modelo
+  apagado ou desativado cai no padrão do tipo (`labels.stage_template`). `GET
+  /stock/documents/{id}/labels/?stage=entry|conference` usa o modelo da etapa (204 quando não há o
+  que etiquetar); `label-options` devolve o modo e o modelo de cada etapa (`FormAction.then.auto`).
+  A etiqueta do lançamento sempre leva a data de entrada. Lote só imprime depois de confirmar;
+  cancelado não imprime. Avulsas: `POST /stock/labels/print/` com `subject` usa o padrão do tipo.
+- **Visual.** Um layout por tipo, no padrão do varejo: borda com cantos arredondados e divisórias;
+  gôndola com nome em caixa alta, "R$" pequeno, reais grandes e centavos em sobrescrito (promoção:
+  "de ~~R$ X~~ por"), EAN-13 no padrão GS1 (1º dígito fora, guardas longas); lote com grade de
+  campos legendados; endereço com QR e código grande; volume com "VOL 2/3" em destaque. Código de
+  barras é SVG próprio com `viewBox` (escala sem distorcer); preço e código do endereço se ajustam
+  ao espaço (container queries).
+- **Leitura.** O código da etiqueta do lote (`L` + 8) é lido em qualquer leitor
+  (`barcodes.resolve_code` devolve produto e lote). SKU com acento sai sem acento no Code 128.
 
 ## Tabelas de desconto com as regras dentro
 
@@ -398,12 +450,36 @@ há mais cadastro separado de regras no menu (o endpoint `/promotions/rules/` co
     usa o mesmo formato de campo do frontend e vira um diálogo na tela.
   - Exemplos: produtos (definir categoria/marca, adicionar tags), clientes (adicionar a grupo, tags).
 
+## Formulários: máscara e conferência antes de enviar
+
+- **Formato brasileiro do campo** (`frontend/src/utils/formats.ts`): `format: "cfop"` no `FieldDef`
+  dá a máscara do InputMask (PrimeVue) E a conferência: tamanho certo, dígito verificador (chave de
+  acesso, CPF/CNPJ), código de tabela que existe (CST PIS/COFINS), CFOP de venda com 5/6/7, DDD
+  válido e celular com 9. Telefone, CEP e documento pegam o seu pelo tipo. Guarda só os dígitos.
+- **Tabela fiscal curta vira lista** com descrição (`resources/fiscalCodes.ts`): origem, CSOSN, CST ICMS.
+  UF é lista em todo endereço (o CEP preenche).
+- **Números** (`utils/fieldHints.ts`): a unidade vem do rótulo ("Peso (kg)" mostra "1,5 kg" dentro do
+  campo) ou de `unit`; sem negativo por padrão (`signed: true` libera: saldo, diferença) e % até 100;
+  ao entrar no campo o valor fica selecionado (digitar troca). Mesmo padrão nas grades (variantes,
+  itens, caixas, parcelas, faixas de CEP).
+- **Placeholder** sempre: o declarado; senão pelo nome do campo (rua, número, razão social, IE...);
+  senão pelo tipo (R$ 0,00, 0 kg, dd/mm/aaaa, Selecione).
+- **Quando confere** (`utils/validation.ts` + `useResourceForm`): ao sair do campo (aviso só se
+  preenchido, sem "obrigatório" ao passar com Tab), a cada mudança de um campo com aviso (corrigiu,
+  some) e no Salvar, que não envia nada com erro. O backend continua sendo a regra que vale;
+  o erro dele cai no mesmo lugar e sai quando o campo muda.
+
 ## Convenções
 
 - Identificadores em **inglês**; textos para o usuário em **português**.
 - Choices com `models.TextChoices` dentro da model (`Sale.Status.OPEN`).
 - Máximo de ~200 linhas por arquivo: passou disso, quebre **por assunto**.
 - Comentário explica **por quê**, nunca **o quê**.
+- **Código não é obrigatório**: modelo com `code` usa `AutoCodeMixin` (`models/base.py`) e, vazio,
+  gera ao salvar (`code_base`), sem repetir no escopo (`CODE_SCOPE`; repetiu → `-2`, `-3`). Caixa:
+  nome em slug (`CAIXA-03`, por filial); cupom: nome junto (`BLACKFRIDAY`) ou `CUPOM` + aleatório;
+  patrimônio: `PAT-000001`; lote: `L` + 8 caracteres; categoria financeira: nome em slug. Digitado
+  é respeitado. Endereço do WMS (`A-01-1`) continua obrigatório: ele é o próprio endereço.
 
 ## Dados fixos e demonstração
 
@@ -420,6 +496,11 @@ há mais cadastro separado de regras no menu (o endpoint `/promotions/rules/` co
   promoções e cupons, 10 turnos de caixa com ~30 vendas, contas a pagar/receber com parcelas,
   lançamentos, notas de entrada (XML) e notas emitidas. Tudo pela MESMA API das telas; as vendas
   ficam espalhadas pelos últimos 30 dias. Rodar de novo não duplica.
+  No fim chama `seed_extras`, que também roda sozinho sobre uma demo já populada e só preenche
+  o cadastro que ainda está vazio: regras extras entre filiais, tags, fotos, volumes, produto do
+  fornecedor, encarte de/por, devoluções e vale-troca, diferença de caixa, DF-e, eventos e
+  pendências de NF-e, divergência de recebimento, estoque endereçado com lotes, patrimônio,
+  impressoras, balanças, fila de impressão, notificações, links de avaliação e plano.
 
 ## Comandos
 
@@ -443,8 +524,26 @@ Na tela a "loja" se chama **filial** (no código e na API continua `Store` / `st
 virtual" e "retirada na loja" seguem com o nome). Cada filial tem um **tipo** (matriz,
 regional, filial, centro de distribuição) e a quem **responde** (`Store.parent`): a lista de
 Filiais abre em árvore (`?root=1` / `?parent=<id>`) e o cadastro recusa ciclo (a matriz não
-pode responder a uma subordinada). Regras que mudam de filial para filial ficam em cadastros
-por filial, como `LogisticsSettings` (nasce sozinha para cada filial).
+pode responder a uma subordinada).
+
+### Regras compartilhadas entre filiais (`models/rules.py`)
+
+O que muda de filial para filial mora em **regras**, não na filial: `StoreRule` (PDV, caixa e
+venda), `LogisticsRule` (recebimento) e `StockRule` (lotes, vencidos, saldo negativo). A filial
+aponta para uma de cada (`Store.rule`, `Store.logistics_rule`, `Store.stock_rule`, obrigatórias)
+e **várias filiais usam a mesma regra**; a que trabalha diferente aponta para outra.
+
+- A conta nasce com uma regra **Padrão** de cada tipo (`services/rules.ensure_defaults`).
+  Filial nova, ou salva sem escolha, recebe a padrão (`Store.save`).
+- Validadores (modelo + API, inclusive exclusão em massa): sempre **uma** padrão por conta
+  (marcar outra desmarca a anterior; desmarcar a padrão é recusado); a padrão, a última
+  regra e a regra **em uso** por alguma filial não se excluem (409 `rule_is_default`,
+  `rule_last`, `rule_in_use`).
+- Para ler: `services/rules.of_store("logistics_rule", store_id, account_id)` (sem filial, a
+  padrão); `services/stock.settings_for(account_id, store_id)` para o estoque; no PDV,
+  `bootstrap.rules`. Configurações da conta (PDV e Estoque) editam as regras padrão.
+- Nova regra compartilhada: herde `SharedRule`, defina `STORE_FIELD`, a FK em `Store` e
+  registre em `rules.store_rule_fields()`.
 
 
 ## Livro de relatórios
@@ -489,15 +588,52 @@ relatório (os valores nunca dependem só da cor).
 até 3 fotos, nome público abreviado ("Matheus S."), selo de compra verificada e moderação
 (pendente → aprovada/rejeitada com motivo, quem e quando). Avalia-se o **produto** (uma por
 cliente e produto) e a **entrega** de uma venda (uma por venda) — índices únicos no banco; a
-rejeitada não conta. Na venda concluída, "Link de avaliação" gera um link assinado (120 dias,
-sem banco) e a mensagem pronta para o WhatsApp; o cliente avalia pelo celular, sem login, em
-`/avaliar/<token>` (`GET/POST /api/v1/public/reviews/<token>/`). A retaguarda modera em Vendas ›
+rejeitada não conta.
+
+**Link de avaliação** (`ReviewLink`): na venda concluída, "Gerar link de avaliação" cria um link
+por TIPO — **pedido** (os produtos) e **entrega** (só se a venda teve entrega) — com a mensagem
+pronta para o WhatsApp (`GET/POST /reviews/links/?sale=`, `{sale, kind, days}`).
+- Token = nº do pedido + início do id do cliente + hash aleatório de 128 bits
+  (`40-4d71a53d-<32 hex>`), gravado no banco; o cliente abre sem login em `/avaliar/<token>`
+  (`GET/POST /api/v1/public/reviews/<token>/`).
+- Vale de 1 a 120 dias (padrão 30) e UMA vez: ao enviar, `used_at` grava (com trava; índice
+  único de "usado" por venda e tipo) e cada `Review` guarda o `link` e a venda. Reabrir mostra
+  "Avaliação já enviada"; vencido mostra "Link expirado" e a loja gera outro.
+- Gerar de novo enquanto vale devolve o mesmo link. Tipo já avaliado (link usado, entrega com
+  avaliação ativa, ou todos os produtos já avaliados pelo cliente, nesta ou em outra compra)
+  não gera link (`review_exists`); produto já avaliado aparece como "Avaliado" na página.
+
+A retaguarda modera em Vendas ›
 Avaliações e também registra a avaliação contada no balcão. `manage.py seed_reviews` cria
 avaliações e entregas de exemplo (o `seed_demo` chama no fim).
 
 Relatórios ligados: **Avaliações** e **Curva ABC de clientes** (Relacionamento), **Entregas**
 (Logística: prazo prometido = venda + dias úteis da tabela de frete × entregue, atrasos,
 bairros, frete e a nota da entrega) e **Cancelamentos e devoluções** (Movimento).
+
+A nota do produto aparece também nos relatórios de mercadoria e venda (`report_book.product_reviews`,
+avaliações ativas de qualquer data): **Avaliações** tem a tabela "Produtos e as avaliações deles"
+(cadastro, notas 5★→1★, satisfeitos, pendentes, o que vendeu e a cobertura = avaliações ÷ vendas) e
+filtros por produto e marca; **Vendas no período** traz "Produtos vendidos e a nota deles" e cada
+venda com a nota do pedido e da entrega; a **Curva ABC** ganha as colunas nota e avaliações. A venda
+e o produto têm a aba **Avaliações**, com o atalho para a lista já filtrada (`?sale=` / `?product=`).
+
+## Endereços do pedido (entrega e cobrança)
+
+O pedido tem endereços PRÓPRIOS (`SaleAddress`, um de entrega e um de cobrança;
+`services/sale_addresses.py`), copiados do cliente ao vincular (criar a venda com cliente ou trocar o
+cliente): entrega = o endereço da entrega escolhida ou o padrão; cobrança = igual à entrega
+(`Customer.billing_same_as_delivery`, padrão) ou o endereço marcado `is_billing`. A opção "cobrança no
+mesmo endereço da entrega" também é herdada (`Sale.billing_same_as_delivery`). Lançar a entrega
+(frete) leva a entrega do pedido para aquele endereço. Corrigir no pedido (`POST /sales/{id}/addresses/`,
+`{delivery, billing, billing_same_as_delivery}` ou `{inherit: true}`) muda só o pedido.
+- **PDV**: com `Store.confirm_address_at_checkout` (padrão ligado, em Filiais › Operação), o F10
+  passa antes pela etapa "Confirme o endereço" quando o pedido tem endereço; sem endereço vai direto
+  ao pagamento.
+- **Retaguarda**: a venda mostra "Endereços do pedido" e a ação **Endereços** (corrigir ou "Usar o
+  do cliente"). A migração 0020 copiou o endereço do cliente nas vendas antigas.
+- **CEP** (`frontend/src/utils/cep.ts`): consulta direto do navegador, sem backend, com fallback
+  ViaCEP → BrasilAPI → OpenCEP → AwesomeAPI (4 s cada); sem IBGE, o próximo serviço completa.
 
 
 ## Cruzamentos (um assunto explicado por outro)
@@ -540,3 +676,195 @@ a lista está vazia):
 recompras), tudo numa transação; o `seed_demo` chama no fim.
 `seed_promotions --prejuizo` cria só 3 vendas de exemplo no prejuízo (desconto de 45–55%, nota
 "Exemplo de venda no prejuízo (gerador da demo)"), uma vez por conta.
+
+## Cosmos: a assistente de IA (OpenAI)
+
+Widget no canto inferior direito da retaguarda: lista de conversas anteriores, "Nova conversa",
+e (para quem supervisiona) os alertas da equipe. A conversa corre por WebSocket
+(`/api/v1/ws/cosmos/`, autenticado pelo mesmo cookie JWT); o resto é REST em `/api/v1/cosmos/`.
+
+Configuração no `.env`: `OPENAI_API_KEY` (vazio = desligada) e `OPENAI_MODEL` (padrão `gpt-5-mini`).
+
+**Limites por conta (só no admin do Django, em Contas):** "Cosmos ligada" e três tetos de tokens
+independentes — por dia, por semana (segunda a domingo) e por mês civil; 0 = sem limite naquele
+período, e vale o primeiro que estourar. O padrão de conta nova é 1 milhão por mês, sem teto diário
+ou semanal. O consumo é somado por dia em `CosmosUsage` (chamadas, tokens de entrada e saída) e a
+tela da conta mostra "hoje / na semana / no mês: X de Y". Estourou → a Cosmos responde que o limite
+acabou, sem chamar a OpenAI. Conta desligada → o widget nem aparece. Nada disso sai pela API.
+
+| Permissão | O que libera |
+| --- | --- |
+| `cosmos.view` | conversar, consultar dados, gerar relatórios |
+| `cosmos.manage` | a Cosmos PROPOR gravações (ainda pedem confirmação e a permissão da área) |
+| `cosmos.supervise` | alertas da equipe e "quem fez o quê" |
+
+Diretor, gerente e administrador têm tudo; supervisor tem `view` + `supervise`; os coordenadores
+(vendas, estoque, logística, financeiro) têm `view` + `manage`; auditor tem `view`.
+
+**A Cosmos nunca grava direto no banco.** Ela chama a API do Starrp como o próprio usuário
+(`services/cosmos/bridge.py`): mesmas permissões, recorte por filial, validação, auditoria e
+histórico. Para gravar, ela cria uma `CosmosAction` pendente — antes, a gravação é ensaiada numa
+transação desfeita (se der erro de validação, ela corrige sozinha). O usuário vê um cartão com os
+dados (numa alteração, o "de → para") e só ao clicar em **Confirmar** a chamada roda de verdade.
+
+```
+usuário: "cadastra a marca Aurora"
+cosmos  → detalhar_endpoint(POST /catalog/brands/) → propor_alteracao(...)   [cartão: Confirmar / Cancelar]
+clique  → POST /catalog/brands/ como o usuário → cartão "Gravado" + botão "Abrir marca"
+```
+
+Relatórios: `relatorio_pronto` (um do livro) ou `montar_relatorio` (sob medida, a partir dos
+conjuntos de `services/cosmos/datasets.py`: vendas, itens vendidos, cancelamentos, devoluções,
+clientes, produtos, estoque, contas). O servidor calcula todos os números; o widget desenha com os
+mesmos gráficos da tela de relatórios e o Excel sai com gráficos nativos (`report_export.to_xlsx(charts=True)`).
+
+Supervisão (`services/cosmos/supervision.py`): depois de gravar cliente, fornecedor, produto,
+variante ou venda, as regras conferem o registro (CPF/CNPJ inválido ou repetido, produto sem NCM,
+preço zerado ou abaixo do custo, desconto ≥ 20%, item vendido abaixo do custo); a cada 30 min o
+Celery varre padrões (3+ cancelamentos do mesmo usuário no dia, estoque negativo, diferença de
+caixa em aberto). Cada alerta diz quem fez, não se repete (`fingerprint`), fecha sozinho quando o
+registro é corrigido e chega na hora ao widget de quem supervisiona aquela filial.
+
+Conversa no widget: Enter envia e Shift+Enter quebra a linha; durante a resposta o botão vira **Parar**;
+várias propostas na mesma resposta ganham **Confirmar todas / Cancelar todas** (uma resposta só no fim);
+erro ganha **Tentar de novo**; a tela aberta (endereço e título) vai junto com a mensagem, então
+"corrija este produto" funciona. Relatório que nada pronto cobre: `relatorio_livre`, com os números que
+a Cosmos levantou nas ferramentas (o servidor confere o formato).
+
+Custo e proteção: resultados de ferramenta de rodadas anteriores vão resumidos ao modelo
+(`OLD_TOOL_CHARS`); `OPENAI_REASONING_EFFORT` (padrão `low`) para os modelos de raciocínio;
+`COSMOS_MESSAGES_PER_MINUTE` (padrão 20) por usuário; o mapa da API do prompt fica 5 min no cache.
+Sem Celery beat, quem supervisiona e abre o widget dispara a varredura da conta (no máximo a cada 30 min).
+
+Pelo socket também vão os pedidos do widget (`services/cosmos/rpc.py`): lista de conversas, falas,
+renomear, apagar, alertas e "resolvido" (`request` → `response`, casados pelo `id`, mesmas permissões
+da API). Socket fora ou sem resposta em 10 s → o widget usa a API REST. Upload de anexo e download de
+relatório continuam por HTTP (arquivo).
+
+Economia de tokens:
+- **Roteamento** (`services/cosmos/router.py`): saudação, comentar o resultado de uma confirmação e
+  resumir histórico vão ao `OPENAI_MODEL_LIGHT` (padrão `gpt-5-nano`, raciocínio mínimo); planilha e
+  lote ao `OPENAI_MODEL_HEAVY` (vazio = o padrão); o resto ao `OPENAI_MODEL`. Se o leve pedir
+  ferramenta, a rodada sobe para o padrão. "sim"/"pode" ficam no padrão (continuam uma tarefa).
+- **Cache de prompt**: o texto de sistema vai do fixo (regras, iguais para todos) ao que muda (hora,
+  tela) e leva `prompt_cache_key` por pessoa; `CosmosUsage.cached_tokens` mostra no admin quanto veio do cache.
+- **Janela + resumo** (`services/cosmos/memory.py`): só as últimas `COSMOS_HISTORY_TURNS` (8) falas do
+  usuário vão inteiras; o resto vira `CosmosConversation.summary` (modelo leve, refeito a cada 4 falas).
+  Pausa de 12 h: o assunto velho sai da janela na hora.
+- **Tabela**: listas de objetos vão ao modelo como `{colunas, linhas}` (as chaves não se repetem).
+- **Teto de saída**: `COSMOS_MAX_OUTPUT_TOKENS` (4.000; o leve usa um terço).
+- **Ensaio de toda proposta**: o cartão só aparece se a gravação passaria (exceto SEFAZ, que não dá para desfazer).
+
+Anexos (`services/cosmos/attachments.py`): o clipe (ou arrastar para a conversa) sobe planilha
+.xlsx, .csv ou texto em `POST /cosmos/attachments/` (até 5 MB, 2.000 linhas, 5 por mensagem). O
+arquivo é lido na hora e só o conteúdo fica em `CosmosAttachment`; a mensagem leva os ids. O modelo
+recebe as colunas e as primeiras linhas e lê o resto com `ler_anexo` (só anexos da própria conversa).
+Cadastro em lote: uma proposta por linha, até 20 por resposta, e "Confirmar todas" (até 50 por vez).
+
+Resumo diário da equipe (`services/cosmos/digest.py`): às 7h (Celery `starrp.cosmos_daily_digest`)
+ou, sem Celery, quando quem supervisiona abre o widget depois das 6h, cada supervisor recebe uma
+conversa "Resumo da equipe — dd/mm" com as vendas do dia anterior, quem fez o quê, os alertas novos e
+os abertos, e botões para seguir. O texto é montado no servidor (não chama o modelo, não gasta
+tokens); dia sem movimento não gera resumo. Desliga por conta no admin ("Resumo diário da equipe").
+
+## Precificação: preço × mercado (Vendas › Precificação)
+
+A plataforma libera pelo **módulo `pricing`** (no plano ou em "Módulos liberados" da conta, no admin do Django). Sem ele,
+o item do menu, a API (403), a varredura, os campos das configurações e os dados na Cosmos ficam de fora.
+
+Com o módulo, a conta liga em **Configurações da conta › Cosmos** (`Account.price_tracking_*`): frequência de leitura,
+margem mínima, faixa do mercado, mínimo de concorrentes, confiança mínima do pareamento e as **fontes**
+(`Account.price_sources`, `services/market/sources.py`). As ofertas de todas entram na mesma mediana:
+
+| Fonte | Custo | Observação |
+|---|---|---|
+| Pesquisa da equipe (`CompetitorPrice`, tela ou planilha) | grátis | vale o preço mais novo de cada concorrente, por 60 dias; salvar recalcula na hora |
+| Open Prices (Open Food Facts) | grátis, sem chave | por GTIN, últimos 180 dias; pouca cobertura no Brasil |
+| Bluesoft Cosmos | `BLUESOFT_COSMOS_TOKEN` | preço médio por GTIN, entra como uma oferta só |
+| Google Shopping (ferramenta própria, projeto `search-shop`) | `SHOPPING_SEARCH_URL` + `SHOPPING_SEARCH_TOKEN`, ou token e endereço da conta | o link já é o da loja, quando o card traz. Bloqueio do Google (HTTP 429) vira falha da fonte. Mesma busca e pareamento da SerpApi |
+| Bright Data (SERP API) | `BRIGHTDATA_API_KEY` + `BRIGHTDATA_ZONE`, ou chave e zona da conta | `POST /request` com `tbm=shop`. Preço em texto: só entra o que vem em R$. Mesma busca e pareamento da SerpApi |
+| SerpApi | `SERPAPI_KEY` (plano grátis limitado) ou chave da conta | várias lojas; só preços em reais. Busca pelo título com marca e modelo e, se nenhuma oferta passar da confiança mínima, por cada EAN/GTIN do produto, o principal primeiro, até um trazer oferta aceita (prefixo 2, etiqueta interna, não conta; zero à esquerda não repete a busca). A busca por código traz produto errado junto, então ela tem critério próprio de pareamento |
+
+**Ordem da leitura:** a pesquisa da equipe sempre entra; depois Google Shopping, SerpApi e Bright Data, na ordem marcada pela conta (cada um pelo título e, se nenhuma oferta for aceita, pelo EAN). `Account.price_search_mode`: `fallback` (padrão) só passa para a próxima se a anterior falhar (erro, bloqueio, limite ou nenhuma oferta aceita); `all` roda todas, sempre. Depois
+Bluesoft e Open Prices. Essas duas só rodam se faltar para `price_min_competitors` ofertas do mesmo
+produto. O que foi pesquisado fica em `PriceCheck.searches`
+e em `MarketOffer.query`.
+
+**Só no admin do Django** (a conta não vê nem altera): as fontes ligadas e a ordem (`Account.price_sources`, padrão `manual`, `brightdata`, `serpapi`), o modo (`price_search_mode`) e os itens abaixo. A pesquisa da equipe é sempre ativa. A conta nunca vê qual API foi usada: a API de precificação devolve "Google Shopping" (scraping), "Banco colaborativo" (Open Prices, Bluesoft) ou "Pesquisa da equipe" (`sources.public_*`), e o feed de histórico esconde `source` e `error`.
+
+- **Chave própria** (`PriceSourceToken`, na tela da conta): vale no lugar da global do `.env`, em toda fonte com chave, com a
+  zona da Bright Data ou o endereço da ferramenta em `option`. Sem API e sem histórico;
+  a tela mostra só o final da chave. Gravada em texto no banco, como `Integration.credentials`.
+- **Limite mensal** (`Account.price_monthly_requests`, padrão 500, 0 = sem limite): soma as duas fontes, com qualquer
+  chave. Consumo em `PriceUsage`, por mês e fonte. Produto sem código de barras não gasta consulta do Bluesoft.
+- **Teto por dia** (`PRICE_SERPAPI_DAILY`, `PRICE_SHOPPING_SEARCH_DAILY`, `PRICE_BRIGHTDATA_DAILY`, `PRICE_COSMOS_DAILY`): soma todas as contas,
+  só com a configuração global.
+
+Passou de um limite ou a fonte caiu → a leitura usa as ofertas guardadas dela por até 14 dias, o motivo fica em
+`PriceCheck.error` e as outras fontes seguem normais.
+
+- **Varredura** (`starrp.price_tracking`, Celery de hora em hora; `services/market/tracker.py`): até
+  `PRICE_TRACKING_BATCH` produtos por conta, nunca lidos primeiro e depois o mais antigo. Serviço e kit ficam de fora.
+  Variações com a mesma busca aproveitam uma consulta só do Google Shopping e da SerpApi na rodada.
+- **Regras** (botão na Precificação, `Account.price_scope`, `services/market/scope.py`): quais produtos a varredura e o
+  "Ler o mercado agora" pegam. (Categorias E marcas) OU os produtos escolhidos, menos os excluídos, com faixa de preço,
+  "só com estoque" e "só com código de barras". Nada marcado = todos.
+- **Título da busca** (`matching.full_title`): o nome do produto, mais a marca e o modelo (`Product.model_name`) que ele ainda não citar.
+- **Rodadas** (`services/batches.py`, `starrp.batch_step`): "Ler o mercado agora", "Analisar agora" e a varredura pegam tudo o que está nas
+  regras, de `PRICE_BATCH_SIZE` em `PRICE_BATCH_SIZE` com `PRICE_BATCH_PAUSE` segundos entre os lotes, criando os itens aos poucos. Uma por conta e
+  tipo; a da precificação não passa do que cabe no limite mensal. `run-status` diz quanto falta.
+- **Tarefas** (`BackgroundTask`, Configurações → Tarefas): rodadas e leituras de um produto, com progresso, histórico e "Parar". Por conta. Sem sinal há
+  15 min, vira falha e libera nova rodada. Não usa `celery-progress`: o endpoint dele não pede login nem conta, e ele exige result backend (`services/background.py`).
+- **Worker:** "Precificar", "Ler o mercado agora" e a varredura rodam no Celery (`starrp.price_read`, `starrp.batch_step`, `starrp.price_tracking`), e o
+  worker precisa estar no ar em produção. Sem Redis, a leitura pedida pela tela roda numa thread (`PRICE_READ_IN_THREAD`). O clique
+  cria o processo com os dados mínimos e `reading_since`; a tela relê a cada 3 s. Passou de 10 min, a tela avisa que não terminou.
+- **Precificar** (botão na página do produto): lê todas as variações, fora das regras e sem pedir o rastreamento
+  automático ligado. Só precisa do módulo, de `catalog.manage` e de uma fonte com chave.
+- **Achados** (seção do processo, com "O que foi pesquisado" acima): cada oferta da última leitura com valor, vendedor,
+  a busca que a trouxe, nota do pareamento, se foi usada e o link. Na SerpApi o link abre a oferta na página do Google, não a da loja.
+- **Pareamento** (`matching.py`): GTIN igual = mesmo produto. Busca por título: o título vira partes (cada palavra, pedaços a
+  cada 2 e a cada 3 espaços, e o título inteiro). As palavras valem 85% e os trechos em sequência, 15%; erro de digitação em
+  palavra de 5 letras ou mais conta como a mesma, número e modelo nunca. Trava: outra medida, kit, combo, acessório ou versão. Busca por EAN: título 50% + marca 25% + modelo 25%.
+  Medida diferente (ml, V, GB...) ou kit/caixa contra unitário = nota 0, sempre. Errar o produto é pior que não achar.
+- **Onde estamos** (régua no topo do processo): menor, média, mediana e maior preço das ofertas usadas, e `market_rank`, nosso lugar
+  do mais barato ao mais caro. Só informa: a posição e a sugestão continuam pela mediana.
+- **Referência** (`pricing.py`): mediana das ofertas pareadas, sem as fora da curva (IQR), com P25/P75 e
+  espalhamento. Nunca o menor preço.
+- **Decisão pelo custo**: o piso é o custo com a margem mínima. Acima do mercado → sugere a mediana, mas nunca
+  abaixo do piso; se o piso passa do preço atual, baixar "não vale a pena" e não há sugestão. Abaixo → sobe até
+  o P25. No mercado com margem baixa → sobe até o piso (sem passar do P75). Sem custo → sugere, mas "vale a pena?"
+  fica em aberto. Poucas ofertas → só informa.
+- **Processo** (`PriceCheck`, um por variante): o novo preço fica esperando **Aprovar** (aplica no cadastro, com
+  histórico e o preço anterior), **Outro preço** ou **Recusar** (não volta a pedir na semana se o mercado não
+  mexer). `MarketOffer` guarda as ofertas da última leitura com a nota e o motivo do pareamento.
+- Ver pede `catalog.view`; decidir e reler pedem `catalog.manage`. A Cosmos consulta pelo conjunto
+  `precificacao` e o resumo diário avisa as sugestões esperando aprovação.
+
+### Cosmos em segundo plano
+
+A Cosmos é o módulo `cosmos`: sem ele não há widget nem acesso (`Account.cosmos_active`). `services/cosmos/light.py` faz as chamadas sem conversa, sempre no
+modelo mais barato (`OPENAI_MODEL_LIGHT`), contando no limite de tokens da conta, e cada função tem um interruptor em Configurações da conta → Cosmos:
+
+- **SEO** (`cosmos_seo_ai`, `services/seo/ai.py`): com os pontos e os termos, sugere nome, título e resumo para aprovar. Número que não está no cadastro é
+  descartado; nada mudou no produto, não chama de novo. Avisa nos alertas: um por produto no clique, um só por rodada.
+- **Precificação** (`cosmos_pricing_ai`, `services/market/ai.py`): confere se as ofertas perto do limite são o mesmo produto, mudando só a nota do pareamento.
+
+- **Estoque** (`cosmos_stock_advice`, `services/cosmos/slotting.py`, não gasta tokens): lê as vendas de 90 dias e os endereços e recomenda em
+  Estoque › Organização do estoque: tirar da doca, aproximar o que sai junto, trazer para a frente o que sai muito, juntar o que está espalhado e
+  afastar o que não sai. Aceitar cria a Movimentação entre endereços em rascunho. A varredura também avisa de entregas e recebimentos parados.
+
+### Analítico de SEO
+
+Em Vendas, abaixo da Precificação (`Module.SEO`; `services/seo/`, `models/seo.py`). Mesmo jeito: `SeoCheck` por produto, análise no worker
+(`starrp.seo_read` e as rodadas), regras próprias (`Account.seo_scope`), e nada muda no cadastro sem aprovação, sugestão por sugestão (`POST /seo-checks/<id>/apply/`).
+
+- **Nota** (`analyzer.py`): nome 25, procura no Google 25, título 15, resumo 15, slug 10, marca/categoria/tags 10. Sem dados de busca, a procura
+  sai e a nota é proporcional ao resto. Mede o preenchimento: não promete posição.
+- **Dicionário** (`dictionary.py`): expande abreviação por contexto ("5P" só em móvel, "500G" é medida). Nunca acrescenta atributo. Sinônimo correto
+  só é trocado com dados de busca a favor.
+- **Dados de busca** (`keywords.py`): análise avulsa por `GenerateKeywordIdeas`; a rodada junta os termos de todos os produtos, sem repetir, e usa uma
+  operação de `GenerateKeywordHistoricalMetrics` (até 10 mil termos, valendo também para os `closeVariants`). Guardados em `KeywordMetric` por 30 dias, valem para todas
+  as contas e só contêm termos. Credencial própria (`SeoCredential`) só no admin do Django, com os segredos mascarados; limite em `Account.seo_monthly_requests`.
+- **Cada problema diz a origem:** "regra" ou "busca". SKU, referência e finalidade fiscal nunca viram palavra-chave. A conta vê "dados de busca do Google".
+
+Fora do MVP (próximos passos do levantamento): embeddings/reranking no pareamento, feeds de fabricante, SEO/qualidade do anúncio (Search Console) e aplicação automática com travas.

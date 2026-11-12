@@ -37,17 +37,5 @@ export function formatPhone(value: unknown) {
   return digits.length === 11 ? applyMask(digits, MASKS.mobile) : applyMask(digits, "(99) 9999-9999");
 }
 
-/** Endereço pelo CEP (ViaCEP, público e gratuito). `null` = CEP não existe ou serviço fora. */
-export async function lookupCep(cep: string) {
-  const digits = cep.replace(/\D/g, "");
-  if (digits.length !== 8) return null;
-  try {
-    const response = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
-    const data = await response.json();
-    if (!response.ok || data.erro) return null;
-    return { street: data.logradouro, district: data.bairro, city: data.localidade, state: data.uf, city_ibge: data.ibge,
-             complement: data.complemento } as Record<string, string>;
-  } catch {
-    return null;
-  }
-}
+/** Busca de CEP com fallback entre serviços públicos: ver `utils/cep.ts`. */
+export { lookupCep } from "./cep";

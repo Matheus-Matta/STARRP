@@ -120,12 +120,14 @@ const totals = computed(() => ({
         <span v-if="isInventory" class="right muted cellx" data-label="Sistema">{{ row.expected_quantity == null ? "—" : quantity(row.expected_quantity) }}</span>
         <span class="cellx" :data-label="isInventory ? 'Contado' : kind === 'adjustment' ? 'Diferença (±)' : 'Quantidade'">
           <InputNumber :model-value="num(row.quantity)" :disabled="locked" :min-fraction-digits="0" :max-fraction-digits="3"
+                       :min="kind === 'adjustment' ? undefined : 0" highlight-on-focus placeholder="0"
                        locale="pt-BR" size="small" fluid input-class="right"
                        @update:model-value="update(index, { quantity: text($event, 3) })" />
         </span>
         <span v-if="isEntry" class="cellx" data-label="Custo unit.">
           <InputNumber :model-value="num(row.unit_cost)" :disabled="locked" mode="currency" currency="BRL"
-                       locale="pt-BR" :max-fraction-digits="4" size="small" fluid input-class="right"
+                       locale="pt-BR" :max-fraction-digits="4" :min="0" highlight-on-focus placeholder="R$ 0,00" size="small" fluid
+                       input-class="right"
                        @update:model-value="update(index, { unit_cost: text($event, 4) })" />
         </span>
         <template v-if="showLots && isEntry">

@@ -1,7 +1,7 @@
 """Turno de caixa: abertura, sangria/suprimento, fechamento e aprovação.
 
 Esperado em gaveta = abertura + movimentos APROVADOS (com sinal por tipo).
-Diferença dentro de `Store.cash_closing_tolerance` fecha direto; fora dela, o
+Diferença dentro de `StoreRule.cash_closing_tolerance` (a regra da filial) fecha direto; fora dela, o
 turno fica aguardando um gerente aprovar. Sangria e suprimento também passam por
 aprovação. Toda aprovação aceita o gerente logado, o usuário/senha dele digitado no
 PDV ou a senha de ações do caixa da filial (`Store.cash_action_password`).
@@ -43,9 +43,9 @@ def sees_drawer(user):
 
 
 def can_operate(register, user):
-    """Abre, movimenta e fecha o caixa quem está vinculado a ele (`operators`); quem aprova
+    """Abre, movimenta e fecha o caixa o operador vinculado a ele (`operator`); quem aprova
     (gerente, supervisor) assume qualquer caixa da loja."""
-    return sees_drawer(user) or register.operators.filter(pk=user.pk).exists()
+    return sees_drawer(user) or register.operator_id == user.pk
 
 
 def _require_operator(register, user, session=None):
@@ -249,7 +249,7 @@ def close_session(session, user, counted_amount, notes=""):
     session.difference = counted - expected
     session.closing_report = {"by_method": totals_by_method(session), "cash_expected": str(expected)}
     session.closed_by, session.closed_at, session.notes = user, timezone.now(), notes
-    within = abs(session.difference) <= session.store.cash_closing_tolerance
+    within = abs(session.difference) <= session.store.rule.cash_closing_tolerance
     session.status = CashSession.Status.CLOSED if within else CashSession.Status.PENDING_APPROVAL
     session.save()
     if session.status == CashSession.Status.CLOSED:
@@ -266,6 +266,8 @@ def approve_closing(session, user, reason, approval=None):
     session = CashSession.all_objects.select_for_update().get(pk=session.pk)
     if session.status != CashSession.Status.PENDING_APPROVAL:
         raise StateConflict("Este turno não está aguardando aprovação.")
+    if not str(reason or "").strip():
+        raise BusinessError("Escreva a justificativa da diferença (ex.: troco dado errado).", code="reason_required")
     approver = authorize(user, session.account, session.store, "cash.approve", approval)
     session.status = CashSession.Status.CLOSED
     session.approved_by, session.approved_at, session.approval_reason = approver or user, timezone.now(), reason

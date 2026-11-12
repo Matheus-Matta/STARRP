@@ -12,7 +12,7 @@ from decimal import Decimal
 
 from django.db import transaction
 
-from starrp.models import FiscalProfile, LabelTemplate, PaymentMethod
+from starrp.models import FiscalProfile, LabelTemplate, LogisticsRule, PaymentMethod
 
 Kind = PaymentMethod.Kind
 
@@ -44,14 +44,17 @@ LABEL_TEMPLATES = [
     {"name": "Folha A4 3 colunas (Pimaco 6180)", "subject": "product", "width_mm": "66.7", "height_mm": "25.4",
      "margin_mm": "1.5", "columns": 3, "code_type": "ean13", "font_size_pt": "7", "fields": ["name", "price", "barcode"]},
     {"name": "Lote e validade 50×30 mm", "subject": "lot", "width_mm": "50", "height_mm": "30", "code_type": "code128",
-     "font_size_pt": "7", "fields": ["name", "lot_number", "expires_at", "barcode"], "is_default": True},
+     "font_size_pt": "7", "fields": ["name", "lot_number", "expires_at", "received_at", "barcode"], "is_default": True},
+    # Sem validade (FIFO pela data de entrada): o que importa é QUANDO entrou.
+    {"name": "Entrada de estoque 50×30 mm", "subject": "lot", "width_mm": "50", "height_mm": "30", "code_type": "code128",
+     "font_size_pt": "7", "fields": ["name", "sku", "received_at", "quantity", "barcode"]},
     {"name": "Endereço de estoque 100×50 mm (QR)", "subject": "bin", "width_mm": "100", "height_mm": "50", "code_type": "qr",
      "font_size_pt": "14", "fields": ["bin", "warehouse", "barcode"], "is_default": True},
     {"name": "Volume / caixa 100×60 mm", "subject": "volume", "width_mm": "100", "height_mm": "60", "code_type": "code128",
      "font_size_pt": "10", "fields": ["name", "volume", "contents", "barcode"], "is_default": True},
 ]
 
-# Regras de tributação mais usadas no varejo. O NCM fica no produto; aqui, CFOP/CST/alíquotas.
+# Regras de tributação mais usadas no varejo: CFOP/CST/alíquotas. NCM e CEST ficam vazios, cada conta define os seus.
 FISCAL_PROFILES = [
     {"name": "Simples Nacional — revenda", "cfop": "5102", "cfop_interstate": "6102", "csosn": "102",
      "approx_tax_rate": Decimal("13.45"), "is_default": True},
@@ -84,7 +87,8 @@ def ensure_system_data(account):
     for position, (name, kind, extra) in enumerate(PAYMENT_METHODS):
         if not PaymentMethod.all_objects.filter(account=account, kind=kind, deleted_at__isnull=True).exists():
             PaymentMethod.all_objects.create(account=account, name=name, kind=kind, position=position, **extra)
-    # Cartão e PIX sempre pedem o comprovante (NSU/autorização) — vale também para contas antigas.
+    # Cartão e PIX mostram o campo do comprovante (NSU/autorização); se é obrigatório, decide a regra
+    # da filial (`require_payment_reference`). Vale também para contas antigas.
     PaymentMethod.all_objects.filter(account=account, kind__in=REFERENCE_KINDS, requires_reference=False).update(
         requires_reference=True)
     for spec in FISCAL_PROFILES:
@@ -101,3 +105,9 @@ def ensure_system_data(account):
             account=account, name=spec["name"], deleted_at=None, defaults=defaults)
         if not created and not template.is_system:
             LabelTemplate.all_objects.filter(pk=template.pk).update(is_system=True)
+    # Regras de logística sem modelo de etiqueta ganham os pré-prontos padrão (entrada, lote, conferência).
+    for rule in LogisticsRule.all_objects.filter(account=account, deleted_at__isnull=True):
+        if rule.fill_label_defaults():
+            LogisticsRule.all_objects.filter(pk=rule.pk).update(
+                entry_lot_label=rule.entry_lot_label, entry_product_label=rule.entry_product_label,
+                conference_label=rule.conference_label)

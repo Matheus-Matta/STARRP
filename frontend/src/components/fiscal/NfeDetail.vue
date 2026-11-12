@@ -59,18 +59,33 @@ const reached = computed(() => ({
   summary: 0, pending_mapping: 2, pending_receipt: 3, checking: 3, received: 5,
 })[stage.value] ?? (v.value.xml_status === "available" ? 2 : 1));
 
-async function act(label: string, call: () => Promise<unknown>, success?: string) {
-  busy.value = label;
+/** Linhas sendo gravadas: a linha mostra o "salvando" e o resto da tela segue usável. */
+const savingRows = ref(new Set<string>());
+
+/** Roda a ação e relê a nota POR BAIXO (sem skeleton): a tela não pisca nem volta ao topo.
+ *  `row`: a ação é de um item; `optimistic`: muda a linha na hora, antes de o servidor responder
+ *  (deu erro, a releitura devolve o que estava). */
+async function act(label: string, call: () => Promise<unknown>, success?: string,
+                   row?: Item, optimistic?: (item: Item) => void) {
+  const key = row ? String(row.id) : null;
+  if (key) savingRows.value = new Set(savingRows.value).add(key);
+  else busy.value = label;
+  if (row && optimistic) optimistic(row);
   try {
     await call();
     if (success) notify.success(success);
-    await props.ctx.reload();
   } catch (error) {
     notify.error(error, `Não foi possível: ${label.toLowerCase()}`);
   } finally {
-    busy.value = null;
+    await props.ctx.reload().catch(() => undefined);
+    if (key) {
+      const rows = new Set(savingRows.value);
+      rows.delete(key);
+      savingRows.value = rows;
+    } else busy.value = null;
   }
 }
+const isSaving = (item: Item) => savingRows.value.has(String(item.id));
 
 function ask(spec: PromptSpec) {
   prompt.value = spec;
@@ -111,8 +126,24 @@ function guarded(label: string, run: () => void) {
 
 function mapItem(item: Item, variant: unknown, factor?: number | null) {
   if (!variant) return item.variant ? unmapItem(item) : undefined; // limpou o campo = desvincular
+  const nextFactor = factor ?? Number(item.conversion_factor);
+  if (String(variant) === String(item.variant) && nextFactor === Number(item.conversion_factor)) return; // nada mudou
   guarded("Trocar o vínculo", () => void act("Vincular",
-    () => nfeApi.mapItem(props.ctx.id, String(item.id), String(variant), factor ?? item.conversion_factor)));
+    () => nfeApi.mapItem(props.ctx.id, String(item.id), String(variant), nextFactor), undefined, item, (row) => {
+      row.variant = variant;
+      row.conversion_factor = nextFactor;
+      row.stock_quantity = Number(row.quantity) * nextFactor;
+    }));
+}
+
+/** Fator: grava quando termina de digitar (sai do campo ou Enter), não a cada tecla. */
+const factorDraft = ref<Record<string, number | null>>({});
+function commitFactor(item: Item) {
+  const key = String(item.id);
+  if (!(key in factorDraft.value)) return;
+  const value = factorDraft.value[key];
+  delete factorDraft.value[key];
+  if (value && value > 0) mapItem(item, item.variant, value);
 }
 
 function unmapItem(item: Item) {
@@ -122,7 +153,8 @@ function unmapItem(item: Item) {
       + (draftEntry.value ? ` A entrada nº ${draftEntry.value.number} em conferência será descartada.` : ""),
     icon: "pi pi-link", acceptProps: { label: "Desvincular", severity: "danger" },
     rejectProps: { label: "Voltar", severity: "secondary", outlined: true },
-    accept: () => act("Desvincular", () => nfeApi.unmapItem(String(item.id)), "Item desvinculado: escolha o produto certo"),
+    accept: () => act("Desvincular", () => nfeApi.unmapItem(String(item.id)), "Item desvinculado: escolha o produto certo",
+                      item, (row) => { row.variant = null; row.variant_name = ""; }),
   });
 }
 
@@ -130,16 +162,17 @@ async function createProduct(item: Item) {
   const answer = await ask({ title: "Cadastrar produto", label: `Preço de venda de "${item.description}"`, kind: "text",
                              confirmLabel: "Cadastrar e vincular" });
   if (answer) void act("Cadastrar produto", () => nfeApi.createProduct(String(item.id), answer.text?.replace(",", ".")),
-                       "Produto cadastrado e vinculado");
+                       "Produto cadastrado e vinculado", item);
 }
 
 function toggleIgnore(item: Item) {
   if (item.ignored) {
     return guarded("Voltar a usar o item", () => void act("Voltar a usar", () => nfeApi.unignoreItem(String(item.id)),
-                                                            "O item volta a entrar no estoque"));
+                                                            "O item volta a entrar no estoque", item,
+                                                            (row) => { row.ignored = false; }));
   }
   guarded("Ignorar item", () => void act("Ignorar item", () => nfeApi.ignoreItem(String(item.id), "Não entra no estoque"),
-                                         "Item fora do estoque"));
+                                         "Item fora do estoque", item, (row) => { row.ignored = true; }));
 }
 
 function discardEntry() {
@@ -316,8 +349,12 @@ const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, 
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in items" :key="item.id" :class="{ pending: !item.variant && !item.ignored, ignored: item.ignored }">
-              <td class="n">{{ item.item_number }}</td>
+            <tr v-for="item in items" :key="item.id"
+                :class="{ pending: !item.variant && !item.ignored, ignored: item.ignored, saving: isSaving(item) }">
+              <td class="n">
+                <i v-if="isSaving(item)" class="pi pi-spin pi-spinner" title="Salvando..." />
+                <template v-else>{{ item.item_number }}</template>
+              </td>
               <td class="desc">
                 <strong>{{ item.description }}</strong>
                 <small>Cód. {{ item.supplier_code || "—" }} · EAN {{ item.barcode || "sem" }}
@@ -340,13 +377,18 @@ const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, 
                 <span v-else class="muted">—</span>
               </td>
               <td class="r" data-label="Fator">
-                <InputNumber v-if="canMap && item.variant" :model-value="Number(item.conversion_factor)" :min="0.000001"
+                <InputNumber v-if="canMap && item.variant"
+                             :model-value="factorDraft[item.id] ?? Number(item.conversion_factor)" :min="0.000001"
                              :max-fraction-digits="6" size="small" class="factor" input-class="factor__input"
                              title="Quantas unidades de estoque vêm em 1 unidade da nota (1 CX = 12 UN → 12)"
-                             @update:model-value="mapItem(item, item.variant, $event)" />
+                             @input="factorDraft[item.id] = Number($event.value) || null"
+                             @update:model-value="factorDraft[item.id] = $event" @blur="commitFactor(item)"
+                             @keydown.enter.prevent="commitFactor(item)" />
                 <span v-else>{{ item.ignored ? "—" : quantity(item.conversion_factor) }}</span>
               </td>
-              <td class="r b" data-label="Entra no estoque">{{ item.ignored ? "—" : quantity(item.stock_quantity) }}</td>
+              <td class="r b" data-label="Entra no estoque">
+                {{ item.ignored ? "—" : quantity(Number(item.quantity) * (factorDraft[item.id] ?? Number(item.conversion_factor))) }}
+              </td>
               <td class="act">
                 <template v-if="canMap">
                   <Button v-if="item.variant && !item.ignored" icon="pi pi-times" text rounded size="small" severity="danger"
@@ -440,6 +482,8 @@ const formatKey = (key: unknown) => String(key ?? "").replace(/(\d{4})(?=\d)/g, 
 .items .act { width: 112px; white-space: nowrap; text-align: right; }
 .items tr.pending { background: color-mix(in srgb, var(--warning-subtle) 55%, transparent); }
 .items tr.ignored td { color: var(--text-subtle); }
+.items tr.saving td { opacity: 0.7; transition: opacity 0.15s; }
+.items tr.saving .n { color: var(--text-brand); opacity: 1; }
 .vols { display: inline-block; margin-top: 4px; padding: 2px 8px; border-radius: 6px;
         background: var(--brand-subtle); color: var(--text-brand); font-size: 11.5px; }
 .vols i { font-size: 11px; margin-right: 4px; }

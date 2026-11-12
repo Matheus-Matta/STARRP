@@ -7,6 +7,8 @@
  */
 import type { Component } from "vue";
 
+import type { FormatName } from "@/utils/formats";
+
 export type Option = { label: string; value: string | number | boolean };
 
 export type Relation = {
@@ -50,9 +52,18 @@ export type FieldDef = {
   maxLength?: number;
   /** Mostra "45/70" enquanto digita (título e resumo do Google, por exemplo). */
   counter?: boolean;
-  /** Máscara de digitação (InputMask): `9` = dígito, `?` = o resto é opcional. Ex.: NCM "9999.99.99".
+  /** Máscara de digitação (InputMask): `9` = dígito, `?` = o resto é opcional. Ex.: "9999999".
    *  Documento, telefone e CEP já vêm com a máscara certa. O valor é guardado só com os dígitos. */
   mask?: string;
+  /** Formato brasileiro com máscara E conferência antes de enviar (CFOP, NCM, chave de acesso...):
+   *  ver `utils/formats.ts`. */
+  format?: FormatName;
+  /** Número: unidade depois do valor ("kg", "cm"). Sem ela, a do rótulo: "Peso (kg)" já mostra "1,5 kg". */
+  unit?: string;
+  /** Número: limites. Padrão: sem negativo (`signed` libera: saldo, diferença) e % até 100. */
+  min?: number;
+  max?: number;
+  signed?: boolean;
   placeholder?: string;
   /** Colunas que o campo ocupa na grade de 6 (padrão 2; `full` = 6). */
   span?: 1 | 2 | 3 | 4 | 6;
@@ -64,6 +75,9 @@ export type FieldDef = {
   visible?: (values: Record<string, unknown>) => boolean;
   /** Só na criação (ex.: senha inicial, username). */
   createOnly?: boolean;
+  /** O formulário só mostra o campo a quem tem esta permissão e este módulo (o backend confere de novo). */
+  permission?: string;
+  module?: string;
   /** Só o suporte (superusuário) edita: para a conta aparece travado (ex.: permissões do cargo fixo). */
   readOnly?: boolean;
   /** Metacampos: de quem são as definições (Configurações → Campos personalizados). */
@@ -73,7 +87,7 @@ export type FieldDef = {
 export type Tone = "success" | "warning" | "danger" | "info" | "neutral" | "brand";
 
 export type ColumnType = "text" | "money" | "quantity" | "percent" | "date" | "datetime" | "boolean" | "tag" | "image"
-  | "stars";
+  | "stars" | "link";
 
 export type ColumnDef = {
   key: string;
@@ -130,6 +144,8 @@ export type TreeDef = {
   hasChildren?: (row: Values) => boolean;
   /** Para onde a linha filha leva ao clicar (padrão: o registro pai). */
   childLink?: (child: Values, parent: Values) => string | null | undefined;
+  /** Já abre todas as linhas ao carregar. Padrão: sim na árvore de `parent` (categorias, filiais). */
+  expanded?: boolean;
 };
 
 /** Selo ao lado do título do registro ("Confirmado", "Conferido", "Entrada"...). */
@@ -229,11 +245,18 @@ export type FormAction = {
   visible?: (values: Record<string, unknown>) => boolean;
   /** Código de permissão exigido (ex.: "logistics.manage"): sem ele a ação nem aparece. */
   permission?: string;
+  /** Módulo exigido: sem ele a ação nem aparece. */
+  module?: string;
   confirm?: string;
   success?: string;
   run?: (ctx: FormActionContext) => Promise<unknown>;
-  /** Componente com props `{ ctx }` aberto num diálogo; emite `done` ao terminar. */
+  /** Componente com props `{ ctx }` aberto num diálogo; emite `done` ao terminar (e aí vale o `then`). */
   dialog?: Component;
+  /** Depois do `run` dar certo, abre este diálogo (ex.: confirmou a entrada → imprimir as etiquetas).
+   *  `visible` olha o registro já recarregado. */
+  then?: { label: string; dialog: Component; visible?: (values: Record<string, unknown>) => boolean;
+    /** Resolve sem diálogo quando devolve `true` (ex.: imprime direto com o modelo da regra). */
+    auto?: (ctx: FormActionContext) => Promise<boolean> };
 };
 
 export type SectionDef = { description?: string; icon?: string };
@@ -249,6 +272,8 @@ export type ListViewDef = {
   ordering?: string;
   rowLink?: (row: Row) => string;
   searchable?: boolean;
+  /** Botão "Abrir na lista de ..." que leva à lista completa já filtrada por este registro. */
+  openAll?: { label: string; to: (id: string, values: Row) => string };
 };
 
 /**
@@ -324,6 +349,10 @@ export type ResourceDef = {
   /** Painel do registro, acima dos campos e fora do formulário (props `{ ctx }`):
    *  para telas com interação própria, como o vínculo dos itens da NF-e. */
   summary?: Component;
+  /** Rodada em lotes: a lista mostra quanto falta e se atualiza até terminar. `label` recebe o que já foi e o total. */
+  progress?: { load: () => Promise<{ running: boolean; done: number; total: number; task?: string | null }>; label: (done: number, total: number) => string };
+  /** Trabalho em segundo plano: enquanto `while` vale, a tela avisa e relê o registro (e a lista) sozinha. */
+  poll?: { while: (values: Record<string, unknown>) => boolean; message: string; done?: string };
   /** Visualização de leitura (ver `DisplayDef`). */
   display?: DisplayDef;
   /** Lista em árvore (ver `TreeDef`). */

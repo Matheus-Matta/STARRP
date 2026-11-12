@@ -20,6 +20,9 @@ class Module(models.TextChoices):
     INBOUND_NFE = "inbound_nfe", "NF-e de entrada (DF-e)"
     ASSETS = "assets", "Patrimônio"
     SYNC = "sync", "Servidor local (loja offline)"
+    PRICING = "pricing", "Precificação (preço × mercado)"
+    SEO = "seo", "Analítico de SEO"
+    COSMOS = "cosmos", "Cosmos (assistente de IA)"
 
 
 class Plan(TimeStampedModel):
@@ -38,6 +41,10 @@ class Plan(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+
+def default_price_sources():
+    return ["manual", "brightdata", "serpapi"]  # sem chave, a fonte fica de fora da leitura sozinha
 
 
 class Account(TimeStampedModel):
@@ -64,6 +71,65 @@ class Account(TimeStampedModel):
     # (`FiscalConfig.local_fiscal_enabled`). Documento fiscal emitido não se
     # apaga — ligar por engano custa nota real no CNPJ do cliente.
     local_fiscal_allowed = models.BooleanField(default=False)
+    # Cosmos (IA): controle da PLATAFORMA, só pelo admin do Django — a conta não vê nem altera.
+    # Três limites independentes de tokens (entrada + saída); 0 = sem limite naquele período.
+    # Use um, dois ou os três (ex.: 50 mil por dia E 1 milhão por mês). Consumo em `CosmosUsage`.
+    cosmos_enabled = models.BooleanField("Cosmos ligada", default=True)
+    cosmos_daily_tokens = models.PositiveIntegerField(
+        "Limite de tokens por dia", default=0, help_text="0 = sem limite diário.")
+    cosmos_weekly_tokens = models.PositiveIntegerField(
+        "Limite de tokens por semana", default=0, help_text="Semana de segunda a domingo. 0 = sem limite semanal.")
+    cosmos_monthly_tokens = models.PositiveIntegerField(
+        "Limite de tokens por mês", default=1_000_000, help_text="Mês civil. 0 = sem limite mensal.")
+    cosmos_daily_digest = models.BooleanField(
+        "Resumo diário da equipe", default=True,
+        help_text="Quem supervisiona recebe na Cosmos, toda manhã, o resumo do dia anterior (não gasta tokens).")
+    # A Cosmos nas telas, em segundo plano. A conta desliga para economizar tokens (ver services/cosmos/light.py).
+    cosmos_seo_ai = models.BooleanField("Cosmos no Analítico de SEO", default=True, help_text="Sugere nome, título e resumo com os pontos e os termos.")
+    cosmos_pricing_ai = models.BooleanField("Cosmos na Precificação", default=True, help_text="Confere se as ofertas são mesmo o mesmo produto.")
+    cosmos_stock_advice = models.BooleanField("Cosmos no estoque", default=True,
+                                              help_text="Recomenda como organizar os endereços e avisa de entregas paradas. Não gasta tokens.")
+    # Precificação (Configurações da conta → Cosmos): o preço de cada produto comparado com o
+    # mercado. A conta liga e ajusta a margem e a frequência; as fontes são da plataforma (admin do Django).
+    # Nada muda no cadastro sem aprovação (ver models/market.py).
+    class SearchMode(models.TextChoices):
+        FALLBACK = "fallback", "Só se a anterior falhar"
+        ALL = "all", "Todas sempre"
+
+    price_tracking_enabled = models.BooleanField("Rastrear preços no mercado", default=False)
+    price_sources = models.JSONField("Fontes de preço", default=default_price_sources, blank=True,
+                                     help_text="Só no admin do Django. Em ordem: é a fila de execução. Ver services/market/sources.py.")
+    price_search_mode = models.CharField(
+        "Com mais de uma fonte de busca", max_length=10, choices=SearchMode.choices, default=SearchMode.FALLBACK,
+        help_text="Falhar = erro, bloqueio, limite ou nenhuma oferta aceita.")
+    price_tracking_hours = models.PositiveIntegerField(
+        "Frequência da leitura (horas)", default=24, help_text="De quanto em quanto tempo cada produto é relido.")
+    price_min_margin = models.DecimalField(
+        "Margem mínima (%)", max_digits=5, decimal_places=2, default=20,
+        help_text="Sobre o preço de venda. Sugestão nunca deixa a margem abaixo disto.")
+    price_band = models.DecimalField(
+        "Faixa do mercado (%)", max_digits=5, decimal_places=2, default=10,
+        help_text="Até esta distância da mediana o preço está 'no mercado'.")
+    price_min_competitors = models.PositiveIntegerField(
+        "Mínimo de concorrentes", default=3, help_text="Menos ofertas pareadas que isto: só informa, não sugere.")
+    price_match_min = models.PositiveIntegerField(
+        "Confiança mínima do pareamento (%)", default=85,
+        help_text="Oferta abaixo desta nota não conta como o mesmo produto.")
+    price_scope = models.JSONField(
+        "Regras da precificação", default=dict, blank=True,
+        help_text="Quais produtos a leitura automática pega (ver services/market/scope.py). Vazio = todos.")
+    seo_scope = models.JSONField(
+        "Regras do Analítico de SEO", default=dict, blank=True,
+        help_text="Quais produtos a análise pega (ver services/market/scope.py). Vazio = todos.")
+    # Controle da PLATAFORMA, só pelo admin do Django. O módulo é `Module.SEO`; a credencial, `SeoCredential`.
+    seo_monthly_requests = models.PositiveIntegerField(
+        "Limite de consultas de busca (SEO) por mês", default=500,
+        help_text="Consultas de palavras-chave, com a credencial global ou a da conta. Termo já guardado não conta. Mês civil. 0 = sem limite.")
+    # Controle da PLATAFORMA, só pelo admin do Django (como os limites da Cosmos). O módulo é `Module.PRICING`.
+    price_monthly_requests = models.PositiveIntegerField(
+        "Limite de consultas de preço por mês", default=500,
+        help_text="Consultas às fontes com chave (Google Shopping, SerpApi, Bright Data, Bluesoft), com a chave global ou a da conta. "
+                  "Mês civil. 0 = sem limite.")
 
     class Meta:
         ordering = ["name"]
@@ -84,6 +150,20 @@ class Account(TimeStampedModel):
 
     def has_module(self, module):
         return module in self.active_modules()
+
+    @property
+    def cosmos_active(self):
+        """A conta pode usar a Cosmos: tem o módulo e não foi desligada no admin. Sem isto, nem widget nem acesso."""
+        return self.cosmos_enabled and self.has_module(Module.COSMOS)
+
+    def session_modules(self):
+        """O que a tela usa para mostrar ou esconder. `cosmos_stock` é uma tela que depende de dois módulos e de um interruptor."""
+        modules = self.active_modules()
+        if not self.cosmos_active:
+            modules = modules - {Module.COSMOS.value}
+        elif self.cosmos_stock_advice and Module.STOCK.value in modules:
+            modules = {*modules, "cosmos_stock"}
+        return sorted(modules)
 
 
 class Subscription(TimeStampedModel):

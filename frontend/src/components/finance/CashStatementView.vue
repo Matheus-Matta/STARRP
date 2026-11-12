@@ -20,7 +20,7 @@ const router = useRouter();
 const query = useQuery({ queryKey: ["cash-statement", props.id], queryFn: () => financeApi.cashStatement(props.id) });
 const s = computed(() => query.data.value);
 
-const STATUS: Record<string, string> = { open: "Aberto", pending_approval: "Aguardando gerente", closed: "Fechado", cancelled: "Cancelado" };
+const STATUS: Record<string, string> = { open: "Aberto", pending_opening: "Abertura aguardando gerente", pending_approval: "Aguardando gerente", closed: "Fechado", cancelled: "Cancelado" };
 const DRAWER: [string, string][] = [
   ["opening", "Troco inicial"], ["sale", "Vendas em dinheiro"], ["supply", "Suprimentos"], ["withdrawal", "Sangrias"],
   ["refund", "Devoluções em dinheiro"], ["expected", "Esperado na gaveta"], ["counted", "Contado"], ["difference", "Diferença"],

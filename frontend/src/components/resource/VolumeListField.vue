@@ -75,13 +75,13 @@ function move(index: number, step: -1 | 1) {
         <InputText :model-value="volume.barcode" placeholder="Código da caixa" fluid
                    @update:model-value="update(index, { barcode: String($event ?? '') })" />
         <InputNumber :model-value="num(volume.gross_weight)" placeholder="Peso (kg)" suffix=" kg" :max-fraction-digits="3"
-                     locale="pt-BR" fluid @update:model-value="update(index, { gross_weight: text($event, 3) })" />
+                     :min="0" highlight-on-focus locale="pt-BR" fluid @update:model-value="update(index, { gross_weight: text($event, 3) })" />
         <div class="dims">
           <InputNumber v-for="key in (['height_cm', 'width_cm', 'length_cm'] as const)" :key="key"
-                       :model-value="num(volume[key])" :placeholder="{ height_cm: 'Alt.', width_cm: 'Larg.', length_cm: 'Comp.' }[key]"
-                       :max-fraction-digits="1" locale="pt-BR" fluid
+                       :model-value="num(volume[key])" :placeholder="{ height_cm: 'Alt. cm', width_cm: 'Larg. cm', length_cm: 'Comp. cm' }[key]"
+                       :aria-label="{ height_cm: 'Altura (cm)', width_cm: 'Largura (cm)', length_cm: 'Comprimento (cm)' }[key]"
+                       suffix=" cm" :max-fraction-digits="1" :min="0" highlight-on-focus locale="pt-BR" fluid
                        @update:model-value="update(index, { [key]: text($event, 1) })" />
-          <span class="unit">cm</span>
         </div>
       </div>
       <div class="volume__actions">
@@ -118,7 +118,6 @@ function move(index: number, step: -1 | 1) {
 .volume__badge small { font-size: 11px; color: var(--text-muted); }
 .volume__fields { display: grid; grid-template-columns: 1.4fr 1fr 0.8fr 1.6fr; gap: 0.5rem; min-width: 0; }
 .dims { display: flex; gap: 0.35rem; align-items: center; }
-.unit { font-size: 12px; color: var(--text-muted); }
 .volume__actions { display: flex; gap: 0.1rem; }
 .footer { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-size: 13px; }
 @media (max-width: 900px) {

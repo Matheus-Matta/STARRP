@@ -1,4 +1,4 @@
-from starrp.views import catalog, logistics, modules, registry, variants
+from starrp.views import catalog, logistics, modules, registry, rules, variants
 
 
 def register(router):
@@ -10,7 +10,7 @@ def register(router):
     router.register("catalog/service-rules", catalog.ServiceRuleViewSet, basename="service-rules")
     router.register("metafield-definitions", logistics.MetafieldDefinitionViewSet, basename="metafield-definitions")
     router.register("logistics/freight-tables", logistics.FreightTableViewSet, basename="freight-tables")
-    router.register("logistics/settings", logistics.LogisticsSettingsViewSet, basename="logistics-settings")
+    router.register("logistics/rules", rules.LogisticsRuleViewSet, basename="logistics-rules")
     router.register("catalog/variants", variants.VariantViewSet, basename="variants")
     router.register("catalog/volumes", variants.ProductVolumeViewSet, basename="volumes")
     router.register("catalog/components", catalog.KitComponentViewSet, basename="kit-components")

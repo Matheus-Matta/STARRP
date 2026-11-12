@@ -7,6 +7,7 @@
     GET  /fiscal/invoices/                          notas emitidas (NFC-e / NF-e)
 """
 from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
@@ -15,7 +16,7 @@ from starrp.core.viewsets import ReadOnlyTenantViewSet, TenantViewSet
 from starrp.models import FiscalConfig, Invoice
 from starrp.models.platform import Module
 from starrp.serializers import misc as s
-from starrp.services import dfe, fiscal_data
+from starrp.services import danfe, dfe, fiscal_data, invoice_cancel
 
 MAX_PFX_BYTES = 64 * 1024
 
@@ -68,3 +69,27 @@ class InvoiceViewSet(ReadOnlyTenantViewSet):
     filterset_fields = {"status": ["exact"], "document_model": ["exact"], "sale": ["exact"],
                         "fiscal_config": ["exact"], "created_at": ["gte", "lte"]}
     search_fields = ["access_key", "number", "recipient_document", "recipient_name"]
+    # Ler a nota imprime o DANFE; cancelar é de quem mexe no fiscal (e, com o pedido, também `sales.cancel`).
+    action_permissions = {"danfe": "fiscal.view", "cancel": "fiscal.manage"}
+    http_method_names = ["get", "post", "head", "options"]  # POST só nas ações (a nota nasce da venda)
+
+    def create(self, request, *args, **kwargs):
+        raise MethodNotAllowed("POST")
+
+    @action(detail=True, methods=["get"])
+    def danfe(self, request, pk=None):
+        """DANFE da nota (NF-e A4 / NFC-e 80 mm): dados completos + código de barras + QR."""
+        return Response(danfe.build(self.get_object(), self.get_serializer_context()))
+
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        """POST {"reason", "with_sale": bool, "approval"}: cancela a nota na SEFAZ; com `with_sale`,
+        cancela também o pedido e reembolsa os pagamentos."""
+        invoice = self.get_object()
+        reason = str(request.data.get("reason", ""))
+        if request.data.get("with_sale") and invoice.sale_id:
+            invoice_cancel.cancel_sale_and_invoices(invoice.sale, request.user, reason, request.data.get("approval"))
+            invoice.refresh_from_db()
+        else:
+            invoice = invoice_cancel.cancel_invoice(invoice, request.user, reason)
+        return Response(s.InvoiceSerializer(invoice, context=self.get_serializer_context()).data)

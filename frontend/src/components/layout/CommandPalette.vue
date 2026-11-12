@@ -1,9 +1,11 @@
 <script setup lang="ts">
 /**
- * Busca rápida (Ctrl+K): vai para qualquer tela, cria um cadastro ou abre um
- * produto/cliente sem passar pelo menu. Setas escolhem, Enter abre, Esc fecha.
+ * Busca rápida (Ctrl+K): vai para qualquer tela do menu (inclusive cada relatório), cria um
+ * cadastro ou abre um registro — pedido, produto, cliente, fornecedor, nota, título... — sem
+ * passar pelo menu. Setas escolhem, Enter abre, Esc fecha.
  *
- * Ex.: "nov prod" → "Novo produto"; "7891000" → o produto com esse código.
+ * Ex.: "nov prod" → "Novo produto"; "7891000" → o produto com esse código; "1042" → o pedido 1042;
+ * "curva abc" → o relatório.
  */
 import Dialog from "primevue/dialog";
 import { computed, nextTick, ref, watch } from "vue";
@@ -14,6 +16,7 @@ import { usePrefetch } from "@/composables/usePrefetch";
 import { findResource, resources } from "@/resources";
 import { newLabel } from "@/resources/types";
 import { useSession } from "@/stores/session";
+import { money } from "@/utils/format";
 
 import { buildNavigation } from "./navigation";
 
@@ -36,8 +39,15 @@ const normalize = (text: string) => text.normalize("NFD").replace(/[̀-ͯ]/g, ""
 const matches = (text: string, query: string) => normalize(query).split(/\s+/).filter(Boolean)
   .every((word) => normalize(text).includes(word));
 
+/** Toda tela do menu, e também os itens dos submenus (cada relatório do livro). */
 const screens = computed<Hit[]>(() => buildNavigation(session.can, session.hasModule).flatMap((group) =>
-  group.items.map((item) => ({ key: item.to, group: "Ir para", label: item.label, hint: group.label, icon: item.icon, to: item.to }))));
+  group.items.flatMap((item) => [
+    { key: item.to, group: "Ir para", label: item.label, hint: group.label, icon: item.icon, to: item.to },
+    ...(item.children ?? []).flatMap((sub) => sub.items.map((child) => ({
+      key: child.to, group: "Ir para", label: child.label, hint: `${item.label} · ${sub.label}`, icon: child.icon, to: child.to }))),
+  ])));
+/** Sem nada digitado, só as telas de primeiro nível (os relatórios aparecem ao buscar). */
+const topScreens = computed(() => screens.value.filter((hit) => !hit.to.startsWith("/relatorios/")));
 
 const actions = computed<Hit[]>(() => resources
   .filter((r) => !r.readOnly && r.creatable !== false && session.can(`${r.permission}.manage`) && session.hasModule(r.module))
@@ -45,7 +55,7 @@ const actions = computed<Hit[]>(() => resources
 
 const hits = computed<Hit[]>(() => {
   const query = term.value.trim();
-  if (!query) return screens.value.slice(0, 8);
+  if (!query) return topScreens.value.slice(0, 8);
   const local = [...screens.value, ...actions.value].filter((hit) => matches(`${hit.label} ${hit.hint ?? ""}`, query));
   return [...local.slice(0, 8), ...records.value];
 });
@@ -56,29 +66,62 @@ const groups = computed(() => {
   return [...map.entries()];
 });
 
-/** Registros vêm do servidor (debounce curto); a resposta velha é descartada. */
-const SOURCES = [
-  { resource: "produtos", group: "Produtos", icon: "pi pi-box", hint: (r: Record<string, unknown>) => String(r.sku ?? "") },
-  { resource: "clientes", group: "Clientes", icon: "pi pi-user", hint: (r: Record<string, unknown>) => String(r.document ?? r.phone ?? "") },
+/** Registros vêm do servidor (debounce curto); a resposta velha é descartada. Cada fonte só entra
+ *  com a permissão `.view` e o módulo do cadastro; a busca é a do próprio endpoint (`search_fields`). */
+type Rec = Record<string, unknown>;
+type Source = { resource: string; group: string; icon: string; label: (r: Rec) => string; hint?: (r: Rec) => string };
+const text = (...parts: unknown[]) => parts.filter((p) => p !== null && p !== undefined && p !== "").map(String).join(" · ");
+const SOURCES: Source[] = [
+  { resource: "vendas", group: "Pedidos", icon: "pi pi-shopping-cart", label: (r) => `Pedido ${r.number}`,
+    hint: (r) => text(r.customer_name || "Sem cliente", r.total != null ? money(r.total as string) : "") },
+  { resource: "produtos", group: "Produtos", icon: "pi pi-box", label: (r) => String(r.name),
+    hint: (r) => text(r.sku, r.category_name) },
+  { resource: "clientes", group: "Clientes", icon: "pi pi-user", label: (r) => String(r.name),
+    hint: (r) => text(r.document || r.phone) },
+  { resource: "fornecedores", group: "Fornecedores", icon: "pi pi-building", label: (r) => String(r.name),
+    hint: (r) => text(r.document) },
+  { resource: "notas-emitidas", group: "Notas emitidas", icon: "pi pi-file", label: (r) => `NF ${r.number ?? ""}`.trim(),
+    hint: (r) => text(r.recipient_name) },
+  { resource: "notas-de-entrada", group: "Notas de entrada", icon: "pi pi-file-import", label: (r) => `NF-e ${r.number ?? ""}`.trim(),
+    hint: (r) => text(r.supplier_name) },
+  { resource: "entradas-e-saidas", group: "Entradas e saídas", icon: "pi pi-arrow-right-arrow-left",
+    label: (r) => `Documento ${r.number ?? ""}`.trim(), hint: (r) => text(r.external_number) },
+  { resource: "contas-a-receber", group: "Contas a receber", icon: "pi pi-arrow-down-left",
+    label: (r) => String(r.description || r.document_number || "Título"), hint: (r) => text(r.customer_name) },
+  { resource: "contas-a-pagar", group: "Contas a pagar", icon: "pi pi-arrow-up-right",
+    label: (r) => String(r.description || r.document_number || "Título"), hint: (r) => text(r.supplier_name) },
+  { resource: "categorias", group: "Categorias", icon: "pi pi-sitemap", label: (r) => String(r.name) },
+  { resource: "marcas", group: "Marcas", icon: "pi pi-bookmark", label: (r) => String(r.name) },
+  { resource: "cupons", group: "Cupons", icon: "pi pi-ticket", label: (r) => String(r.code), hint: (r) => text(r.name) },
+  { resource: "usuarios", group: "Usuários", icon: "pi pi-id-card", label: (r) => String(r.full_name || r.username),
+    hint: (r) => text(r.username, r.role_name) },
+  { resource: "filiais", group: "Filiais", icon: "pi pi-shop", label: (r) => String(r.name), hint: (r) => text(r.city) },
 ];
+const PER_SOURCE = 4;
 
 async function searchRecords(query: string) {
   const mine = ++ticket;
   const usable = SOURCES.map((s) => ({ ...s, def: findResource(s.resource) }))
-    .filter((s) => s.def && session.can(`${s.def.permission}.view`));
+    .filter((s) => s.def && session.can(`${s.def.permission}.view`) && session.hasModule(s.def.module));
   if (query.length < 2 || !usable.length) {
     records.value = [];
     return;
   }
   searching.value = true;
   try {
-    const pages = await Promise.all(usable.map((s) => resourceApi.list(s.def!.endpoint, { search: query, page_size: 5 })
-      .catch(() => ({ results: [] as Record<string, unknown>[] }))));
+    // `params` do cadastro: contas a receber e a pagar são o mesmo endpoint, separadas pelo tipo.
+    const pages = await Promise.all(usable.map((s) => resourceApi.list<Rec>(s.def!.endpoint,
+      { ...s.def!.params, search: query, page_size: PER_SOURCE })
+      .catch(() => ({ results: [] as Rec[] }))));
     if (mine !== ticket) return;
-    records.value = pages.flatMap((page, index) => page.results.map((row) => ({
-      key: `${usable[index]!.resource}-${row.id}`, group: usable[index]!.group, label: String(row.name ?? row.id),
-      hint: usable[index]!.hint(row), icon: usable[index]!.icon, to: `/cadastros/${usable[index]!.resource}/${row.id}`,
-    })));
+    records.value = pages.flatMap((page, index) => {
+      const source = usable[index]!;
+      return page.results.map((row) => ({
+        key: `${source.resource}-${row.id}`, group: source.group, label: source.label(row) || String(row.id),
+        hint: source.hint?.(row) || undefined, icon: source.icon,
+        to: source.def!.rowLink?.(row) ?? `/cadastros/${source.resource}/${row.id}`,
+      }));
+    });
   } finally {
     if (mine === ticket) searching.value = false;
   }
@@ -87,7 +130,7 @@ async function searchRecords(query: string) {
 watch(term, (value) => {
   active.value = 0;
   clearTimeout(timer);
-  timer = setTimeout(() => searchRecords(value.trim()), 200);
+  timer = setTimeout(() => searchRecords(value.trim()), 250);
 });
 
 watch(open, async (isOpen) => {

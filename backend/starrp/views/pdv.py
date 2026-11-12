@@ -16,6 +16,7 @@ from rest_framework.views import APIView
 from starrp.core.errors import BusinessError
 from starrp.core.permissions import has_permission_code
 from starrp.models import CashRegister, PaymentMethod, Printer, Scale, Terminal
+from starrp.serializers import rules as rules_s
 from starrp.serializers import company, operations
 from starrp.serializers import misc as s
 from starrp.services.cash import active_session_for_user, sees_drawer
@@ -45,9 +46,11 @@ class PdvBootstrapView(APIView):
 
         session = active_session_for_user(store, request.user)  # aberto ou abertura esperando o gerente
         sellers = sellers_of(store)
-        registers = CashRegister.objects.filter(store=store, is_active=True).prefetch_related("operators")
+        registers = CashRegister.objects.filter(store=store, is_active=True).select_related("operator")
+        # O caixa DO usuário (um por usuário): o PDV abre nele sem perguntar.
+        mine = registers.filter(operator=request.user).first()
         if not sees_drawer(request.user):
-            registers = registers.filter(operators=request.user)
+            registers = registers.filter(operator=request.user)
         # Vendedor monta e guarda pedidos; caixa cobra, abre e fecha o turno. Modo caixa = tem
         # `cash.manage` E um caixa desta loja vinculado a ele (ou um turno dele ainda aberto).
         # Com acesso mas sem caixa vinculado: entra só para criar pedidos, sem nada do caixa.
@@ -58,7 +61,9 @@ class PdvBootstrapView(APIView):
         ctx = {"request": request}
         return Response({
             "mode": mode,
-            "lock_minutes": int((store.settings or {}).get("pdv_lock_minutes", 5)),
+            "lock_minutes": store.rule.pdv_lock_minutes if store.rule.pdv_auto_lock else 0,  # 0 = não bloqueia sozinho
+            # Regras da filial (PDV, caixa, venda): a regra que esta filial usa.
+            "rules": rules_s.StoreRuleSerializer(store.rule, context={"request": request}).data,
             "has_cash_action_password": bool(store.cash_action_password),
             "server_time": timezone.now(),
             "store": company.StoreSerializer(store).data,
@@ -68,6 +73,7 @@ class PdvBootstrapView(APIView):
             ).data,
             # Só os caixas em que ele está vinculado (quem aprova vê todos da loja).
             "cash_registers": operations.CashRegisterSerializer(registers, many=True, context=ctx).data,
+            "my_register": str(mine.pk) if mine and cashier else None,
             "cash_session": operations.CashSessionSerializer(session, context=ctx).data if session else None,
             "sees_drawer": sees_drawer(request.user),
             "sellers": [{"user_id": p.user_id, "name": p.user.get_full_name() or p.user.username,

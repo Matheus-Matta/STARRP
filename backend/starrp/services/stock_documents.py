@@ -28,7 +28,7 @@ EXIT_KINDS = {
 }
 
 
-def _new_lot(item, warehouse, quantity_hint):
+def _new_lot(item, warehouse, quantity_hint, received_at=None):
     return StockLot.all_objects.create(
         account_id=item.account_id,
         variant=item.variant,
@@ -40,15 +40,33 @@ def _new_lot(item, warehouse, quantity_hint):
         initial_quantity=quantity_hint,
         quantity=Decimal("0"),
         unit_cost=item.unit_cost,
+        received_at=received_at or timezone.localdate(),
     )
+
+
+def validate_lot_dates(item, today=None):
+    """Datas do lote que chegam erradas viram erro de estoque depois: barra na entrada."""
+    today = today or timezone.localdate()
+    name = item.variant.display_name
+    if item.expires_at and item.expires_at < today:
+        raise BusinessError(f"{name}: validade {item.expires_at:%d/%m/%Y} já passou. Produto vencido não entra no "
+                            "estoque: devolva ao fornecedor ou lance como perda.", code="lot_expired")
+    if item.manufactured_at and item.manufactured_at > today:
+        raise BusinessError(f"{name}: fabricação {item.manufactured_at:%d/%m/%Y} está no futuro.",
+                            code="lot_manufactured_future")
+    if item.manufactured_at and item.expires_at and item.manufactured_at > item.expires_at:
+        raise BusinessError(f"{name}: a fabricação é depois da validade. Confira as datas.", code="lot_dates_inverted")
 
 
 def _entry(item, doc, kind, user):
     lot = None
-    if item.variant.track_lots:
-        if not item.expires_at and not item.lot_number:
-            raise BusinessError(f"{item.variant.display_name} exige lote ou validade na entrada.")
-        lot = _new_lot(item, doc.warehouse, item.quantity)
+    settings = stock.settings_for(doc.account_id, doc.warehouse.store_id)
+    if item.variant.track_lots and not item.expires_at and not item.lot_number:
+        raise BusinessError(f"{item.variant.display_name} exige lote ou validade na entrada.", code="lot_required")
+    validate_lot_dates(item)
+    # Lote = a etiqueta da entrada: validade (produto com lote) ou só a data de entrada (FIFO).
+    if item.variant.track_stock and stock.uses_lots(item.variant, settings) and item.quantity > 0:
+        lot = _new_lot(item, doc.warehouse, item.quantity, received_at=doc.effective_date)
     stock.move(item.variant, doc.warehouse, item.quantity, kind, lot=lot, bin=item.bin, unit_cost=item.unit_cost,
                source_key=f"doc:{item.pk}", document_item=item, operator=user)
 
@@ -64,9 +82,11 @@ def _transfer(item, doc, user):
     for index, out in enumerate(_exit(item, doc, StockMovement.Kind.TRANSFER_OUT, user)):
         lot = None
         if out.lot_id:
-            lot = _new_lot(item, doc.destination, -out.quantity)
+            # O lote no destino guarda a validade e a DATA DE ENTRADA original: a idade não zera.
+            lot = _new_lot(item, doc.destination, -out.quantity, received_at=out.lot.received_at)
             lot.lot_number, lot.expires_at = out.lot.lot_number, out.lot.expires_at
-            lot.save(update_fields=["lot_number", "expires_at"])
+            lot.manufactured_at = out.lot.manufactured_at
+            lot.save(update_fields=["lot_number", "expires_at", "manufactured_at"])
         stock.move(item.variant, doc.destination, -out.quantity, StockMovement.Kind.TRANSFER_IN, lot=lot,
                    bin=item.destination_bin, unit_cost=out.unit_cost, source_key=f"doc:{item.pk}:in{index}",
                    document_item=item, operator=user)
@@ -100,8 +120,11 @@ def _inventory(item, doc, user):
     """Contagem: grava o saldo do sistema como esperado e move só a diferença.
     Com endereço, a contagem é DAQUELE endereço (e lote, se informado)."""
     if item.bin_id:
-        row = BinBalance.all_objects.filter(bin=item.bin, variant=item.variant, lot=item.lot).first()
-        current = row.quantity if row else Decimal("0")
+        # Sem lote informado, conta o endereço INTEIRO (todos os lotes de entrada dele).
+        rows = BinBalance.all_objects.filter(bin=item.bin, variant=item.variant)
+        if item.lot_id:
+            rows = rows.filter(lot=item.lot)
+        current = sum((r.quantity for r in rows), Decimal("0"))
     else:
         current = stock.available(item.variant, doc.warehouse)
     item.expected_quantity = current
@@ -123,9 +146,9 @@ def _spread(lines, counted):
 
 
 def _manual_allowed(doc):
-    from starrp.services import logistics_settings
+    from starrp.services import rules
 
-    if not logistics_settings.for_store(doc.store_id).allow_manual_conference:
+    if not rules.of_store("logistics_rule", doc.store_id, doc.account_id).allow_manual_conference:
         raise BusinessError("A conferência manual está desligada nesta filial (Logística › Configurações de "
                             "logística): leia os códigos.", code="manual_conference_disabled")
 

@@ -14,7 +14,7 @@ from decimal import ROUND_HALF_UP, Decimal
 from django.db import models
 from django.utils import timezone
 
-from starrp.models.base import MoneyField, TenantModel, alive, optional_store_fk
+from starrp.models.base import AutoCodeMixin, MoneyField, TenantModel, alive, code_from, optional_store_fk
 
 CENTS = Decimal("0.01")
 
@@ -132,7 +132,7 @@ class PromotionProduct(TenantModel):
         ]
 
 
-class Coupon(ScheduledMixin, TenantModel):
+class Coupon(AutoCodeMixin, ScheduledMixin, TenantModel):
     store_lookup = "store"
     store_shared_when_null = True
 
@@ -142,7 +142,8 @@ class Coupon(ScheduledMixin, TenantModel):
         FREE_SHIPPING = "free_shipping", "Frete grátis"
 
     store = optional_store_fk()
-    code = models.CharField(max_length=40, help_text="Guardado em MAIÚSCULAS.")
+    code = models.CharField(max_length=40, blank=True,
+                            help_text="Guardado em MAIÚSCULAS. Vazio = gerado pelo nome (BLACKFRIDAY) ou aleatório.")
     name = models.CharField(max_length=140, blank=True)
     kind = models.CharField(max_length=16, choices=Kind.choices, default=Kind.PERCENT)
     value = MoneyField()
@@ -167,6 +168,11 @@ class Coupon(ScheduledMixin, TenantModel):
     def save(self, *args, **kwargs):
         self.code = (self.code or "").strip().upper()
         super().save(*args, **kwargs)
+
+    def code_base(self):
+        import secrets
+
+        return code_from(self.name, f"CUPOM{secrets.token_hex(3).upper()}", upper=True, joined=True)
 
     def discount_for(self, subtotal, freight=Decimal("0.00")):
         subtotal = Decimal(subtotal or 0)

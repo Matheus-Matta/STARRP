@@ -57,6 +57,8 @@ class Category(TenantModel):
 
 class Brand(TenantModel):
     name = models.CharField(max_length=120)
+    supplier = models.ForeignKey("starrp.Supplier", null=True, blank=True, related_name="brands", on_delete=models.SET_NULL,
+                                 help_text="De quem a loja compra esta marca.")
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -95,6 +97,7 @@ class Product(TenantModel):
     sale_method = models.CharField(max_length=10, choices=SaleMethod.choices, default=SaleMethod.UNIT)
     name = models.CharField(max_length=180, db_index=True)
     reference = models.CharField(max_length=60, blank=True, help_text="Referência do modelo; base do SKU das variantes.")
+    model_name = models.CharField("Modelo", max_length=80, blank=True, help_text="Modelo do fabricante (ex.: Tune 510BT).")
     description = models.TextField(blank=True, help_text="Texto rico (HTML limpo).")
     # Loja virtual / SEO: endereço amigável e o que aparece no Google.
     slug = models.SlugField(max_length=180, blank=True, help_text="Endereço na loja virtual (gerado pelo nome).")
@@ -106,12 +109,13 @@ class Product(TenantModel):
     commission_percent = PercentField(null=True, blank=True, default=None, help_text="Vazio = comissão do vendedor.")
     tags = models.ManyToManyField("starrp.Tag", related_name="products", blank=True)
 
-    # Fiscal: NCM/CEST/origem são do produto; o perfil guarda só a regra (CFOP, CST, alíquotas).
+    # Fiscal: o perfil traz a regra (CFOP, CST, alíquotas) e pode trazer NCM/CEST. Preenchidos aqui, sobrescrevem
+    # os do perfil: quem precisa do código de verdade lê `fiscal_ncm` e `fiscal_cest`. A origem é só do produto.
     fiscal_profile = models.ForeignKey(
         "starrp.FiscalProfile", null=True, blank=True, related_name="products", on_delete=models.SET_NULL
     )
-    ncm = models.CharField(max_length=8, blank=True)
-    cest = models.CharField(max_length=7, blank=True)
+    ncm = models.CharField(max_length=8, blank=True, help_text="Vazio = o do perfil fiscal.")
+    cest = models.CharField(max_length=7, blank=True, help_text="Vazio = o do perfil fiscal.")
     origin = models.CharField(max_length=1, default="0", help_text="Origem da mercadoria (0 = nacional).")
 
     # Estoque (vale para todas as variantes). Kit e serviço nunca têm saldo próprio.
@@ -135,6 +139,20 @@ class Product(TenantModel):
 
     def __str__(self):
         return self.name
+
+    def _from_profile(self, field):
+        profile = self.fiscal_profile
+        return getattr(profile, field) if profile is not None and profile.deleted_at is None else ""
+
+    @property
+    def fiscal_ncm(self):
+        """O NCM que vale: o do produto; sem ele, o do perfil fiscal."""
+        return self.ncm or self._from_profile("ncm")
+
+    @property
+    def fiscal_cest(self):
+        """O CEST que vale: o do produto; sem ele, o do perfil fiscal."""
+        return self.cest or self._from_profile("cest")
 
     @property
     def keeps_stock(self):

@@ -13,9 +13,10 @@ Money = {"max_digits": 14, "decimal_places": 2}
 
 PaymentMethodSerializer = tenant_serializer(PaymentMethod)
 class CashRegisterSerializer(TenantSerializer):
-    """Caixa e QUEM opera (`operators`, ids de usuário): só eles abrem, movimentam e fecham."""
+    """Caixa e QUEM opera (`operator`, id do usuário): só ele abre, movimenta e fecha. Um operador
+    por caixa e um caixa por usuário."""
 
-    operator_names = serializers.SerializerMethodField()
+    operator_name = serializers.SerializerMethodField()
     in_use_by = serializers.SerializerMethodField(help_text="Quem está com o turno deste caixa agora (vazio = livre).")
 
     class Meta:
@@ -27,19 +28,24 @@ class CashRegisterSerializer(TenantSerializer):
                 .select_related("opened_by").first())
         return (busy.opened_by.get_full_name() or busy.opened_by.username) if busy else None
 
-    def get_operator_names(self, obj):
-        return ", ".join(u.get_full_name() or u.username for u in obj.operators.all())
+    def get_operator_name(self, obj) -> str:
+        return (obj.operator.get_full_name() or obj.operator.username) if obj.operator_id else ""
 
-    def validate_operators(self, users):
+    def validate_operator(self, user):
         from starrp.models import UserProfile
 
+        if user is None:
+            return user
         account = self.context["request"].account
-        ok = set(UserProfile.all_objects.filter(account=account, user__in=users, deleted_at__isnull=True)
-                 .values_list("user_id", flat=True))
-        strangers = [u.username for u in users if u.pk not in ok]
-        if strangers:
-            raise serializers.ValidationError(f"Usuário fora da conta: {', '.join(strangers)}.")
-        return users
+        if not UserProfile.all_objects.filter(account=account, user=user, deleted_at__isnull=True).exists():
+            raise serializers.ValidationError(f"Usuário fora da conta: {user.username}.")
+        taken = CashRegister.all_objects.filter(operator=user, deleted_at__isnull=True).exclude(
+            pk=getattr(self.instance, "pk", None)).select_related("store").first()
+        if taken is not None:
+            who = user.get_full_name() or user.username
+            raise serializers.ValidationError(f"{who} já opera o {taken.name} ({taken.store.name}): cada usuário tem um "
+                                              "caixa só. Tire de lá antes.")
+        return user
 CustomerCreditSerializer = tenant_serializer(CustomerCredit)
 CashDiscrepancySerializer = tenant_serializer(
     CashDiscrepancy, read_only=("status", "resolved_by", "resolved_at")
@@ -98,11 +104,16 @@ class CashSessionSerializer(TenantSerializer):
     register_name = serializers.CharField(source="register.name", read_only=True)
     opened_by_name = serializers.CharField(source="opened_by.get_full_name", read_only=True)
     expected_now = serializers.SerializerMethodField()
+    pending_movements = serializers.SerializerMethodField()
 
     class Meta:
         model = CashSession
         fields = "__all__"
         read_only_fields = [f.name for f in CashSession._meta.fields]
+
+    def get_pending_movements(self, obj) -> int:
+        """Sangrias/suprimentos aguardando aprovação (o fechamento espera por eles)."""
+        return obj.movements.filter(status=CashMovement.Status.PENDING).count()
 
     def get_expected_now(self, obj):
         from starrp.services.cash import expected_cash

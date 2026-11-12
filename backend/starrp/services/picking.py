@@ -19,7 +19,7 @@ def picking_list(document):
     if document.kind not in PICKABLE:
         raise StateConflict("Lista de separação só existe para saída, transferência e movimentação.")
     warehouse = document.warehouse
-    settings = stock.settings_for(document.account_id)
+    settings = stock.settings_for(document.account_id, document.store_id)
     lines, shortages = [], []
     items = list(document.items.select_related("variant__product", "bin", "lot"))
     for item in items:

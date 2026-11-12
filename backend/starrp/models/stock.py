@@ -13,23 +13,7 @@ O StarChef tinha dois sistemas paralelos (`StockLot` × `InventoryLot`,
 from django.db import models
 from django.db.models import Q
 
-from starrp.models.base import MoneyField, QuantityField, StoreModel, TenantModel, UnitCostField, alive, user_fk
-
-
-class StockSettings(TenantModel):
-    """Política de estoque da conta (uma por conta)."""
-
-    class Picking(models.TextChoices):
-        FIFO = "fifo", "FIFO - primeiro a entrar"
-        FEFO = "fefo", "FEFO - primeiro a vencer"
-
-    picking_strategy = models.CharField(max_length=4, choices=Picking.choices, default=Picking.FEFO)
-    expiry_warning_days = models.PositiveSmallIntegerField(default=7)
-    block_expired = models.BooleanField(default=True)
-    allow_negative_stock = models.BooleanField(default=False)
-
-    class Meta:
-        constraints = [models.UniqueConstraint(fields=["account"], condition=alive(), name="uniq_stock_settings")]
+from starrp.models.base import AutoCodeMixin, MoneyField, QuantityField, StoreModel, TenantModel, UnitCostField, alive, user_fk
 
 
 class Warehouse(StoreModel):
@@ -76,7 +60,7 @@ class StockBalance(TenantModel):
         constraints = [models.UniqueConstraint(fields=["variant", "warehouse"], name="uniq_stock_balance")]
 
 
-class StockLot(TenantModel):
+class StockLot(AutoCodeMixin, TenantModel):
     store_lookup = "warehouse__store"
 
     class Status(models.TextChoices):
@@ -88,11 +72,14 @@ class StockLot(TenantModel):
 
     variant = models.ForeignKey("starrp.ProductVariant", related_name="lots", on_delete=models.PROTECT)
     warehouse = models.ForeignKey(Warehouse, related_name="lots", on_delete=models.PROTECT)
-    # Código da etiqueta interna: imutável e nunca reaproveitado.
-    code = models.CharField(max_length=40)
+    # Código da etiqueta interna: imutável e nunca reaproveitado (vazio = gerado, L + 8 caracteres).
+    code = models.CharField(max_length=40, blank=True)
     lot_number = models.CharField(max_length=60, blank=True, help_text="Lote do fabricante.")
     manufactured_at = models.DateField(null=True, blank=True)
     expires_at = models.DateField(null=True, blank=True, db_index=True)
+    # Data em que a mercadoria ENTROU no estoque (vai na etiqueta). Sem validade, a saída vai do mais
+    # antigo para o mais novo (FIFO): nada fica parado até mofar. Transferência leva a data junto.
+    received_at = models.DateField(null=True, blank=True, db_index=True, help_text="Data de entrada no estoque.")
     initial_quantity = QuantityField()
     quantity = QuantityField()
     unit_cost = UnitCostField()
@@ -105,6 +92,18 @@ class StockLot(TenantModel):
 
     def __str__(self):
         return f"{self.code} ({self.variant})"
+
+    def save(self, *args, **kwargs):
+        if self.received_at is None:
+            from django.utils import timezone
+
+            self.received_at = timezone.localdate()
+        super().save(*args, **kwargs)
+
+    def code_base(self):
+        import uuid
+
+        return f"L{uuid.uuid4().hex[:8].upper()}"
 
 
 class StockMovement(TenantModel):

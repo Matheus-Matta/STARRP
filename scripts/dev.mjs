@@ -14,7 +14,7 @@ const only = process.argv[2]; // "backend" | "frontend" | undefined
 
 const children = [];
 if (only !== "frontend") {
-  children.push(start("backend", "33", venvPython, ["manage.py", "runserver", "8000"], { cwd: BACKEND }));
+  children.push(start("backend", "33", venvPython, ["manage.py", "runserver", "8001"], { cwd: BACKEND }));
 }
 if (only !== "backend") {
   children.push(start("frontend", "36", ...npm(["run", "dev"]), { cwd: FRONTEND }));

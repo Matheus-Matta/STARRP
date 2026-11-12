@@ -2,7 +2,8 @@
 /**
  * Endereços de entrega do cliente (trabalhamos com entrega): um cartão por endereço,
  * com nome ("Casa", "Trabalho"), o CEP que preenche rua/bairro/cidade/UF, número,
- * complemento e ponto de referência para o entregador. Um só é o padrão (a estrela).
+ * complemento e ponto de referência para o entregador. Um só é o padrão (a estrela) e,
+ * quando a cobrança não é no mesmo endereço da entrega (`separateBilling`), um só é o de cobrança.
  * A lista inteira vai no salvar do cliente; o que sai daqui é apagado.
  */
 import Button from "primevue/button";
@@ -25,10 +26,11 @@ export type Address = {
   city_ibge?: string;
   reference: string;
   is_default: boolean;
+  is_billing?: boolean;
 };
 
 const model = defineModel<Address[]>({ default: () => [] });
-defineProps<{ disabled?: boolean }>();
+defineProps<{ disabled?: boolean; separateBilling?: boolean }>();
 const notes = ref<Record<number, string>>({});
 
 const blank = (first: boolean): Address => ({
@@ -45,6 +47,9 @@ function update(index: number, patch: Partial<Address>) {
 function makeDefault(index: number) {
   model.value = model.value.map((a, i) => ({ ...a, is_default: i === index }));
 }
+function makeBilling(index: number) {
+  model.value = model.value.map((a, i) => ({ ...a, is_billing: i === index }));
+}
 function remove(index: number) {
   const removed = model.value[index];
   const rest = model.value.filter((_, i) => i !== index);
@@ -55,11 +60,9 @@ async function cep(index: number, event: Event) {
   notes.value = { ...notes.value, [index]: "Buscando o endereço…" };
   const found = await lookupCep((event.target as HTMLInputElement).value);
   notes.value = { ...notes.value, [index]: found ? "Endereço preenchido pelo CEP." : "CEP não encontrado: preencha à mão." };
-  if (found) {
-    const rest = { ...found };
-    delete rest.complement; // complemento é da casa, não do CEP
-    update(index, rest);
-  }
+  // Complemento é da casa, não do CEP: fica o que a pessoa digitou.
+  if (found) update(index, { street: found.street, district: found.district, city: found.city, state: found.state,
+                             city_ibge: found.city_ibge });
 }
 </script>
 
@@ -73,6 +76,10 @@ async function cep(index: number, event: Event) {
                 :title="a.is_default ? 'Endereço padrão' : 'Tornar padrão'" @click="makeDefault(i)">
           <i :class="a.is_default ? 'pi pi-star-fill' : 'pi pi-star'" /> {{ a.is_default ? "Padrão" : "Tornar padrão" }}
         </button>
+        <button v-if="separateBilling" type="button" class="star bill" :class="{ on: a.is_billing }" :disabled="disabled"
+                :title="a.is_billing ? 'Endereço de cobrança' : 'Usar para cobrança'" @click="makeBilling(i)">
+          <i :class="a.is_billing ? 'pi pi-check-circle' : 'pi pi-wallet'" /> {{ a.is_billing ? "Cobrança" : "Usar para cobrança" }}
+        </button>
         <Button icon="pi pi-trash" text rounded severity="danger" size="small" :disabled="disabled"
                 :aria-label="`Remover endereço ${a.label || i + 1}`" @click="remove(i)" />
       </header>
@@ -82,22 +89,22 @@ async function cep(index: number, event: Event) {
                      :disabled="disabled" @update:model-value="update(i, { zip_code: String($event ?? '') })" @complete="cep(i, $event)" />
         </label>
         <label class="c7">Logradouro
-          <InputText :model-value="a.street" fluid :disabled="disabled" @update:model-value="update(i, { street: String($event ?? '') })" />
+          <InputText :model-value="a.street" placeholder="Rua, avenida, travessa…" fluid :disabled="disabled" @update:model-value="update(i, { street: String($event ?? '') })" />
         </label>
         <label class="c2">Número
-          <InputText :model-value="a.number" fluid :disabled="disabled" @update:model-value="update(i, { number: String($event ?? '') })" />
+          <InputText :model-value="a.number" placeholder="123 ou S/N" fluid :disabled="disabled" @update:model-value="update(i, { number: String($event ?? '') })" />
         </label>
         <label class="c5">Complemento
           <InputText :model-value="a.complement" placeholder="Apto, bloco, fundos…" fluid :disabled="disabled"
                      @update:model-value="update(i, { complement: String($event ?? '') })" />
         </label>
         <label class="c4">Bairro
-          <InputText :model-value="a.district" fluid :disabled="disabled" @update:model-value="update(i, { district: String($event ?? '') })" />
+          <InputText :model-value="a.district" placeholder="Bairro" fluid :disabled="disabled" @update:model-value="update(i, { district: String($event ?? '') })" />
         </label>
         <label class="c3">Cidade / UF
           <span class="city">
-            <InputText :model-value="a.city" fluid :disabled="disabled" @update:model-value="update(i, { city: String($event ?? '') })" />
-            <InputText :model-value="a.state" maxlength="2" class="uf" :disabled="disabled" aria-label="UF"
+            <InputText :model-value="a.city" placeholder="Preenchida pelo CEP" fluid :disabled="disabled" @update:model-value="update(i, { city: String($event ?? '') })" />
+            <InputText :model-value="a.state" maxlength="2" placeholder="UF" class="uf" :disabled="disabled" aria-label="UF"
                        @update:model-value="update(i, { state: String($event ?? '').toUpperCase() })" />
           </span>
         </label>
@@ -111,6 +118,8 @@ async function cep(index: number, event: Event) {
     <Button :label="model.length ? 'Adicionar outro endereço' : 'Adicionar endereço'" icon="pi pi-plus" severity="secondary"
             outlined size="small" class="add" :disabled="disabled" @click="add" />
     <p v-if="!model.length" class="empty">Sem endereço: o cliente só compra com retirada na loja.</p>
+    <p v-else-if="separateBilling && !model.some((a) => a.is_billing)" class="empty">
+      <i class="pi pi-info-circle" /> Marque qual endereço é o de cobrança (sem marcar, a cobrança vai para o de entrega).</p>
   </div>
 </template>
 
@@ -122,6 +131,7 @@ async function cep(index: number, event: Event) {
 .addr__label { flex: 1; max-width: 260px; font-weight: 600; }
 .star { display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; cursor: pointer; font: 600 12px/1 var(--font-sans); color: var(--text-muted); padding: 6px; border-radius: 6px; }
 .star.on { color: var(--warning-text); }
+.star.bill.on { color: var(--text-brand); }
 .star:hover:enabled { background: var(--surface-hover); }
 .addr__head :deep(.p-button) { margin-left: auto; }
 .addr__grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 8px 10px; }

@@ -32,9 +32,24 @@ export const stockApi = {
   check: (id: string, body: { codes?: string[]; lines?: ManualLine[] } = {}) =>
     data(http.post(`/stock/documents/${id}/check/`, body)),
   alerts: () => data(http.get<StockAlert[]>("/stock/balances/alerts/")),
-  /** URL da página de impressão de etiquetas (abre em nova aba; o cookie autentica). */
-  labelsUrl: (id: string, template: string) => `/api/v1/stock/documents/${id}/labels/?template=${template}`,
+  /** URL da página de impressão de etiquetas (abre em nova aba; o cookie autentica). Sem modelo = o padrão. */
+  labelsUrl: (id: string, template?: string | null) =>
+    `/api/v1/stock/documents/${id}/labels/${template ? `?template=${template}` : ""}`,
+  /** Etiquetas da etapa com o modelo da regra de logística (HTML); `null` quando não há o que etiquetar. */
+  stageLabels: (id: string, stage: LabelStage) =>
+    http.get<string>(`/stock/documents/${id}/labels/`, { params: { stage }, responseType: "text" })
+      .then((r) => (r.status === 204 || !r.data ? null : r.data)),
+  /** O que a entrada/transferência confirmada tem para etiquetar e o modelo padrão sugerido. */
+  labelOptions: (id: string) => data(http.get<LabelOptions>(`/stock/documents/${id}/label-options/`)),
+  /** Etiquetas avulsas (lote, produto...): sem `template`, o padrão do `subject`. Devolve o HTML. */
+  printLabels: (body: { subject?: string; template?: string; items: { id: string; copies?: number }[] }) =>
+    data(http.post<string>("/stock/labels/print/", body, { responseType: "text" })),
 };
+export type LabelStage = "entry" | "conference";
+/** Como a regra de logística da filial trata a etapa: imprime sozinho, pergunta ou não imprime. */
+export type StageLabels = { mode: "auto" | "ask" | "off"; template: string | null; template_name: string | null };
+export type LabelOptions = { lots: number; items: number; received_at: string; suggested: string | null }
+  & Record<LabelStage, StageLabels>;
 
 // ── Financeiro ───────────────────────────────────────────────────────────────
 export type Balances = { accounts: { id: string; name: string; kind: string; balance: string }[]; total: string };

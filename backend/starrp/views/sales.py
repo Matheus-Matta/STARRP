@@ -10,8 +10,11 @@
     DELETE /sales/{id}/payments/{pay}/   estorna pagamento (venda aberta)
     POST /sales/{id}/checkout/           paga e conclui numa transação
     POST /sales/{id}/complete/           conclui (já paga)
-    POST /sales/{id}/cancel/             cancela
+    POST /sales/{id}/cancel/             cancela (com nota autorizada: cancela a nota junto e reembolsa)
     POST /sales/{id}/returns/            abre devolução
+    POST /sales/{id}/edit-delivery/      corrige a entrega da venda concluída (sales.edit_delivery)
+    POST /sales/{id}/payments/{pay}/change/  troca a forma do pagamento da venda concluída (sales.edit_payment)
+    GET  /sales/{id}/invoices/{nota}/danfe/  nota do pedido para imprimir (DANFE): dados + código de barras + QR
 """
 from decimal import Decimal
 
@@ -23,10 +26,10 @@ from rest_framework.response import Response
 
 from starrp.core.errors import BusinessError
 from starrp.core.viewsets import TenantViewSet
-from starrp.models import CustomerAddress, FreightTable, Payment, Sale, SaleItem
+from starrp.models import CustomerAddress, FreightTable, Invoice, Payment, PaymentMethod, Sale, SaleItem
 from starrp.serializers import operations as ops
 from starrp.serializers import sales as s
-from starrp.services import checkout, returns, sales
+from starrp.services import checkout, danfe, invoice_cancel, returns, sale_addresses, sale_edits, sales
 from starrp.services.barcodes import resolve_code
 from starrp.services.cash import session_for_user
 from starrp.services.store_access import sellers_of
@@ -60,7 +63,8 @@ class SaleViewSet(TenantViewSet):
     # Receber é do CAIXA: o vendedor monta e guarda o pedido; quem cobra tem `cash.manage`.
     action_permissions = {"cancel": "sales.view", "returns": "sales.view", "payments": "cash.manage",
                           "payment_detail": "cash.manage", "checkout_action": "cash.manage", "complete": "cash.manage",
-                          "fulfillment": "logistics.manage"}
+                          "fulfillment": "logistics.manage", "edit_delivery": "sales.edit_delivery",
+                          "change_payment": "sales.edit_payment", "danfe": "sales.view"}
 
     def get_serializer_class(self):
         return s.SaleListSerializer if self.action == "list" else s.SaleSerializer
@@ -130,6 +134,43 @@ class SaleViewSet(TenantViewSet):
         sales.set_delivery(sale, request.user, address, table)
         return self._respond(sale)
 
+    @action(detail=True, methods=["post"], url_path="edit-delivery")
+    def edit_delivery(self, request, pk=None):
+        """Venda concluída: {"reason", "pickup": true} ou {"reason", "address", "table"}. O frete cobrado fica."""
+        sale = self.get_object()
+        pickup = request.data.get("pickup") in (True, "true", "1", 1)
+        address = table = None
+        if not pickup:
+            address = get_object_or_404(CustomerAddress.all_objects, pk=request.data.get("address"),
+                                        account=request.account, deleted_at__isnull=True)
+            table = get_object_or_404(FreightTable.all_objects, pk=request.data.get("table"),
+                                      account=request.account, deleted_at__isnull=True)
+        sale_edits.change_delivery(sale, request.user, reason=str(request.data.get("reason", "")),
+                                   address=address, table=table, pickup=pickup)
+        return self._respond(sale)
+
+    @action(detail=True, methods=["post"], url_path=r"payments/(?P<payment_id>[^/.]+)/change")
+    def change_payment(self, request, pk=None, payment_id=None):
+        """Venda concluída: {"method", "reason", "installments"?, "nsu"?, "authorization_code"?}, mesmo valor."""
+        sale = self.get_object()
+        payment = get_object_or_404(Payment.all_objects, pk=payment_id, sale=sale)
+        method = get_object_or_404(PaymentMethod.all_objects, pk=request.data.get("method"), account=request.account,
+                                   deleted_at__isnull=True)
+        sale_edits.change_payment(payment, request.user, method, reason=str(request.data.get("reason", "")),
+                                  installments=request.data.get("installments") or 1,
+                                  nsu=str(request.data.get("nsu") or "")[:40],
+                                  authorization_code=str(request.data.get("authorization_code") or "")[:40])
+        return self._respond(sale)
+
+    @action(detail=True, methods=["get"], url_path=r"invoices/(?P<invoice_id>[^/.]+)/danfe")
+    def danfe(self, request, pk=None, invoice_id=None):
+        """A nota do pedido para imprimir: quem vê o pedido imprime a nota dele (sem precisar do módulo
+        fiscal). Código de barras da chave (Code 128) e QR da consulta (NFC-e) já em SVG."""
+        sale = self.get_object()
+        invoice = get_object_or_404(Invoice.all_objects.select_related("store", "fiscal_config", "sale")
+                                    .prefetch_related("items"), pk=invoice_id, sale=sale, deleted_at__isnull=True)
+        return Response(danfe.build(invoice, self.get_serializer_context()))
+
     @action(detail=True, methods=["post"])
     def fulfillment(self, request, pk=None):
         """POST {"status": "ready"|"shipped"|"delivered", "note"}: anda (ou volta, com motivo) a entrega."""
@@ -164,6 +205,7 @@ class SaleViewSet(TenantViewSet):
     def customer(self, request, pk=None):
         sale = sales.lock_open(self.get_object())
         data = self._body(s.SaleCustomerSerializer)
+        changed = "customer" in data and (data["customer"].pk if data["customer"] else None) != sale.customer_id
         for field in ("customer", "customer_document", "customer_name", "freight", "notes"):
             if field in data:
                 setattr(sale, field, data[field])
@@ -172,8 +214,24 @@ class SaleViewSet(TenantViewSet):
         if "seller" in data:
             sale.seller = _seller(sale.store, data["seller"])
         sale.save()
+        if changed:
+            sale_addresses.inherit(sale, request.user)  # trocou o cliente: herda o endereço dele
         sales.recalculate(sale)
         return self._respond(sale)
+
+    @action(detail=True, methods=["get", "post"])
+    def addresses(self, request, pk=None):
+        """Endereços do pedido: GET; POST {delivery, billing, billing_same_as_delivery} corrige só o pedido
+        (o cadastro do cliente fica como está). `inherit: true` copia de novo do cliente."""
+        sale = self.get_object()
+        if request.method == "POST":
+            if request.data.get("inherit"):
+                sale_addresses.inherit(sale, request.user)
+            else:
+                same = request.data.get("billing_same_as_delivery", True) not in (False, "false", "0", 0)
+                sale_addresses.save(sale, request.user, request.data.get("delivery"), request.data.get("billing"), same)
+            sale.refresh_from_db()
+        return Response(sale_addresses.as_dict(sale))
 
     @action(detail=True, methods=["post"])
     def discount(self, request, pk=None):
@@ -232,7 +290,8 @@ class SaleViewSet(TenantViewSet):
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
         data = self._body(s.ReasonSerializer)
-        return self._respond(checkout.cancel(self.get_object(), request.user, data["reason"], data.get("approval")))
+        return self._respond(invoice_cancel.cancel_sale_and_invoices(self.get_object(), request.user, data["reason"],
+                                                                     data.get("approval")))
 
     @action(detail=True, methods=["post"], url_path="returns")
     def returns(self, request, pk=None):

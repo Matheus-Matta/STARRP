@@ -9,6 +9,8 @@ import { z, type ZodTypeAny } from "zod";
 import type { FieldDef } from "@/resources/types";
 
 import { documentError } from "./documents";
+import { boundsOf } from "./fieldHints";
+import { formatOf, maskError } from "./formats";
 
 const NUMERIC = new Set(["number", "money", "percent", "quantity", "measure"]);
 
@@ -30,10 +32,15 @@ function fieldSchema(field: FieldDef): ZodTypeAny {
   }
   if (field.type === "segmented") return z.any();
   if (NUMERIC.has(field.type)) {
-    const base = z.union([z.number(), z.string(), z.null()]).optional();
-    return field.required
-      ? base.refine((v) => v !== null && v !== undefined && v !== "", "Campo obrigatório.")
-      : base;
+    const { min, max } = boundsOf(field);
+    return z.union([z.number(), z.string(), z.null()]).optional().superRefine((v, ctx) => {
+      const fail = (message: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, message });
+      if (v === null || v === undefined || v === "") return field.required ? fail("Campo obrigatório.") : undefined;
+      const n = Number(v);
+      if (Number.isNaN(n)) return fail("Número inválido.");
+      if (min !== undefined && n < min) return fail(min === 0 ? "Não pode ser negativo." : `Mínimo ${min}.`);
+      if (max !== undefined && n > max) fail(`Máximo ${max.toLocaleString("pt-BR")}${field.type === "percent" ? " %" : ""}.`);
+    });
   }
   let text = z.string({ invalid_type_error: "Valor inválido." });
   if (field.maxLength) text = text.max(field.maxLength, `Máximo de ${field.maxLength} caracteres.`);
@@ -44,7 +51,26 @@ function fieldSchema(field: FieldDef): ZodTypeAny {
       message: documentError(String(v)) ?? "Documento inválido.",
     }));
   }
+  // Máscara (CEP, telefone, NCM, CFOP...): incompleto ou código que não confere não sai daqui.
+  const format = formatOf(field);
+  const mask = field.mask ?? format?.mask;
+  if (mask) {
+    return schema.refine((v) => !maskError(v, mask, format), (v) => ({ message: maskError(v, mask, format) ?? "" }));
+  }
   return schema;
+}
+
+/** Mapa de erros com `key` trocado: com mensagem, põe; sem, tira. */
+export function withError(errors: Record<string, string>, key: string, message?: string) {
+  const next = { ...errors };
+  if (message) next[key] = message;
+  else delete next[key];
+  return next;
+}
+
+/** Erro de UM campo agora (ao sair dele, ao corrigir), sem esperar o "Salvar". */
+export function validateField(field: FieldDef, values: Record<string, unknown>): string | undefined {
+  return validate([field], values)[field.name];
 }
 
 export function validate(fields: FieldDef[], values: Record<string, unknown>): Record<string, string> {

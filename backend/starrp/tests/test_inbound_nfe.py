@@ -5,7 +5,7 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from starrp.models import (
-    FinancialTitle, InboundNFe, LogisticsSettings, ProductBarcode, ProductVariant, ReceivingDivergence, Store,
+    FinancialTitle, InboundNFe, LogisticsRule, ProductBarcode, ProductVariant, ReceivingDivergence, Store,
     SupplierProduct,
 )
 from starrp.services import stock
@@ -19,8 +19,7 @@ def setup(ctx):
     ctx.account.save()
     Store.all_objects.filter(pk=ctx.store.pk).update(cnpj="11222333000181")
     # A maioria dos testes aprova direto ("receber e aprovar"): isso é conferência manual.
-    LogisticsSettings.all_objects.update_or_create(store=ctx.store, defaults={"account": ctx.account,
-                                                                              "allow_manual_conference": True})
+    LogisticsRule.all_objects.filter(pk=ctx.store.logistics_rule_id).update(allow_manual_conference=True)
     soda = ctx.product(name="Refrigerante Lata", sku="REFRI", price="5.00")
     ProductBarcode.all_objects.create(account=ctx.account, variant=soda, code=UNIT_EAN)
     yogurt = ctx.product(name="Iogurte Natural", sku="IOG", price="6.00", track_lots=True)
@@ -239,7 +238,7 @@ def test_conferencia_manual_com_item_incorreto_entra_ajustada_e_registra_o_erro(
 
 def test_sem_permissao_da_logistica_so_confere_lendo_os_codigos(setup):
     ctx, soda, yogurt = setup
-    LogisticsSettings.all_objects.filter(store=ctx.store).update(allow_manual_conference=False)
+    LogisticsRule.all_objects.filter(pk=ctx.store.logistics_rule_id).update(allow_manual_conference=False)
     api = ctx.client()
     _, doc_id = _draft(api, ctx, yogurt)
     doc = api.get(f"/api/v1/stock/documents/{doc_id}/").json()

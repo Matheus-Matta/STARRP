@@ -71,6 +71,7 @@ const formBlocks = computed<Block[]>(() => {
   for (const field of props.resource.fields) {
     if (hidden.has(field.name) || (field.type === "password" && !(`has_${field.name}` in values.value))) continue;
     if (field.visible && !field.visible(values.value)) continue;
+    if (field.createOnly) continue;  // só existe ao criar: a API não devolve
     if (field.type === "seo-preview") continue;  // prévia do Google é só para quem está editando
     const name = field.section ?? "Dados";
     groups.set(name, [...(groups.get(name) ?? []), field]);

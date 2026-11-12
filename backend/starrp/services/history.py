@@ -93,6 +93,7 @@ def _history_rows(instance, logs):
     skip = {f.name for f in instance._meta.concrete_fields
             if f.name in IGNORED or isinstance(f, (models.JSONField, models.FileField))}
     skip |= {f"{prefix}_{end}" for prefix in MOMENTS for end in ("at", "by")}  # já viram "Confirmado", "Cancelado"...
+    skip |= set(getattr(instance, "history_hidden", ()))  # o que a conta não deve ver
     labels = {f.name: str(f.verbose_name).capitalize() for f in instance._meta.concrete_fields}
     # A mesma gravação feita pela API tem auditoria E histórico: é a mesma se nasceu junto,
     # pelo mesmo usuário, levando os MESMOS campos aos MESMOS valores (só o tempo esconderia

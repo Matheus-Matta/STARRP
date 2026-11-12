@@ -29,6 +29,23 @@ def sellers_of(store):
     )
 
 
+def visible_stores(account, store=None):
+    """Filiais que um relatório POR FILIAL lista: a da tela, ou todas as que o usuário enxerga.
+    Serve para mostrar também quem não teve movimento (zerada) — ausência também é informação."""
+    from starrp.models import Store
+
+    if store is not None:
+        return [store]
+    qs = Store.all_objects.filter(account=account, deleted_at__isnull=True)
+    return list(scope_to_allowed(qs, "pk").order_by("name"))
+
+
+def include_empty(params):
+    """Lojas sem movimento entram, a não ser que peçam para tirar (`include_empty=0/false/nao`)."""
+    value = str((params or {}).get("include_empty", "1")).strip().lower()
+    return value not in ("0", "false", "nao", "não", "no")
+
+
 def scope_to_allowed(qs, field="store"):
     """Para consultas de serviço feitas com `all_objects` (relatórios)."""
     allowed = get_allowed_store_ids()

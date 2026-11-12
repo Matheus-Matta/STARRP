@@ -76,13 +76,17 @@ def test_entrega_entra_no_total_e_retirada_tira(ctx):
              format="json")
     kept = api.get(f"/api/v1/sales/{sale['id']}/").json()
     pickup = api.delete(f"/api/v1/sales/{sale['id']}/delivery/").json()
+    again = api.post(f"/api/v1/sales/{sale['id']}/delivery/", {"address": home, "table": table["id"]},
+                     format="json").json()
 
+    assert "_entrega" not in sale["metafields"] and "_retirada" not in sale["metafields"]  # nada escolhido ainda
     assert delivered["freight"] == "19.90" and delivered["total"] == "119.90"
     assert delivered["shipping_address_detail"]["zip_code"] == "01310-100"
     assert delivered["metafields"]["_entrega"]["lead_days"] == 1
     assert kept["metafields"]["pedido_loja"] == "A-77" and kept["metafields"]["_entrega"]["table_name"] == "Motoboy"
     assert pickup["freight"] == "0.00" and pickup["total"] == "100.00" and pickup["shipping_address"] is None
     assert "_entrega" not in pickup["metafields"] and pickup["metafields"]["pedido_loja"] == "A-77"
+    assert pickup["metafields"]["_retirada"] is True and "_retirada" not in again["metafields"]
 
 
 def test_ficha_tecnica_personalizada_por_categoria(ctx):

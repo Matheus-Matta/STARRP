@@ -6,22 +6,25 @@
 - kit baixa os componentes, não o kit;
 - entrada com custo recalcula o custo médio ponderado da variante.
 """
+from datetime import date
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from starrp.core.errors import InsufficientStock
-from starrp.models import StockBalance, StockLot, StockMovement, StockSettings, Warehouse
+from starrp.models import StockBalance, StockLot, StockMovement, StockRule, Warehouse
 from starrp.services import wms
 
 ENTRY_KINDS_WITH_COST = {StockMovement.Kind.PURCHASE, StockMovement.Kind.INITIAL}
 
 
-def settings_for(account_id):
-    found = StockSettings.all_objects.filter(account_id=account_id, deleted_at__isnull=True).first()
-    return found or StockSettings(account_id=account_id)
+def settings_for(account_id, store_id=None):
+    """A regra de estoque da filial (`Store.stock_rule`); sem filial, a padrão da conta."""
+    from starrp.services import rules
+
+    return rules.of_store("stock_rule", store_id, account_id)
 
 
 def default_warehouse(store):
@@ -84,6 +87,28 @@ def _record(variant, warehouse, quantity, kind, *, lot, unit_cost, source_key, a
     )
 
 
+FAR_FUTURE = date(9999, 12, 31)
+
+
+def _age(lot):
+    """Mais antigo primeiro: a data de ENTRADA (transferência leva a data junto), depois a criação."""
+    return (lot.received_at or lot.created_at.date(), lot.created_at)
+
+
+def uses_lots(variant, settings):
+    """Com lote: o produto exige lote/validade, ou a regra guarda a data de entrada (FIFO)."""
+    return variant.track_lots or settings.fifo_by_entry
+
+
+def _unlotted(variant, warehouse):
+    """Saldo sem lote: o que entrou ANTES de a regra passar a guardar a data de entrada."""
+    balance = StockBalance.all_objects.filter(variant=variant, warehouse=warehouse).values_list(
+        "quantity", flat=True).first() or Decimal("0")
+    in_lots = StockLot.all_objects.filter(variant=variant, warehouse=warehouse, quantity__gt=0,
+                                          deleted_at__isnull=True).aggregate(t=Sum("quantity"))["t"] or Decimal("0")
+    return max(balance - in_lots, Decimal("0"))
+
+
 def _pick_lots(variant, warehouse, needed, settings):
     lots = StockLot.all_objects.select_for_update().filter(
         variant=variant, warehouse=warehouse, status=StockLot.Status.AVAILABLE, quantity__gt=0, deleted_at__isnull=True
@@ -91,9 +116,9 @@ def _pick_lots(variant, warehouse, needed, settings):
     if settings.block_expired:
         today = timezone.localdate()
         lots = [lot for lot in lots if not lot.expires_at or lot.expires_at >= today]
-    order = (lambda lot: (lot.expires_at or timezone.localdate().replace(year=9999), lot.created_at)) if (
-        settings.picking_strategy == StockSettings.Picking.FEFO
-    ) else (lambda lot: lot.created_at)
+    order = (lambda lot: (lot.expires_at or FAR_FUTURE, *_age(lot))) if (
+        settings.picking_strategy == StockRule.Picking.FEFO
+    ) else _age
     picked = []
     for lot in sorted(lots, key=order):
         if needed <= 0:
@@ -136,19 +161,33 @@ def move(variant, warehouse, quantity, kind, *, lot=None, bin=None, unit_cost=No
     if not variant.track_stock:  # serviço, kit e "não controla estoque"
         return []
     quantity = Decimal(quantity)
-    settings = settings_for(variant.account_id)
+    if source_key:
+        # Reenvio (fila do PDV, clique duplo): a baixa já feita — inteira ou dividida em lotes — não repete.
+        done = list(StockMovement.all_objects.filter(
+            Q(source_key=source_key) | Q(source_key__startswith=f"{source_key}:"),
+            account_id=variant.account_id, variant=variant, warehouse=warehouse).order_by("created_at"))
+        if done:
+            return done
+    settings = settings_for(variant.account_id, warehouse.store_id)
     if allow_negative is None:
         allow_negative = settings.allow_negative_stock
     common = {"unit_cost": unit_cost, "allow_negative": allow_negative, **links}
     if warehouse.uses_bins:
         return _move_binned(variant, warehouse, quantity, kind, settings, bin=bin, lot=lot, source_key=source_key,
                             common=common)
-    if quantity >= 0 or not variant.track_lots or lot is not None:
+    if quantity >= 0 or not uses_lots(variant, settings) or lot is not None:
         return [_record(variant, warehouse, quantity, kind, lot=lot, source_key=source_key, **common)]
-    picked, missing = _pick_lots(variant, warehouse, -quantity, settings)
-    if missing > 0 and not allow_negative:
+    needed, movements = -quantity, []
+    if not variant.track_lots:
+        # Sem validade (FIFO pela entrada): o saldo antigo, sem lote, é o mais velho; sai primeiro.
+        old = min(_unlotted(variant, warehouse), needed)
+        if old > 0:
+            key = f"{source_key}:old" if source_key else ""
+            movements.append(_record(variant, warehouse, -old, kind, lot=None, source_key=key, **common))
+            needed -= old
+    picked, missing = _pick_lots(variant, warehouse, needed, settings)
+    if missing > 0 and not allow_negative and variant.track_lots:
         raise InsufficientStock(f"Lotes disponíveis insuficientes de {variant.display_name}.")
-    movements = []
     for index, (picked_lot, take) in enumerate(picked):
         key = f"{source_key}:lot{index}" if source_key else ""
         movements.append(_record(variant, warehouse, -take, kind, lot=picked_lot, source_key=key, **common))
@@ -156,6 +195,14 @@ def move(variant, warehouse, quantity, kind, *, lot=None, bin=None, unit_cost=No
         key = f"{source_key}:nolot" if source_key else ""
         movements.append(_record(variant, warehouse, -missing, kind, lot=None, source_key=key, **common))
     return movements
+
+
+@transaction.atomic
+def seed(variants, *, warehouse, quantity, unit_cost, operator):
+    """O saldo com que o produto nasce: cada variante entra com `quantity` (e o custo vira o custo médio)."""
+    for variant in variants:
+        move(variant, warehouse, quantity, StockMovement.Kind.INITIAL, unit_cost=unit_cost, operator=operator,
+             source_key=f"initial:{variant.pk}", reason="Estoque inicial no cadastro do produto.")
 
 
 @transaction.atomic

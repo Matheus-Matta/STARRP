@@ -16,6 +16,8 @@ import { computed, defineAsyncComponent, ref } from "vue";
 
 import { useViewport } from "@/composables/useViewport";
 import type { FieldDef } from "@/resources/types";
+import { boundsOf, placeholderOf, unitOf } from "@/utils/fieldHints";
+import { formatOf } from "@/utils/formats";
 import { lookupCep, MASKS } from "@/utils/masks";
 
 import BarcodeListField from "./BarcodeListField.vue";
@@ -42,7 +44,8 @@ const props = defineProps<{ field: FieldDef; error?: string; context?: Record<st
 const model = defineModel<unknown>();
 /** `reload`: o campo mudou dados no servidor (baixa de parcela) e o formulário precisa reler. */
 /** `fill`: o campo preencheu outros (o CEP traz rua, bairro, cidade, UF e IBGE). */
-const emit = defineEmits<{ reload: []; fill: [values: Record<string, string>] }>();
+/** `check`: o usuário saiu do campo; o formulário confere o valor na hora (máscara, dígito verificador). */
+const emit = defineEmits<{ reload: []; fill: [values: Record<string, string>]; check: [] }>();
 
 /**
  * Máscara do campo: a declarada, ou a do tipo. Documento depende do tipo de pessoa
@@ -50,6 +53,7 @@ const emit = defineEmits<{ reload: []; fill: [values: Record<string, string>] }>
  */
 const mask = computed(() => {
   if (props.field.mask) return props.field.mask;
+  if (props.field.format) return formatOf(props.field)?.mask;
   // Telefone: fixo (10) com 11º opcional; chegando o 11º dígito vira celular "(11) 98765-4321".
   if (props.field.type === "phone") return String(model.value ?? "").replace(/\D/g, "").length >= 11 ? MASKS.mobile : MASKS.phone;
   if (props.field.type === "cep") return MASKS.cep;
@@ -62,8 +66,9 @@ async function onComplete(event: Event) {
   cepNote.value = "Buscando o endereço…";
   // O valor do campo, não o do modelo: no "complete" o modelo ainda tem o dígito anterior.
   const found = await lookupCep((event.target as HTMLInputElement).value);
-  cepNote.value = found ? "Endereço preenchido pelo CEP." : "CEP não encontrado: preencha o endereço.";
-  if (found) emit("fill", found);
+  cepNote.value = found ? `Endereço preenchido pelo CEP (${found.source}).` : "CEP não encontrado: preencha o endereço.";
+  if (found) emit("fill", { street: found.street, district: found.district, city: found.city, state: found.state,
+                            city_ibge: found.city_ibge });
 }
 const length = computed(() => String(model.value ?? "").length);
 
@@ -82,6 +87,14 @@ const seo = computed(() => {
 });
 const id = computed(() => `f-${props.field.name}`);
 
+const placeholder = computed(() => placeholderOf(props.field));
+const bounds = computed(() => boundsOf(props.field));
+/** "1,5 kg", "12 dias", "15 %": a unidade fica dentro do campo, depois do número. */
+const suffix = computed(() => {
+  if (props.field.type === "percent") return " %";
+  const unit = unitOf(props.field);
+  return unit ? ` ${unit}` : undefined;
+});
 const decimals = computed(() => ({ money: 2, percent: 2, quantity: 3, measure: 1, number: 0 })[props.field.type as string] ?? 0);
 const WIDE = ["textarea", "barcodes", "variants", "volumes", "grid", "stock-items", "installments", "images", "richtext",
               "addresses", "zip-ranges", "metafields", "promotion-rules"];
@@ -123,7 +136,7 @@ const color = computed({
 </script>
 
 <template>
-  <div class="field" :class="[sizeClass, { 'field--bare': bare }]">
+  <div class="field" :class="[sizeClass, { 'field--bare': bare }]" @focusout="emit('check')">
     <label v-if="!bare && !SELF_LABELED.includes(field.type)" :for="id">{{ field.label }}<span v-if="field.required" class="req">*</span></label>
 
     <!-- Rótulo em cima, como os outros campos: o switch fica na mesma linha dos inputs vizinhos. -->
@@ -132,7 +145,7 @@ const color = computed({
       <ToggleSwitch v-model="model as boolean" :input-id="id" :disabled="disabled" @click.stop />
     </div>
     <Textarea v-else-if="field.type === 'textarea'" :id="id" v-model="model as string" rows="2" auto-resize
-              :maxlength="field.maxLength" :placeholder="field.placeholder" :invalid="!!error" :disabled="disabled" />
+              :maxlength="field.maxLength" :placeholder="placeholder" :invalid="!!error" :disabled="disabled" />
     <Editor v-else-if="field.type === 'richtext'" :id="id" v-model="model as string" :readonly="disabled"
             editor-style="min-height: 180px" class="rich" :class="{ invalid: !!error }">
       <template #toolbar>
@@ -157,11 +170,13 @@ const color = computed({
       <strong class="seo__title" :class="{ long: seo.title.length > 70 }">{{ seo.title }}</strong>
       <p class="seo__text">{{ seo.text.length > 160 ? `${seo.text.slice(0, 157)}…` : seo.text }}</p>
     </div>
+    <!-- Ao entrar, o valor fica selecionado: digitar troca (preço, peso). Quantidade mostra só as casas usadas (2, 1,5). -->
     <InputNumber
       v-else-if="['number', 'money', 'percent', 'quantity', 'measure'].includes(field.type)" v-model="numeric" :input-id="id"
-      :min-fraction-digits="decimals" :max-fraction-digits="decimals" :mode="field.type === 'money' ? 'currency' : 'decimal'"
-      currency="BRL" locale="pt-BR" :suffix="field.type === 'percent' ? ' %' : undefined" :placeholder="field.placeholder"
-      :invalid="!!error" :disabled="disabled" fluid
+      :min-fraction-digits="field.type === 'quantity' ? 0 : decimals" :max-fraction-digits="decimals"
+      :mode="field.type === 'money' ? 'currency' : 'decimal'" currency="BRL" locale="pt-BR" :suffix="suffix"
+      :min="bounds.min" :max="bounds.max" :use-grouping="field.type !== 'number'" highlight-on-focus
+      :placeholder="placeholder" :invalid="!!error" :disabled="disabled" fluid
     />
     <!-- No celular, botões demais (mais de 3) não cabem: vira lista de seleção. -->
     <Select
@@ -174,7 +189,8 @@ const color = computed({
     />
     <Select
       v-else-if="field.type === 'select'" v-model="model" :input-id="id" :options="field.options" option-label="label"
-      option-value="value" :placeholder="field.placeholder" :invalid="!!error" :disabled="disabled" fluid
+      option-value="value" :placeholder="placeholder" :invalid="!!error" :disabled="disabled" fluid
+      :filter="(field.options?.length ?? 0) > 8" :show-clear="!field.required && !!model" @change="emit('check')"
     />
     <MultiSelect
       v-else-if="field.type === 'multiselect'" v-model="model" :input-id="id" :options="field.options" option-label="label"
@@ -190,12 +206,13 @@ const color = computed({
                :placeholder="field.placeholder" :invalid="!!error" :disabled="disabled" />
     <DatePicker
       v-else-if="field.type === 'date' || field.type === 'datetime'" v-model="asDate" :input-id="id"
-      :show-time="field.type === 'datetime'" date-format="dd/mm/yy" show-icon :invalid="!!error" :disabled="disabled" fluid
+      :show-time="field.type === 'datetime'" date-format="dd/mm/yy" show-icon :placeholder="placeholder" :invalid="!!error" :disabled="disabled" fluid
     />
     <Password v-else-if="field.type === 'password'" v-model="model as string" :input-id="id" :feedback="false" toggle-mask :disabled="disabled" fluid />
     <ColorPicker v-else-if="field.type === 'color'" v-model="color" :input-id="id" :disabled="disabled" />
     <ImageGallery v-else-if="field.type === 'images'" v-model="model as never" :disabled="disabled" />
-    <AddressListField v-else-if="field.type === 'addresses'" v-model="model as never" :disabled="disabled" />
+    <AddressListField v-else-if="field.type === 'addresses'" v-model="model as never" :disabled="disabled"
+                      :separate-billing="context?.billing_same_as_delivery === false" />
     <ZipRangesField v-else-if="field.type === 'zip-ranges'" v-model="model as never" :disabled="disabled" />
     <PromotionRulesField v-else-if="field.type === 'promotion-rules'" v-model="model as never" :disabled="disabled" />
     <MetafieldsField v-else-if="field.type === 'metafields'" v-model="model as never" :owner="field.owner ?? 'product'"
@@ -210,11 +227,11 @@ const color = computed({
     <!-- Máscara: mostra 01001-000 / (11) 98765-4321 e guarda só os dígitos. A máscara pode mudar com o campo aberto (CPF↔CNPJ, fixo↔celular). -->
     <InputMask
       v-else-if="mask" :id="id" v-model="model as string" :mask="mask" unmask :auto-clear="false" slot-char="_"
-      :placeholder="field.placeholder ?? mask.replace('?', '').replace(/9/g, '0')" :invalid="!!error" :disabled="disabled" fluid
+      :placeholder="field.placeholder ?? (field.type === 'phone' ? '(11) 98765-4321' : mask.replace('?', '').replace(/9/g, '0'))" :invalid="!!error" :disabled="disabled" fluid
       @complete="onComplete"
     />
     <InputText
-      v-else :id="id" v-model="model as string" :maxlength="field.maxLength" :placeholder="field.placeholder" :invalid="!!error"
+      v-else :id="id" v-model="model as string" :maxlength="field.maxLength" :placeholder="placeholder" :invalid="!!error"
       :type="field.type === 'email' ? 'email' : 'text'" :disabled="disabled" fluid
     />
 
@@ -236,6 +253,7 @@ const color = computed({
 .switch-row:hover { border-color: var(--brand-border); }
 .switch-row.on { border-color: var(--brand-border); background: var(--brand-subtle); }
 .switch-row.disabled { cursor: default; border-color: var(--border); background: var(--p-form-field-disabled-background); }
+.switch-row :deep(.p-toggleswitch) { flex-shrink: 0; }
 .switch-row__text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: var(--text-body); }
 .switch-row.on .switch-row__text { color: var(--text-strong); }
 .field small.hint, .field small.error { font-size: 11.5px; }

@@ -55,6 +55,7 @@ class SaleSerializer(TenantSerializer):
     balance_due = serializers.DecimalField(read_only=True, **Money)
     seller_name = serializers.SerializerMethodField()
     shipping_address_detail = serializers.SerializerMethodField()
+    addresses = serializers.SerializerMethodField(help_text="Endereços do pedido: entrega e cobrança (herdados do cliente).")
     invoices = serializers.SerializerMethodField(help_text="Notas fiscais do pedido, a principal primeiro.")
 
     class Meta:
@@ -65,6 +66,11 @@ class SaleSerializer(TenantSerializer):
     def get_seller_name(self, obj):
         return (obj.seller.get_full_name() or obj.seller.username) if obj.seller_id else ""
 
+
+    def get_addresses(self, obj) -> dict:
+        from starrp.services import sale_addresses
+
+        return sale_addresses.as_dict(obj)
 
     def get_invoices(self, obj):
         return invoice_summaries(obj)

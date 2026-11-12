@@ -130,7 +130,7 @@ function summary(r: Rule) {
             <RelationSelect :model-value="p.product" :relation="{ endpoint: '/catalog/products/' }" :disabled="disabled"
                             placeholder="Produto" @update:model-value="updateProduct(i, j, { product: ($event ?? null) as string | null })" />
             <InputNumber :model-value="p.promotional_price === null ? null : Number(p.promotional_price)" mode="currency"
-                         currency="BRL" locale="pt-BR" placeholder="Por (opcional)" :disabled="disabled" class="por"
+                         currency="BRL" locale="pt-BR" :min="0" highlight-on-focus placeholder="Por (opcional)" :disabled="disabled" class="por"
                          @update:model-value="updateProduct(i, j, { promotional_price: $event === null ? null : Number($event).toFixed(2) })" />
             <Button icon="pi pi-times" text rounded size="small" severity="secondary" :disabled="disabled" aria-label="Tirar produto"
                     @click="removeProduct(i, j)" />

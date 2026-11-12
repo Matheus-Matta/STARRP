@@ -32,6 +32,8 @@ const props = defineProps<{
   formats: PrintFormat[];
   ready: boolean;
   storeId?: string | null;
+  /** Documento com layout oficial (DANFE): sem o cabeçalho/rodapé da loja e sem o rodapé da página. */
+  bare?: boolean;
 }>();
 const format = defineModel<PrintFormat>("format", { required: true });
 const route = useRoute();
@@ -80,7 +82,7 @@ const issued = new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyl
 const pageStyle = document.createElement("style");
 document.head.appendChild(pageStyle);
 watchEffect(() => {
-  pageStyle.textContent = `@page { ${PAGE[format.value]} ${thermal.value ? "" : `
+  pageStyle.textContent = `@page { ${PAGE[format.value]} ${thermal.value || props.bare ? "" : `
     @bottom-left { content: "${company.value.name.replace(/"/g, "")} · ${props.title.replace(/"/g, "")}"; font: 8pt Arial; color: #777; }
     @bottom-right { content: "Página " counter(page) " de " counter(pages); font: 8pt Arial; color: #777; }`} }`;
 });
@@ -118,8 +120,8 @@ function back() {
       <Button icon="pi pi-print" label="Imprimir / PDF" size="small" :disabled="!ready" @click="print" />
     </div>
 
-    <div class="sheet">
-      <header class="doc-head" :class="{ 'doc-head--thermal': thermal }">
+    <div class="sheet" :class="{ 'sheet--bare': bare }">
+      <header v-if="!bare" class="doc-head" :class="{ 'doc-head--thermal': thermal }">
         <div class="company">
           <strong>{{ company.name }}</strong>
           <span v-if="company.legal">{{ company.legal }}</span>
@@ -139,7 +141,7 @@ function back() {
         <slot v-else :thermal="thermal" />
       </main>
 
-      <footer class="doc-foot">
+      <footer v-if="!bare" class="doc-foot">
         Emitido em {{ issued }} por {{ session.me?.name ?? "—" }} · Starrp
       </footer>
     </div>
@@ -169,6 +171,7 @@ function back() {
 .print-root.fmt-a4 .sheet { width: 210mm; min-height: 297mm; }
 .print-root.fmt-a4-landscape .sheet { width: 297mm; min-height: 210mm; padding: 12mm; }
 .print-root.fmt-80mm .sheet { width: 80mm; padding: 4mm 3mm; font-size: 8.5pt; }
+.print-root.fmt-a4 .sheet--bare { padding: 8mm 7mm; }
 
 .doc-head { display: flex; justify-content: space-between; gap: 16px; padding-bottom: 8px; margin-bottom: 12px; border-bottom: 2px solid #111; }
 .doc-head .company { display: flex; flex-direction: column; font-size: 8.5pt; color: #444; }

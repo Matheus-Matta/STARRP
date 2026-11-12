@@ -11,7 +11,7 @@ from starrp.core.text import decimals_as_text
 from starrp.core.viewsets import ReadOnlyTenantViewSet, TenantViewSet
 from starrp.models import (
     LabelTemplate, ProductVariant, ReceivingDivergence, StockBalance, StockDocument, StockLot, StockMovement,
-    StockSettings, Warehouse,
+    Warehouse,
 )
 from starrp.models.platform import Module
 from starrp.serializers import stock as s
@@ -21,11 +21,6 @@ from starrp.services import labels, picking, stock_documents, volumes
 class StockView:
     required_module = Module.STOCK
     permission_code = "stock"
-
-
-class StockSettingsViewSet(StockView, TenantViewSet):
-    model = StockSettings
-    serializer_class = s.StockSettingsSerializer
 
 
 class WarehouseViewSet(StockView, TenantViewSet):
@@ -110,21 +105,63 @@ class StockDocumentViewSet(StockView, TenantViewSet):
         """Onde pegar cada item (endereço/lote), na ordem do caminho do depósito."""
         return Response(decimals_as_text(picking.picking_list(self.get_object())))
 
+    def _labeled_doc(self):
+        """Produto e volume saem até do rascunho (identificar as caixas no recebimento); lote só depois de
+        confirmar, que é quando o lote nasce. Cancelado não imprime: a etiqueta mentiria."""
+        doc = self.get_object()
+        if doc.status == StockDocument.Status.CANCELLED:
+            raise BusinessError("Lançamento cancelado não imprime etiqueta.", code="labels_not_available")
+        return doc
+
+    @staticmethod
+    def _entered_lots(doc):
+        """Lotes que ENTRARAM com o documento (na transferência, os do destino)."""
+        return list(StockMovement.all_objects.filter(document_item__document=doc, lot__isnull=False, quantity__gt=0)
+                    .values_list("lot_id", flat=True).distinct())
+
+    @action(detail=True, methods=["get"], url_path="label-options")
+    def label_options(self, request, pk=None):
+        """O que dá para imprimir e o modelo sugerido (o padrão do sistema para lote, senão o de produto)."""
+        doc = self._labeled_doc()
+        lots = self._entered_lots(doc)
+        stages = {}
+        for stage in ("entry", "conference"):
+            mode, template = labels.stage_template(doc, stage, bool(lots))
+            stages[stage] = {"mode": mode, "template": str(template.pk) if template else None,
+                             "template_name": template.name if template else None}
+        return Response({"lots": len(lots), "items": doc.items.count(), "received_at": doc.effective_date,
+                         "suggested": stages["entry"]["template"], **stages})
+
     @action(detail=True, methods=["get"])
     def labels(self, request, pk=None):
-        """Etiquetas do que entrou: ?template=<id>. Produto: uma por unidade
-        (vendido por peso: uma por linha). Lote: uma por lote gerado.
-        Volume: uma por caixa de cada unidade (2 guarda-roupas em 3 caixas = 6)."""
-        doc = self.get_object()
-        template = get_object_or_404(LabelTemplate.objects, pk=request.query_params.get("template"))
+        """Etiquetas do que entrou: ?template=<id>, ou ?stage=entry|conference (o modelo da etapa na regra
+        de logística da filial; vazio = entrada). Produto: uma por unidade (vendido por peso: uma por linha),
+        com a data de entrada. Lote: uma por lote gerado, com a data de entrada e a validade. Volume: uma por
+        caixa de cada unidade (2 guarda-roupas em 3 caixas = 6). Etapa sem nada para imprimir: 204."""
+        doc = self._labeled_doc()
+        lots = self._entered_lots(doc)
+        wanted, stage = request.query_params.get("template"), request.query_params.get("stage")
+        if wanted:
+            template = get_object_or_404(LabelTemplate.objects, pk=wanted)
+        else:
+            template = labels.stage_template(doc, "conference" if stage == "conference" else "entry", bool(lots))[1]
+        if template is None:
+            raise BusinessError("Nenhum modelo de etiqueta ativo. Cadastre em Estoque › Modelos de etiqueta.",
+                                code="no_label_template")
+        if template.subject == LabelTemplate.Subject.BIN:
+            raise BusinessError("Etiqueta de endereço sai pelo cadastro de endereços, não pelo lançamento.")
         if template.subject == LabelTemplate.Subject.LOT:
-            lot_ids = StockMovement.all_objects.filter(document_item__document=doc, lot__isnull=False).values_list(
-                "lot_id", flat=True).distinct()
-            rows = [{"id": lot_id, "copies": 1} for lot_id in lot_ids]
+            if not lots:
+                raise BusinessError("Este lançamento não gerou lotes (os lotes nascem ao confirmar a entrada): "
+                                    "use uma etiqueta de produto.", code="no_lots")
+            rows = [{"id": lot_id, "copies": 1} for lot_id in lots]
         else:
             rows = self._label_rows(doc, template)
-        found = labels.labels_for(template.subject, rows, doc.store_id)
-        return HttpResponse(labels.render(template, found), content_type="text/html; charset=utf-8")
+        found = labels.labels_for(template.subject, rows, doc.store_id, received_at=doc.effective_date)
+        if stage and not found:  # impressão automática: nada a etiquetar (ex.: nenhum produto com caixas)
+            return HttpResponse(status=204)
+        return HttpResponse(labels.render(template, found, extra_fields=["received_at"]),
+                            content_type="text/html; charset=utf-8")
 
     @staticmethod
     def _label_rows(doc, template):
@@ -187,7 +224,7 @@ class LabelTemplateViewSet(StockView, TenantViewSet):
     serializer_class = s.LabelTemplateSerializer
     permission_code = "catalog"
     required_module = Module.BASE
-    filterset_fields = ["subject", "is_system", "is_active", "is_default"]
+    filterset_fields = {"subject": ["exact", "in"], "is_system": ["exact"], "is_active": ["exact"], "is_default": ["exact"]}
     search_fields = ["name"]
 
     def perform_destroy(self, instance):

@@ -17,10 +17,24 @@ describe("autorização de gerente", () => {
     };
     const result = withApproval(action);
     await Promise.resolve();
-    useApprovalDialog().answer({ username: "gerente", password: "x" });
+    useApprovalDialog().answer({ approval: { username: "gerente", password: "x" }, reason: "" });
 
     expect(await result).toBe("ok");
     expect(calls).toEqual([undefined, { username: "gerente", password: "x" }]);
+  });
+
+  it("com justificativa, pede já de saída e entrega a justificativa", async () => {
+    const calls: unknown[] = [];
+    const result = withApproval(async (approval, reason) => {
+      calls.push([approval, reason]);
+      return "ok";
+    }, { reason: "Justificativa" });
+    await Promise.resolve();
+    expect(useApprovalDialog().pending.value?.reasonLabel).toBe("Justificativa");
+    useApprovalDialog().answer({ approval: { cash_password: "4321" }, reason: "Troco errado" });
+
+    expect(await result).toBe("ok");
+    expect(calls).toEqual([[{ cash_password: "4321" }, "Troco errado"]]);
   });
 
   it("fechar o diálogo cancela a operação", async () => {

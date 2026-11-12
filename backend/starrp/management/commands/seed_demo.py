@@ -144,6 +144,10 @@ class Command(BaseCommand):
         # Cupom, desconto e promoção (relatórios de Promoções) e depois avaliações e entregas.
         call_command("seed_promotions", account=options["account"], stdout=self.stdout)
         call_command("seed_reviews", account=options["account"], stdout=self.stdout)
+        # O resto dos cadastros (patrimônio, devoluções, periféricos, fotos...): ver seed_extras.
+        call_command("seed_extras", account=options["account"], stdout=self.stdout)
+        # Por último: as seeds acima acham os produtos pelo nome da demo.
+        call_command("seed_real_products", account=options["account"], stdout=self.stdout)
         self.stdout.write(self.style.SUCCESS("Demo pronta: lojas, catálogo, estoque, vendas, financeiro e fiscal."))
 
     def log(self, text):
@@ -223,7 +227,7 @@ class Command(BaseCommand):
                      "Eletro Tech Plus", "Confecções Urbano"]
         self.suppliers = [api.post("/suppliers/", {
             "person_type": "J", "document": cnpj(50 + i), "name": name, "legal_name": f"{name} LTDA",
-            "phone": f"113{2000_0000 + i:07d}", "email": f"vendas@{name.split()[-1].lower()}.com.br",
+            "phone": f"11{3200_0000 + i:08d}", "email": f"vendas@{name.split()[-1].lower()}.com.br",
             "contact_name": first_names[i], "state": "SP", "city": "São Paulo", "zip_code": "01310100",
             "street": "Avenida Paulista", "number": str(1000 + i)})["id"] for i, name in enumerate(suppliers)]
         self.log("cargos, 10 usuários, 10 grupos, 12 clientes e 10 fornecedores")
@@ -462,13 +466,20 @@ class Command(BaseCommand):
         # da demo (bruno) abre o dele no Caixa 02.
         if not CashRegister.all_objects.filter(store=self.main, code="CX02", deleted_at__isnull=True).exists():
             CashRegister.all_objects.create(account=self.account, store=self.main, name="Caixa 02", code="CX02")
-        # Caixa tem dono: o operador da demo (bruno) é vinculado aos dois caixas da loja.
+        # Caixa tem dono (um por usuário): o operador da demo (bruno) opera o Caixa 02.
         from django.contrib.auth import get_user_model
 
         bruno = get_user_model().objects.filter(username="bruno").first()
-        for reg in CashRegister.all_objects.filter(store=self.main, deleted_at__isnull=True):
-            if bruno:
-                reg.operators.add(bruno)
+        if bruno and not CashRegister.all_objects.filter(operator=bruno, deleted_at__isnull=True).exists():
+            CashRegister.all_objects.filter(store=self.main, code="CX02", deleted_at__isnull=True).update(operator=bruno)
+        # O "turno de hoje" fica no Caixa 01 com o admin da conta: ele é o operador desse caixa.
+        admin = self.api.user
+        if not CashRegister.all_objects.filter(operator=admin, deleted_at__isnull=True).exists():
+            CashRegister.all_objects.filter(pk=register, operator__isnull=True).update(operator=admin)
+        # Senha de aprovação do caixa da filial (sangria, suprimento e diferenças sem o gerente presente).
+        if not self.main.cash_action_password:
+            self.main.set_cash_action_password("1234")
+            self.main.save(update_fields=["cash_action_password"])
         for open_one in api.get(f"/cash/sessions/?register={register}&status=open")["results"]:  # turno esquecido aberto
             current = api.get(f"/cash/sessions/{open_one['id']}/")
             api.post(f"/cash/sessions/{open_one['id']}/close/", {"counted_amount": current["expected_now"], "notes": ""})

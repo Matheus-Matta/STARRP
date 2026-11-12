@@ -1,7 +1,7 @@
 """Configurações da conta numa página só (admin) e modelos de etiqueta pré-prontos."""
 from decimal import Decimal
 
-from starrp.models import LabelTemplate, StockSettings, Store
+from starrp.models import LabelTemplate, StockRule, Store, StoreRule
 from starrp.services.provisioning import create_store
 from starrp.services.system_data import LABEL_TEMPLATES
 
@@ -18,12 +18,13 @@ def test_admin_ve_e_salva_tudo_numa_pagina_e_o_pdv_vale_para_todas_as_lojas(ctx)
     seller = ctx.user("vend", "seller")
     forbidden = ctx.client(seller).get(url)
 
-    assert set(before) == {"account", "pdv", "stock", "plan"} and before["plan"]["stores"] >= 1
+    assert set(before) == {"account", "pdv", "stock", "cosmos", "plan"} and before["plan"]["stores"] >= 1
     assert saved.status_code == 200 and saved.json()["pdv"]["pdv_lock_minutes"] == 10
-    for store in Store.all_objects.filter(pk__in=[ctx.store.pk, second.pk]):
-        assert store.require_seller and store.cash_closing_tolerance == Decimal("2.00")
-        assert store.settings["pdv_lock_minutes"] == 10
-    stock = StockSettings.all_objects.get(account=ctx.account, deleted_at__isnull=True)
+    for store in Store.all_objects.filter(pk__in=[ctx.store.pk, second.pk]):  # as duas usam a regra padrão
+        rule = StoreRule.all_objects.get(pk=store.rule_id)
+        assert rule.is_default and rule.require_seller and rule.cash_closing_tolerance == Decimal("2.00")
+        assert rule.pdv_lock_minutes == 10 and rule.pdv_auto_lock
+    stock = StockRule.all_objects.get(account=ctx.account, is_default=True, deleted_at__isnull=True)
     assert stock.allow_negative_stock and stock.expiry_warning_days == 15
     assert bad.status_code == 400 and forbidden.status_code == 403
 

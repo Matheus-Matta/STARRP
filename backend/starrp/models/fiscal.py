@@ -30,11 +30,14 @@ class Environment(models.TextChoices):
 
 
 class FiscalProfile(TenantModel):
-    """Regra de tributação reutilizável (o NCM é do produto). A conta cria os seus; os
-    pré-prontos (`is_system`, `services/system_data.FISCAL_PROFILES`) não são excluídos."""
+    """Regra de tributação reutilizável. NCM e CEST aqui valem para os produtos do perfil que não têm
+    os próprios (`Product.fiscal_ncm`). A conta cria os seus; os pré-prontos (`is_system`,
+    `services/system_data.FISCAL_PROFILES`) não são excluídos."""
 
     name = models.CharField(max_length=120)
     is_system = models.BooleanField(default=False, help_text="Pré-pronto do sistema: ajusta, mas não exclui.")
+    ncm = models.CharField(max_length=8, blank=True, help_text="Vale para o produto do perfil que não tiver NCM próprio.")
+    cest = models.CharField(max_length=7, blank=True, help_text="Vale para o produto do perfil que não tiver CEST próprio.")
     cfop = models.CharField(max_length=4, default="5102")
     cfop_interstate = models.CharField(max_length=4, blank=True, help_text="CFOP para outra UF (ex.: 6102).")
     csosn = models.CharField(max_length=3, blank=True, help_text="Simples Nacional (ex.: 102).")

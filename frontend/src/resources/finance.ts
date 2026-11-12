@@ -11,6 +11,7 @@ import { openPrint } from "@/utils/print";
 import { saleColumns } from "./sales";
 import { choices, type ColumnDef, defineResource, type FieldDef, linkTo, type ResourceDef, rowsOf, type Tone, yesNo } from "./types";
 
+const CashApprovalDialog = defineAsyncComponent(() => import("@/components/finance/CashApprovalDialog.vue"));
 const CashReportDialog = defineAsyncComponent(() => import("@/components/finance/CashReportDialog.vue"));
 const CashStatementView = defineAsyncComponent(() => import("@/components/finance/CashStatementView.vue"));
 
@@ -19,8 +20,12 @@ export const titleKind = choices({ receivable: "A receber", payable: "A pagar" }
 const txKind = choices({ in: "Entrada", out: "Saída" });
 const categoryKind = choices({ income: "Receita", expense: "Despesa" });
 const sessionStatus = choices({
-  open: "Aberto", pending_approval: "Aguardando gerente", closed: "Fechado", cancelled: "Cancelado",
+  open: "Aberto", pending_opening: "Abertura aguardando gerente", pending_approval: "Aguardando gerente", closed: "Fechado",
+  cancelled: "Cancelado",
 });
+/** Turno com algo esperando o gerente: abertura/fechamento com diferença ou sangria/suprimento pendente. */
+const awaiting = (v: Record<string, unknown>) =>
+  ["pending_opening", "pending_approval"].includes(String(v.status)) || Number(v.pending_movements) > 0;
 
 const FINANCE = { permission: "finance", module: "finance", group: "Financeiro" } as const;
 /** Contado e diferença só existem depois do fechamento (aberto ainda não contou a gaveta). */
@@ -132,7 +137,7 @@ function titles(kind: "receivable" | "payable"): ResourceDef {
         : "Dê baixa ao pagar: o dinheiro sai da conta escolhida." },
     },
     fields: [
-      { name: "description", label: "Descrição", type: "text", required: true, maxLength: 255, span: 4, section: "Título" },
+      { name: "description", label: "Descrição", type: "text", required: true, maxLength: 255, span: 4, section: "Título", placeholder: "Ex.: Aluguel da loja - março" },
       { name: "document_number", label: "Nº documento", type: "text", maxLength: 60, section: "Título" },
       party,
       { name: "category", label: "Categoria", type: "relation", section: "Título",
@@ -248,7 +253,7 @@ export const transactions = defineResource({
     { name: "financial_account", label: "Conta", type: "relation", relation: accounts, required: true, section: "Lançamento" },
     { name: "date", label: "Data", type: "date", required: true, default: new Date().toLocaleDateString("sv-SE"),
       section: "Lançamento" },
-    { name: "description", label: "Descrição", type: "text", required: true, maxLength: 255, span: 4, section: "Lançamento" },
+    { name: "description", label: "Descrição", type: "text", required: true, maxLength: 255, span: 4, section: "Lançamento", placeholder: "Ex.: Tarifa bancária" },
     { name: "amount", label: "Valor", type: "money", required: true, section: "Lançamento" },
     { name: "category", label: "Categoria", type: "relation", relation: { endpoint: "/finance/categories/" }, creatable: false,
       section: "Lançamento" },
@@ -281,8 +286,9 @@ export const financialCategories = defineResource({
     { name: "is_active", label: "Ativa", type: "boolean", options: yesNo },
   ],
   fields: [
-    { name: "name", label: "Nome", type: "text", required: true, span: 4 },
-    { name: "code", label: "Código", type: "text", maxLength: 20 },
+    { name: "name", label: "Nome", type: "text", required: true, span: 4, placeholder: "Ex.: Energia elétrica" },
+    { name: "code", label: "Código", type: "text", maxLength: 20, placeholder: "Gerado pelo nome",
+      hint: "Vazio = gerado pelo nome." },
     { name: "kind", label: "Tipo", type: "segmented", options: categoryKind.options, default: "expense" },
     { name: "parent", label: "Categoria pai", type: "relation", relation: { endpoint: "/finance/categories/" } },
     { name: "is_active", label: "Ativa", type: "boolean", default: true },
@@ -293,7 +299,10 @@ export const cashSessions = defineResource({
   name: "turnos-de-caixa",
   display: {
     badges: (v) => [{ label: sessionStatus.map[String(v.status)] ?? "",
-                      tone: ({ open: "warning", pending_approval: "info", closed: "success", cancelled: "danger" } as Record<string, Tone>)[String(v.status)] }],
+                      tone: ({ open: "warning", pending_opening: "info", pending_approval: "info", closed: "success",
+                               cancelled: "danger" } as Record<string, Tone>)[String(v.status)] },
+                    ...(Number(v.pending_movements) > 0
+                      ? [{ label: `${v.pending_movements} aguardando aprovação`, tone: "warning" as Tone }] : [])],
     stats: [
       { label: "Troco inicial", icon: "pi pi-wallet", type: "money", value: (v) => v.opening_amount },
       { label: "Esperado na gaveta", icon: "pi pi-calculator", type: "money", value: (v) => (counted(v) ? v.expected_amount : v.expected_now ?? v.expected_amount),
@@ -336,7 +345,8 @@ export const cashSessions = defineResource({
                           supply: "Suprimento", refund: "Devolução", adjustment: "Ajuste" } },
                         { key: "amount", label: "Valor", type: "money", total: true },
                         { key: "status", label: "Situação", type: "tag", map: { pending: "Pendente", approved: "Aprovado", cancelled: "Cancelado" } },
-                        { key: "reason", label: "Motivo" }, { key: "operator_name", label: "Operador", sortable: false }] } },
+                        { key: "reason", label: "Motivo" }, { key: "operator_name", label: "Operador", sortable: false },
+                        { key: "approved_by_name", label: "Aprovado/recusado por", sortable: false }] } },
   ],
   title: "Turnos de caixa",
   singular: "turno",
@@ -373,10 +383,11 @@ export const cashSessions = defineResource({
     { name: "opening_amount", label: "Troco inicial", type: "money" },
     { name: "expected_amount", label: "Esperado", type: "money" },
     { name: "counted_amount", label: "Contado", type: "money" },
-    { name: "difference", label: "Diferença", type: "money" },
+    { name: "difference", label: "Diferença", type: "money", signed: true },
     { name: "notes", label: "Observações", type: "textarea" },
   ],
   formActions: [
+    { label: "Aprovações", icon: "pi pi-verified", severity: "contrast", visible: awaiting, dialog: CashApprovalDialog },
     { label: "Fechamento", icon: "pi pi-file", dialog: CashReportDialog },
     { label: "Imprimir", icon: "pi pi-print", run: async ({ id }) => openPrint("turno", id, { formato: "a4" }) },
     { label: "Z (bobina)", icon: "pi pi-receipt", run: async ({ id }) => openPrint("turno", id, { formato: "80mm" }) },

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * Catálogo do PDV: busca (Tab), chips de categoria e a grade de produtos — 20 por
- * vez, carregando mais ao rolar. Clique no cartão lança o item; Enter na busca
+ * Catálogo do PDV: busca (Tab), chips de categoria e a grade de produtos — uma página do
+ * tamanho da tela por vez, carregando mais ao rolar (ou sozinha, se o fim ainda está à vista). Clique no cartão lança o item; Enter na busca
  * lança pelo código (leitor de código de barras, SKU, etiqueta de balança ou
  * "3*código" para 3 unidades).
  */
@@ -35,27 +35,52 @@ function onEnter() {
 const initials = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 const TYPE_ICON: Record<string, string> = { service: "pi pi-wrench", kit: "pi pi-gift", variable: "pi pi-clone" };
 
-/** Mais 20 sempre que o fim da grade está à vista (ou a menos de 300 px dele).
+/** Medidas do cartão (CSS abaixo): largura mínima 250 px, altura 98 px, espaço de 8 px. */
+const CARD_MIN_W = 250;
+const CARD_H = 98;
+const GAP = 8;
+/** Quantos cartões cabem na grade: vira o tamanho da página do catálogo. */
+function measure() {
+  if (!grid.value) return;
+  const { width, height } = grid.value.getBoundingClientRect();
+  const visibleHeight = Math.min(height, window.innerHeight);
+  if (width <= 0) return;
+  props.catalog.fit(Math.floor((width + GAP) / (CARD_MIN_W + GAP)), Math.ceil((visibleHeight + GAP) / (CARD_H + GAP)));
+}
+
+/** Mais uma página sempre que o fim da grade está à vista (ou a menos de 300 px dele).
  *  Conta pela posição real na tela — vale para tela grande sem rolagem nenhuma,
  *  zoom do navegador e celular (onde quem rola é a página) — e é refeita a cada
  *  página que chega, ao rolar e ao redimensionar, até encher a tela. */
+let frame = 0;
 function fill() {
-  const q = props.catalog.query;
-  if (!sentinel.value || !grid.value || !q.hasNextPage.value || q.isFetching.value) return;
-  const visibleBottom = Math.min(grid.value.getBoundingClientRect().bottom, window.innerHeight);
-  if (sentinel.value.getBoundingClientRect().top - visibleBottom < 300) void props.catalog.more();
+  cancelAnimationFrame(frame);
+  // Depois do desenho: a página que acabou de chegar já ocupa o lugar dela na grade.
+  frame = requestAnimationFrame(() => {
+    const q = props.catalog.query;
+    if (!sentinel.value || !grid.value || !q.hasNextPage.value || q.isFetchingNextPage.value) return;
+    const visibleBottom = Math.min(grid.value.getBoundingClientRect().bottom, window.innerHeight);
+    if (sentinel.value.getBoundingClientRect().top - visibleBottom < 300) void props.catalog.more();
+  });
+}
+function resized() {
+  measure();
+  fill();
 }
 let resize: ResizeObserver | null = null;
 onMounted(() => {
   document.addEventListener("scroll", fill, { capture: true, passive: true });
-  window.addEventListener("resize", fill);
-  resize = new ResizeObserver(fill);
+  window.addEventListener("resize", resized);
+  resize = new ResizeObserver(resized);
   if (grid.value) resize.observe(grid.value);
+  resized();
 });
-watch(() => [props.catalog.visible.value.length, props.catalog.query.isFetching.value], () => fill(), { flush: "post" });
+watch(() => [props.catalog.visible.value.length, props.catalog.query.isFetching.value, props.catalog.query.hasNextPage.value],
+      () => fill(), { flush: "post" });
 onBeforeUnmount(() => {
   document.removeEventListener("scroll", fill, { capture: true });
-  window.removeEventListener("resize", fill);
+  window.removeEventListener("resize", resized);
+  cancelAnimationFrame(frame);
   resize?.disconnect();
 });
 
