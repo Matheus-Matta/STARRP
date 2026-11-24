@@ -3,7 +3,7 @@
 # O que entra no contexto está em frontend/Dockerfile.dockerignore.
 
 # 1) Build do app (tipos conferidos pelo vue-tsc: não compila, não sobe).
-FROM node:22-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /repo/frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci --no-audit --no-fund
