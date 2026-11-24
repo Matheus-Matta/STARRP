@@ -6,7 +6,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 
 import AppLayout from "@/components/layout/AppLayout.vue";
-import { buildNavigation } from "@/components/layout/navigation";
+import { findReport, visibleGroups } from "@/reports/catalog";
 import { findResource } from "@/resources";
 import { useSession } from "@/stores/session";
 
@@ -14,6 +14,9 @@ export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: "/login", component: () => import("@/pages/auth/LoginPage.vue"), meta: { public: true } },
+    // Esqueci minha senha e o link do e-mail (#token=...).
+    { path: "/redefinir-senha", component: () => import("@/pages/auth/ResetPasswordPage.vue"),
+      meta: { public: true, title: "Redefinir senha" } },
     // Link que o cliente recebe para avaliar a compra (sem login, fora do layout do sistema).
     { path: "/avaliar/:token", component: () => import("@/pages/public/ReviewPage.vue"), meta: { public: true, title: "Avaliar compra" } },
     { path: "/pdv", component: () => import("@/pages/pdv/PdvPage.vue"), meta: { permission: "sales.manage" } },
@@ -31,7 +34,9 @@ export const router = createRouter({
         { path: "relatorios", component: () => import("@/pages/ReportsHomePage.vue"), meta: { title: "Relatórios" } },
         { path: "relatorios/:slug", component: () => import("@/pages/ReportPage.vue"), meta: { title: "Relatório" } },
         { path: "configuracoes", component: () => import("@/pages/AccountSettingsPage.vue"),
-          meta: { title: "Configurações da conta", permission: "account.admin" } },
+          meta: { title: "Configurações da conta", permission: "account.admin", hideCosmos: true } },
+        { path: "integracoes", component: () => import("@/pages/IntegrationsPage.vue"),
+          meta: { title: "Integrações", permission: "account.admin" } },
         // Endereços antigos (Lojas → Filiais, documentos de estoque → entradas e saídas): links salvos continuam abrindo.
         { path: "cadastros/lojas/:rest(.*)*",
           redirect: (to) => ({ path: ["/cadastros/filiais", ...[to.params.rest ?? []].flat()].join("/"), query: to.query }) },
@@ -39,7 +44,8 @@ export const router = createRouter({
           redirect: (to) => ({ path: ["/cadastros/entradas-e-saidas", ...[to.params.rest ?? []].flat()].join("/"),
                                query: to.query }) },
         { path: "cadastros/:resource", component: () => import("@/pages/ResourceListPage.vue") },
-        { path: "cadastros/:resource/:id", component: () => import("@/pages/ResourceFormPage.vue") },
+        { path: "cadastros/:resource/:id", component: () => import("@/pages/ResourceFormPage.vue"),
+          meta: { hideCosmos: true } },
         { path: "cadastros/:resource/:id/:view", component: () => import("@/pages/ResourceViewPage.vue") },
         { path: "sem-acesso", component: () => import("@/pages/NoAccessPage.vue"), meta: { title: "Sem acesso" } },
         { path: ":pathMatch(.*)*", component: () => import("@/pages/NoAccessPage.vue"), meta: { notFound: true, title: "Não encontrada" } },
@@ -55,10 +61,11 @@ router.beforeEach(async (to) => {
   if (!session.isAuthenticated) return { path: "/login", query: { next: to.fullPath } };
   // Vendedor e caixa: o "início" deles é o PDV (não o painel da retaguarda).
   if (to.path === "/" && session.pdvFirst) return { path: "/pdv" };
-  // Sem relatórios não há painel: o início é a primeira tela do menu que ele abre.
-  if (to.path === "/" && !session.can("reports.view")) {
-    const first = buildNavigation(session.can, session.hasModule).flatMap((g) => g.items).find((i) => i.to !== "/");
-    return first ? { path: first.to } : { path: "/sem-acesso" };
+  // O livro e cada relatório respeitam a permissão específica da área.
+  if (to.path === "/relatorios" && !visibleGroups(session.can, session.hasModule).length) return { path: "/sem-acesso" };
+  if (typeof to.params.slug === "string") {
+    const report = findReport(to.params.slug);
+    if (!report || !session.can(report.permission) || !session.hasModule(report.module)) return { path: "/sem-acesso" };
   }
 
   const resourceName = to.params.resource as string | undefined;

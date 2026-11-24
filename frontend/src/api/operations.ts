@@ -32,9 +32,10 @@ export const stockApi = {
   check: (id: string, body: { codes?: string[]; lines?: ManualLine[] } = {}) =>
     data(http.post(`/stock/documents/${id}/check/`, body)),
   alerts: () => data(http.get<StockAlert[]>("/stock/balances/alerts/")),
-  /** URL da página de impressão de etiquetas (abre em nova aba; o cookie autentica). Sem modelo = o padrão. */
-  labelsUrl: (id: string, template?: string | null) =>
-    `/api/v1/stock/documents/${id}/labels/${template ? `?template=${template}` : ""}`,
+  /** HTML das etiquetas do documento com o modelo escolhido (sem modelo = o padrão). */
+  labelsHtml: (id: string, template?: string | null) =>
+    http.get<string>(`/stock/documents/${id}/labels/`, { params: template ? { template } : {}, responseType: "text" })
+      .then((r) => r.data),
   /** Etiquetas da etapa com o modelo da regra de logística (HTML); `null` quando não há o que etiquetar. */
   stageLabels: (id: string, stage: LabelStage) =>
     http.get<string>(`/stock/documents/${id}/labels/`, { params: { stage }, responseType: "text" })
@@ -64,6 +65,7 @@ export type CashFlow = {
 export type Dre = {
   period: { from: string; to: string };
   gross_revenue: string; freight: string; discounts: string; returns: string; net_revenue: string; cmv: string;
+  other_revenue?: { category: string; amount: string }[]; other_revenue_total?: string;
   gross_profit: string; gross_margin_percent: string; card_fees: string; commissions: string; cash_differences: string;
   expenses: { category: string; amount: string }[]; expenses_total: string;
   operating_result: string; operating_margin_percent: string;
@@ -72,7 +74,9 @@ export type CashReport = {
   session: { register: string; terminal: string; status: string; opened_at: string; closed_at: string | null;
              opened_by: string; closed_by: string; approved_by: string };
   sales: { count: number; total: string; average_ticket: string; discounts: string; cancelled_count: number;
-           cancelled_total: string; cost: string; gross_margin: string };
+           cancelled_total: string;
+           /** Só com `catalog.view_costs`. */
+           cost?: string; gross_margin?: string };
   by_payment_method: { method__name: string; method__kind: string; count: number; total: string; change: string | null }[];
   drawer: Record<string, string | number | null>;
 };
@@ -82,8 +86,8 @@ export type CashStatement = CashReport & {
   sales_list: { id: string; number: number; status: string; status_label: string; created_at: string; completed_at: string | null;
                 customer: string; seller: string; subtotal: string; discount: string; total: string; payments: string;
                 cancel_reason: string }[];
-  items: { variant: string; description: string; sku: string; unit: string; quantity: string; total: string; cost: string;
-           margin: string; sales: number }[];
+  items: { variant: string; description: string; sku: string; unit: string; quantity: string; total: string; cost?: string;
+           margin?: string; sales: number }[];
   occurrences: { kind: string; tone: "warning" | "danger"; text: string }[];
 };
 export type AccountStatement = {
@@ -91,7 +95,8 @@ export type AccountStatement = {
   lines: { date: string; description: string; kind: "in" | "out"; amount: string; category: string; balance: string }[];
 };
 export type SettleInput = {
-  financial_account: string; amount: string; interest?: string; fine?: string; discount?: string; date?: string;
+  financial_account: string | null; amount: string; interest?: string; fine?: string; discount?: string; date?: string;
+  use_credit?: boolean; allow_excess?: boolean;
 };
 
 const report = <T>(name: string, params: ListParams = {}) =>
@@ -103,7 +108,9 @@ export const financeApi = {
   cashFlow: (params: ListParams) => report<CashFlow>("cash-flow", params),
   dre: (params: ListParams) => report<Dre>("dre", params),
   settle: (installment: string, body: SettleInput) => data(http.post(`/finance/installments/${installment}/settle/`, body)),
-  transfer: (body: { source: string; target: string; amount: string; description?: string }) =>
+  credit: (installment: string) => data(http.get<{ credit: string; party: string | null }>(`/finance/installments/${installment}/credit/`)),
+  generateRecurring: (id: string) => data(http.post<{ created: number }>(`/finance/recurring/${id}/generate/`, {})),
+  transfer: (body: { source: string; target: string; amount: string; description?: string; date?: string }) =>
     data(http.post<Balances>("/finance/accounts/transfer/", body)),
   reverse: (id: string, reason = "") => data(http.post(`/finance/transactions/${id}/reverse/`, { reason })),
   cashReport: (session: string) => data(http.get<CashReport>(`/cash/sessions/${session}/report/`)),

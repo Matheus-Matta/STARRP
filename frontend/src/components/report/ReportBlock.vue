@@ -22,6 +22,8 @@ defineProps<{ block: BookBlock; tableTitle: string; compact?: boolean;
 const f = (value: unknown) => (value ?? "number") as Format;
 /** Mensagem de lista vazia que o relatório manda ("Nenhuma promoção deu prejuízo no período."). */
 const emptyOf = (block: BookBlock) => (typeof block.empty === "string" ? block.empty : undefined);
+/** Coluna de valor com filtro de faixa ("de / até") na tabela. */
+const rangeOf = (block: BookBlock) => (typeof block.range === "string" ? block.range : undefined);
 </script>
 
 <template>
@@ -39,5 +41,6 @@ const emptyOf = (block: BookBlock) => (typeof block.empty === "string" ? block.e
   <CompareChart v-else-if="block.type === 'compare'" :metrics="block.metrics as never" :rows="block.rows as never" />
   <InsightsBlock v-else-if="block.type === 'insights'" :items="block.items as never" />
   <ReportTable v-else-if="block.type === 'table'" :columns="block.columns as never" :rows="block.rows as never"
-               :title="tableTitle" :tabs="block.tabs as never" :empty="emptyOf(block)" :on-export="onExport" />
+               :title="tableTitle" :tabs="block.tabs as never" :empty="emptyOf(block)" :on-export="onExport"
+               :search="block.search === true" :range="rangeOf(block)" />
 </template>

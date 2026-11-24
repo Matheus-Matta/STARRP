@@ -2,6 +2,8 @@
 /** A conversa aberta: falas, o texto da Cosmos chegando ao vivo, o que ela está fazendo e o campo de envio. */
 import { computed, nextTick, ref, watch } from "vue";
 
+import { cosmosApi } from "@/api/cosmos";
+import { useCosmosVoice } from "@/composables/useCosmosVoice";
 import { useCosmos } from "@/stores/cosmos";
 import { renderMarkdown } from "@/utils/markdown";
 
@@ -26,7 +28,10 @@ const attached = computed(() => cosmos.files[key.value] ?? []);
 const uploading = computed(() => cosmos.uploading > 0);
 const canSend = computed(() => !busy.value && !offline.value && !uploading.value
   && (Boolean(draft.value.trim()) || attached.value.length > 0));
-const lastBot = computed(() => [...cosmos.thread].reverse().find((m) => m.role === "assistant")?.id);
+const latestBot = computed(() => [...cosmos.thread].reverse().find((m) => m.role === "assistant"));
+const lastBot = computed(() => latestBot.value?.id);
+const voiceEnabled = computed(() => Boolean(cosmos.status?.voice_enabled));
+const voice = useCosmosVoice(cosmosApi.transcribe, (text) => send(text), () => !busy.value && !offline.value);
 
 /** O campo cresce com o texto (até ~6 linhas) e volta a uma linha ao enviar. */
 function grow() {
@@ -37,11 +42,18 @@ function grow() {
 }
 
 function send(text = draft.value) {
-  if (busy.value || uploading.value || (!text.trim() && !attached.value.length)) return;
+  if (busy.value || uploading.value || (!text.trim() && !attached.value.length)) return false;
   if (cosmos.ask(text)) {
     draft.value = "";
     void nextTick(grow);
+    return true;
   }
+  return false;
+}
+
+function toggleVoice() {
+  if (voice.active.value) return voice.stop();
+  voice.start();
 }
 
 /** Enter envia; Shift+Enter quebra a linha. */
@@ -76,6 +88,11 @@ async function toBottom() {
   scroller.value?.scrollTo({ top: scroller.value.scrollHeight, behavior: "smooth" });
 }
 watch(() => [cosmos.thread.length, live.value.length, doing.value, busy.value], toBottom, { immediate: true });
+watch(busy, (current, previous) => {
+  if (voice.active.value && previous && !current) voice.resume();
+});
+watch(offline, (value) => { if (value) voice.stop(); });
+watch(voiceEnabled, (value) => { if (!value) voice.stop(); });
 </script>
 
 <template>
@@ -112,6 +129,15 @@ watch(() => [cosmos.thread.length, live.value.length, doing.value, busy.value], 
         <i class="pi pi-refresh" /> Tentar de novo
       </button>
     </p>
+    <p v-if="voice.error.value" class="chat__error">
+      <i class="pi pi-microphone" /> <span class="grow">{{ voice.error.value }}</span>
+    </p>
+    <div v-if="voice.active.value" class="voice-state" role="status" aria-live="polite">
+      <span class="voice-state__pulse" />
+      <span class="grow">{{ voice.label.value }}</span>
+      <button v-if="voice.listening.value" type="button" @click="voice.finish()">Concluir fala</button>
+      <button type="button" @click="voice.stop()">Encerrar</button>
+    </div>
     <form class="composer" @submit.prevent="send()">
       <ul v-if="attached.length || uploading" class="files">
         <li v-for="f in attached" :key="f.id" class="file">
@@ -129,9 +155,17 @@ watch(() => [cosmos.thread.length, live.value.length, doing.value, busy.value], 
               title="Anexar planilha (.xlsx, .csv) ou texto" :disabled="offline || busy" @click="picker?.click()">
         <i class="pi pi-paperclip" />
       </button>
-      <textarea ref="input" v-model="draft" rows="1" class="composer__input" :class="{ 'composer__input--off': offline }"
+      <textarea ref="input" v-model="draft" rows="1" class="composer__input"
+                :class="{ 'composer__input--off': offline, 'composer__input--voice': voiceEnabled }"
                 :disabled="offline" aria-label="Mensagem para a Cosmos"
-                :placeholder="offline ? 'Conectando à Cosmos…' : 'Enviar mensagem...'" @input="grow" @keydown="onKey" />
+                :placeholder="offline ? 'Conectando à Cosmos…' : voice.active.value ? 'Fale ou digite uma mensagem…' : 'Enviar mensagem...'"
+                @input="grow" @keydown="onKey" />
+      <button v-if="voiceEnabled" type="button" class="composer__voice" :class="{ 'composer__voice--active': voice.active.value }"
+              :aria-label="voice.active.value ? 'Desligar microfone' : 'Falar com a Cosmos'"
+              :title="voice.supported ? (voice.active.value ? 'Desligar microfone' : 'Falar em vez de digitar') : 'Seu navegador não permite gravar áudio'"
+              :disabled="offline || (busy && !voice.active.value)" @click="toggleVoice">
+        <i :class="voice.active.value ? 'pi pi-times' : 'pi pi-microphone'" />
+      </button>
       <!-- Respondendo: o botão vira "Parar". -->
       <button v-if="busy && cosmos.activeId" type="button" class="composer__send composer__send--stop" aria-label="Parar"
               title="Parar a resposta" @click="cosmos.stop()">
@@ -189,6 +223,14 @@ watch(() => [cosmos.thread.length, live.value.length, doing.value, busy.value], 
 .doing { font-size: 11.5px; color: var(--text-muted); }
 .chat__error { margin: 0 14px; padding: 6px 10px; border-radius: 8px; font-size: 12.5px; background: var(--danger-subtle);
                color: var(--danger-text); display: flex; gap: 6px; align-items: center; }
+.voice-state { margin: 0 14px 6px; min-height: 34px; padding: 6px 9px; display: flex; align-items: center; gap: 8px;
+               border: 1px solid var(--border); border-radius: 10px; background: var(--brand-subtle);
+               color: var(--text-body); font-size: 12.5px; }
+.voice-state__pulse { width: 9px; height: 9px; flex: 0 0 auto; border-radius: 50%; background: var(--danger);
+                      box-shadow: 0 0 0 0 color-mix(in srgb, var(--danger) 45%, transparent);
+                      animation: voice-pulse 1.5s ease-out infinite; }
+.voice-state button { border: 0; background: none; color: var(--text-brand); font: 600 12px var(--font-sans); cursor: pointer; }
+@keyframes voice-pulse { 70% { box-shadow: 0 0 0 7px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
 /* Campo de largura total com o botão de enviar DENTRO dele, à direita. */
 .composer { position: relative; margin: 10px 12px 4px; }
 .composer__input { display: block; width: 100%; min-height: 46px; max-height: 140px; padding: 11px 48px 11px 42px;
@@ -198,6 +240,7 @@ watch(() => [cosmos.thread.length, live.value.length, doing.value, busy.value], 
 .composer__input:focus { box-shadow: 0 0 0 3px color-mix(in srgb, var(--brand) 22%, transparent); }
 .composer__input::placeholder { color: var(--text-subtle); }
 .composer__input--off { border-color: var(--border-strong); }
+.composer__input--voice { padding-right: 84px; }
 .files { list-style: none; margin: 0 0 6px; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .file { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; padding: 4px 6px 4px 9px; border-radius: 8px;
         border: 1px solid var(--border); background: var(--surface-sunken); font-size: 12px; color: var(--text-body); }
@@ -218,6 +261,11 @@ watch(() => [cosmos.thread.length, live.value.length, doing.value, busy.value], 
 .composer__send:disabled { color: var(--text-subtle); cursor: default; }
 .composer__send .pi { font-size: 14px; }
 .composer__send--stop { color: var(--danger-text); }
+.composer__voice { position: absolute; bottom: 7px; right: 44px; width: 32px; height: 32px; display: grid; place-items: center;
+                   border: 0; border-radius: 8px; background: transparent; color: var(--text-muted); cursor: pointer; }
+.composer__voice:hover:not(:disabled) { background: var(--surface-active); color: var(--text-strong); }
+.composer__voice--active { color: var(--danger-text); background: var(--danger-subtle); }
+.composer__voice:disabled { color: var(--text-subtle); cursor: default; }
 .grow { flex: 1; }
 .retry { border: 0; background: none; color: inherit; font: 600 12px var(--font-sans); cursor: pointer;
          display: inline-flex; gap: 4px; align-items: center; text-decoration: underline; }

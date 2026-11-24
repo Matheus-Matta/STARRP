@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /** Extrato da conta financeira: saldo inicial, cada lançamento com o saldo corrido e o saldo final do período. */
 import { useQuery } from "@tanstack/vue-query";
-import DatePicker from "primevue/datepicker";
 import Skeleton from "primevue/skeleton";
 import { computed, ref } from "vue";
 
@@ -10,6 +9,7 @@ import Button from "primevue/button";
 import { financeApi } from "@/api/operations";
 import { openPrint } from "@/utils/print";
 import { date, money } from "@/utils/format";
+import DateRangePicker from "@/components/common/DateRangePicker.vue";
 
 const props = defineProps<{ id: string; values: Record<string, unknown> }>();
 const range = ref<(Date | null)[]>([new Date(Date.now() - 29 * 86_400_000), new Date()]);
@@ -29,7 +29,8 @@ const outflow = computed(() => (s.value?.lines ?? []).filter((l) => l.kind === "
     <div class="bar">
       <Button label="Imprimir" icon="pi pi-print" size="small" severity="secondary" outlined
               @click="openPrint('conta', id, { de: params.date_from, ate: params.date_to })" />
-      <DatePicker v-model="range" selection-mode="range" date-format="dd/mm/yy" show-icon :manual-input="false" size="small" />
+      <DateRangePicker :model-value="range" size="small" :show-clear="false"
+                       @update:model-value="(value) => value?.[0] && (range = value)" />
     </div>
     <div v-if="!s" class="stack"><Skeleton v-for="i in 6" :key="i" height="2.2rem" /></div>
     <template v-else>

@@ -28,6 +28,34 @@ const awaiting = (v: Record<string, unknown>) =>
   ["pending_opening", "pending_approval"].includes(String(v.status)) || Number(v.pending_movements) > 0;
 
 const FINANCE = { permission: "finance", module: "finance", group: "Financeiro" } as const;
+
+/* Vencimentos: frequência + dia do mês (mensal) ou da semana (semanal), horário e encargos de atraso. */
+export const frequency = choices({ monthly: "Todo mês", weekly: "Toda semana", daily: "Todo dia" });
+export const weekdays = [
+  { label: "Segunda", value: 0 }, { label: "Terça", value: 1 }, { label: "Quarta", value: 2 }, { label: "Quinta", value: 3 },
+  { label: "Sexta", value: 4 }, { label: "Sábado", value: 5 }, { label: "Domingo", value: 6 },
+];
+const paymentMode = [{ label: "Pagamento único", value: "single" }, { label: "Parcelado", value: "installments" }];
+const parceled = (v: Record<string, unknown>) => v.payment_mode === "installments";
+/** Campos de agenda e encargos, iguais no título (parcelas) e na recorrência. */
+function scheduleFields(section: string, show: (v: Record<string, unknown>) => boolean, createOnly: boolean): FieldDef[] {
+  return [
+    { name: "frequency", label: "Vence", type: "segmented", options: frequency.options, default: "monthly", section,
+      createOnly, visible: show },
+    { name: "due_day", label: "Dia do mês", type: "number", section, createOnly, placeholder: "Ex.: 10",
+      hint: "31 = último dia do mês. Vazio = o dia do 1º vencimento.",
+      visible: (v) => show(v) && (v.frequency ?? "monthly") === "monthly" },
+    { name: "due_weekday", label: "Dia da semana", type: "select", options: weekdays, section, createOnly,
+      visible: (v) => show(v) && v.frequency === "weekly" },
+    { name: "due_time", label: "Horário", type: "text", maxLength: 5, placeholder: "14:00", section,
+      hint: "Opcional." },
+    { name: "fine_percent", label: "Multa por atraso (%)", type: "percent", section,
+      hint: "Uma vez, sobre a parcela vencida." },
+    { name: "interest_percent", label: "Juros por atraso (% ao mês)", type: "percent", section,
+      hint: "Proporcional aos dias de atraso." },
+  ];
+}
+
 /** Contado e diferença só existem depois do fechamento (aberto ainda não contou a gaveta). */
 const counted = (v: Record<string, unknown>) => ["closed", "pending_approval"].includes(String(v.status));
 const titleTone: Record<string, Tone> = { open: "info", partial: "warning", paid: "success", cancelled: "neutral" };
@@ -144,9 +172,15 @@ function titles(kind: "receivable" | "payable"): ResourceDef {
         relation: { endpoint: "/finance/categories/", params: { kind: receivable ? "income" : "expense" } } },
       { name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" }, section: "Título" },
       { name: "total", label: "Valor total", type: "money", required: true, section: "Título" },
-      { name: "installment_count", label: "Parcelas", type: "number", default: 1, createOnly: true, section: "Título",
-        hint: "Mensais, a partir do 1º vencimento." },
-      { name: "first_due", label: "1º vencimento", type: "date", createOnly: true, section: "Título" },
+      { name: "issue_date", label: "Competência", type: "date", section: "Título",
+        hint: "O mês em que conta no resultado (DRE). Vazio = hoje." },
+      { name: "payment_mode", label: "Forma", type: "segmented", options: paymentMode, default: "single", createOnly: true,
+        section: "Título" },
+      { name: "installment_count", label: "Parcelas", type: "number", default: 2, createOnly: true, section: "Título",
+        visible: parceled, hint: "O total é dividido igual; o centavo que sobra vai na 1ª." },
+      { name: "first_due", label: "1º vencimento", type: "date", createOnly: true, section: "Título",
+        hint: "As seguintes seguem a frequência (passa para o ano seguinte sozinho)." },
+      ...scheduleFields("Título", parceled, true),
       { name: "notes", label: "Observações", type: "textarea", section: "Título" },
       { name: "installments", label: "Parcelas", type: "installments", section: "Parcelas", visible: (v) => Boolean(v.id) },
     ],
@@ -235,6 +269,7 @@ export const transactions = defineResource({
     { key: "description", label: "Descrição", title: true },
     { key: "account_name", label: "Conta" },
     { key: "category_name", label: "Categoria" },
+    { key: "party_name", label: "Cliente / fornecedor", sortable: false },
     { key: "kind", label: "Tipo", type: "tag", map: txKind.map },
     { key: "amount", label: "Valor", type: "money", total: true },
     { key: "is_reversal", label: "Estorno", type: "boolean", sortable: false },
@@ -243,6 +278,8 @@ export const transactions = defineResource({
     { name: "financial_account", label: "Conta", type: "relation", relation: accounts },
     { name: "kind", label: "Tipo", type: "select", options: txKind.options },
     { name: "category", label: "Categoria", type: "relation", relation: { endpoint: "/finance/categories/" } },
+    { name: "customer", label: "Cliente", type: "relation", relation: { endpoint: "/customers/" } },
+    { name: "supplier", label: "Fornecedor", type: "relation", relation: { endpoint: "/suppliers/" } },
     { name: "date", label: "Período", type: "daterange" },
   ],
   sections: {
@@ -256,7 +293,11 @@ export const transactions = defineResource({
     { name: "description", label: "Descrição", type: "text", required: true, maxLength: 255, span: 4, section: "Lançamento", placeholder: "Ex.: Tarifa bancária" },
     { name: "amount", label: "Valor", type: "money", required: true, section: "Lançamento" },
     { name: "category", label: "Categoria", type: "relation", relation: { endpoint: "/finance/categories/" }, creatable: false,
-      section: "Lançamento" },
+      section: "Lançamento", hint: "Sem categoria e com cliente/fornecedor = crédito (adiantamento, pago a mais)." },
+    { name: "customer", label: "Cliente", type: "relation", relation: { endpoint: "/customers/" }, section: "Lançamento",
+      visible: (v) => !v.supplier, hint: "Pagamento extra/adiantamento do cliente: vira crédito dele." },
+    { name: "supplier", label: "Fornecedor", type: "relation", relation: { endpoint: "/suppliers/" }, section: "Lançamento",
+      visible: (v) => !v.customer },
   ],
   formActions: [
     { label: "Estornar", icon: "pi pi-undo", severity: "danger", visible: (v) => !v.is_reversal && !v.installment,
@@ -394,5 +435,57 @@ export const cashSessions = defineResource({
   ],
   rowActions: [
     { label: "Imprimir fechamento", icon: "pi pi-print", run: async (row) => openPrint("turno", String(row.id), { formato: "a4" }) },
+  ],
+});
+
+export const recurringTitles = defineResource({
+  ...FINANCE,
+  name: "recorrentes",
+  title: "Contas recorrentes",
+  singular: "conta recorrente",
+  feminine: true,
+  endpoint: "/finance/recurring/",
+  icon: "pi pi-sync",
+  ordering: "description",
+  columns: [
+    { key: "description", label: "Descrição", title: true },
+    { key: "kind", label: "Tipo", type: "tag", map: titleKind.map },
+    { key: "party_name", label: "Cliente / fornecedor", sortable: false },
+    { key: "frequency", label: "Vence", type: "tag", map: frequency.map },
+    { key: "amount", label: "Valor", type: "money", total: true },
+    { key: "next_due", label: "Próximo vencimento", type: "date", sortable: false },
+    { key: "generated", label: "Títulos gerados", sortable: false },
+    { key: "is_active", label: "Ativa", type: "boolean" },
+  ],
+  filters: [
+    { name: "kind", label: "Tipo", type: "select", options: titleKind.options },
+    { name: "is_active", label: "Ativa", type: "boolean", options: yesNo },
+  ],
+  sections: {
+    Recorrência: { icon: "pi pi-sync", description: "Um título nasce sozinho a cada vencimento, alguns dias antes. "
+      + "Mensalidade de cliente, aluguel, assinatura, diária fixa." },
+  },
+  fields: [
+    { name: "kind", label: "Tipo", type: "segmented", options: titleKind.options, default: "receivable", section: "Recorrência" },
+    { name: "description", label: "Descrição", type: "text", required: true, maxLength: 255, span: 4, section: "Recorrência",
+      placeholder: "Ex.: Mensalidade Cliente A" },
+    { name: "customer", label: "Cliente", type: "relation", relation: { endpoint: "/customers/" }, section: "Recorrência",
+      visible: (v) => v.kind !== "payable" },
+    { name: "supplier", label: "Fornecedor", type: "relation", relation: { endpoint: "/suppliers/" }, section: "Recorrência",
+      visible: (v) => v.kind === "payable" },
+    { name: "category", label: "Categoria", type: "relation", relation: { endpoint: "/finance/categories/" }, section: "Recorrência" },
+    { name: "store", label: "Filial", type: "relation", relation: { endpoint: "/stores/" }, section: "Recorrência" },
+    { name: "amount", label: "Valor de cada um", type: "money", required: true, section: "Recorrência" },
+    { name: "start_date", label: "A partir de", type: "date", required: true, section: "Recorrência",
+      default: new Date().toLocaleDateString("sv-SE") },
+    { name: "end_date", label: "Até", type: "date", section: "Recorrência", hint: "Vazio = sem fim." },
+    ...scheduleFields("Recorrência", () => true, false),
+    { name: "lead_days", label: "Gerar com antecedência (dias)", type: "number", default: 10, section: "Recorrência" },
+    { name: "is_active", label: "Ativa", type: "boolean", default: true, section: "Recorrência" },
+    { name: "notes", label: "Observações", type: "textarea", section: "Recorrência" },
+  ],
+  formActions: [
+    { label: "Gerar agora", icon: "pi pi-bolt", success: "Títulos gerados até hoje",
+      run: ({ id }) => financeApi.generateRecurring(id) },
   ],
 });

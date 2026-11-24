@@ -17,7 +17,7 @@ const session = useSession();
 const saving = ref(false);
 const chosen = ref<string[]>([]);
 
-const canApply = computed(() => session.can("catalog.manage") && !props.ctx.values.reading);
+const canApply = computed(() => session.can("seo.full") && !props.ctx.values.reading);
 const suggestions = computed(() => (props.ctx.values.suggestions ?? []) as Suggestion[]);
 watch(suggestions, (rows) => {
   chosen.value = rows.map((row) => row.field).filter((name) => name !== "slug");  // o endereço só com escolha consciente

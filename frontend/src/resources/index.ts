@@ -2,7 +2,7 @@
 import { fiscalProfiles, financialAccounts, warehouses } from "./backoffice";
 import { brands, categories, products, serviceRules } from "./catalog";
 import {
-  cashSessions, financialCategories, installments, payables, receivables, transactions,
+  cashSessions, financialCategories, installments, payables, receivables, recurringTitles, transactions,
 } from "./finance";
 import { fiscalConfigs, inboundNfes, invoices } from "./fiscal";
 import { customerGroups, customers, suppliers } from "./partners";
@@ -20,6 +20,8 @@ import {
   labelTemplates, receivingDivergences, stockBalances, stockDocuments, stockLots, stockMovements, storageBins,
 } from "./stock";
 import { backgroundTasks } from "./tasks";
+import { visibleResource } from "@/utils/costs";
+
 import type { ResourceDef } from "./types";
 
 /** A ordem aqui é a ordem dentro de cada grupo do menu (o grupo vem do `group` de cada cadastro). */
@@ -37,7 +39,7 @@ export const resources: ResourceDef[] = [
   // Logística
   freightTables, warehouses, storageBins, receivingDivergences, logisticsRules,
   // Financeiro
-  receivables, payables, installments, transactions, cashSessions, cashRegisters, paymentMethods, financialAccounts,
+  receivables, payables, recurringTitles, installments, transactions, cashSessions, cashRegisters, paymentMethods, financialAccounts,
   financialCategories,
   // Fiscal
   invoices, fiscalConfigs, fiscalProfiles,
@@ -47,6 +49,8 @@ export const resources: ResourceDef[] = [
 
 const byName = new Map(resources.map((r) => [r.name, r]));
 
+/** O cadastro pelo slug, como a pessoa logada pode ver (sem colunas de custo para quem não tem a permissão). */
 export function findResource(name: string) {
-  return byName.get(name);
+  const resource = byName.get(name);
+  return resource && visibleResource(resource);
 }

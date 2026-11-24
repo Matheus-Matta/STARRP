@@ -7,10 +7,11 @@
  * progresso só aparece se a rota demorar mais de 150 ms.
  */
 import { onBeforeUnmount, onMounted, ref } from "vue";
-import { RouterView, useRouter } from "vue-router";
+import { RouterView, useRoute, useRouter } from "vue-router";
 
 import CosmosWidget from "@/components/cosmos/CosmosWidget.vue";
 import { usePrefetch } from "@/composables/usePrefetch";
+import { useSession } from "@/stores/session";
 
 import AppSidebar from "./AppSidebar.vue";
 import AppTopbar from "./AppTopbar.vue";
@@ -28,7 +29,9 @@ const collapsed = ref(readMini());
 const mobileOpen = ref(false);
 const paletteOpen = ref(false);
 const loading = ref(false);
+const route = useRoute();
 const router = useRouter();
+const session = useSession();
 let slow: ReturnType<typeof setTimeout> | undefined;
 const stopBefore = router.beforeEach(() => {
   slow = setTimeout(() => (loading.value = true), 150);
@@ -82,8 +85,8 @@ function onMenu() {
       </main>
     </div>
     <CommandPalette v-model:open="paletteOpen" />
-    <!-- Cosmos (IA): só aparece para quem tem `cosmos.view` (o próprio widget confere). -->
-    <CosmosWidget />
+    <!-- Cosmos: administrador sempre vê; os demais dependem da opção no cadastro do usuário. -->
+    <CosmosWidget v-if="!route.meta.hideCosmos && session.me?.can_use_cosmos" />
   </div>
 </template>
 

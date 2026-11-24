@@ -4,7 +4,8 @@ import type { CosmosStatus } from "@/api/cosmos";
 import { suggestionsFor } from "@/components/cosmos/suggestions";
 
 const status = (extra: Partial<CosmosStatus> = {}): CosmosStatus => ({
-  enabled: true, model: "gpt", can_use: true, can_write: true, can_supervise: false, open_alerts: 0, ...extra,
+  enabled: true, model: "gpt", can_use: true, can_write: true, can_supervise: false, voice_enabled: false,
+  open_alerts: 0, ...extra,
 });
 const all = () => true;
 

@@ -4,8 +4,12 @@
  * (25, 50 ou 100 por página) e exporta Excel ou CSV (gerados no servidor) com TODAS as linhas da aba.
  * `tabs` (ex.: Curva ABC por classe): abas Todas / A / B / C com a contagem e a soma de cada uma;
  * a tabela e a exportação levam só a aba aberta (arquivo "...-classe-a.csv").
+ * `search`: caixa de busca no texto das linhas; `range`: coluna de valor com faixa "de / até".
+ * A busca e a faixa filtram a tela e somam o que sobrou (a exportação leva a aba inteira).
  */
 import Button from "primevue/button";
+import InputNumber from "primevue/inputnumber";
+import InputText from "primevue/inputtext";
 import Paginator, { type PageState } from "primevue/paginator";
 import { computed, ref, watch } from "vue";
 
@@ -15,7 +19,18 @@ type Column = { key: string; label: string; format?: Format };
 /** `order`: a ordem (e portanto a cor) das abas, igual à do gráfico; sem ela, alfabética. */
 type Tabs = { key: string; label: string; sum?: string; order?: string[] };
 const props = defineProps<{ columns: Column[]; rows: Record<string, unknown>[]; title: string; tabs?: Tabs; empty?: string;
-                            onExport?: (format: "xlsx" | "csv", tab: string | null) => Promise<void> }>();
+                            onExport?: (format: "xlsx" | "csv", tab: string | null) => Promise<void>;
+                            search?: boolean; range?: string }>();
+const query = ref("");
+const minValue = ref<number | null>(null);
+const maxValue = ref<number | null>(null);
+const rangeColumn = computed(() => props.columns.find((c) => c.key === props.range));
+const filtering = computed(() => Boolean(query.value.trim()) || minValue.value !== null || maxValue.value !== null);
+function clearFilters() {
+  query.value = "";
+  minValue.value = null;
+  maxValue.value = null;
+}
 const tab = ref<string | null>(null);
 const sumColumn = computed(() => props.columns.find((c) => c.key === props.tabs?.sum));
 const tabList = computed(() => {
@@ -30,8 +45,28 @@ const tabList = computed(() => {
   return [{ value: null, label: "Todas", ...summary(props.rows) },
           ...values.map((v) => ({ value: v, label: `${props.tabs!.label} ${v}`.trim(), ...summary(props.rows.filter((r) => String(r[key]) === v)) }))];
 });
-const base = computed(() => (props.tabs && tab.value !== null
+const inTab = computed(() => (props.tabs && tab.value !== null
   ? props.rows.filter((r) => String(r[props.tabs!.key]) === tab.value) : props.rows));
+const norm = (v: unknown) => String(v ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const base = computed(() => {
+  const words = norm(query.value).split(/\s+/).filter(Boolean);
+  return inTab.value.filter((r) => {
+    if (r.strong) return !filtering.value; // linha de total só sem filtro
+    if (words.length) {
+      const text = props.columns.map((c) => norm(r[c.key])).join(" ");
+      if (!words.every((w) => text.includes(w))) return false;
+    }
+    if (props.range) {
+      const value = Math.abs(Number(r[props.range] ?? 0));
+      if (minValue.value !== null && value < minValue.value) return false;
+      if (maxValue.value !== null && value > maxValue.value) return false;
+    }
+    return true;
+  });
+});
+/** Soma da coluna de valor no que está na tela (com busca/faixa/aba). */
+const shownSum = computed(() => (rangeColumn.value
+  ? base.value.filter((r) => !r.strong).reduce((t, r) => t + Number(r[props.range!] ?? 0), 0) : null));
 const sortKey = ref<string | null>(null);
 const sortDir = ref<1 | -1>(-1);
 const first = ref(0);
@@ -53,7 +88,7 @@ function onPage(event: PageState) {
   first.value = event.first;
   perPage.value = event.rows;
 }
-watch([tab, () => props.rows], () => (first.value = 0));
+watch([tab, () => props.rows, query, minValue, maxValue], () => (first.value = 0));
 
 function sortBy(col: Column) {
   first.value = 0;
@@ -88,8 +123,21 @@ async function exportAs(format: "xlsx" | "csv") {
           · {{ fmt(t.sum, sumColumn.format) }}</template></span>
       </button>
     </div>
+    <div v-if="search || range" class="rtable__filters">
+      <span v-if="search" class="rtable__search"><i class="pi pi-search" />
+        <InputText v-model="query" size="small" placeholder="Buscar pessoa, descrição, categoria…" aria-label="Buscar na tabela" />
+      </span>
+      <template v-if="rangeColumn">
+        <InputNumber v-model="minValue" size="small" mode="currency" currency="BRL" locale="pt-BR" placeholder="Valor de"
+                     :input-style="{ width: '120px' }" aria-label="Valor mínimo" />
+        <InputNumber v-model="maxValue" size="small" mode="currency" currency="BRL" locale="pt-BR" placeholder="até"
+                     :input-style="{ width: '120px' }" aria-label="Valor máximo" />
+      </template>
+      <Button v-if="filtering" label="Limpar" icon="pi pi-filter-slash" text size="small" @click="clearFilters" />
+    </div>
     <div class="rtable__bar">
-      <span class="muted">{{ base.length }} {{ base.length === 1 ? "linha" : "linhas" }}</span>
+      <span class="muted">{{ base.length }} {{ base.length === 1 ? "linha" : "linhas" }}<template v-if="shownSum !== null && rangeColumn">
+        · total {{ fmt(shownSum, rangeColumn.format) }}</template></span>
       <span class="rtable__export">
         <span class="muted">{{ tabs && tab !== null ? `Exportar ${tabs.label} ${tab}:` : "Exportar:" }}</span>
         <Button label="Excel" icon="pi pi-file-excel" text size="small" :disabled="!base.length || !onExport"
@@ -141,6 +189,10 @@ async function exportAs(format: "xlsx" | "csv") {
 .rtab .rtab__dot { position: absolute; top: 12px; right: 10px; }
 .rtab__meta { font-size: 11.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; }
 .rtable__export { display: inline-flex; align-items: center; gap: 2px; }
+.rtable__filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 10px; }
+.rtable__search { position: relative; display: inline-flex; align-items: center; flex: 1 1 220px; max-width: 360px; }
+.rtable__search i { position: absolute; left: 10px; font-size: 12px; color: var(--text-subtle); }
+.rtable__search :deep(input) { width: 100%; padding-left: 30px; }
 .rtable__bar { display: flex; justify-content: space-between; align-items: center; margin: -6px 0 6px; font-size: 12px; }
 .rtable__scroll { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 13px; }

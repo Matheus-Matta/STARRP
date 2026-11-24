@@ -3,7 +3,7 @@ import { http, type Page } from "./http";
 import type { BookReport } from "./reports";
 
 export type CosmosStatus = { enabled: boolean; model: string | null; can_use: boolean; can_write: boolean;
-                             can_supervise: boolean; open_alerts: number;
+                             can_supervise: boolean; voice_enabled: boolean; open_alerts: number;
                              /** O que a pessoa mais faz (temas, do mais frequente): ordena os atalhos. */
                              habits?: string[] };
 
@@ -15,7 +15,7 @@ export type CosmosConversation = { id: string; title: string; last_message_at: s
 export type CosmosAttachment = { id: string; name: string; kind: "sheet" | "text"; rows: number; columns: number };
 
 export type CosmosButton = { label: string; kind: "reply" | "link"; value: string };
-export type CosmosPreviewRow = { label: string; value: string; from?: string };
+export type CosmosPreviewRow = { label: string; note?: string; value: string; from?: string; detail?: string };
 export type CosmosAction = {
   id: string; title: string; summary: string; method: string; path: string; preview: CosmosPreviewRow[];
   status: "pending" | "executed" | "failed" | "rejected" | "expired";
@@ -63,6 +63,13 @@ export const cosmosApi = {
     const form = new FormData();
     form.append("file", file);
     return http.post<CosmosAttachment>("/cosmos/attachments/", form, { timeout: 60_000 }).then((r) => r.data);
+  },
+  transcribe: (audio: Blob) => {
+    const type = audio.type.split(";", 1)[0];
+    const extension = type === "audio/mp4" ? "m4a" : type === "audio/ogg" ? "ogg" : "webm";
+    const form = new FormData();
+    form.append("audio", audio, `fala.${extension}`);
+    return http.post<{ text: string }>("/cosmos/voice/transcribe/", form, { timeout: 90_000 }).then((r) => r.data.text);
   },
   rename: (id: string, title: string) => http.patch(`/cosmos/conversations/${id}/`, { title }),
   remove: (id: string) => http.delete(`/cosmos/conversations/${id}/`),

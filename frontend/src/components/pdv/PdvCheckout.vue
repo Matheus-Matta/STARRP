@@ -41,7 +41,16 @@ const ICONS: Record<string, string> = {
   voucher: "pi pi-ticket", store_credit: "pi pi-replay", installment_plan: "pi pi-calendar", bank_slip: "pi pi-file",
 };
 const NEEDS_CUSTOMER = new Set(["installment_plan", "store_credit"]);
-const blocked = (m: PaymentMethod) => NEEDS_CUSTOMER.has(m.kind) && !props.sale.customer;
+const creditBalance = computed(() => Number(props.sale.customer_credit_balance ?? 0));
+const queuedCredit = computed(() => lines.value.filter((line) => line.kind === "store_credit")
+  .reduce((sum, line) => sum + Number(line.amount), 0));
+const creditAvailable = computed(() => Math.max(creditBalance.value - queuedCredit.value, 0));
+const blockedReason = (m: PaymentMethod) => {
+  if (NEEDS_CUSTOMER.has(m.kind) && !props.sale.customer) return "exige cliente";
+  if (m.kind === "store_credit" && creditAvailable.value <= 0.001) return "sem saldo";
+  return "";
+};
+const blocked = (m: PaymentMethod) => Boolean(blockedReason(m));
 
 /* ---- Conferência ---- */
 type Delivery = { table_name: string; lead_days: number | null; address_label: string };
@@ -83,14 +92,19 @@ const pendingChange = computed(() => (isCash.value ? Math.max(amount.value - rem
 
 function suggest() {
   typed.value = false;
-  digits.value = String(Math.round(remaining.value * 100));
+  const suggested = method.value?.kind === "store_credit"
+    ? Math.min(remaining.value, creditAvailable.value)
+    : remaining.value;
+  digits.value = String(Math.round(suggested * 100));
 }
 /** O total mudou (desconto, cupom, frete) ou uma linha saiu: o visor volta a mostrar o que falta. */
 watch(remaining, () => !typed.value && suggest());
 
 function pick(next: PaymentMethod | null) {
   if (next && blocked(next)) {
-    error.value = `${next.name} exige o cliente na venda: identifique o cliente antes (F3).`;
+    error.value = blockedReason(next) === "sem saldo"
+      ? "O cliente não tem saldo disponível na carteira."
+      : `${next.name} exige o cliente na venda: identifique o cliente antes (F3).`;
     return;
   }
   method.value = next;
@@ -149,6 +163,10 @@ function add(): boolean {
     error.value = `Em ${m.name} o valor não pode passar de ${money(remaining.value)} (troco só em dinheiro).`;
     return false;
   }
+  if (m.kind === "store_credit" && value > creditAvailable.value + 0.001) {
+    error.value = `O crédito não pode passar do saldo disponível de ${money(creditAvailable.value)}.`;
+    return false;
+  }
   if (m.requires_reference && props.requireReference && !reference.value.trim()) {
     error.value = `Digite o NSU/autorização do comprovante de ${m.name}.`;
     document.getElementById("pdv-pay-ref")?.focus();
@@ -160,7 +178,10 @@ function add(): boolean {
     installments: installments.value,
     ...(m.requires_reference && reference.value.trim() ? { nsu: reference.value.trim() } : {}),
   }];
-  pick(m);
+  const next = m.kind === "store_credit" && creditAvailable.value <= 0.001
+    ? props.methods.find((candidate) => !blocked(candidate)) ?? null
+    : m;
+  pick(next);
   return true;
 }
 
@@ -304,9 +325,12 @@ onMounted(() => {
         </template>
         <template #option="{ option }">
           <span class="opt"><i :class="ICONS[option.kind] ?? 'pi pi-wallet'" /> {{ option.name }}
-            <small v-if="blocked(option)">exige cliente</small></span>
+            <small v-if="blocked(option)">{{ blockedReason(option) }}</small></span>
         </template>
       </Select>
+      <small v-if="method?.kind === 'store_credit'" class="credit-hint">
+        Carteira do cliente: {{ money(creditBalance) }} · disponível nesta venda: {{ money(creditAvailable) }}
+      </small>
     </div>
 
     <div v-if="method && ((method.max_installments ?? 1) > 1 || method.requires_reference)" class="extra">
@@ -421,6 +445,7 @@ kbd { font: 600 10px/1 var(--font-mono); padding: 2px 5px; border-radius: 4px; b
 .tile--change { background: var(--brand-subtle); border-color: var(--brand-border); } .tile--change strong { color: var(--text-brand); }
 .tile--ok { background: var(--success-subtle); border-color: transparent; } .tile--ok strong { color: var(--success-text); }
 .field { display: flex; flex-direction: column; gap: 4px; }
+.credit-hint { color: var(--text-muted); font-size: 12px; }
 .field label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
 .req { color: var(--danger-text); }
 .opt { display: inline-flex; align-items: center; gap: 8px; }

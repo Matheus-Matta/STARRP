@@ -29,6 +29,7 @@ import StockItemsField from "./StockItemsField.vue";
 import AddressListField from "./AddressListField.vue";
 import MetafieldsField from "./MetafieldsField.vue";
 import PromotionRulesField from "./PromotionRulesField.vue";
+import PermissionMatrixField from "./PermissionMatrixField.vue";
 import TagsInput from "./TagsInput.vue";
 import ZipRangesField from "./ZipRangesField.vue";
 import VolumeListField from "./VolumeListField.vue";
@@ -97,10 +98,10 @@ const suffix = computed(() => {
 });
 const decimals = computed(() => ({ money: 2, percent: 2, quantity: 3, measure: 1, number: 0 })[props.field.type as string] ?? 0);
 const WIDE = ["textarea", "barcodes", "variants", "volumes", "grid", "stock-items", "installments", "images", "richtext",
-              "addresses", "zip-ranges", "metafields", "promotion-rules"];
+              "addresses", "zip-ranges", "metafields", "promotion-rules", "permission-matrix"];
 /** Campos que já são um bloco com títulos próprios: sem o rótulo de cima. */
 const SELF_LABELED = ["variants", "stock-items", "installments", "images", "addresses", "zip-ranges", "metafields",
-                      "promotion-rules"];
+                      "promotion-rules", "permission-matrix"];
 const sizeClass = computed(() => (props.field.full || WIDE.includes(props.field.type) ? "full"
   : props.field.span ? `span-${props.field.span}` : ""));
 const existingOptions = computed(() =>
@@ -215,6 +216,8 @@ const color = computed({
                       :separate-billing="context?.billing_same_as_delivery === false" />
     <ZipRangesField v-else-if="field.type === 'zip-ranges'" v-model="model as never" :disabled="disabled" />
     <PromotionRulesField v-else-if="field.type === 'promotion-rules'" v-model="model as never" :disabled="disabled" />
+    <PermissionMatrixField v-else-if="field.type === 'permission-matrix'" v-model="model as string[]"
+                           :context="context" :disabled="disabled" />
     <MetafieldsField v-else-if="field.type === 'metafields'" v-model="model as never" :owner="field.owner ?? 'product'"
                      :context="context" :disabled="disabled" />
     <BarcodeListField v-else-if="field.type === 'barcodes'" v-model="model as never" />

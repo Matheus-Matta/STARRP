@@ -13,17 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet" />
-    <script>
-      // Aplica o tema ANTES de pintar: sem isto a tela pisca clara no modo escuro.
-      try {
-        var t = localStorage.getItem("starrp.theme");
-        var dark = t === "dark" || (!t && matchMedia("(prefers-color-scheme: dark)").matches);
-        document.documentElement.dataset.theme = dark ? "dark" : "light";
-        if (dark) document.documentElement.classList.add("dark");
-        var b = localStorage.getItem("starrp.brand");
-        if (b) document.documentElement.dataset.brand = b;
-      } catch (e) {}
-    </script>
+    <script src="/theme-boot.js"></script>
   </head>
   <body>
     <div id="app"></div>

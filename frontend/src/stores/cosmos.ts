@@ -79,7 +79,7 @@ export const useCosmos = defineStore("cosmos", () => {
   const active = computed(() => conversations.value.find((c) => c.id === activeId.value) ?? null);
   const key = computed(() => activeId.value ?? "new");
   const thread = computed(() => messages.value[key.value] ?? []);
-  const canUse = computed(() => session.can("cosmos.view"));
+  const canUse = computed(() => Boolean(session.me?.can_use_cosmos));
 
   function storeHeader() {
     return session.activeStoreId;

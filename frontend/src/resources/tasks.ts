@@ -22,7 +22,7 @@ export const backgroundTasks = defineResource({
   singular: "tarefa",
   feminine: true,
   endpoint: "/background-tasks/",
-  permission: "catalog",
+  permission: "tasks",
   icon: "pi pi-sync",
   group: "Configurações",
   ordering: "-started_at",
@@ -60,7 +60,7 @@ export const backgroundTasks = defineResource({
     ],
   },
   formActions: [
-    { label: "Parar", icon: "pi pi-stop-circle", severity: "danger", permission: "catalog.manage", visible: (v) => v.can_stop === true,
+    { label: "Parar", icon: "pi pi-stop-circle", severity: "danger", permission: "tasks.manage", visible: (v) => v.can_stop === true,
       confirm: "Parar esta tarefa? O lote em andamento termina, e o que já foi feito fica salvo.", success: "Tarefa parada",
       run: ({ id }) => tasksApi.stop(id) },
   ],

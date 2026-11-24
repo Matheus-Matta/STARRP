@@ -11,7 +11,7 @@ export type ReportGroup = { label: string; icon: string; description: string; re
 export const REPORT_GROUPS: ReportGroup[] = [
   { label: "Movimento", icon: "pi pi-chart-line", description: "O giro do balcão: vendas, horários, recebimentos e quem vendeu.",
     reports: [
-      { slug: "vendas", title: "Vendas no período", icon: "pi pi-chart-line", permission: "reports.view",
+      { slug: "vendas", title: "Vendas no período", icon: "pi pi-chart-line", permission: "sales.view",
         description: "Faturamento, ticket e margem contra o período anterior, por canal.",
         about: {
           purpose: "Responde \"estamos vendendo mais ou menos?\". Compara o período escolhido com o mesmo número de dias imediatamente antes, já descontando cancelamentos.",
@@ -22,7 +22,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
                    "Margem caindo mais que o faturamento: desconto demais ou custo subiu sem reajuste de preço.",
                    "Use os filtros de vendedor, canal e categoria para achar de onde vem a variação."],
         } },
-      { slug: "horarios", title: "Horários de pico", icon: "pi pi-clock", permission: "reports.view",
+      { slug: "horarios", title: "Horários de pico", icon: "pi pi-clock", permission: "sales.view",
         description: "Mapa de calor de dia da semana × hora do dia.",
         about: {
           purpose: "Mostra em que dias e horas a filial realmente vende, para colocar gente e caixa onde o cliente está.",
@@ -31,7 +31,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
           decide: ["Escala de equipe e de caixas abertos.", "Horário e dia de entrega de mercadoria (nos horários fracos).",
                    "Dia mais fraco é o melhor dia para promoção ou ação de vitrine."],
         } },
-      { slug: "recebimentos", title: "Formas de recebimento", icon: "pi pi-credit-card", permission: "reports.view",
+      { slug: "recebimentos", title: "Formas de recebimento", icon: "pi pi-credit-card", permission: "cash.view",
         description: "Participação de cada forma de pagamento, valor médio e taxas.",
         about: {
           purpose: "Mostra como o cliente paga e quanto isso custa em taxas, o que afeta o caixa e a margem.",
@@ -40,7 +40,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
           decide: ["Negociar taxa com a adquirente quando o cartão pesa muito.", "Incentivar Pix ou dinheiro com desconto à vista.",
                    "Valor médio alto numa forma indica parcelamento: confira o prazo de recebimento."],
         } },
-      { slug: "vendedores", title: "Desempenho de vendedores", icon: "pi pi-users", permission: "reports.view",
+      { slug: "vendedores", title: "Desempenho de vendedores", icon: "pi pi-users", permission: "sales.view",
         description: "Ranking, ticket, desconto concedido, crescimento e comissão.",
         about: {
           purpose: "Avalia cada vendedor por quanto vende, como vende (ticket, desconto) e se está crescendo.",
@@ -57,7 +57,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
           decide: ["Onde investir (estoque, reforma, equipe).", "Que prática da filial destaque replicar nas outras.",
                    "Filial com margem baixa: revisar preço local, desconto e mix."],
         } },
-      { slug: "cancelamentos", title: "Cancelamentos e devoluções", icon: "pi pi-replay", permission: "reports.view",
+      { slug: "cancelamentos", title: "Cancelamentos e devoluções", icon: "pi pi-replay", permission: "sales.view",
         description: "Vendas canceladas, mercadoria devolvida, motivos e produtos.",
         about: {
           purpose: "Mostra o que deixou de virar receita: vendas canceladas (com o motivo informado) e devoluções concluídas.",
@@ -70,7 +70,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
     ] },
   { label: "Mercadorias", icon: "pi pi-box", description: "O que vende, o que fica parado e o que entra e sai do estoque.",
     reports: [
-      { slug: "curva-abc", title: "Curva ABC", icon: "pi pi-sort-amount-down", permission: "reports.view",
+      { slug: "curva-abc", title: "Curva ABC", icon: "pi pi-sort-amount-down", permission: "catalog.view",
         description: "Os poucos produtos que fazem a maior parte do resultado.",
         about: {
           purpose: "Classifica os produtos em A (os que fazem 80% do total), B (os próximos 15%) e C (o resto), por faturamento, margem ou quantidade.",
@@ -79,7 +79,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
           decide: ["Produto A nunca pode faltar: estoque de segurança e reposição prioritária.",
                    "Produto C parado: promoção, queima ou tirar do mix.", "Negocie melhor preço de compra nos itens A."],
         } },
-      { slug: "categorias", title: "Vendas por categoria", icon: "pi pi-sitemap", permission: "reports.view",
+      { slug: "categorias", title: "Vendas por categoria", icon: "pi pi-sitemap", permission: "catalog.view",
         description: "Faturamento e margem de cada categoria e marca.",
         about: {
           purpose: "Mostra quais linhas de produto sustentam a loja e quais deixam margem.",
@@ -116,7 +116,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
   { label: "Promoções", icon: "pi pi-percentage",
     description: "O desconto se paga? Promoção de produto, cupom e desconto manual com veredito.",
     reports: [
-      { slug: "descontos", title: "Descontos: visão geral", icon: "pi pi-chart-pie", permission: "reports.view",
+      { slug: "descontos", title: "Descontos: visão geral", icon: "pi pi-chart-pie", permission: "promotions.view",
         description: "Quanto se abriu mão em promoção, cupom e desconto manual, e o que cada um devolveu.",
         about: {
           purpose: "Soma tudo o que a loja deixou de cobrar no período e compara as vendas com cada tipo de desconto com as vendas sem desconto: ticket, margem, recompra e nota.",
@@ -126,7 +126,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
           decide: ["Se a margem cai e a recompra não sobe, o desconto não está fidelizando.",
                    "Desconto manual alto: rever o limite por cargo."],
         } },
-      { slug: "promocoes-de-produto", title: "Promoções de produto", icon: "pi pi-tag", permission: "reports.view",
+      { slug: "promocoes-de-produto", title: "Promoções de produto", icon: "pi pi-tag", permission: "promotions.view",
         description: "Cada promoção vendeu mais e lucrou mais por dia? Veredito produto a produto.",
         about: {
           purpose: "Responde se vale a pena aplicar desconto num produto: compara, nos mesmos produtos, as vendas e o lucro POR DIA com a promoção valendo e sem ela.",
@@ -136,7 +136,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
           decide: ["Repetir as que compensaram.", "Encerrar as que só queimam margem ou não aumentaram as vendas.",
                    "Prejuízo (abaixo do custo): corrigir o percentual na hora."],
         } },
-      { slug: "cupons", title: "Cupons: fidelizam e dão lucro?", icon: "pi pi-ticket", permission: "reports.view",
+      { slug: "cupons", title: "Cupons: fidelizam e dão lucro?", icon: "pi pi-ticket", permission: "promotions.view",
         description: "Cada cupom: lucro, recompra, clientes novos e retorno por R$ 1 de desconto.",
         about: {
           purpose: "Mostra se cada cupom traz o cliente de volta e se dá lucro: margem da venda com o cupom, recompra, o que o cliente gastou nos 60 dias seguintes e quanto cada R$ 1 de desconto devolveu.",
@@ -149,6 +149,17 @@ export const REPORT_GROUPS: ReportGroup[] = [
     ] },
   { label: "Contábil", icon: "pi pi-book", description: "Resultado, caixa e compromissos: o fechamento do período.",
     reports: [
+      { slug: "fechamento", title: "Fechamento financeiro", icon: "pi pi-book", permission: "finance.view", module: "finance",
+        description: "Tudo do período num lugar: resultado, caixa, reembolsos, clientes e fornecedores e os lançamentos.",
+        about: {
+          purpose: "O fechamento do mês (ou de qualquer período): quanto entrou e saiu, o resultado, quanto a empresa precisa reembolsar e quanto cada cliente deve.",
+          read: ["No topo, o resultado de tudo. Faturamento = Recebido + Falta receber (o que foi vendido/cobrado no período, pago ou não). \"Atrasado de antes\" são contas de meses anteriores ainda em aberto: não entram no faturamento deste período. Clique num card para abrir a tela de onde ele vem.",
+                 "Reembolso por pessoa: quanto a empresa deve a cada um. Itens a reembolsar: cada despesa paga do bolso, com abas por pessoa, busca e filtro de valor.",
+                 "Clientes e fornecedores: saldo positivo é quem deve; crédito é o que pagou a mais.",
+                 "No fim, todos os lançamentos do período, com busca e filtro de valor, para conferir e exportar para o Excel."],
+          decide: ["Reembolsar: transferência do banco para a conta de reembolso da pessoa.", "Cobrar quem está com saldo em aberto.",
+                   "Dividir o lucro pela coluna \"Total a receber\" (para quem tem % no resultado)."],
+        } },
       { slug: "dre", title: "DRE gerencial", icon: "pi pi-calculator", permission: "finance.view", module: "finance",
         description: "Da receita ao resultado, em cascata.",
         about: {
@@ -185,7 +196,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
     ] },
   { label: "Logística", icon: "pi pi-truck", description: "Entregas: prazo, atraso, frete e para onde se entrega.",
     reports: [
-      { slug: "entregas", title: "Entregas", icon: "pi pi-truck", permission: "reports.view",
+      { slug: "entregas", title: "Entregas", icon: "pi pi-truck", permission: "logistics.view",
         description: "Prazo prometido × entregue, atrasos, frete, bairros e a nota da entrega.",
         about: {
           purpose: "Acompanha as vendas com entrega: se chegaram no prazo prometido pela tabela de frete, quanto se cobrou e o que o cliente achou.",
@@ -198,7 +209,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
     ] },
   { label: "Relacionamento", icon: "pi pi-heart", description: "Quem compra, quanto e com que frequência.",
     reports: [
-      { slug: "curva-abc-clientes", title: "Curva ABC de clientes", icon: "pi pi-sort-amount-down", permission: "reports.view",
+      { slug: "curva-abc-clientes", title: "Curva ABC de clientes", icon: "pi pi-sort-amount-down", permission: "partners.view",
         description: "Os poucos clientes que fazem a maior parte do faturamento.",
         about: {
           purpose: "Classifica os clientes em A (os que fazem 80% do total), B (os próximos 15%) e C (o resto), por faturamento, margem ou número de compras.",
@@ -207,7 +218,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
           decide: ["Atendimento VIP, pré-venda e brinde para os clientes A.", "Campanha para transformar B em A.",
                    "Exporte a classe (aba) para mandar uma ação só para ela."],
         } },
-      { slug: "avaliacoes", title: "Avaliações", icon: "pi pi-star", permission: "reports.view",
+      { slug: "avaliacoes", title: "Avaliações", icon: "pi pi-star", permission: "sales.view",
         description: "Nota dos produtos e da entrega, melhores e piores avaliados.",
         about: {
           purpose: "Resume o que os clientes disseram pelo link de avaliação (e o que a loja registrou): estrelas, comentários e tendência.",
@@ -216,7 +227,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
           decide: ["Produto com nota baixa: ler os comentários e falar com o fornecedor.",
                    "Usar as avaliações 5 estrelas na vitrine e nas redes.", "Moderar as pendentes em Vendas › Avaliações."],
         } },
-      { slug: "clientes", title: "Clientes", icon: "pi pi-id-card", permission: "reports.view",
+      { slug: "clientes", title: "Clientes", icon: "pi pi-id-card", permission: "partners.view",
         description: "Os que mais compram, recorrência, sumidos e novos cadastros.",
         about: {
           purpose: "Mostra a base de clientes: quem compra mais, quem volta e quem parou de comprar.",
@@ -229,7 +240,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
   { label: "Cruzamentos", icon: "pi pi-sitemap",
     description: "Um assunto explicado por outro: o que leva o cliente a voltar, a avaliar bem ou a cancelar.",
     reports: [
-      { slug: "cruzamento-clientes", title: "Clientes × satisfação e entrega", icon: "pi pi-users", permission: "reports.view",
+      { slug: "cruzamento-clientes", title: "Clientes × satisfação e entrega", icon: "pi pi-users", permission: "partners.view",
         description: "A classe ABC do cliente cruzada com as notas, a entrega e a frequência.",
         about: {
           purpose: "Mostra se os clientes que mais compram (A) são os mais satisfeitos e os mais bem atendidos — ou se a loja trata todo mundo igual.",
@@ -239,7 +250,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
                    "Cliente C satisfeito é oportunidade de crescer (campanha, crediário, kit).",
                    "Entrega pior para uma classe: revise rota ou transportadora daquela região."],
         } },
-      { slug: "cruzamento-entregas", title: "Entrega × satisfação e recompra", icon: "pi pi-truck", permission: "reports.view",
+      { slug: "cruzamento-entregas", title: "Entrega × satisfação e recompra", icon: "pi pi-truck", permission: "logistics.view",
         description: "No prazo × com atraso: a nota cai? o cliente volta?",
         about: {
           purpose: "Mede o custo do atraso: compara a nota e a recompra de quem recebeu no prazo com quem recebeu atrasado.",
@@ -249,7 +260,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
                    "Avisar o cliente antes do atraso costuma salvar a nota."],
         } },
       { slug: "cruzamento-vendedores", title: "Vendedores × desconto, margem e satisfação", icon: "pi pi-id-card",
-        permission: "reports.view", description: "Quanto cada vendedor desconta, quanto sobra e o que o cliente acha.",
+        permission: "sales.view", description: "Quanto cada vendedor desconta, quanto sobra e o que o cliente acha.",
         about: {
           purpose: "Junta, por vendedor, o desconto concedido, a margem que sobrou, a taxa de cancelamento e a nota dos clientes atendidos.",
           read: ["Desconto alto + margem baixa + nota igual aos outros = desconto que não fideliza.",
@@ -257,7 +268,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
           decide: ["Limite de desconto por vendedor (Cargos).", "Treino com quem tem nota alta dos clientes.",
                    "Meta por margem, não só por faturamento."],
         } },
-      { slug: "cruzamento-produtos", title: "Produtos × qualidade e devolução", icon: "pi pi-box", permission: "reports.view",
+      { slug: "cruzamento-produtos", title: "Produtos × qualidade e devolução", icon: "pi pi-box", permission: "catalog.view",
         description: "Estrelas, produtos que vendem e não agradam, joias escondidas.",
         about: {
           purpose: "Cruza o quanto o produto vende (classe ABC) com a nota das avaliações, a margem e a devolução, e separa os produtos em quatro quadrantes.",
@@ -268,7 +279,7 @@ export const REPORT_GROUPS: ReportGroup[] = [
                    "Revisar: candidato a sair do mix."],
         } },
       { slug: "cruzamento-descontos", title: "Desconto × margem, ticket e recompra", icon: "pi pi-percentage",
-        permission: "reports.view", description: "O desconto traz o cliente de volta ou só come a margem?",
+        permission: "promotions.view", description: "O desconto traz o cliente de volta ou só come a margem?",
         about: {
           purpose: "Separa as vendas por faixa de desconto e compara ticket, margem, nota e recompra.",
           read: ["Desconto em % do valor cheio da venda (desconto do vendedor + cupom).",

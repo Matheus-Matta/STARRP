@@ -6,7 +6,6 @@
  */
 import { useQuery } from "@tanstack/vue-query";
 import Button from "primevue/button";
-import DatePicker from "primevue/datepicker";
 import Select from "primevue/select";
 import SelectButton from "primevue/selectbutton";
 import Skeleton from "primevue/skeleton";
@@ -23,6 +22,7 @@ import { useSession } from "@/stores/session";
 import { useNotify } from "@/composables/useNotify";
 import { date } from "@/utils/format";
 import { openPrint } from "@/utils/print";
+import DateRangePicker from "@/components/common/DateRangePicker.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -44,10 +44,17 @@ const PRESETS = [
   { label: "30 dias", value: "30", range: () => [back(30), today()] },
   { label: "90 dias", value: "90", range: () => [back(90), today()] },
   { label: "Este mês", value: "month", range: () => [new Date(today().getFullYear(), today().getMonth(), 1), today()] },
+  { label: "Próximo mês", value: "next-month",
+    range: () => [new Date(today().getFullYear(), today().getMonth() + 1, 1), new Date(today().getFullYear(), today().getMonth() + 2, 0)] },
   { label: "Este ano", value: "year", range: () => [new Date(today().getFullYear(), 0, 1), today()] },
 ];
-const preset = ref<string | null>(String(route.query.periodo ?? "30"));
-const custom = ref<Date[] | null>(null);
+/** Período no endereço (`date_from`/`date_to`, ex.: vindo de um card de outro relatório) vale sobre o atalho. */
+const fromQuery = (key: string) => (typeof route.query[key] === "string" && /^\d{4}-\d{2}-\d{2}$/.test(route.query[key] as string)
+  ? new Date(`${route.query[key]}T00:00:00`) : null);
+const linkedFrom = fromQuery("date_from");
+const linkedTo = fromQuery("date_to");
+const preset = ref<string | null>(linkedFrom ? null : String(route.query.periodo ?? "30"));
+const custom = ref<Date[] | null>(linkedFrom ? [linkedFrom, linkedTo ?? linkedFrom] : null);
 const range = computed<Date[]>(() => {
   if (custom.value?.[0]) return [custom.value[0], custom.value[1] ?? custom.value[0]];
   return (PRESETS.find((p) => p.value === preset.value) ?? PRESETS[1]!).range();
@@ -58,11 +65,15 @@ watch(preset, (value) => {
 });
 watch(custom, (value) => {
   if (value?.[0]) preset.value = null;
+  else {
+    if (!preset.value) preset.value = "30"; // limpou o período: volta ao padrão
+    if (route.query.date_from) void router.replace({ query: { ...route.query, date_from: undefined, date_to: undefined } });
+  }
 });
 
 /** Filtros próprios do relatório (vêm do backend com as opções): ficam no endereço, dá para mandar o link. */
 const extra = computed(() => Object.fromEntries(Object.entries(route.query)
-  .filter(([key, value]) => key !== "periodo" && typeof value === "string" && value)) as Record<string, string>);
+  .filter(([key, value]) => !["periodo", "date_from", "date_to"].includes(key) && typeof value === "string" && value)) as Record<string, string>);
 function setFilter(name: string, value: unknown) {
   void router.replace({ query: { ...route.query, [name]: value ? String(value) : undefined } });
 }
@@ -119,8 +130,7 @@ async function exportReport(format: "xlsx" | "csv", extra: { bloco?: number; aba
     <!-- Filtros: uma linha só, acima de tudo -->
     <div class="filters no-print">
       <SelectButton v-model="preset" :options="PRESETS" option-label="label" option-value="value" size="small" />
-      <DatePicker v-model="custom" selection-mode="range" :manual-input="false" date-format="dd/mm/yy" show-icon
-                  placeholder="Outro período" size="small" class="filters__date" :max-date="today()" />
+      <DateRangePicker v-model="custom" placeholder="Outro período" size="small" class="filters__date" />
       <span class="filters__scope"><i class="pi pi-building" /> {{ scope }}</span>
     </div>
     <div v-if="report?.filters?.length" class="filters filters--own no-print">
@@ -162,7 +172,8 @@ async function exportReport(format: "xlsx" | "csv", extra: { bloco?: number; aba
     <template v-else>
       <div class="kpis" :class="{ refreshing: query.isFetching.value }">
         <KpiTile v-for="(k, i) in report.kpis" :key="k.label" :label="k.label" :value="k.value" :format="f(k.format)"
-                 :delta="k.delta" :good="k.good" :hint="k.hint" :accent="i" />
+                 :delta="k.delta" :good="k.good" :hint="k.hint" :accent="i" :icon="k.icon" :tone="k.tone" :link="k.link"
+                 :count="k.count ?? undefined" />
       </div>
       <div class="blocks" :class="{ refreshing: query.isFetching.value }">
         <section v-for="(block, i) in report.blocks" :key="`${block.title}-${i}`" class="block"

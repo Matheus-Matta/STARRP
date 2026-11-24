@@ -29,6 +29,8 @@ export type Me = {
   name: string;
   email: string;
   is_superuser: boolean;
+  is_account_admin: boolean;
+  can_use_cosmos: boolean;
   /** `logo_url`: logo da empresa (1080×1080); vazio = as impressões usam o do Starrp. */
   account: { id: string; name: string; modules: string[]; logo_url: string | null } | null;
   role: { code: string; name: string; rank: number } | null;

@@ -16,8 +16,11 @@ const GROUP_ORDER = ["Vendas", "Catálogo", "Promoções", "Compras", "Estoque",
                      "Configurações"];
 
 /** Telas especiais que FECHAM o grupo (depois dos cadastros). `account.admin` só o administrador tem. */
-const FOOTERS: Record<string, NavItem> = {
-  Configurações: { label: "Configurações da conta", icon: "pi pi-cog", to: "/configuracoes", permission: "account.admin" },
+const FOOTERS: Record<string, NavItem[]> = {
+  Configurações: [
+    { label: "Integrações", icon: "pi pi-link", to: "/integracoes", permission: "account.admin" },
+    { label: "Configurações da conta", icon: "pi pi-cog", to: "/configuracoes", permission: "account.admin" },
+  ],
 };
 
 /** Telas especiais que abrem o grupo (painéis), antes dos cadastros dele. */
@@ -32,7 +35,7 @@ export function buildNavigation(can: (code?: string) => boolean, hasModule: (m?:
     {
       label: "Operação",
       items: [
-        { label: "Painel", icon: "pi pi-chart-bar", to: "/", permission: "reports.view" },
+        { label: "Painel", icon: "pi pi-th-large", to: "/" },
         { label: "PDV", icon: "pi pi-shopping-cart", to: "/pdv", permission: "sales.manage" },
       ],
     },
@@ -43,7 +46,7 @@ export function buildNavigation(can: (code?: string) => boolean, hasModule: (m?:
       .map((r) => ({ label: r.title, icon: r.icon, to: `/cadastros/${r.name}`, permission: `${r.permission}.view`,
                      module: r.module }));
     groups.push({ label: name, items: [...(PANELS[name] ? [PANELS[name]] : []), ...items,
-                                       ...(FOOTERS[name] ? [FOOTERS[name]] : [])] });
+                                       ...(FOOTERS[name] ?? [])] });
   }
   // Relatórios: um item só em Operação, que abre o livro em grupos (Movimento, Mercadorias, Contábil...).
   const book = visibleGroups(can, hasModule);

@@ -15,12 +15,14 @@ export default defineConfig(({ mode }) => {
     resolve: { alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) } },
     server: {
       port: 5173,
+      // O núcleo fiscal é compartilhado com o PDV desktop (../shared/fiscal): o dev server serve de lá também.
+      fs: { allow: [fileURLToPath(new URL("..", import.meta.url))] },
       // Proxy da API: app e API na MESMA origem, como os cookies httpOnly (SameSite=Lax) exigem.
       proxy: {
         // `ws`: o widget da Cosmos conversa por WebSocket em /api/v1/ws/cosmos/.
-        "/api": { target: env.VITE_API_TARGET || "http://localhost:8000", changeOrigin: true, ws: true },
+        "/api": { target: env.VITE_API_TARGET || "http://localhost:8001", changeOrigin: true, ws: true },
         // Fotos enviadas (produto, variante): o Django serve em desenvolvimento.
-        "/media": { target: env.VITE_API_TARGET || "http://localhost:8000", changeOrigin: true },
+        "/media": { target: env.VITE_API_TARGET || "http://localhost:8001", changeOrigin: true },
       },
     },
     build: {

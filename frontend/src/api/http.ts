@@ -1,5 +1,5 @@
 /**
- * Cliente HTTP único. Autenticação por cookie httpOnly (o JS nunca vê o token).
+ * Cliente HTTP único. Autenticação por cookie httpOnly (o JS nunca vê o token, nem no corpo do login).
  *
  * - toda requisição leva a loja ativa (`X-Store-ID`), lida do store de sessão;
  * - um 401 tenta renovar o token UMA vez (requisições simultâneas esperam a
@@ -8,9 +8,13 @@
  */
 import axios, { type AxiosRequestConfig } from "axios";
 
-import { toApiError } from "./errors";
+import { readBlobError, toApiError } from "./errors";
 
-export const http = axios.create({ baseURL: "/api/v1", withCredentials: true, timeout: 20_000 });
+/** O app web trabalha SÓ com o cookie httpOnly: com este cabeçalho o backend não põe o token no corpo do
+ *  login (um script injetado na página não teria o que ler). PDV desktop e app móvel não mandam. */
+const COOKIE_ONLY = { "X-Auth-Transport": "cookie" };
+
+export const http = axios.create({ baseURL: "/api/v1", withCredentials: true, timeout: 20_000, headers: COOKIE_ONLY });
 
 type Hooks = { storeId: () => string | null; onUnauthorized: () => void };
 let hooks: Hooks = { storeId: () => null, onUnauthorized: () => undefined };
@@ -30,7 +34,7 @@ let refreshing: Promise<boolean> | null = null;
 
 function refresh(): Promise<boolean> {
   refreshing ??= axios
-    .post("/api/v1/auth/refresh/", {}, { withCredentials: true })
+    .post("/api/v1/auth/refresh/", {}, { withCredentials: true, headers: COOKIE_ONLY })
     .then(() => true)
     .catch(() => false)
     .finally(() => {
@@ -48,6 +52,7 @@ http.interceptors.response.use(
       if (await refresh()) return http(original);
       hooks.onUnauthorized();
     }
+    await readBlobError(error);
     throw toApiError(error);
   },
 );

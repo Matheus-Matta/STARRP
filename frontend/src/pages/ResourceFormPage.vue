@@ -37,7 +37,12 @@ const confirm = useConfirm();
 const resource = computed(() => findResource(String(route.params.resource)) as ResourceDef);
 const id = computed(() => (route.params.id === "novo" ? null : String(route.params.id)));
 const { values, errors, loading, saving, isNew, load, save, check } = useResourceForm(resource, id);
-const canWrite = computed(() => !resource.value.readOnly && session.can(`${resource.value.permission}.manage`)
+const writeAudience = computed(() => !resource.value.accountAdminOnlyWrite || Boolean(
+  session.me?.is_account_admin || session.me?.is_superuser));
+const canCreate = computed(() => writeAudience.value && session.can(`${resource.value.permission}.create`));
+const canUpdate = computed(() => writeAudience.value && session.can(`${resource.value.permission}.update`));
+const canDelete = computed(() => writeAudience.value && session.can(`${resource.value.permission}.delete`));
+const canWrite = computed(() => !resource.value.readOnly && (isNew.value ? canCreate.value : canUpdate.value)
   && (isNew.value || resource.value.editable !== false) && !resource.value.lockedWhen?.(values.value));
 /** Sem edição (confirmado, só leitura, sem permissão): página de leitura em vez de campos desabilitados. */
 const viewing = computed(() => !isNew.value && !canWrite.value);
@@ -59,7 +64,11 @@ const draft = ref<Draft | null>(null);
 const leaveTo = ref<string | null>(null);
 let leaving = false;
 function keepDraft() {
-  saveDraft(draftScope.value, resource.value.name, draftRecord.value, values.value, title.value);
+  // Senha e segredo nunca ficam no navegador (R2-18): o rascunho sobrevive ao logout.
+  const secret = new Set(resource.value.fields.filter((f) => f.type === "password").map((f) => f.name));
+  const kept = Object.fromEntries(Object.entries(values.value).filter(([name]) => !secret.has(name)
+    && !/(password|senha|token|secret)/i.test(name)));
+  saveDraft(draftScope.value, resource.value.name, draftRecord.value, kept, title.value);
 }
 function dropDraft() {
   removeDraft(draftScope.value, resource.value.name, draftRecord.value);
@@ -221,7 +230,7 @@ const polling = computed(() => !isNew.value && !loading.value && Boolean(resourc
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 watch(polling, (on, before) => {
   clearInterval(pollTimer);
-  if (on) pollTimer = setInterval(() => void reload(true), 3000);
+  if (on) pollTimer = setInterval(() => document.hidden || void reload(true), 3000);
   else if (before && resource.value.poll?.done) notify.success(resource.value.poll.done);
 });
 onBeforeUnmount(() => clearInterval(pollTimer));
@@ -294,22 +303,23 @@ onBeforeUnmount(() => clearInterval(pollTimer));
     <!-- Histórico sempre no fim da página, em qualquer registro já salvo (feed com rolagem própria). -->
     <HistoryFeed v-if="!isNew && !loading" :resource="resource" :id="id!" :version="values.updated_at" />
 
-    <div v-if="canWrite" class="actionbar" :class="{ 'actionbar--dirty': dirty }">
-      <span class="actionbar__status">
+    <div v-if="canWrite || (!isNew && canDelete)" class="actionbar" :class="{ 'actionbar--dirty': dirty }">
+      <span v-if="canWrite" class="actionbar__status">
         <i :class="dirty ? 'pi pi-circle-fill' : 'pi pi-check-circle'" />
         <span>{{ dirty ? "Alterações não salvas" : isNew ? "Novo cadastro" : "Tudo salvo" }}</span>
         <span class="hint"><kbd class="kbd">Ctrl S</kbd> salva</span>
       </span>
       <div class="actionbar__buttons">
-        <Button v-if="!isNew && resource.deletable !== false && !(resource.systemData && !session.me?.is_superuser)"
+        <Button v-if="!isNew && canDelete && resource.deletable !== false && !(resource.systemData && !session.me?.is_superuser)"
                 icon="pi pi-trash" severity="danger" text size="small"
                 aria-label="Excluir" title="Excluir" @click="remove" />
-        <Button v-if="dirty" label="Guardar rascunho" icon="pi pi-bookmark" severity="secondary" text size="small"
+        <Button v-if="canWrite && dirty" label="Guardar rascunho" icon="pi pi-bookmark" severity="secondary" text size="small"
                 title="Guarda as alterações neste navegador para terminar depois" class="another" :disabled="saving"
                 @click="leaveKeepingDraft" />
-        <Button label="Salvar e novo" severity="secondary" outlined size="small" title="Ctrl+Enter" class="another"
+        <Button v-if="canWrite && canCreate" label="Salvar e novo" severity="secondary" outlined size="small" title="Ctrl+Enter" class="another"
                 :disabled="saving" @click="submit(true)" />
-        <Button type="submit" label="Salvar" icon="pi pi-check" size="small" :loading="saving" :disabled="!dirty && !isNew" />
+        <Button v-if="canWrite" type="submit" label="Salvar" icon="pi pi-check" size="small" :loading="saving"
+                :disabled="!dirty && !isNew" />
       </div>
     </div>
     <!-- Sair com alterações não salvas: continuar, descartar ou guardar rascunho. -->

@@ -44,6 +44,9 @@ function flatten(value: unknown, prefix = ""): FieldErrors {
 
 export function toApiError(error: unknown): ApiError {
   if (error instanceof ApiError) return error;
+  if (isAxiosError(error) && !error.response && error.code === "ECONNABORTED") {
+    return new ApiError(0, "timeout", "O servidor demorou demais para responder. Tente de novo em instantes.");
+  }
   if (!isAxiosError(error) || !error.response) {
     return new ApiError(0, "network", "Sem conexão com o servidor. Verifique a internet e tente novamente.");
   }
@@ -53,4 +56,27 @@ export function toApiError(error: unknown): ApiError {
   const fields = typeof raw === "object" ? flatten(raw) : {};
   const message = typeof raw === "string" ? raw : firstText(raw) || "Não foi possível concluir a operação.";
   return new ApiError(status, envelope?.code ?? "error", message, fields);
+}
+
+function blobText(blob: Blob): Promise<string> {
+  if (typeof blob.text === "function") return blob.text();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(blob);
+  });
+}
+
+/** Download (`responseType: "blob"`) que deu erro: o corpo é o JSON do envelope dentro de um Blob.
+ *  Lê o texto para a mensagem do backend aparecer (e não "Não foi possível..."). */
+export async function readBlobError(error: unknown) {
+  if (!isAxiosError(error) || !(error.response?.data instanceof Blob)) return;
+  const blob = error.response.data;
+  if (!blob.type.includes("json")) return;
+  try {
+    error.response.data = JSON.parse(await blobText(blob));
+  } catch {
+    // corpo não é JSON: fica a mensagem genérica
+  }
 }

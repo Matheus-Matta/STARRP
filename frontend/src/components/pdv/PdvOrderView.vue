@@ -14,8 +14,10 @@ import { resourceApi } from "@/api/resource";
 import RecordView from "@/components/resource/RecordView.vue";
 import { useNotify } from "@/composables/useNotify";
 import { useSession } from "@/stores/session";
+import { emitForSale, fiscalSettings } from "@/fiscal/pdvFiscal";
 import { FULFILLMENT_FLOW, fulfillmentStatus, overallStatus, sales } from "@/resources/sales";
 import { dateTime } from "@/utils/format";
+import { openPrint } from "@/utils/print";
 
 const props = defineProps<{ id: string; busy: boolean; seller: boolean }>();
 const emit = defineEmits<{ back: []; resume: [id: string]; print: [id: string] }>();
@@ -56,6 +58,30 @@ async function move(to: string, note = "") {
     moving.value = false;
   }
 }
+
+/* Nota fiscal pelo comunicador em nuvem, via servidor (o mesmo núcleo do PDV desktop). */
+type InvoiceRow = { id: string; document_model: string; status: string; label: string };
+const invoices = computed(() => ((sale.value?.invoices as InvoiceRow[] | undefined) ?? []));
+const valid = computed(() => invoices.value.find((i) => i.status === "authorized" || i.status === "contingency") ?? null);
+const canEmit = computed(() => status.value === "completed" && fiscalSettings.enabled && !valid.value && !props.seller);
+const emitting = ref(false);
+async function emitInvoice(model: "65" | "55") {
+  if (!sale.value) return;
+  emitting.value = true;
+  try {
+    const label = model === "65" ? "NFC-e" : "NF-e";
+    const result = await emitForSale(sale.value as Record<string, unknown> & { id: string }, model);
+    if (!result.ok) return notify.warn(`${label} não emitida`, result.error ?? result.invoice?.message);
+    notify.success(`${label} ${result.invoice!.number} ${result.invoice!.status === "contingency" ? "em contingência" : "autorizada"}`);
+    await query.refetch();
+    if (result.invoice?.server_invoice_id) printDanfe(result.invoice.server_invoice_id, model);
+  } finally {
+    emitting.value = false;
+  }
+}
+function printDanfe(invoiceId: string, model: string) {
+  openPrint("danfe", invoiceId, { venda: props.id, formato: model === "65" ? "80mm" : "a4", auto: "1" });
+}
 </script>
 
 <template>
@@ -74,6 +100,11 @@ async function move(to: string, note = "") {
                 :loading="busy" @click="emit('resume', id)" />
         <Button v-if="status === 'completed'" label="Imprimir" icon="pi pi-print" severity="secondary" outlined
                 @click="emit('print', id)" />
+        <Button v-if="valid" :label="`DANFE ${valid.label}`" icon="pi pi-file" severity="secondary" outlined
+                @click="printDanfe(valid.id, valid.document_model)" />
+        <Button v-if="canEmit" label="Emitir NFC-e" icon="pi pi-receipt" :loading="emitting" @click="emitInvoice('65')" />
+        <Button v-if="canEmit" label="Emitir NF-e" icon="pi pi-file-export" severity="secondary" outlined :loading="emitting"
+                @click="emitInvoice('55')" />
       </div>
     </header>
     <div v-if="delivers" class="flow" role="group" aria-label="Entrega">

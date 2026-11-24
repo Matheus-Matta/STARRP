@@ -8,6 +8,7 @@
  */
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import Button from "primevue/button";
+import DatePicker from "primevue/datepicker";
 import Dialog from "primevue/dialog";
 import InputNumber from "primevue/inputnumber";
 import InputText from "primevue/inputtext";
@@ -80,6 +81,7 @@ const dreLines = computed<DreLine[]>(() => {
     { label: "Frete cobrado", value: d.freight, sign: "+" },
     { label: "Descontos", value: d.discounts, sign: "−" },
     { label: "Devoluções", value: d.returns, sign: "−" },
+    ...(d.other_revenue ?? []).map((e) => ({ label: `Serviços: ${e.category}`, value: e.amount, sign: "+", indent: true })),
     { label: "Receita líquida", value: d.net_revenue, total: true },
     { label: "Custo das mercadorias (CMV)", value: d.cmv, sign: "−" },
     { label: "Lucro bruto", value: d.gross_profit, total: true, pct: d.gross_margin_percent },
@@ -106,14 +108,15 @@ function openDue(kind: string, bucket: string) {
 
 // Transferência entre contas
 const transferring = ref(false);
-const transfer = ref({ source: null as string | null, target: null as string | null, amount: 0, description: "" });
+const transfer = ref({ source: null as string | null, target: null as string | null, amount: 0, description: "", date: new Date() });
 const saving = ref(false);
 async function doTransfer() {
   if (!transfer.value.source || !transfer.value.target || transfer.value.amount <= 0) return notify.warn("Preencha origem, destino e valor.");
   saving.value = true;
   try {
     await financeApi.transfer({ source: transfer.value.source, target: transfer.value.target,
-                                amount: transfer.value.amount.toFixed(2), description: transfer.value.description });
+                                amount: transfer.value.amount.toFixed(2), description: transfer.value.description,
+                                date: transfer.value.date.toLocaleDateString("sv-SE") });
     notify.success("Transferência feita");
     transferring.value = false;
     await queryClient.invalidateQueries({ queryKey: ["fin-balances"] });
@@ -203,7 +206,8 @@ const accountRelation = { endpoint: "/finance/accounts/", params: { is_active: "
         <div class="field full"><label>Para</label><RelationSelect v-model="transfer.target" :relation="accountRelation" /></div>
         <div class="field span-3"><label>Valor</label>
           <InputNumber v-model="transfer.amount" mode="currency" currency="BRL" locale="pt-BR" fluid /></div>
-        <div class="field span-3"><label>Descrição</label><InputText v-model="transfer.description" placeholder="Depósito do cofre" fluid /></div>
+        <div class="field span-3"><label>Descrição</label><InputText v-model="transfer.description" placeholder="Depósito do cofre / reembolso do sócio" fluid /></div>
+        <div class="field span-3"><label>Data</label><DatePicker v-model="transfer.date" date-format="dd/mm/yy" show-icon fluid /></div>
       </div>
       <template #footer>
         <Button label="Cancelar" severity="secondary" text @click="transferring = false" />

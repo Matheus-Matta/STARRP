@@ -31,7 +31,7 @@ export const seoChecks = defineResource({
   singular: "análise de SEO",
   feminine: true,
   endpoint: "/seo-checks/",
-  permission: "catalog",
+  permission: "seo",
   module: "seo",
   icon: "pi pi-search-plus",
   group: "Vendas",
@@ -108,14 +108,14 @@ export const seoChecks = defineResource({
     ],
   },
   formActions: [
-    { label: "Recusar sugestões", icon: "pi pi-times", severity: "danger", permission: "catalog.manage", visible: pending,
+    { label: "Recusar sugestões", icon: "pi pi-times", severity: "danger", permission: "seo.full", visible: pending,
       success: "Sugestões recusadas", run: ({ id }) => seoApi.reject(id) },
-    { label: "Analisar de novo", icon: "pi pi-refresh", severity: "secondary", permission: "catalog.manage",
+    { label: "Analisar de novo", icon: "pi pi-refresh", severity: "secondary", permission: "seo.full",
       visible: (v) => !reading(v), success: "Análise iniciada. Aguarde", run: ({ id }) => seoApi.refresh(id) },
   ],
   listActions: [
-    { label: "Regras", icon: "pi pi-filter", severity: "secondary", permission: "catalog.manage", dialog: SeoRulesDialog },
-    { label: "Analisar agora", icon: "pi pi-refresh", severity: "secondary", permission: "catalog.manage",
+    { label: "Regras", icon: "pi pi-filter", severity: "secondary", permission: "seo.full", dialog: SeoRulesDialog },
+    { label: "Analisar agora", icon: "pi pi-refresh", severity: "secondary", permission: "seo.full",
       success: "Análise iniciada, de 10 em 10. A lista se atualiza sozinha", run: () => seoApi.run() },
   ],
 });

@@ -18,6 +18,7 @@ const ReviewLinkDialog = defineAsyncComponent(() => import("@/components/reviews
 const OrderAddressesDialog = defineAsyncComponent(() => import("@/components/sales/OrderAddressesDialog.vue"));
 const OrderDeliveryDialog = defineAsyncComponent(() => import("@/components/sales/OrderDeliveryDialog.vue"));
 const OrderPaymentDialog = defineAsyncComponent(() => import("@/components/sales/OrderPaymentDialog.vue"));
+const OrderReturnDialog = defineAsyncComponent(() => import("@/components/sales/OrderReturnDialog.vue"));
 const CancelOrderDialog = defineAsyncComponent(() => import("@/components/sales/CancelOrderDialog.vue"));
 type OrderAddr = { text?: string; recipient?: string; reference?: string } | null;
 /** Endereços do pedido (entrega e cobrança), herdados do cliente e corrigíveis no pedido. */
@@ -316,6 +317,9 @@ export const sales = defineResource({
     { label: "Trocar pagamento", icon: "pi pi-credit-card", permission: "sales.edit_payment",
       visible: (v) => v.status === "completed" && rowsOf(v, "payments").some((p) => p.status === "approved"),
       dialog: OrderPaymentDialog },
+    { label: "Devolver itens", icon: "pi pi-replay", permission: "sales.return",
+      visible: (v) => v.status === "completed" && String(v.fulfillment_status) !== "returned",
+      dialog: OrderReturnDialog },
     // A nota do pedido: ver na tela (DANFE) e imprimir. Quem vê o pedido imprime a nota dele.
     { label: "Ver nota fiscal", icon: "pi pi-file", visible: (v) => Boolean(mainInvoice(v)), run: printInvoice(false) },
     { label: "Imprimir nota", icon: "pi pi-print", visible: (v) => Boolean(mainInvoice(v)), run: printInvoice(true) },

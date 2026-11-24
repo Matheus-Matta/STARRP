@@ -7,4 +7,5 @@ export const authApi = {
   me: (storeId?: string | null) =>
     http.get<Me>("/me/", { headers: storeId ? { "X-Store-ID": storeId } : {} }).then((r) => r.data),
   requestReset: (email: string) => http.post("/auth/password-reset/", { email }),
+  confirmReset: (token: string, password: string) => http.post("/auth/password-reset/confirm/", { token, password }),
 };

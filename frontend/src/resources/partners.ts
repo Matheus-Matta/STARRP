@@ -1,7 +1,11 @@
+import { defineAsyncComponent } from "vue";
+
 import { choices, defineResource, type FieldDef, type SectionDef, UFS, yesNo } from "./types";
 import { installmentColumns } from "./finance";
 import { saleColumns, saleItemColumns, saleLink } from "./sales";
 import { documentColumns, stockLinks } from "./stock";
+
+const CustomerCreditDialog = defineAsyncComponent(() => import("@/components/partners/CustomerCreditDialog.vue"));
 
 export const personType = choices({ F: "Pessoa física", J: "Pessoa jurídica" });
 const isCompany = (v: Record<string, unknown>) => v.person_type === "J";
@@ -50,7 +54,7 @@ export const customers = defineResource({
       list: { endpoint: "/sales/items/", params: (id) => ({ sale__customer: id, sale__status: "completed" }),
               columns: saleItemColumns, ordering: "-completed_at", rowLink: saleLink } },
     { name: "vale-troca", label: "Vale-troca", icon: "pi pi-wallet",
-      description: "Créditos gerados nas devoluções e o que já foi usado (valor negativo).",
+      description: "Créditos de devoluções ou concessões manuais e o que já foi usado (valor negativo).",
       list: { endpoint: "/customer-credits/", params: (id) => ({ customer: id }), ordering: "-created_at", searchable: false,
               columns: [{ key: "created_at", label: "Quando", type: "datetime" },
                         { key: "kind", label: "Tipo", type: "tag", map: { return: "Devolução", usage: "Uso em venda", adjustment: "Ajuste", expiration: "Expirou" } },
@@ -80,6 +84,10 @@ export const customers = defineResource({
     { name: "person_type", label: "Tipo", type: "select", options: personType.options },
     { name: "groups", label: "Grupo", type: "relation", relation: { endpoint: "/customers/groups/" } },
     { name: "is_active", label: "Ativo", type: "boolean", options: yesNo },
+  ],
+  formActions: [
+    { label: "Conceder crédito", icon: "pi pi-wallet", severity: "success", permission: "partners.credit",
+      dialog: CustomerCreditDialog },
   ],
   sections,
   fields: [

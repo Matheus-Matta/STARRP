@@ -26,7 +26,7 @@ const difference = computed(() => Number(r.value?.drawer.difference ?? 0));
     <div class="kpis">
       <div><small>Vendas</small><strong>{{ money(r.sales.total) }}</strong><span>{{ r.sales.count }} vendas</span></div>
       <div><small>Ticket médio</small><strong>{{ money(r.sales.average_ticket) }}</strong></div>
-      <div><small>Margem bruta</small><strong>{{ money(r.sales.gross_margin) }}</strong><span>custo {{ money(r.sales.cost) }}</span></div>
+      <div v-if="r.sales.gross_margin != null"><small>Margem bruta</small><strong>{{ money(r.sales.gross_margin) }}</strong><span>custo {{ money(r.sales.cost) }}</span></div>
       <div><small>Descontos</small><strong>{{ money(r.sales.discounts) }}</strong>
         <span>{{ r.sales.cancelled_count }} canceladas ({{ money(r.sales.cancelled_total) }})</span></div>
     </div>

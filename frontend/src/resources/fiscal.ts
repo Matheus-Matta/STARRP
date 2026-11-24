@@ -56,7 +56,7 @@ const invoiceTones: Record<string, Tone> = {
   authorized: "success", rejected: "danger", error: "danger", cancelled: "neutral", processing: "info", draft: "warning",
 };
 
-const FISCAL = { permission: "fiscal", module: "fiscal", group: "Fiscal" } as const;
+const FISCAL = { permission: "fiscal", module: "base", group: "Fiscal" } as const; // fiscal é do Base
 const configRelation = { endpoint: "/fiscal/configs/" };
 
 export const inboundColumns: ColumnDef[] = [
@@ -140,6 +140,12 @@ export const fiscalConfigs = defineResource({
       default: [], section: "Filiais" },
     { name: "environment", label: "Ambiente", type: "segmented", options: environment.options, default: "2", section: "Emissão" },
     { name: "provider", label: "Provedor", type: "select", options: provider.options, default: "manual", section: "Emissão" },
+    { name: "local_fiscal_enabled", label: "Emitir nota no PDV", type: "boolean", default: false, section: "Emissão",
+      visible: (v) => v.provider === "acbrlib",
+      hint: "PDV web pelo comunicador em nuvem; PDV desktop pelo Comunicador Fiscal do caixa" },
+    { name: "local_fiscal_contingency", label: "Contingência offline", type: "boolean", default: false, section: "Emissão",
+      visible: (v) => v.provider === "acbrlib" && Boolean(v.local_fiscal_enabled),
+      hint: "Sem SEFAZ, o PDV desktop emite em contingência e transmite depois" },
     { name: "default_profile", label: "Perfil fiscal padrão", type: "relation", relation: { endpoint: "/fiscal/profiles/" },
       section: "Emissão" },
     { name: "csc_id", label: "ID do CSC", type: "text", format: "digits6", section: "Emissão" },

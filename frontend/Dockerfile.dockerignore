@@ -1,0 +1,11 @@
+# Contexto do build do frontend (docker build -f frontend/Dockerfile .): só frontend/ e shared/ entram.
+*
+!frontend
+!shared
+**/node_modules
+**/dist
+**/coverage
+**/*.log
+**/*.tsbuildinfo
+**/.env
+**/.env.*

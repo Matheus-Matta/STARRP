@@ -26,6 +26,8 @@ const DRAWER: [string, string][] = [
   ["refund", "Devoluções em dinheiro"], ["expected", "Esperado na gaveta"], ["counted", "Contado"], ["difference", "Diferença"],
 ];
 const n = (v: unknown) => Number(v ?? 0);
+/** Custo e margem só vêm para quem tem `catalog.view_costs` (o operador fecha o turno sem eles). */
+const costs = computed(() => s.value?.sales.cost != null);
 const printPage = () => openPrint("turno", props.id, { formato: "a4" });
 
 function csv() {
@@ -39,8 +41,8 @@ function csv() {
     ["Movimentos da gaveta"], ["Quando", "Tipo", "Valor", "Situação", "Motivo", "Operador"],
     ...r.movements.map((m) => [dateTime(m.created_at), m.kind_label, m.amount, m.status_label, m.reason, m.operator]),
     [],
-    ["Itens vendidos"], ["Produto", "SKU", "Qtd.", "Total", "Custo", "Margem"],
-    ...r.items.map((i) => [i.description, i.sku, i.quantity, i.total, i.cost, i.margin]),
+    ["Itens vendidos"], ["Produto", "SKU", "Qtd.", "Total", ...(costs.value ? ["Custo", "Margem"] : [])],
+    ...r.items.map((i) => [i.description, i.sku, i.quantity, i.total, ...(costs.value ? [i.cost, i.margin] : [])]),
   ];
   const text = "﻿" + lines.map((l) => l.map((c) => `"${String(c ?? "").replace(/"/g, '""').replace(/^(-?\d+)\.(\d+)$/, "$1,$2")}"`).join(";")).join("\n");
   const url = URL.createObjectURL(new Blob([text], { type: "text/csv;charset=utf-8" }));
@@ -68,8 +70,8 @@ function csv() {
 
     <div class="kpis">
       <div><small>Vendido</small><strong>{{ money(s.sales.total) }}</strong></div>
-      <div><small>Custo</small><strong>{{ money(s.sales.cost) }}</strong></div>
-      <div><small>Margem bruta</small><strong class="pos">{{ money(s.sales.gross_margin) }}</strong></div>
+      <div v-if="costs"><small>Custo</small><strong>{{ money(s.sales.cost) }}</strong></div>
+      <div v-if="costs"><small>Margem bruta</small><strong class="pos">{{ money(s.sales.gross_margin) }}</strong></div>
       <div><small>Descontos</small><strong>{{ money(s.sales.discounts) }}</strong></div>
       <div><small>Cancelamentos</small><strong :class="{ neg: s.sales.cancelled_count }">{{ s.sales.cancelled_count }} · {{ money(s.sales.cancelled_total) }}</strong></div>
     </div>
@@ -123,13 +125,13 @@ function csv() {
 
     <SectionCard title="Itens vendidos" description="Somados por produto, do que mais rendeu" icon="pi pi-box">
       <table class="hide-sm-3 hide-sm-5 list">
-        <thead><tr><th>Produto</th><th class="right">Qtd.</th><th class="right">Vendas</th><th class="right">Total</th><th class="right">Custo</th><th class="right">Margem</th></tr></thead>
+        <thead><tr><th>Produto</th><th class="right">Qtd.</th><th class="right">Vendas</th><th class="right">Total</th><template v-if="costs"><th class="right">Custo</th><th class="right">Margem</th></template></tr></thead>
         <tbody>
           <tr v-for="i in s.items" :key="i.variant">
             <td><strong>{{ i.description }}</strong> <small class="muted">{{ i.sku }}</small></td>
             <td class="right">{{ quantity(i.quantity) }} {{ i.unit.toLowerCase() }}</td><td class="right">{{ i.sales }}</td>
-            <td class="right"><strong>{{ money(i.total) }}</strong></td><td class="right">{{ money(i.cost) }}</td>
-            <td class="right pos">{{ money(i.margin) }}</td>
+            <td class="right"><strong>{{ money(i.total) }}</strong></td>
+            <template v-if="costs"><td class="right">{{ money(i.cost) }}</td><td class="right pos">{{ money(i.margin) }}</td></template>
           </tr>
         </tbody>
       </table>

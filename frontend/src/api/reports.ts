@@ -7,14 +7,15 @@ export type Summary = {
   discounts: string;
   returns_total: string;
   cancelled_count: number;
-  gross_margin: string;
+  /** Só com `catalog.view_costs`. */
+  gross_margin?: string;
 };
 
 export type Dashboard = {
   summary: Summary;
   by_day: { day: string; count: number; revenue: string }[];
   by_payment_method: { method__name: string; total: string; count: number }[];
-  top_products: { description: string; sold_quantity: string; revenue: string; margin: string }[];
+  top_products: { description: string; sold_quantity: string; revenue: string; margin?: string }[];
   by_seller: { seller__first_name: string; seller__username: string; revenue: string; commission: string }[];
   open_sales: number;
 };
@@ -25,8 +26,10 @@ export type BookBlock = {
   title: string; description?: string; span?: "full" | "half"; format?: string; stacked?: boolean;
   [key: string]: unknown;
 };
+/** `link`: a tela de onde o número vem (já filtrada): o card vira um atalho. */
 export type BookKpi = { label: string; value: string | number; format: string; delta: string | null;
-                        good: "up" | "down"; hint: string };
+                        good: "up" | "down"; hint: string; icon?: string; count?: string | null; tone?: "good" | "bad" | "neutral";
+                        link?: { path: string; query?: Record<string, string> } };
 export type BookFilter = { name: string; label: string; options: { label: string; value: string }[] };
 export type BookReport = { title: string; subtitle: string; period: { from: string; to: string }; grain: "day" | "week" | "month";
                            filters: BookFilter[]; kpis: BookKpi[]; blocks: BookBlock[] };

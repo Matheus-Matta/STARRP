@@ -18,7 +18,6 @@
 import Button from "primevue/button";
 import Checkbox from "primevue/checkbox";
 import Column from "primevue/column";
-import DatePicker from "primevue/datepicker";
 import DataTable, { type DataTableSortEvent } from "primevue/datatable";
 import IconField from "primevue/iconfield";
 import InputIcon from "primevue/inputicon";
@@ -52,6 +51,7 @@ import { useViewport } from "@/composables/useViewport";
 import { findResource } from "@/resources";
 import { type ColumnDef, newLabel, type ResourceDef } from "@/resources/types";
 import { useSession } from "@/stores/session";
+import DateRangePicker from "@/components/common/DateRangePicker.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -114,13 +114,20 @@ const polling = computed(() => rows.value.some((row) => resource.value.poll?.whi
 let pollTimer: ReturnType<typeof setInterval> | undefined;
 watch(polling, (on) => {
   clearInterval(pollTimer);
-  if (on) pollTimer = setInterval(() => void refetch(), 3000);
+  if (on) pollTimer = setInterval(() => document.hidden || void refetch(), 3000);
 }, { immediate: true });
 onBeforeUnmount(() => clearInterval(pollTimer));
-const canWrite = computed(() => !resource.value.readOnly && session.can(`${resource.value.permission}.manage`));
+const writeAudience = computed(() => !resource.value.accountAdminOnlyWrite || Boolean(
+  session.me?.is_account_admin || session.me?.is_superuser));
+const canUpdate = computed(() => !resource.value.readOnly && writeAudience.value
+  && session.can(`${resource.value.permission}.update`));
+const canDelete = computed(() => !resource.value.readOnly && writeAudience.value
+  && session.can(`${resource.value.permission}.delete`));
 /** Cadastro fixo do sistema: só o superusuário cria ou exclui (a loja só ajusta). */
 const locked = computed(() => Boolean(resource.value.systemData) && !session.me?.is_superuser);
-const canCreate = computed(() => canWrite.value && resource.value.creatable !== false && !locked.value);
+const canCreate = computed(() => !resource.value.readOnly && writeAudience.value
+  && session.can(`${resource.value.permission}.create`)
+  && resource.value.creatable !== false && !locked.value);
 
 /** Nome amigável dos filtros que chegam por link (o selo mostra "Filtrado: produto"). */
 const FILTER_NAMES: Record<string, string> = {
@@ -234,7 +241,7 @@ const rowMenuItems = computed(() => {
   if (!row) return [];
   const base = `/cadastros/${resource.value.name}/${row.id}`;
   const items: Record<string, unknown>[] = [
-    { label: canWrite.value && resource.value.editable !== false ? "Abrir / editar" : "Abrir", icon: "pi pi-external-link",
+    { label: canUpdate.value && resource.value.editable !== false ? "Abrir / editar" : "Abrir", icon: "pi pi-external-link",
       command: () => openRow(row) },
   ];
   const views = (resource.value.views ?? []).filter((v) => session.can(v.permission) && session.hasModule(v.module));
@@ -248,7 +255,7 @@ const rowMenuItems = computed(() => {
     extra.forEach((a) => items.push({ label: a.label, icon: a.icon, class: a.danger ? "menu-danger" : undefined,
                                       command: () => runRowAction(a, row) }));
   }
-  if (canWrite.value && resource.value.deletable !== false && !locked.value) {
+  if (canDelete.value && resource.value.deletable !== false && !locked.value) {
     items.push({ separator: true }, { label: "Excluir", icon: "pi pi-trash", class: "menu-danger", command: () => removeRow(row) });
   }
   return items;
@@ -424,7 +431,7 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
       <i class="pi pi-spin pi-spinner" />
       <span class="list-progress__text">{{ resource.progress?.label(progress.done, progress.total) }}</span>
       <RouterLink v-if="progress.task" :to="`/cadastros/tarefas/${progress.task}`">Ver tarefa</RouterLink>
-      <Button v-if="progress.task && session.can('catalog.manage')" label="Parar rodada" icon="pi pi-stop-circle" size="small" severity="danger"
+      <Button v-if="progress.task && session.can(`${resource.permission}.manage`)" label="Parar rodada" icon="pi pi-stop-circle" size="small" severity="danger"
               outlined :loading="stopping" @click="stopRound" />
     </p>
 
@@ -446,9 +453,8 @@ onBeforeUnmount(() => window.removeEventListener("keydown", onKey));
                 icon="pi pi-sliders-h" size="small" :severity="activeFilters ? undefined : 'secondary'" outlined
                 class="filters-toggle" :aria-expanded="filtersOpen" @click="filtersOpen = !filtersOpen" />
         <template v-for="filter in !isPhone || filtersOpen ? resource.filters ?? [] : []" :key="filter.name">
-          <DatePicker v-if="filter.type === 'daterange'" :model-value="rangeOf(filter.name)" selection-mode="range"
-                      :manual-input="false" date-format="dd/mm/yy" :placeholder="filter.label" show-icon show-button-bar
-                      size="small" class="filter filter--date" @update:model-value="setRange(filter.name, $event)" />
+          <DateRangePicker v-if="filter.type === 'daterange'" :model-value="rangeOf(filter.name)" :placeholder="filter.label"
+                           size="small" class="filter filter--date" @update:model-value="setRange(filter.name, $event)" />
           <RelationSelect v-else-if="filter.type === 'relation'" :model-value="state.filters[filter.name]"
                           :relation="filter.relation!" :placeholder="filter.label" class="filter" size="small"
                           @update:model-value="setFilter(filter.name, $event)" />
@@ -641,9 +647,13 @@ h1 { font: 700 19px/1.2 var(--font-sans); letter-spacing: -0.01em; }
 .tree-child :deep(.cell) { color: var(--text-body); font-weight: 500; }
 .tree-loading { font-size: 12px; margin-right: 6px; color: var(--text-muted); }
 .body :deep(.p-datatable-thead > tr > th) { position: sticky; top: 0; z-index: 1; }
-.pager { position: relative; display: flex; justify-content: center; align-items: center; border-top: 1px solid var(--border-subtle); }
+.pager {
+  position: relative; display: flex; justify-content: center; align-items: center;
+  min-height: 48px; padding-inline: 84px; border-top: 1px solid var(--border-subtle);
+}
 .pager :deep(.p-paginator) { background: transparent; padding: 6px 8px; }
-.pager__info { position: absolute; right: 14px; font-size: 12px; color: var(--text-muted); }
+/* Total à direita, fora da área ocupada pelo lançador flutuante da Cosmos. */
+.pager__info { position: absolute; right: 88px; font-size: 12px; color: var(--text-muted); white-space: nowrap; }
 .toolbar { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--border-subtle); }
 .search { flex: 1 1 220px; max-width: 320px; }
 .filter { min-width: 160px; }
@@ -690,6 +700,7 @@ h1 { font: 700 19px/1.2 var(--font-sans); letter-spacing: -0.01em; }
 @media (max-width: 760px) {
   .search { max-width: none; flex-basis: 100%; }
   .filter { flex: 1 1 140px; min-width: 0; }
+  .pager { padding-inline: 4px; }
   .pager__info { display: none; }
   .page--list { height: calc(100dvh - var(--topbar-h)); }
 }

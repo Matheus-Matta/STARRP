@@ -18,6 +18,35 @@ export const fiscalApi = {
   syncDfe: (id: string) => data(http.post(`/fiscal/configs/${id}/sync-dfe/`, {}, SLOW)),
 };
 
+export type FiscalCheck = { key: string; label: string; ok: boolean; message: string; scope: "all" | "cloud" | "desktop" };
+export type StoreFiscal = {
+  ready: boolean;
+  cloud_ready?: boolean;
+  checks: FiscalCheck[];
+  config: null | {
+    id: string; name: string; cnpj: string; legal_name: string; state: string; environment: "1" | "2"; crt: string;
+    provider: string; local_fiscal_enabled: boolean; local_fiscal_contingency: boolean; csc_id: string;
+    has_csc_token: boolean; has_certificate: boolean; certificate_name: string; certificate_cnpj: string;
+    certificate_valid_until: string | null; certificate_days: number | null; default_profile: string | null; stores: string[];
+  };
+};
+export type StoreFiscalInput = Partial<{
+  environment: string; crt: string; local_fiscal_enabled: boolean; local_fiscal_contingency: boolean;
+  csc_id: string; csc_token: string; default_profile: string | null;
+}>;
+
+/** Aba "Nota fiscal" da filial: grava nos dados fiscais vinculados (cria pelo CNPJ da filial se faltar). */
+export const storeFiscalApi = {
+  get: (store: string) => data(http.get<StoreFiscal>(`/stores/${store}/fiscal/`)),
+  save: (store: string, input: StoreFiscalInput) => data(http.post<StoreFiscal>(`/stores/${store}/fiscal/`, input)),
+  certificate: (store: string, file: File, password: string) => {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("password", password);
+    return data(http.post<StoreFiscal>(`/stores/${store}/fiscal/certificate/`, form));
+  },
+};
+
 export const nfeApi = {
   /** Busca em todos os CNPJs com a busca ligada (ou só em `config`). */
   sync: (config?: string) =>

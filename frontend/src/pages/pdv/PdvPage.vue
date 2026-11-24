@@ -37,7 +37,9 @@ import PdvLock from "@/components/pdv/PdvLock.vue";
 import PdvOrder from "@/components/pdv/PdvOrder.vue";
 import PdvOrders from "@/components/pdv/PdvOrders.vue";
 import PdvFreightDialog from "@/components/pdv/PdvFreightDialog.vue";
+import PdvFiscalDialog from "@/components/pdv/PdvFiscalDialog.vue";
 import PdvPriceDialog from "@/components/pdv/PdvPriceDialog.vue";
+import { emitForSale, fiscalSettings, startFiscalSync, stopFiscalSync } from "@/fiscal/pdvFiscal";
 import PdvProductDialog from "@/components/pdv/PdvProductDialog.vue";
 import PdvRail, { type RailAction } from "@/components/pdv/PdvRail.vue";
 import PdvStatusBar from "@/components/pdv/PdvStatusBar.vue";
@@ -71,6 +73,7 @@ watch(() => pdv.sale.value?.id, () => (paymentLines.value = []));
 const cashMode = ref<CashMode>("open");
 const cashOpen = ref(false);
 const priceOpen = ref(false);
+const fiscalOpen = ref(false);
 const freightOpen = ref(false);
 const viewing = ref<PdvProductView | null>(null);
 const opening = ref<string | null>(null);
@@ -224,11 +227,21 @@ async function pay(payments: PaymentInput[]) {
     paymentLines.value = [];
     show("sale");
     const autoPrint = pdv.boot.value?.rules.auto_print_receipt !== false;
-    if (autoPrint) openPrint("venda", done.id, { auto: "1" }); // papel: o último escolhido nesta máquina
     const change = Number(done.change_amount ?? 0);
-    notify.success(`Venda ${done.number} concluída · ${money(done.total)}`,
-                   [change ? `Troco ${money(change)}.` : "", autoPrint ? "Recibo na impressora." : "Recibo em Pedidos (F2)."]
-                     .filter(Boolean).join(" "));
+    notify.success(`Venda ${done.number} concluída · ${money(done.total)}`, change ? `Troco ${money(change)}.` : undefined);
+    // Nota pelo comunicador ACBr do caixa (o mesmo do PDV desktop): o DANFE substitui o recibo.
+    if (fiscalSettings.enabled && fiscalSettings.autoEmit) {
+      const result = await emitForSale(done as unknown as Record<string, unknown> & { id: string });
+      const label = fiscalSettings.model === "65" ? "NFC-e" : "NF-e";
+      if (result.ok && result.invoice?.server_invoice_id) {
+        if (result.invoice.status === "contingency") notify.warn(`${label} ${result.invoice.number} em contingência`, "SEFAZ fora: será transmitida quando voltar.");
+        openPrint("danfe", result.invoice.server_invoice_id, { venda: done.id, formato: fiscalSettings.model === "65" ? "80mm" : "a4", auto: "1" });
+        void catalog.refresh();
+        return;
+      }
+      notify.warn(`${label} não emitida`, result.error ?? result.invoice?.message ?? "Emita pelo pedido (F2).");
+    }
+    if (autoPrint) openPrint("venda", done.id, { auto: "1" }); // papel: o último escolhido nesta máquina
     void catalog.refresh(); // saldo dos cartões
   }, "Pagamento não concluído");
 }
@@ -315,8 +328,15 @@ async function logout() {
   await router.push("/login");
 }
 
+function fiscalClosed() {
+  fiscalOpen.value = false;
+  if (fiscalSettings.enabled && !seller.value) startFiscalSync();
+  else stopFiscalSync();
+}
+
 function rail(action: RailAction) {
   if (action === "price") priceOpen.value = true;
+  else if (action === "fiscal") fiscalOpen.value = true;
   else if (action === "freight") freightOpen.value = true;
   else if (action === "backoffice") void (session.pdvFirst ? logout() : router.push("/"));
   else if (action === "cash" && seller.value) return;
@@ -378,10 +398,12 @@ onMounted(async () => {
   }
   pdv.setUser(session.me?.id ?? null);
   await guard(() => pdv.init(session.me?.id), "Não foi possível iniciar o PDV");
+  if (!seller.value && fiscalSettings.enabled) startFiscalSync(); // kit, contingência e notas pendentes
   if (pdv.needsCash.value && !pdv.locked.value) closedAlert.value = true;
 });
 onBeforeUnmount(() => {
   clearTimeout(idleTimer);
+  stopFiscalSync();
   window.removeEventListener("keydown", onKey);
   window.removeEventListener("pointerdown", touch);
   window.removeEventListener("beforeunload", onLeave);
@@ -428,6 +450,7 @@ onBeforeUnmount(() => {
 
     <PdvProductDialog :product="viewing" :busy="pdv.busy.value" @confirm="confirmView" @close="viewing = null; focusSearch()" />
     <PdvPriceDialog :visible="priceOpen" @close="priceOpen = false" />
+    <PdvFiscalDialog :visible="fiscalOpen" @close="fiscalClosed" />
     <PdvFreightDialog :visible="freightOpen" @close="freightOpen = false; focusSearch()" />
     <PdvCashDialog v-model:visible="cashOpen" :mode="cashMode" :registers="pdv.boot.value?.cash_registers ?? []"
                    :my-register="pdv.boot.value?.my_register"

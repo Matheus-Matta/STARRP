@@ -12,6 +12,7 @@ import { authApi } from "@/api/auth";
 import { ApiError } from "@/api/errors";
 import { configureHttp } from "@/api/http";
 import type { Me } from "@/api/types";
+import { COST_PERMISSION, setSeesCosts } from "@/utils/costs";
 
 const STORE_KEY = "starrp.activeStore";
 /** Valor do header que pede a visão consolidada das lojas permitidas. */
@@ -67,6 +68,7 @@ export const useSession = defineStore("session", () => {
       loaded.value = true;
     }
     if (me.value && activeStoreId.value !== ALL_STORES) setActiveStore(me.value.active_store_id);
+    setSeesCosts(!me.value || can(COST_PERMISSION));
     return me.value;
   }
 
@@ -83,15 +85,35 @@ export const useSession = defineStore("session", () => {
   function can(code: string | undefined) {
     if (!code) return true;
     const perms = me.value?.permissions ?? [];
-    return perms.includes("*") || perms.includes(code);
+    if (perms.includes("*") || perms.includes(code)) return true;
+    const impliedBy: Record<string, string[]> = {
+      "cosmos.view": ["cosmos.access", "cosmos.full"],
+      "cosmos.manage": ["cosmos.full"],
+      "pricing.view": ["pricing.access", "pricing.full"],
+      "pricing.create": ["pricing.full"],
+      "pricing.update": ["pricing.full"],
+      "pricing.delete": ["pricing.full"],
+      "pricing.manage": ["pricing.full"],
+      "seo.view": ["seo.access", "seo.full"],
+      "seo.create": ["seo.full"],
+      "seo.update": ["seo.full"],
+      "seo.delete": ["seo.full"],
+      "seo.manage": ["seo.full"],
+      "tasks.view": ["catalog.view", "pricing.access", "pricing.full", "seo.access", "seo.full"],
+      "tasks.manage": ["catalog.manage", "pricing.full", "seo.full"],
+    };
+    return (impliedBy[code] ?? []).some((permission) => perms.includes(permission));
   }
 
   function hasModule(module: string | undefined) {
     return !module || module === "base" || (me.value?.account?.modules ?? []).includes(module);
   }
 
+  /** Custo e margem (`catalog.view_costs`): o caixa e o vendedor não veem. */
+  const seesCosts = computed(() => can(COST_PERMISSION));
+
   return { me, loaded, isAuthenticated, stores, activeStore, activeStoreId, hasConcreteStore, setActiveStore, load,
-    login, logout, can, hasModule, pdvFirst };
+    login, logout, can, hasModule, pdvFirst, seesCosts };
 });
 
 /** Liga o cliente HTTP à sessão. Chamado uma vez em `main.ts`. */

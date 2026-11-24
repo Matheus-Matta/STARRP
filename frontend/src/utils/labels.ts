@@ -1,10 +1,27 @@
 import { type LabelStage, stockApi } from "@/api/operations";
 
-/** Abre o HTML de etiquetas numa aba nova (a página já chama a impressão sozinha). */
-export function openLabelsHtml(html: string) {
-  const url = URL.createObjectURL(new Blob([html], { type: "text/html" }));
-  window.open(url, "_blank");
-  setTimeout(() => URL.revokeObjectURL(url), 60_000);
+/**
+ * O HTML das etiquetas não tem script (o CSP do app não deixa rodar script na página de impressão, S-23):
+ * quem imprime é o app, chamando `print()` da janela/quadro onde o HTML foi escrito.
+ */
+function printWhenReady(target: Window) {
+  const go = () => {
+    target.focus();
+    target.print();
+  };
+  if (target.document.readyState === "complete") setTimeout(go, 150);  // dá tempo às imagens dos códigos
+  else target.addEventListener("load", go, { once: true });
+}
+
+/** Abre o HTML de etiquetas numa aba e pede a impressão. `win`: aba já aberta no clique (o navegador
+ *  bloqueia aba aberta depois de uma chamada à API). */
+export function openLabelsHtml(html: string, win?: Window | null) {
+  const target = win ?? window.open("", "_blank");
+  if (!target) return;
+  target.document.open();
+  target.document.write(html);
+  target.document.close();
+  printWhenReady(target);
 }
 
 /** Imprime o HTML num quadro escondido da própria página: sem aba nova (que o navegador bloqueia
@@ -13,7 +30,8 @@ export function printLabelsHtml(html: string) {
   const frame = document.createElement("iframe");
   frame.setAttribute("aria-hidden", "true");
   frame.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0;visibility:hidden";
-  frame.srcdoc = html; // o HTML já chama window.print() ao carregar
+  frame.addEventListener("load", () => frame.contentWindow && printWhenReady(frame.contentWindow), { once: true });
+  frame.srcdoc = html;
   document.body.appendChild(frame);
   setTimeout(() => frame.remove(), 120_000);
 }

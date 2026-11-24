@@ -6,7 +6,7 @@
  */
 import { computed } from "vue";
 
-export type RailAction = "sale" | "orders" | "customer" | "cash" | "price" | "freight" | "backoffice";
+export type RailAction = "sale" | "orders" | "customer" | "cash" | "price" | "freight" | "fiscal" | "backoffice";
 
 const props = defineProps<{ active?: RailAction; seller?: boolean; exitLabel?: string }>();
 const emit = defineEmits<{ select: [action: RailAction] }>();
@@ -18,6 +18,7 @@ const items = computed(() => [
   ...(props.seller ? [] : [{ action: "cash" as const, label: "Caixa", icon: "pi pi-wallet", key: "F4" }]),
   { action: "price" as const, label: "Preço", icon: "pi pi-tag", key: "F5" },
   { action: "freight" as const, label: "Frete", icon: "pi pi-truck", key: "⇧F5" },
+  ...(props.seller ? [] : [{ action: "fiscal" as const, label: "Nota", icon: "pi pi-receipt", key: "NF" }]),
   { action: "backoffice" as const, label: props.exitLabel ?? "Sair", icon: "pi pi-sign-out", key: "F8" },
 ]);
 </script>

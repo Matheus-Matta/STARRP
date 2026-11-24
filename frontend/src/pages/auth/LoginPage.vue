@@ -33,7 +33,9 @@ async function submit() {
   try {
     const me = await session.login(username.value, password.value);
     if (!me) throw new Error("Seu usuário não está vinculado a nenhuma conta.");
-    router.replace(String(route.query.next ?? "/"));
+    // Só caminho interno ("/cadastros/..."): nunca outro site (`//x.com`, `https://...`).
+    const next = typeof route.query.next === "string" ? route.query.next : "/";
+    router.replace(next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/");
   } catch (e) {
     const apiError = toApiError(e);
     error.value = apiError.status === 401 ? "Usuário ou senha incorretos." : apiError.message || String(e);
@@ -82,6 +84,7 @@ async function submit() {
                     :input-props="{ autocomplete: 'current-password' }" />
         </label>
         <Button type="submit" label="Entrar" icon="pi pi-arrow-right" icon-pos="right" :loading="loading" size="large" fluid />
+        <RouterLink to="/redefinir-senha" class="forgot">Esqueci minha senha</RouterLink>
       </form>
     </main>
   </div>
@@ -112,6 +115,7 @@ li small { color: rgba(230, 255, 251, 0.75); font-size: 12.5px; }
 .box { width: min(400px, 100%); display: flex; flex-direction: column; gap: 1.1rem; animation: srp-fade-up var(--dur-slow) var(--ease-out); }
 .box h2 { font: 800 28px/1.1 var(--font-sans); letter-spacing: -0.02em; }
 .box > p { margin-top: -0.6rem; }
+.forgot { align-self: center; font-size: 13px; color: var(--brand-600); }
 .field { display: flex; flex-direction: column; gap: 0.4rem; font-size: 13px; font-weight: 600; color: var(--text-strong); }
 @media (max-width: 900px) {
   .login { grid-template-columns: 1fr; }

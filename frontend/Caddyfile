@@ -1,0 +1,89 @@
+# Produção: o Caddy serve o app (dist/) e repassa a API ao backend na MESMA origem, como os
+# cookies httpOnly (SameSite=Lax) exigem. HTTPS automático (Let's Encrypt) para SITE_ADDRESS.
+#
+#   SITE_ADDRESS      domínio público (ex.: app.exemplo.com.br); "localhost" testa sem certificado público
+#   BACKEND_UPSTREAM  onde o gunicorn escuta (padrão: backend:8000, o serviço do docker compose)
+{
+	# Para receber avisos do Let's Encrypt (certificado perto de vencer): `email voce@empresa.com.br`.
+	servers {
+		# Desliga o HTTP/3 se o firewall não liberar UDP 443; com ele liberado, fica mais rápido no celular.
+		protocols h1 h2 h3
+	}
+}
+
+{$SITE_ADDRESS:localhost} {
+	encode zstd gzip
+
+	# HSTS para o domínio inteiro (o Django já manda na API; aqui cobre o app).
+	header Strict-Transport-Security "max-age=31536000"
+	header -Server
+
+	# API, WebSocket da Cosmos (/api/v1/ws/), admin, estáticos do admin (WhiteNoise) e healthcheck.
+	@backend path /api/* /admin /admin/* /static/* /health/
+	handle @backend {
+		reverse_proxy {$BACKEND_UPSTREAM:backend:8000} {
+			# O cliente pode mandar X-Forwarded-For falso: o Caddy troca pelo IP real (o limite de
+			# tentativas de login do backend conta por IP).
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	# Certificado A1 e segredos: nunca por URL (S-01); barra cópias antigas que tenham ficado no /media.
+	@secret path /media/certificates/* *.pfx *.p12 *.pem *.key *.enc
+	handle @secret {
+		respond 404
+	}
+
+	# Fotos enviadas (produto, variante, logo): o volume de MEDIA_ROOT do backend, montado aqui.
+	handle /media/* {
+		root * /srv
+		header X-Content-Type-Options nosniff
+		header Cache-Control "public, max-age=86400"
+		# Arquivo enviado por usuário nunca roda script, mesmo que alguém suba um HTML/SVG.
+		header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox"
+		file_server
+	}
+
+	# Pedaços do build (nome com hash): cache de 1 ano. Arquivo que não existe dá 404, NUNCA o
+	# index.html (senão o navegador guardaria o HTML no lugar do JS por 1 ano).
+	handle /assets/* {
+		root * /srv/app
+		@found file
+		header @found Cache-Control "public, max-age=31536000, immutable"
+		@missing not file
+		header @missing Cache-Control "no-store"
+		file_server
+	}
+
+	# O app (SPA): qualquer rota do Vue cai no index.html, que nunca fica em cache (deploy novo vale
+	# na hora). Ícones e imagens de public/ ficam 1 dia.
+	# `route`: na ordem escrita (sem ela o Caddy aplica o `header` ANTES do try_files, e a rota do Vue
+	# levaria o cache de 1 dia dos ícones).
+	handle {
+		root * /srv/app
+		route {
+			try_files {path} /index.html
+			@html path /index.html / *.html
+			header @html Cache-Control "no-cache"
+			@public not path /index.html / *.html
+			header @public Cache-Control "public, max-age=86400"
+			file_server
+		}
+		header {
+			X-Content-Type-Options nosniff
+			Referrer-Policy strict-origin-when-cross-origin
+			X-Frame-Options SAMEORIGIN
+			# Câmera (leitor de código de barras) e microfone (voz da Cosmos) só para o próprio app.
+			Permissions-Policy "camera=(self), microphone=(self), geolocation=(), payment=()"
+			# S-23: só script do próprio site (nada inline: o tema é /theme-boot.js e a impressão de etiquetas é
+			# chamada pelo app). Estilo inline fica (PrimeVue e Quill injetam <style>). Imagem de qualquer https
+			# (fotos de concorrentes, logos); CEP pelas APIs públicas.
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://viacep.com.br https://opencep.com https://cep.awesomeapi.com.br https://brasilapi.com.br; frame-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
+		}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

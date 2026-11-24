@@ -2,6 +2,7 @@ import { defineAsyncComponent } from "vue";
 
 import { choices, defineResource, UFS, yesNo } from "./types";
 
+const StoreFiscalView = defineAsyncComponent(() => import("@/components/fiscal/StoreFiscalView.vue"));
 const CashShiftHistory = defineAsyncComponent(() => import("@/components/finance/CashShiftHistory.vue"));
 
 export const paymentKind = choices({
@@ -52,7 +53,8 @@ export const stores = defineResource({
     { name: "cnpj", label: "CNPJ", type: "document", section: "Empresa" },
     { name: "state_registration", label: "Inscrição estadual", type: "text", section: "Empresa" },
     { name: "fiscal_config", label: "Dados fiscais", type: "relation", relation: { endpoint: "/fiscal/configs/" },
-      hint: "Emitente usado na emissão e na busca de notas de entrada.", section: "Empresa" },
+      hint: "Emitente usado na emissão e na busca de notas de entrada. Ambiente, CSC e certificado: aba Nota fiscal.",
+      section: "Empresa" },
     { name: "phone", label: "Telefone", type: "phone", section: "Empresa" },
     { name: "email", label: "E-mail", type: "email", section: "Empresa" },
     { name: "zip_code", label: "CEP", type: "cep", section: "Endereço" },
@@ -72,6 +74,11 @@ export const stores = defineResource({
       hint: "Aprova sangria, suprimento, abertura e fechamento com diferença, desconto e cancelamento no PDV "
         + "sem o gerente presente. Em branco mantém a atual." },
     { name: "is_active", label: "Ativa", type: "boolean", default: true, section: "Operação" },
+  ],
+  views: [
+    { name: "nota-fiscal", label: "Nota fiscal", icon: "pi pi-receipt", permission: "fiscal.view", module: "base",
+      description: "Ambiente, CSC e certificado A1 da emissão de NFC-e/NF-e, com a conferência do que falta.",
+      component: StoreFiscalView },
   ],
 });
 
@@ -108,6 +115,8 @@ export const users = defineResource({
     { name: "extra_roles", label: "Outros cargos (somam permissões)", type: "multirelation", default: [],
       relation: { endpoint: "/roles/", params: { is_active: "true" } }, section: "Acesso", full: true,
       hint: "Ex.: Coordenador de logística + Assistente financeiro. Vale o maior nível e o maior desconto." },
+    { name: "cosmos_enabled", label: "Exibir assistente Cosmos", type: "boolean", default: false, section: "Acesso",
+      hint: "Administradores sempre veem. Para os demais, habilite aqui e dê ao cargo acesso normal ou total à Conversa com IA." },
     { name: "all_stores", label: "Acessa todas as filiais", type: "boolean", section: "Filiais" },
     { name: "stores", label: "Filiais que acessa", type: "multirelation", relation: { endpoint: "/stores/" },
       section: "Filiais", visible: (v) => !v.all_stores },
@@ -133,8 +142,8 @@ export const roles = defineResource({
   icon: "pi pi-shield",
   group: "Configurações",
   systemData: true,
-  systemNote: "Cargos fixos do sistema, por área e nível. Para juntar áreas (ex.: logística + financeiro), some cargos "
-    + "no usuário. Aqui a conta só ajusta o desconto máximo e desativa um cargo.",
+  accountAdminOnlyWrite: true,
+  systemNote: "Cargos fixos do sistema. O administrador pode ajustar desconto, ativação e a matriz de permissões.",
   ordering: "-rank",
   searchable: true,
   columns: [
@@ -155,7 +164,7 @@ export const roles = defineResource({
     Cargo: { icon: "pi pi-shield", description: "Cargo fixo do sistema. Para juntar áreas (ex.: logística + financeiro), "
       + "some cargos no usuário em vez de criar um novo." },
     "Ajustes da conta": { icon: "pi pi-sliders-h", description: "O que a sua empresa decide neste cargo." },
-    Permissões: { icon: "pi pi-key", description: "Vêm do sistema e acompanham as atualizações." },
+    Permissões: { icon: "pi pi-key", description: "Marque Ver, Criar, Editar e Excluir; Gerenciar liga as três permissões de escrita juntas." },
   },
   fields: [
     { name: "name", label: "Nome", type: "text", readOnly: true, section: "Cargo", span: 3 },
@@ -165,7 +174,7 @@ export const roles = defineResource({
     { name: "max_discount_percent", label: "Desconto máximo sem autorização (%)", type: "percent", section: "Ajustes da conta",
       span: 3 },
     { name: "is_active", label: "Ativo (pode ser atribuído)", type: "boolean", default: true, section: "Ajustes da conta", span: 3 },
-    { name: "permission_names", label: "Permissões", type: "tags", full: true, readOnly: true, section: "Permissões" },
+    { name: "permissions", label: "Permissões", type: "permission-matrix", full: true, section: "Permissões" },
   ],
 });
 

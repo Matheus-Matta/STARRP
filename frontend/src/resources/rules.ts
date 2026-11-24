@@ -58,6 +58,8 @@ export const storeRules = defineResource({
     { name: "auto_print_receipt", label: "Imprime recibo ao concluir", type: "boolean", default: true, section: "Venda", span: 3 },
     { name: "require_payment_reference", label: "Exige NSU/autorização no cartão e PIX", type: "boolean", default: false,
       section: "Venda", span: 3, hint: "Desligado, o campo aparece no pagamento mas é opcional" },
+    { name: "allow_store_credit_refund", label: "Permitir reembolso em crédito na loja", type: "boolean", default: true,
+      section: "Venda", span: 3, hint: "A devolução entra na carteira do cliente e pode abater compras futuras" },
     { name: "print_cancellation_receipt", label: "Imprime comprovante de cancelamento", type: "boolean", default: false,
       section: "Venda", span: 3 },
     { name: "scale_barcode_mode", label: "Etiqueta de balança", type: "select", default: "", section: "Venda", span: 3,

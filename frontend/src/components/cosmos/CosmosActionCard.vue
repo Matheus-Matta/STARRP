@@ -53,6 +53,10 @@ const link = computed(() => (props.action.status === "executed" && props.action.
             <s>{{ row.from }}</s> <i class="pi pi-arrow-right" /> <b>{{ row.value }}</b>
           </template>
           <template v-else>{{ row.value }}</template>
+          <!-- O valor acima é o que será gravado; a nota é só a explicação da Cosmos. -->
+          <small v-if="row.note" class="card__note">{{ row.note }}</small>
+          <!-- Itens/endereços: o detalhe inteiro do que será gravado (não só "3 itens"). -->
+          <details v-if="row.detail" class="card__detail"><summary>ver tudo</summary><pre>{{ row.detail }}</pre></details>
         </dd>
       </template>
     </dl>
@@ -95,6 +99,9 @@ const link = computed(() => (props.action.status === "executed" && props.action.
                 padding: 8px 10px; border-radius: var(--radius-sm); background: var(--surface-sunken); }
 .card__fields dt { color: var(--text-muted); }
 .card__fields dd { margin: 0; color: var(--text-strong); word-break: break-word; }
+.card__note { display: block; color: var(--text-muted); font-size: 11.5px; }
+.card__detail summary { cursor: pointer; color: var(--text-brand); font-size: 11.5px; }
+.card__detail pre { margin: 4px 0 0; max-height: 220px; overflow: auto; white-space: pre-wrap; word-break: break-word; font-size: 11px; }
 .card__fields s { color: var(--text-subtle); }
 .card__fields .pi { font-size: 9px; color: var(--text-subtle); margin: 0 2px; }
 .card__error { margin: 0; font-size: 12.5px; color: var(--danger-text); display: flex; gap: 6px; }

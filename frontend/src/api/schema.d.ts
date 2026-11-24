@@ -14,9 +14,9 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description POST multipart `file`: troca o logo (ajustado para 1080×1080). DELETE: tira (volta o do Starrp). */
-        post: operations["api_v1_account_logo_create"];
+        post: operations["v1_account_logo_create"];
         /** @description POST multipart `file`: troca o logo (ajustado para 1080×1080). DELETE: tira (volta o do Starrp). */
-        delete: operations["api_v1_account_logo_destroy"];
+        delete: operations["v1_account_logo_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -29,13 +29,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_account_settings_retrieve"];
+        get: operations["v1_account_settings_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["api_v1_account_settings_partial_update"];
+        patch: operations["v1_account_settings_partial_update"];
         trace?: never;
     };
     "/api/v1/assets/": {
@@ -45,9 +45,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_assets_list"];
+        get: operations["v1_assets_list"];
         put?: never;
-        post: operations["api_v1_assets_create"];
+        post: operations["v1_assets_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -61,13 +61,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_assets_retrieve"];
-        put: operations["api_v1_assets_update"];
+        get: operations["v1_assets_retrieve"];
+        put: operations["v1_assets_update"];
         post?: never;
-        delete: operations["api_v1_assets_destroy"];
+        delete: operations["v1_assets_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_assets_partial_update"];
+        patch: operations["v1_assets_partial_update"];
         trace?: never;
     };
     "/api/v1/assets/{id}/history/": {
@@ -81,7 +81,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_assets_history_retrieve"];
+        get: operations["v1_assets_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -97,9 +97,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_assets_bulk_retrieve"];
+        get: operations["v1_assets_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_assets_bulk_create"];
+        post: operations["v1_assets_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -113,9 +113,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_assets_disposals_list"];
+        get: operations["v1_assets_disposals_list"];
         put?: never;
-        post: operations["api_v1_assets_disposals_create"];
+        post: operations["v1_assets_disposals_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -129,13 +129,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_assets_disposals_retrieve"];
-        put: operations["api_v1_assets_disposals_update"];
+        get: operations["v1_assets_disposals_retrieve"];
+        put: operations["v1_assets_disposals_update"];
         post?: never;
-        delete: operations["api_v1_assets_disposals_destroy"];
+        delete: operations["v1_assets_disposals_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_assets_disposals_partial_update"];
+        patch: operations["v1_assets_disposals_partial_update"];
         trace?: never;
     };
     "/api/v1/assets/disposals/{id}/history/": {
@@ -149,7 +149,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_assets_disposals_history_retrieve"];
+        get: operations["v1_assets_disposals_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -165,9 +165,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_assets_disposals_bulk_retrieve"];
+        get: operations["v1_assets_disposals_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_assets_disposals_bulk_create"];
+        post: operations["v1_assets_disposals_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -181,9 +181,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_assets_movements_list"];
+        get: operations["v1_assets_movements_list"];
         put?: never;
-        post: operations["api_v1_assets_movements_create"];
+        post: operations["v1_assets_movements_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -197,13 +197,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_assets_movements_retrieve"];
-        put: operations["api_v1_assets_movements_update"];
+        get: operations["v1_assets_movements_retrieve"];
+        put: operations["v1_assets_movements_update"];
         post?: never;
-        delete: operations["api_v1_assets_movements_destroy"];
+        delete: operations["v1_assets_movements_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_assets_movements_partial_update"];
+        patch: operations["v1_assets_movements_partial_update"];
         trace?: never;
     };
     "/api/v1/assets/movements/{id}/history/": {
@@ -217,7 +217,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_assets_movements_history_retrieve"];
+        get: operations["v1_assets_movements_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -233,9 +233,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_assets_movements_bulk_retrieve"];
+        get: operations["v1_assets_movements_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_assets_movements_bulk_create"];
+        post: operations["v1_assets_movements_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -249,7 +249,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_audit_logs_list"];
+        get: operations["v1_audit_logs_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -265,7 +265,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_audit_logs_retrieve"];
+        get: operations["v1_audit_logs_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -285,7 +285,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_audit_logs_history_retrieve"];
+        get: operations["v1_audit_logs_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -301,7 +301,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_audit_logs_bulk_retrieve"];
+        get: operations["v1_audit_logs_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -323,7 +323,7 @@ export interface paths {
          * @description Takes a set of user credentials and returns an access and refresh JSON web
          *     token pair to prove the authentication of those credentials.
          */
-        post: operations["api_v1_auth_login_create"];
+        post: operations["v1_auth_login_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -339,7 +339,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_auth_logout_create"];
+        post: operations["v1_auth_logout_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -355,7 +355,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_auth_password_reset_create"];
+        post: operations["v1_auth_password_reset_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -371,7 +371,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_auth_password_reset_confirm_create"];
+        post: operations["v1_auth_password_reset_confirm_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -387,7 +387,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_auth_refresh_create"];
+        post: operations["v1_auth_refresh_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -401,9 +401,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_background_tasks_list"];
+        get: operations["v1_background_tasks_list"];
         put?: never;
-        post: operations["api_v1_background_tasks_create"];
+        post: operations["v1_background_tasks_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -417,7 +417,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_background_tasks_retrieve"];
+        get: operations["v1_background_tasks_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -437,7 +437,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_background_tasks_history_retrieve"];
+        get: operations["v1_background_tasks_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -455,7 +455,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_background_tasks_stop_create"];
+        post: operations["v1_background_tasks_stop_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -469,9 +469,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_background_tasks_bulk_retrieve"];
+        get: operations["v1_background_tasks_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_background_tasks_bulk_create"];
+        post: operations["v1_background_tasks_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -485,9 +485,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_discrepancies_list"];
+        get: operations["v1_cash_discrepancies_list"];
         put?: never;
-        post: operations["api_v1_cash_discrepancies_create"];
+        post: operations["v1_cash_discrepancies_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -501,13 +501,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_discrepancies_retrieve"];
-        put: operations["api_v1_cash_discrepancies_update"];
+        get: operations["v1_cash_discrepancies_retrieve"];
+        put?: never;
         post?: never;
-        delete: operations["api_v1_cash_discrepancies_destroy"];
+        delete?: never;
         options?: never;
         head?: never;
-        patch: operations["api_v1_cash_discrepancies_partial_update"];
+        patch?: never;
         trace?: never;
     };
     "/api/v1/cash/discrepancies/{id}/history/": {
@@ -521,7 +521,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_cash_discrepancies_history_retrieve"];
+        get: operations["v1_cash_discrepancies_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -539,7 +539,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_cash_discrepancies_resolve_create"];
+        post: operations["v1_cash_discrepancies_resolve_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -553,9 +553,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_discrepancies_bulk_retrieve"];
+        get: operations["v1_cash_discrepancies_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_cash_discrepancies_bulk_create"];
+        post: operations["v1_cash_discrepancies_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -569,9 +569,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_movements_list"];
+        get: operations["v1_cash_movements_list"];
         put?: never;
-        post: operations["api_v1_cash_movements_create"];
+        post: operations["v1_cash_movements_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -585,7 +585,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_movements_retrieve"];
+        get: operations["v1_cash_movements_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -604,7 +604,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Sangria/suprimento pendente: gerente direto, ou `approval` (gerente/senha do caixa da filial). */
-        post: operations["api_v1_cash_movements_approve_create"];
+        post: operations["v1_cash_movements_approve_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -622,7 +622,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_cash_movements_history_retrieve"];
+        get: operations["v1_cash_movements_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -641,7 +641,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Gerente recusa, ou o operador desiste do que lançou: fica cancelado, fora da gaveta. */
-        post: operations["api_v1_cash_movements_reject_create"];
+        post: operations["v1_cash_movements_reject_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -655,9 +655,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_movements_bulk_retrieve"];
+        get: operations["v1_cash_movements_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_cash_movements_bulk_create"];
+        post: operations["v1_cash_movements_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -671,9 +671,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_registers_list"];
+        get: operations["v1_cash_registers_list"];
         put?: never;
-        post: operations["api_v1_cash_registers_create"];
+        post: operations["v1_cash_registers_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -687,13 +687,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_registers_retrieve"];
-        put: operations["api_v1_cash_registers_update"];
+        get: operations["v1_cash_registers_retrieve"];
+        put: operations["v1_cash_registers_update"];
         post?: never;
-        delete: operations["api_v1_cash_registers_destroy"];
+        delete: operations["v1_cash_registers_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_cash_registers_partial_update"];
+        patch: operations["v1_cash_registers_partial_update"];
         trace?: never;
     };
     "/api/v1/cash/registers/{id}/history/": {
@@ -707,7 +707,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_cash_registers_history_retrieve"];
+        get: operations["v1_cash_registers_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -723,9 +723,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_registers_bulk_retrieve"];
+        get: operations["v1_cash_registers_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_cash_registers_bulk_create"];
+        post: operations["v1_cash_registers_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -739,9 +739,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_sessions_list"];
+        get: operations["v1_cash_sessions_list"];
         put?: never;
-        post: operations["api_v1_cash_sessions_create"];
+        post: operations["v1_cash_sessions_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -755,7 +755,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_sessions_retrieve"];
+        get: operations["v1_cash_sessions_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -774,7 +774,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Fechamento com diferença: o gerente aprova (direto ou pelo `approval` no corpo). */
-        post: operations["api_v1_cash_sessions_approve_create"];
+        post: operations["v1_cash_sessions_approve_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -791,7 +791,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Abertura com diferença: o gerente aprova (direto ou pelo `approval` no corpo). */
-        post: operations["api_v1_cash_sessions_approve_opening_create"];
+        post: operations["v1_cash_sessions_approve_opening_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -807,7 +807,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_cash_sessions_close_create"];
+        post: operations["v1_cash_sessions_close_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -825,7 +825,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_cash_sessions_history_retrieve"];
+        get: operations["v1_cash_sessions_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -845,13 +845,13 @@ export interface paths {
          * @description GET: movimentos do turno. POST: sangria/suprimento (devolve o movimento criado, que pode
          *     vir `pending` aguardando aprovação).
          */
-        get: operations["api_v1_cash_sessions_movements_retrieve"];
+        get: operations["v1_cash_sessions_movements_retrieve"];
         put?: never;
         /**
          * @description GET: movimentos do turno. POST: sangria/suprimento (devolve o movimento criado, que pode
          *     vir `pending` aguardando aprovação).
          */
-        post: operations["api_v1_cash_sessions_movements_create"];
+        post: operations["v1_cash_sessions_movements_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -866,7 +866,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Fechamento do turno: vendas, formas de pagamento, gaveta, diferença e margem. */
-        get: operations["api_v1_cash_sessions_report_retrieve"];
+        get: operations["v1_cash_sessions_report_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -883,7 +883,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Extrato do turno: resumo + movimentos da gaveta + vendas + itens + ocorrências. */
-        get: operations["api_v1_cash_sessions_statement_retrieve"];
+        get: operations["v1_cash_sessions_statement_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -899,9 +899,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cash_sessions_bulk_retrieve"];
+        get: operations["v1_cash_sessions_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_cash_sessions_bulk_create"];
+        post: operations["v1_cash_sessions_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -916,7 +916,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Turno aberto do usuário na loja ativa (o que o PDV mostra no topo). */
-        get: operations["api_v1_cash_sessions_current_retrieve"];
+        get: operations["v1_cash_sessions_current_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -932,9 +932,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_attribute_values_list"];
+        get: operations["v1_catalog_attribute_values_list"];
         put?: never;
-        post: operations["api_v1_catalog_attribute_values_create"];
+        post: operations["v1_catalog_attribute_values_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -948,13 +948,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_attribute_values_retrieve"];
-        put: operations["api_v1_catalog_attribute_values_update"];
+        get: operations["v1_catalog_attribute_values_retrieve"];
+        put: operations["v1_catalog_attribute_values_update"];
         post?: never;
-        delete: operations["api_v1_catalog_attribute_values_destroy"];
+        delete: operations["v1_catalog_attribute_values_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_catalog_attribute_values_partial_update"];
+        patch: operations["v1_catalog_attribute_values_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/attribute-values/{id}/history/": {
@@ -968,7 +968,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_attribute_values_history_retrieve"];
+        get: operations["v1_catalog_attribute_values_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -984,9 +984,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_attribute_values_bulk_retrieve"];
+        get: operations["v1_catalog_attribute_values_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_catalog_attribute_values_bulk_create"];
+        post: operations["v1_catalog_attribute_values_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1001,10 +1001,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Eixos da grade (Cor, Tamanho) com os valores cadastrados. */
-        get: operations["api_v1_catalog_attributes_list"];
+        get: operations["v1_catalog_attributes_list"];
         put?: never;
         /** @description Eixos da grade (Cor, Tamanho) com os valores cadastrados. */
-        post: operations["api_v1_catalog_attributes_create"];
+        post: operations["v1_catalog_attributes_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1019,16 +1019,16 @@ export interface paths {
             cookie?: never;
         };
         /** @description Eixos da grade (Cor, Tamanho) com os valores cadastrados. */
-        get: operations["api_v1_catalog_attributes_retrieve"];
+        get: operations["v1_catalog_attributes_retrieve"];
         /** @description Eixos da grade (Cor, Tamanho) com os valores cadastrados. */
-        put: operations["api_v1_catalog_attributes_update"];
+        put: operations["v1_catalog_attributes_update"];
         post?: never;
         /** @description Eixos da grade (Cor, Tamanho) com os valores cadastrados. */
-        delete: operations["api_v1_catalog_attributes_destroy"];
+        delete: operations["v1_catalog_attributes_destroy"];
         options?: never;
         head?: never;
         /** @description Eixos da grade (Cor, Tamanho) com os valores cadastrados. */
-        patch: operations["api_v1_catalog_attributes_partial_update"];
+        patch: operations["v1_catalog_attributes_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/attributes/{id}/history/": {
@@ -1042,7 +1042,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_attributes_history_retrieve"];
+        get: operations["v1_catalog_attributes_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1059,10 +1059,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Eixos da grade (Cor, Tamanho) com os valores cadastrados. */
-        get: operations["api_v1_catalog_attributes_bulk_retrieve"];
+        get: operations["v1_catalog_attributes_bulk_retrieve"];
         put?: never;
         /** @description Eixos da grade (Cor, Tamanho) com os valores cadastrados. */
-        post: operations["api_v1_catalog_attributes_bulk_create"];
+        post: operations["v1_catalog_attributes_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1076,9 +1076,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_brands_list"];
+        get: operations["v1_catalog_brands_list"];
         put?: never;
-        post: operations["api_v1_catalog_brands_create"];
+        post: operations["v1_catalog_brands_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1092,13 +1092,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_brands_retrieve"];
-        put: operations["api_v1_catalog_brands_update"];
+        get: operations["v1_catalog_brands_retrieve"];
+        put: operations["v1_catalog_brands_update"];
         post?: never;
-        delete: operations["api_v1_catalog_brands_destroy"];
+        delete: operations["v1_catalog_brands_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_catalog_brands_partial_update"];
+        patch: operations["v1_catalog_brands_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/brands/{id}/history/": {
@@ -1112,7 +1112,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_brands_history_retrieve"];
+        get: operations["v1_catalog_brands_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1128,9 +1128,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_brands_bulk_retrieve"];
+        get: operations["v1_catalog_brands_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_catalog_brands_bulk_create"];
+        post: operations["v1_catalog_brands_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1144,9 +1144,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_categories_list"];
+        get: operations["v1_catalog_categories_list"];
         put?: never;
-        post: operations["api_v1_catalog_categories_create"];
+        post: operations["v1_catalog_categories_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1160,13 +1160,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_categories_retrieve"];
-        put: operations["api_v1_catalog_categories_update"];
+        get: operations["v1_catalog_categories_retrieve"];
+        put: operations["v1_catalog_categories_update"];
         post?: never;
-        delete: operations["api_v1_catalog_categories_destroy"];
+        delete: operations["v1_catalog_categories_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_catalog_categories_partial_update"];
+        patch: operations["v1_catalog_categories_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/categories/{id}/history/": {
@@ -1180,7 +1180,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_categories_history_retrieve"];
+        get: operations["v1_catalog_categories_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1196,9 +1196,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_categories_bulk_retrieve"];
+        get: operations["v1_catalog_categories_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_catalog_categories_bulk_create"];
+        post: operations["v1_catalog_categories_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1212,9 +1212,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_components_list"];
+        get: operations["v1_catalog_components_list"];
         put?: never;
-        post: operations["api_v1_catalog_components_create"];
+        post: operations["v1_catalog_components_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1228,13 +1228,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_components_retrieve"];
-        put: operations["api_v1_catalog_components_update"];
+        get: operations["v1_catalog_components_retrieve"];
+        put: operations["v1_catalog_components_update"];
         post?: never;
-        delete: operations["api_v1_catalog_components_destroy"];
+        delete: operations["v1_catalog_components_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_catalog_components_partial_update"];
+        patch: operations["v1_catalog_components_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/components/{id}/history/": {
@@ -1248,7 +1248,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_components_history_retrieve"];
+        get: operations["v1_catalog_components_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1264,9 +1264,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_components_bulk_retrieve"];
+        get: operations["v1_catalog_components_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_catalog_components_bulk_create"];
+        post: operations["v1_catalog_components_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1280,10 +1280,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_images_list"];
+        get: operations["v1_catalog_images_list"];
         put?: never;
         /** @description Envio (multipart `file`): confere, reduz se for enorme e reaproveita o mesmo arquivo. */
-        post: operations["api_v1_catalog_images_create"];
+        post: operations["v1_catalog_images_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1297,13 +1297,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_images_retrieve"];
-        put: operations["api_v1_catalog_images_update"];
+        get: operations["v1_catalog_images_retrieve"];
+        put: operations["v1_catalog_images_update"];
         post?: never;
-        delete: operations["api_v1_catalog_images_destroy"];
+        delete: operations["v1_catalog_images_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_catalog_images_partial_update"];
+        patch: operations["v1_catalog_images_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/images/{id}/history/": {
@@ -1317,7 +1317,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_images_history_retrieve"];
+        get: operations["v1_catalog_images_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1333,9 +1333,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_images_bulk_retrieve"];
+        get: operations["v1_catalog_images_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_catalog_images_bulk_create"];
+        post: operations["v1_catalog_images_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1349,9 +1349,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_product_images_list"];
+        get: operations["v1_catalog_product_images_list"];
         put?: never;
-        post: operations["api_v1_catalog_product_images_create"];
+        post: operations["v1_catalog_product_images_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1365,13 +1365,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_product_images_retrieve"];
-        put: operations["api_v1_catalog_product_images_update"];
+        get: operations["v1_catalog_product_images_retrieve"];
+        put: operations["v1_catalog_product_images_update"];
         post?: never;
-        delete: operations["api_v1_catalog_product_images_destroy"];
+        delete: operations["v1_catalog_product_images_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_catalog_product_images_partial_update"];
+        patch: operations["v1_catalog_product_images_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/product-images/{id}/history/": {
@@ -1385,7 +1385,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_product_images_history_retrieve"];
+        get: operations["v1_catalog_product_images_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1401,9 +1401,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_product_images_bulk_retrieve"];
+        get: operations["v1_catalog_product_images_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_catalog_product_images_bulk_create"];
+        post: operations["v1_catalog_product_images_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1418,10 +1418,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Produto com as variantes aninhadas. Venda e estoque usam /catalog/variants/. */
-        get: operations["api_v1_catalog_products_list"];
+        get: operations["v1_catalog_products_list"];
         put?: never;
         /** @description Produto com as variantes aninhadas. Venda e estoque usam /catalog/variants/. */
-        post: operations["api_v1_catalog_products_create"];
+        post: operations["v1_catalog_products_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1436,16 +1436,16 @@ export interface paths {
             cookie?: never;
         };
         /** @description Produto com as variantes aninhadas. Venda e estoque usam /catalog/variants/. */
-        get: operations["api_v1_catalog_products_retrieve"];
+        get: operations["v1_catalog_products_retrieve"];
         /** @description Produto com as variantes aninhadas. Venda e estoque usam /catalog/variants/. */
-        put: operations["api_v1_catalog_products_update"];
+        put: operations["v1_catalog_products_update"];
         post?: never;
         /** @description Produto com as variantes aninhadas. Venda e estoque usam /catalog/variants/. */
-        delete: operations["api_v1_catalog_products_destroy"];
+        delete: operations["v1_catalog_products_destroy"];
         options?: never;
         head?: never;
         /** @description Produto com as variantes aninhadas. Venda e estoque usam /catalog/variants/. */
-        patch: operations["api_v1_catalog_products_partial_update"];
+        patch: operations["v1_catalog_products_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/products/{id}/generate-variants/": {
@@ -1458,7 +1458,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Cria as combinações que faltam: {"attributes": {"Cor": ["Azul"], "Tamanho": ["P", "M"]}}. */
-        post: operations["api_v1_catalog_products_generate_variants_create"];
+        post: operations["v1_catalog_products_generate_variants_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1476,7 +1476,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_products_history_retrieve"];
+        get: operations["v1_catalog_products_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1493,10 +1493,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Produto com as variantes aninhadas. Venda e estoque usam /catalog/variants/. */
-        get: operations["api_v1_catalog_products_bulk_retrieve"];
+        get: operations["v1_catalog_products_bulk_retrieve"];
         put?: never;
         /** @description Produto com as variantes aninhadas. Venda e estoque usam /catalog/variants/. */
-        post: operations["api_v1_catalog_products_bulk_create"];
+        post: operations["v1_catalog_products_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1511,10 +1511,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Serviços oferecidos com os produtos. `?product=` = as regras que pegam aquele produto. */
-        get: operations["api_v1_catalog_service_rules_list"];
+        get: operations["v1_catalog_service_rules_list"];
         put?: never;
         /** @description Serviços oferecidos com os produtos. `?product=` = as regras que pegam aquele produto. */
-        post: operations["api_v1_catalog_service_rules_create"];
+        post: operations["v1_catalog_service_rules_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1529,16 +1529,16 @@ export interface paths {
             cookie?: never;
         };
         /** @description Serviços oferecidos com os produtos. `?product=` = as regras que pegam aquele produto. */
-        get: operations["api_v1_catalog_service_rules_retrieve"];
+        get: operations["v1_catalog_service_rules_retrieve"];
         /** @description Serviços oferecidos com os produtos. `?product=` = as regras que pegam aquele produto. */
-        put: operations["api_v1_catalog_service_rules_update"];
+        put: operations["v1_catalog_service_rules_update"];
         post?: never;
         /** @description Serviços oferecidos com os produtos. `?product=` = as regras que pegam aquele produto. */
-        delete: operations["api_v1_catalog_service_rules_destroy"];
+        delete: operations["v1_catalog_service_rules_destroy"];
         options?: never;
         head?: never;
         /** @description Serviços oferecidos com os produtos. `?product=` = as regras que pegam aquele produto. */
-        patch: operations["api_v1_catalog_service_rules_partial_update"];
+        patch: operations["v1_catalog_service_rules_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/service-rules/{id}/history/": {
@@ -1552,7 +1552,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_service_rules_history_retrieve"];
+        get: operations["v1_catalog_service_rules_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1569,10 +1569,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Serviços oferecidos com os produtos. `?product=` = as regras que pegam aquele produto. */
-        get: operations["api_v1_catalog_service_rules_bulk_retrieve"];
+        get: operations["v1_catalog_service_rules_bulk_retrieve"];
         put?: never;
         /** @description Serviços oferecidos com os produtos. `?product=` = as regras que pegam aquele produto. */
-        post: operations["api_v1_catalog_service_rules_bulk_create"];
+        post: operations["v1_catalog_service_rules_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1586,9 +1586,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_supplier_products_list"];
+        get: operations["v1_catalog_supplier_products_list"];
         put?: never;
-        post: operations["api_v1_catalog_supplier_products_create"];
+        post: operations["v1_catalog_supplier_products_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1602,13 +1602,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_supplier_products_retrieve"];
-        put: operations["api_v1_catalog_supplier_products_update"];
+        get: operations["v1_catalog_supplier_products_retrieve"];
+        put: operations["v1_catalog_supplier_products_update"];
         post?: never;
-        delete: operations["api_v1_catalog_supplier_products_destroy"];
+        delete: operations["v1_catalog_supplier_products_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_catalog_supplier_products_partial_update"];
+        patch: operations["v1_catalog_supplier_products_partial_update"];
         trace?: never;
     };
     "/api/v1/catalog/supplier-products/{id}/history/": {
@@ -1622,7 +1622,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_supplier_products_history_retrieve"];
+        get: operations["v1_catalog_supplier_products_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1638,9 +1638,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_supplier_products_bulk_retrieve"];
+        get: operations["v1_catalog_supplier_products_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_catalog_supplier_products_bulk_create"];
+        post: operations["v1_catalog_supplier_products_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1654,7 +1654,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_variants_list"];
+        get: operations["v1_catalog_variants_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1670,7 +1670,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_variants_retrieve"];
+        get: operations["v1_catalog_variants_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1690,7 +1690,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_variants_history_retrieve"];
+        get: operations["v1_catalog_variants_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1706,7 +1706,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_catalog_variants_bulk_retrieve"];
+        get: operations["v1_catalog_variants_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1723,7 +1723,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description PDV: lê código de barras, SKU, etiqueta de balança ou de volume e devolve o preço vigente. */
-        get: operations["api_v1_catalog_variants_lookup_retrieve"];
+        get: operations["v1_catalog_variants_lookup_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1740,7 +1740,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Caixas cadastradas (para etiquetas e conferência). */
-        get: operations["api_v1_catalog_volumes_list"];
+        get: operations["v1_catalog_volumes_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1757,7 +1757,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Caixas cadastradas (para etiquetas e conferência). */
-        get: operations["api_v1_catalog_volumes_retrieve"];
+        get: operations["v1_catalog_volumes_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1777,7 +1777,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_catalog_volumes_history_retrieve"];
+        get: operations["v1_catalog_volumes_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1794,7 +1794,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Caixas cadastradas (para etiquetas e conferência). */
-        get: operations["api_v1_catalog_volumes_bulk_retrieve"];
+        get: operations["v1_catalog_volumes_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1810,9 +1810,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_commissions_list"];
+        get: operations["v1_commissions_list"];
         put?: never;
-        post: operations["api_v1_commissions_create"];
+        post: operations["v1_commissions_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1826,13 +1826,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_commissions_retrieve"];
+        get: operations["v1_commissions_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["api_v1_commissions_partial_update"];
+        patch: operations["v1_commissions_partial_update"];
         trace?: never;
     };
     "/api/v1/commissions/{id}/history/": {
@@ -1846,7 +1846,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_commissions_history_retrieve"];
+        get: operations["v1_commissions_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1862,9 +1862,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_commissions_bulk_retrieve"];
+        get: operations["v1_commissions_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_commissions_bulk_create"];
+        post: operations["v1_commissions_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1881,7 +1881,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Paga as comissões pendentes de um vendedor até `until` (padrão: hoje). */
-        post: operations["api_v1_commissions_payout_create"];
+        post: operations["v1_commissions_payout_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1896,10 +1896,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
-        get: operations["api_v1_competitor_prices_list"];
+        get: operations["v1_competitor_prices_list"];
         put?: never;
         /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
-        post: operations["api_v1_competitor_prices_create"];
+        post: operations["v1_competitor_prices_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1914,16 +1914,16 @@ export interface paths {
             cookie?: never;
         };
         /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
-        get: operations["api_v1_competitor_prices_retrieve"];
+        get: operations["v1_competitor_prices_retrieve"];
         /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
-        put: operations["api_v1_competitor_prices_update"];
+        put: operations["v1_competitor_prices_update"];
         post?: never;
         /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
-        delete: operations["api_v1_competitor_prices_destroy"];
+        delete: operations["v1_competitor_prices_destroy"];
         options?: never;
         head?: never;
         /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
-        patch: operations["api_v1_competitor_prices_partial_update"];
+        patch: operations["v1_competitor_prices_partial_update"];
         trace?: never;
     };
     "/api/v1/competitor-prices/{id}/history/": {
@@ -1937,7 +1937,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_competitor_prices_history_retrieve"];
+        get: operations["v1_competitor_prices_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1954,10 +1954,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
-        get: operations["api_v1_competitor_prices_bulk_retrieve"];
+        get: operations["v1_competitor_prices_bulk_retrieve"];
         put?: never;
         /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
-        post: operations["api_v1_competitor_prices_bulk_create"];
+        post: operations["v1_competitor_prices_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1974,7 +1974,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Salvar ou apagar recalcula o processo do produto na hora, sem gastar consulta de fonte paga. */
-        post: operations["api_v1_competitor_prices_import_create"];
+        post: operations["v1_competitor_prices_import_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1990,7 +1990,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_cosmos_attachments_create"];
+        post: operations["v1_cosmos_attachments_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2004,7 +2004,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cosmos_conversations_list"];
+        get: operations["v1_cosmos_conversations_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2020,13 +2020,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cosmos_conversations_retrieve"];
+        get: operations["v1_cosmos_conversations_retrieve"];
         put?: never;
         post?: never;
-        delete: operations["api_v1_cosmos_conversations_destroy"];
+        delete: operations["v1_cosmos_conversations_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_cosmos_conversations_partial_update"];
+        patch: operations["v1_cosmos_conversations_partial_update"];
         trace?: never;
     };
     "/api/v1/cosmos/conversations/{id}/history/": {
@@ -2040,7 +2040,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_cosmos_conversations_history_retrieve"];
+        get: operations["v1_cosmos_conversations_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2056,7 +2056,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cosmos_conversations_messages_retrieve"];
+        get: operations["v1_cosmos_conversations_messages_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2072,7 +2072,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cosmos_conversations_bulk_retrieve"];
+        get: operations["v1_cosmos_conversations_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2088,9 +2088,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cosmos_findings_list"];
+        get: operations["v1_cosmos_findings_list"];
         put?: never;
-        post: operations["api_v1_cosmos_findings_create"];
+        post: operations["v1_cosmos_findings_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2104,7 +2104,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cosmos_findings_retrieve"];
+        get: operations["v1_cosmos_findings_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2124,7 +2124,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_cosmos_findings_history_retrieve"];
+        get: operations["v1_cosmos_findings_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2142,7 +2142,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_cosmos_findings_resolve_create"];
+        post: operations["v1_cosmos_findings_resolve_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2156,9 +2156,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cosmos_findings_bulk_retrieve"];
+        get: operations["v1_cosmos_findings_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_cosmos_findings_bulk_create"];
+        post: operations["v1_cosmos_findings_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2172,7 +2172,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cosmos_reports_export_retrieve"];
+        get: operations["v1_cosmos_reports_export_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2188,9 +2188,26 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_cosmos_status_retrieve"];
+        get: operations["v1_cosmos_status_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cosmos/voice/transcribe/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Recebe uma fala curta, transcreve e descarta o áudio; nunca cria mensagem por conta própria. */
+        post: operations["v1_cosmos_voice_transcribe_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2204,9 +2221,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customer_credits_list"];
+        /** @description Extrato imutável: créditos nascem da devolução e débitos do checkout. */
+        get: operations["v1_customer_credits_list"];
         put?: never;
-        post: operations["api_v1_customer_credits_create"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2220,7 +2238,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customer_credits_retrieve"];
+        /** @description Extrato imutável: créditos nascem da devolução e débitos do checkout. */
+        get: operations["v1_customer_credits_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2240,7 +2259,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_customer_credits_history_retrieve"];
+        get: operations["v1_customer_credits_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2256,9 +2275,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customer_credits_bulk_retrieve"];
+        /** @description Extrato imutável: créditos nascem da devolução e débitos do checkout. */
+        get: operations["v1_customer_credits_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_customer_credits_bulk_create"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2272,9 +2292,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customers_list"];
+        get: operations["v1_customers_list"];
         put?: never;
-        post: operations["api_v1_customers_create"];
+        post: operations["v1_customers_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2288,13 +2308,29 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customers_retrieve"];
-        put: operations["api_v1_customers_update"];
+        get: operations["v1_customers_retrieve"];
+        put: operations["v1_customers_update"];
         post?: never;
-        delete: operations["api_v1_customers_destroy"];
+        delete: operations["v1_customers_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_customers_partial_update"];
+        patch: operations["v1_customers_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/customers/{id}/grant-credit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_customers_grant_credit_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/customers/{id}/history/": {
@@ -2308,7 +2344,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_customers_history_retrieve"];
+        get: operations["v1_customers_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2324,9 +2360,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customers_addresses_list"];
+        get: operations["v1_customers_addresses_list"];
         put?: never;
-        post: operations["api_v1_customers_addresses_create"];
+        post: operations["v1_customers_addresses_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2340,13 +2376,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customers_addresses_retrieve"];
-        put: operations["api_v1_customers_addresses_update"];
+        get: operations["v1_customers_addresses_retrieve"];
+        put: operations["v1_customers_addresses_update"];
         post?: never;
-        delete: operations["api_v1_customers_addresses_destroy"];
+        delete: operations["v1_customers_addresses_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_customers_addresses_partial_update"];
+        patch: operations["v1_customers_addresses_partial_update"];
         trace?: never;
     };
     "/api/v1/customers/addresses/{id}/history/": {
@@ -2360,7 +2396,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_customers_addresses_history_retrieve"];
+        get: operations["v1_customers_addresses_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2376,9 +2412,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customers_addresses_bulk_retrieve"];
+        get: operations["v1_customers_addresses_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_customers_addresses_bulk_create"];
+        post: operations["v1_customers_addresses_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2392,9 +2428,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customers_bulk_retrieve"];
+        get: operations["v1_customers_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_customers_bulk_create"];
+        post: operations["v1_customers_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2408,9 +2444,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customers_groups_list"];
+        get: operations["v1_customers_groups_list"];
         put?: never;
-        post: operations["api_v1_customers_groups_create"];
+        post: operations["v1_customers_groups_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2424,13 +2460,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customers_groups_retrieve"];
-        put: operations["api_v1_customers_groups_update"];
+        get: operations["v1_customers_groups_retrieve"];
+        put: operations["v1_customers_groups_update"];
         post?: never;
-        delete: operations["api_v1_customers_groups_destroy"];
+        delete: operations["v1_customers_groups_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_customers_groups_partial_update"];
+        patch: operations["v1_customers_groups_partial_update"];
         trace?: never;
     };
     "/api/v1/customers/groups/{id}/history/": {
@@ -2444,7 +2480,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_customers_groups_history_retrieve"];
+        get: operations["v1_customers_groups_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2460,9 +2496,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_customers_groups_bulk_retrieve"];
+        get: operations["v1_customers_groups_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_customers_groups_bulk_create"];
+        post: operations["v1_customers_groups_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2476,9 +2512,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_print_jobs_list"];
+        get: operations["v1_devices_print_jobs_list"];
         put?: never;
-        post: operations["api_v1_devices_print_jobs_create"];
+        post: operations["v1_devices_print_jobs_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2492,13 +2528,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_print_jobs_retrieve"];
-        put: operations["api_v1_devices_print_jobs_update"];
+        get: operations["v1_devices_print_jobs_retrieve"];
+        put: operations["v1_devices_print_jobs_update"];
         post?: never;
-        delete: operations["api_v1_devices_print_jobs_destroy"];
+        delete: operations["v1_devices_print_jobs_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_devices_print_jobs_partial_update"];
+        patch: operations["v1_devices_print_jobs_partial_update"];
         trace?: never;
     };
     "/api/v1/devices/print-jobs/{id}/history/": {
@@ -2512,7 +2548,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_devices_print_jobs_history_retrieve"];
+        get: operations["v1_devices_print_jobs_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2528,9 +2564,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_print_jobs_bulk_retrieve"];
+        get: operations["v1_devices_print_jobs_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_devices_print_jobs_bulk_create"];
+        post: operations["v1_devices_print_jobs_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2544,9 +2580,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_printers_list"];
+        get: operations["v1_devices_printers_list"];
         put?: never;
-        post: operations["api_v1_devices_printers_create"];
+        post: operations["v1_devices_printers_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2560,13 +2596,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_printers_retrieve"];
-        put: operations["api_v1_devices_printers_update"];
+        get: operations["v1_devices_printers_retrieve"];
+        put: operations["v1_devices_printers_update"];
         post?: never;
-        delete: operations["api_v1_devices_printers_destroy"];
+        delete: operations["v1_devices_printers_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_devices_printers_partial_update"];
+        patch: operations["v1_devices_printers_partial_update"];
         trace?: never;
     };
     "/api/v1/devices/printers/{id}/history/": {
@@ -2580,7 +2616,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_devices_printers_history_retrieve"];
+        get: operations["v1_devices_printers_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2596,9 +2632,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_printers_bulk_retrieve"];
+        get: operations["v1_devices_printers_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_devices_printers_bulk_create"];
+        post: operations["v1_devices_printers_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2612,9 +2648,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_scale_readings_list"];
+        get: operations["v1_devices_scale_readings_list"];
         put?: never;
-        post: operations["api_v1_devices_scale_readings_create"];
+        post: operations["v1_devices_scale_readings_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2628,7 +2664,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_scale_readings_retrieve"];
+        get: operations["v1_devices_scale_readings_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2648,7 +2684,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_devices_scale_readings_history_retrieve"];
+        get: operations["v1_devices_scale_readings_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2664,9 +2700,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_scale_readings_bulk_retrieve"];
+        get: operations["v1_devices_scale_readings_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_devices_scale_readings_bulk_create"];
+        post: operations["v1_devices_scale_readings_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2680,9 +2716,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_scales_list"];
+        get: operations["v1_devices_scales_list"];
         put?: never;
-        post: operations["api_v1_devices_scales_create"];
+        post: operations["v1_devices_scales_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2696,13 +2732,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_scales_retrieve"];
-        put: operations["api_v1_devices_scales_update"];
+        get: operations["v1_devices_scales_retrieve"];
+        put: operations["v1_devices_scales_update"];
         post?: never;
-        delete: operations["api_v1_devices_scales_destroy"];
+        delete: operations["v1_devices_scales_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_devices_scales_partial_update"];
+        patch: operations["v1_devices_scales_partial_update"];
         trace?: never;
     };
     "/api/v1/devices/scales/{id}/history/": {
@@ -2716,7 +2752,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_devices_scales_history_retrieve"];
+        get: operations["v1_devices_scales_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2732,9 +2768,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_devices_scales_bulk_retrieve"];
+        get: operations["v1_devices_scales_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_devices_scales_bulk_create"];
+        post: operations["v1_devices_scales_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2748,9 +2784,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_accounts_list"];
+        get: operations["v1_finance_accounts_list"];
         put?: never;
-        post: operations["api_v1_finance_accounts_create"];
+        post: operations["v1_finance_accounts_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2764,13 +2800,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_accounts_retrieve"];
-        put: operations["api_v1_finance_accounts_update"];
+        get: operations["v1_finance_accounts_retrieve"];
+        put: operations["v1_finance_accounts_update"];
         post?: never;
-        delete: operations["api_v1_finance_accounts_destroy"];
+        delete: operations["v1_finance_accounts_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_finance_accounts_partial_update"];
+        patch: operations["v1_finance_accounts_partial_update"];
         trace?: never;
     };
     "/api/v1/finance/accounts/{id}/history/": {
@@ -2784,7 +2820,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_finance_accounts_history_retrieve"];
+        get: operations["v1_finance_accounts_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2800,7 +2836,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_accounts_statement_retrieve"];
+        get: operations["v1_finance_accounts_statement_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2816,9 +2852,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_accounts_bulk_retrieve"];
+        get: operations["v1_finance_accounts_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_finance_accounts_bulk_create"];
+        post: operations["v1_finance_accounts_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2834,7 +2870,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_finance_accounts_transfer_create"];
+        post: operations["v1_finance_accounts_transfer_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2848,9 +2884,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_categories_list"];
+        get: operations["v1_finance_categories_list"];
         put?: never;
-        post: operations["api_v1_finance_categories_create"];
+        post: operations["v1_finance_categories_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2864,13 +2900,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_categories_retrieve"];
-        put: operations["api_v1_finance_categories_update"];
+        get: operations["v1_finance_categories_retrieve"];
+        put: operations["v1_finance_categories_update"];
         post?: never;
-        delete: operations["api_v1_finance_categories_destroy"];
+        delete: operations["v1_finance_categories_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_finance_categories_partial_update"];
+        patch: operations["v1_finance_categories_partial_update"];
         trace?: never;
     };
     "/api/v1/finance/categories/{id}/history/": {
@@ -2884,7 +2920,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_finance_categories_history_retrieve"];
+        get: operations["v1_finance_categories_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2900,9 +2936,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_categories_bulk_retrieve"];
+        get: operations["v1_finance_categories_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_finance_categories_bulk_create"];
+        post: operations["v1_finance_categories_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2916,9 +2952,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_installments_list"];
+        get: operations["v1_finance_installments_list"];
         put?: never;
-        post: operations["api_v1_finance_installments_create"];
+        post: operations["v1_finance_installments_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2932,7 +2968,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_installments_retrieve"];
+        get: operations["v1_finance_installments_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/finance/installments/{id}/credit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_finance_installments_credit_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2952,7 +3004,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_finance_installments_history_retrieve"];
+        get: operations["v1_finance_installments_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2970,7 +3022,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_finance_installments_settle_create"];
+        post: operations["v1_finance_installments_settle_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2984,9 +3036,119 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_installments_bulk_retrieve"];
+        get: operations["v1_finance_installments_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_finance_installments_bulk_create"];
+        post: operations["v1_finance_installments_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/finance/recurring/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        get: operations["v1_finance_recurring_list"];
+        put?: never;
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        post: operations["v1_finance_recurring_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/finance/recurring/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        get: operations["v1_finance_recurring_retrieve"];
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        put: operations["v1_finance_recurring_update"];
+        post?: never;
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        delete: operations["v1_finance_recurring_destroy"];
+        options?: never;
+        head?: never;
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        patch: operations["v1_finance_recurring_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/finance/recurring/{id}/generate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        post: operations["v1_finance_recurring_generate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/finance/recurring/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["v1_finance_recurring_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/finance/recurring/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        get: operations["v1_finance_recurring_bulk_retrieve"];
+        put?: never;
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        post: operations["v1_finance_recurring_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/finance/recurring/generate-all/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora"). */
+        post: operations["v1_finance_recurring_generate_all_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3000,9 +3162,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_titles_list"];
+        get: operations["v1_finance_titles_list"];
         put?: never;
-        post: operations["api_v1_finance_titles_create"];
+        post: operations["v1_finance_titles_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3016,13 +3178,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_titles_retrieve"];
+        get: operations["v1_finance_titles_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["api_v1_finance_titles_partial_update"];
+        patch: operations["v1_finance_titles_partial_update"];
         trace?: never;
     };
     "/api/v1/finance/titles/{id}/history/": {
@@ -3036,7 +3198,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_finance_titles_history_retrieve"];
+        get: operations["v1_finance_titles_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3052,9 +3214,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_finance_titles_bulk_retrieve"];
+        get: operations["v1_finance_titles_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_finance_titles_bulk_create"];
+        post: operations["v1_finance_titles_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3069,10 +3231,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Lançamento é imutável: errado se corrige com estorno, para o extrato contar a história. */
-        get: operations["api_v1_finance_transactions_list"];
+        get: operations["v1_finance_transactions_list"];
         put?: never;
         /** @description Lançamento é imutável: errado se corrige com estorno, para o extrato contar a história. */
-        post: operations["api_v1_finance_transactions_create"];
+        post: operations["v1_finance_transactions_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3087,7 +3249,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Lançamento é imutável: errado se corrige com estorno, para o extrato contar a história. */
-        get: operations["api_v1_finance_transactions_retrieve"];
+        get: operations["v1_finance_transactions_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3107,7 +3269,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_finance_transactions_history_retrieve"];
+        get: operations["v1_finance_transactions_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3126,7 +3288,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Lançamento é imutável: errado se corrige com estorno, para o extrato contar a história. */
-        post: operations["api_v1_finance_transactions_reverse_create"];
+        post: operations["v1_finance_transactions_reverse_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3141,10 +3303,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Lançamento é imutável: errado se corrige com estorno, para o extrato contar a história. */
-        get: operations["api_v1_finance_transactions_bulk_retrieve"];
+        get: operations["v1_finance_transactions_bulk_retrieve"];
         put?: never;
         /** @description Lançamento é imutável: errado se corrige com estorno, para o extrato contar a história. */
-        post: operations["api_v1_finance_transactions_bulk_create"];
+        post: operations["v1_finance_transactions_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3158,9 +3320,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_fiscal_configs_list"];
+        get: operations["v1_fiscal_configs_list"];
         put?: never;
-        post: operations["api_v1_fiscal_configs_create"];
+        post: operations["v1_fiscal_configs_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3174,13 +3336,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_fiscal_configs_retrieve"];
-        put: operations["api_v1_fiscal_configs_update"];
+        get: operations["v1_fiscal_configs_retrieve"];
+        put: operations["v1_fiscal_configs_update"];
         post?: never;
-        delete: operations["api_v1_fiscal_configs_destroy"];
+        delete: operations["v1_fiscal_configs_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_fiscal_configs_partial_update"];
+        patch: operations["v1_fiscal_configs_partial_update"];
         trace?: never;
     };
     "/api/v1/fiscal/configs/{id}/certificate/": {
@@ -3192,7 +3354,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_fiscal_configs_certificate_create"];
+        post: operations["v1_fiscal_configs_certificate_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3210,7 +3372,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_fiscal_configs_history_retrieve"];
+        get: operations["v1_fiscal_configs_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3228,7 +3390,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_fiscal_configs_sync_dfe_create"];
+        post: operations["v1_fiscal_configs_sync_dfe_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3242,9 +3404,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_fiscal_configs_bulk_retrieve"];
+        get: operations["v1_fiscal_configs_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_fiscal_configs_bulk_create"];
+        post: operations["v1_fiscal_configs_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3260,7 +3422,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_fiscal_configs_from_stores_create"];
+        post: operations["v1_fiscal_configs_from_stores_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3274,9 +3436,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_fiscal_invoices_list"];
+        get: operations["v1_fiscal_invoices_list"];
         put?: never;
-        post: operations["api_v1_fiscal_invoices_create"];
+        post: operations["v1_fiscal_invoices_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3290,7 +3452,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_fiscal_invoices_retrieve"];
+        get: operations["v1_fiscal_invoices_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3312,7 +3474,7 @@ export interface paths {
          * @description POST {"reason", "with_sale": bool, "approval"}: cancela a nota na SEFAZ; com `with_sale`,
          *     cancela também o pedido e reembolsa os pagamentos.
          */
-        post: operations["api_v1_fiscal_invoices_cancel_create"];
+        post: operations["v1_fiscal_invoices_cancel_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3327,7 +3489,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description DANFE da nota (NF-e A4 / NFC-e 80 mm): dados completos + código de barras + QR. */
-        get: operations["api_v1_fiscal_invoices_danfe_retrieve"];
+        get: operations["v1_fiscal_invoices_danfe_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3347,7 +3509,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_fiscal_invoices_history_retrieve"];
+        get: operations["v1_fiscal_invoices_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3363,9 +3525,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_fiscal_invoices_bulk_retrieve"];
+        get: operations["v1_fiscal_invoices_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_fiscal_invoices_bulk_create"];
+        post: operations["v1_fiscal_invoices_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3380,10 +3542,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
-        get: operations["api_v1_fiscal_profiles_list"];
+        get: operations["v1_fiscal_profiles_list"];
         put?: never;
         /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
-        post: operations["api_v1_fiscal_profiles_create"];
+        post: operations["v1_fiscal_profiles_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3398,16 +3560,16 @@ export interface paths {
             cookie?: never;
         };
         /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
-        get: operations["api_v1_fiscal_profiles_retrieve"];
+        get: operations["v1_fiscal_profiles_retrieve"];
         /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
-        put: operations["api_v1_fiscal_profiles_update"];
+        put: operations["v1_fiscal_profiles_update"];
         post?: never;
         /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
-        delete: operations["api_v1_fiscal_profiles_destroy"];
+        delete: operations["v1_fiscal_profiles_destroy"];
         options?: never;
         head?: never;
         /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
-        patch: operations["api_v1_fiscal_profiles_partial_update"];
+        patch: operations["v1_fiscal_profiles_partial_update"];
         trace?: never;
     };
     "/api/v1/fiscal/profiles/{id}/history/": {
@@ -3421,7 +3583,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_fiscal_profiles_history_retrieve"];
+        get: operations["v1_fiscal_profiles_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3438,10 +3600,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
-        get: operations["api_v1_fiscal_profiles_bulk_retrieve"];
+        get: operations["v1_fiscal_profiles_bulk_retrieve"];
         put?: never;
         /** @description Perfis fiscais: a conta cria os seus; os pré-prontos do sistema não são excluídos. */
-        post: operations["api_v1_fiscal_profiles_bulk_create"];
+        post: operations["v1_fiscal_profiles_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3455,9 +3617,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_fiscal_series_list"];
+        get: operations["v1_fiscal_series_list"];
         put?: never;
-        post: operations["api_v1_fiscal_series_create"];
+        post: operations["v1_fiscal_series_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3471,13 +3633,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_fiscal_series_retrieve"];
-        put: operations["api_v1_fiscal_series_update"];
+        get: operations["v1_fiscal_series_retrieve"];
+        put: operations["v1_fiscal_series_update"];
         post?: never;
-        delete: operations["api_v1_fiscal_series_destroy"];
+        delete: operations["v1_fiscal_series_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_fiscal_series_partial_update"];
+        patch: operations["v1_fiscal_series_partial_update"];
         trace?: never;
     };
     "/api/v1/fiscal/series/{id}/history/": {
@@ -3491,7 +3653,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_fiscal_series_history_retrieve"];
+        get: operations["v1_fiscal_series_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3507,9 +3669,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_fiscal_series_bulk_retrieve"];
+        get: operations["v1_fiscal_series_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_fiscal_series_bulk_create"];
+        post: operations["v1_fiscal_series_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3523,9 +3685,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_imports_list"];
+        get: operations["v1_imports_list"];
         put?: never;
-        post: operations["api_v1_imports_create"];
+        post: operations["v1_imports_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3539,7 +3701,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_imports_retrieve"];
+        get: operations["v1_imports_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3559,7 +3721,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_imports_history_retrieve"];
+        get: operations["v1_imports_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3575,9 +3737,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_imports_bulk_retrieve"];
+        get: operations["v1_imports_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_imports_bulk_create"];
+        post: operations["v1_imports_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3591,9 +3753,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_list"];
+        get: operations["v1_inbound_nfe_list"];
         put?: never;
-        post: operations["api_v1_inbound_nfe_create"];
+        post: operations["v1_inbound_nfe_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3607,13 +3769,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_retrieve"];
+        get: operations["v1_inbound_nfe_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["api_v1_inbound_nfe_partial_update"];
+        patch: operations["v1_inbound_nfe_partial_update"];
         trace?: never;
     };
     "/api/v1/inbound-nfe/{id}/discard-entry/": {
@@ -3625,7 +3787,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_discard_entry_create"];
+        post: operations["v1_inbound_nfe_discard_entry_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3641,7 +3803,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_download_create"];
+        post: operations["v1_inbound_nfe_download_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3659,7 +3821,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_inbound_nfe_history_retrieve"];
+        get: operations["v1_inbound_nfe_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3677,7 +3839,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_ignore_create"];
+        post: operations["v1_inbound_nfe_ignore_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3693,7 +3855,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_manifest_create"];
+        post: operations["v1_inbound_nfe_manifest_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3709,7 +3871,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_map_item_create"];
+        post: operations["v1_inbound_nfe_map_item_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3725,7 +3887,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_receive_create"];
+        post: operations["v1_inbound_nfe_receive_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3741,7 +3903,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_rematch_create"];
+        post: operations["v1_inbound_nfe_rematch_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3757,7 +3919,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_restore_create"];
+        post: operations["v1_inbound_nfe_restore_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3773,7 +3935,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_science_create"];
+        post: operations["v1_inbound_nfe_science_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3789,7 +3951,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_undo_receipt_create"];
+        post: operations["v1_inbound_nfe_undo_receipt_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3803,9 +3965,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_bulk_retrieve"];
+        get: operations["v1_inbound_nfe_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_inbound_nfe_bulk_create"];
+        post: operations["v1_inbound_nfe_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3819,7 +3981,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_events_list"];
+        get: operations["v1_inbound_nfe_events_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3835,7 +3997,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_events_retrieve"];
+        get: operations["v1_inbound_nfe_events_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3855,7 +4017,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_inbound_nfe_events_history_retrieve"];
+        get: operations["v1_inbound_nfe_events_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3871,7 +4033,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_events_bulk_retrieve"];
+        get: operations["v1_inbound_nfe_events_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3889,7 +4051,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_import_create"];
+        post: operations["v1_inbound_nfe_import_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3903,7 +4065,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_issues_list"];
+        get: operations["v1_inbound_nfe_issues_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3919,13 +4081,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_issues_retrieve"];
+        get: operations["v1_inbound_nfe_issues_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["api_v1_inbound_nfe_issues_partial_update"];
+        patch: operations["v1_inbound_nfe_issues_partial_update"];
         trace?: never;
     };
     "/api/v1/inbound-nfe/issues/{id}/history/": {
@@ -3939,7 +4101,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_inbound_nfe_issues_history_retrieve"];
+        get: operations["v1_inbound_nfe_issues_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3955,7 +4117,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_issues_bulk_retrieve"];
+        get: operations["v1_inbound_nfe_issues_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3971,9 +4133,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_items_list"];
+        get: operations["v1_inbound_nfe_items_list"];
         put?: never;
-        post: operations["api_v1_inbound_nfe_items_create"];
+        post: operations["v1_inbound_nfe_items_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3987,7 +4149,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_items_retrieve"];
+        get: operations["v1_inbound_nfe_items_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4005,7 +4167,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_items_create_product_create"];
+        post: operations["v1_inbound_nfe_items_create_product_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4023,7 +4185,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_inbound_nfe_items_history_retrieve"];
+        get: operations["v1_inbound_nfe_items_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4041,7 +4203,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_items_ignore_create"];
+        post: operations["v1_inbound_nfe_items_ignore_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4057,7 +4219,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_items_unignore_create"];
+        post: operations["v1_inbound_nfe_items_unignore_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4073,7 +4235,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_inbound_nfe_items_unmap_create"];
+        post: operations["v1_inbound_nfe_items_unmap_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4087,9 +4249,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_inbound_nfe_items_bulk_retrieve"];
+        get: operations["v1_inbound_nfe_items_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_inbound_nfe_items_bulk_create"];
+        post: operations["v1_inbound_nfe_items_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4109,7 +4271,7 @@ export interface paths {
          * @description Busca agora em cada CNPJ (dados fiscais) com a busca ligada. Um CNPJ que
          *     falha (sem certificado, intervalo da SEFAZ) não impede os outros.
          */
-        post: operations["api_v1_inbound_nfe_sync_create"];
+        post: operations["v1_inbound_nfe_sync_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4123,9 +4285,23 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_integrations_list"];
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        get: operations["v1_integrations_list"];
         put?: never;
-        post: operations["api_v1_integrations_create"];
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        post: operations["v1_integrations_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4139,13 +4315,160 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_integrations_retrieve"];
-        put: operations["api_v1_integrations_update"];
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        get: operations["v1_integrations_retrieve"];
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        put: operations["v1_integrations_update"];
         post?: never;
-        delete: operations["api_v1_integrations_destroy"];
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        delete: operations["v1_integrations_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_integrations_partial_update"];
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        patch: operations["v1_integrations_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/integrations/{id}/history/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
+         *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
+         */
+        get: operations["v1_integrations_history_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/{id}/test/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        post: operations["v1_integrations_test_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/bulk/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        get: operations["v1_integrations_bulk_retrieve"];
+        put?: never;
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        post: operations["v1_integrations_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/check/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        post: operations["v1_integrations_check_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/integrations/types/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Integrações da conta (Asaas, Shopify...). Só o administrador: guardam chaves de API.
+         *
+         *     - GET  /integrations/types/          os tipos: configurações (obrigatórias, segredos) e o que fazem;
+         *     - POST /integrations/check/          testa valores ainda não salvos (etapa do assistente);
+         *     - POST /integrations/{id}/test/      testa a salva e guarda o resultado.
+         */
+        get: operations["v1_integrations_types_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/logistics/freight-tables/": {
@@ -4156,10 +4479,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Cadastro em Configurações; ler e cotar é de quem vende (PDV). */
-        get: operations["api_v1_logistics_freight_tables_list"];
+        get: operations["v1_logistics_freight_tables_list"];
         put?: never;
         /** @description Cadastro em Configurações; ler e cotar é de quem vende (PDV). */
-        post: operations["api_v1_logistics_freight_tables_create"];
+        post: operations["v1_logistics_freight_tables_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4174,16 +4497,16 @@ export interface paths {
             cookie?: never;
         };
         /** @description Cadastro em Configurações; ler e cotar é de quem vende (PDV). */
-        get: operations["api_v1_logistics_freight_tables_retrieve"];
+        get: operations["v1_logistics_freight_tables_retrieve"];
         /** @description Cadastro em Configurações; ler e cotar é de quem vende (PDV). */
-        put: operations["api_v1_logistics_freight_tables_update"];
+        put: operations["v1_logistics_freight_tables_update"];
         post?: never;
         /** @description Cadastro em Configurações; ler e cotar é de quem vende (PDV). */
-        delete: operations["api_v1_logistics_freight_tables_destroy"];
+        delete: operations["v1_logistics_freight_tables_destroy"];
         options?: never;
         head?: never;
         /** @description Cadastro em Configurações; ler e cotar é de quem vende (PDV). */
-        patch: operations["api_v1_logistics_freight_tables_partial_update"];
+        patch: operations["v1_logistics_freight_tables_partial_update"];
         trace?: never;
     };
     "/api/v1/logistics/freight-tables/{id}/history/": {
@@ -4197,7 +4520,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_logistics_freight_tables_history_retrieve"];
+        get: operations["v1_logistics_freight_tables_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4214,10 +4537,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Cadastro em Configurações; ler e cotar é de quem vende (PDV). */
-        get: operations["api_v1_logistics_freight_tables_bulk_retrieve"];
+        get: operations["v1_logistics_freight_tables_bulk_retrieve"];
         put?: never;
         /** @description Cadastro em Configurações; ler e cotar é de quem vende (PDV). */
-        post: operations["api_v1_logistics_freight_tables_bulk_create"];
+        post: operations["v1_logistics_freight_tables_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4236,7 +4559,7 @@ export interface paths {
          *     Endereço: o CEP vem da ViaCEP (para as tabelas por faixa) e a coordenada do OpenStreetMap
          *     (para as por distância, medidas até o endereço exato).
          */
-        get: operations["api_v1_logistics_freight_tables_estimate_retrieve"];
+        get: operations["v1_logistics_freight_tables_estimate_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4253,7 +4576,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description GET ?zip=01001000 → as cotações de todas as tabelas ativas da loja. */
-        get: operations["api_v1_logistics_freight_tables_quote_retrieve"];
+        get: operations["v1_logistics_freight_tables_quote_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4273,13 +4596,13 @@ export interface paths {
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        get: operations["api_v1_logistics_rules_list"];
+        get: operations["v1_logistics_rules_list"];
         put?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        post: operations["api_v1_logistics_rules_create"];
+        post: operations["v1_logistics_rules_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4297,25 +4620,25 @@ export interface paths {
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        get: operations["api_v1_logistics_rules_retrieve"];
+        get: operations["v1_logistics_rules_retrieve"];
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        put: operations["api_v1_logistics_rules_update"];
+        put: operations["v1_logistics_rules_update"];
         post?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        delete: operations["api_v1_logistics_rules_destroy"];
+        delete: operations["v1_logistics_rules_destroy"];
         options?: never;
         head?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        patch: operations["api_v1_logistics_rules_partial_update"];
+        patch: operations["v1_logistics_rules_partial_update"];
         trace?: never;
     };
     "/api/v1/logistics/rules/{id}/history/": {
@@ -4329,7 +4652,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_logistics_rules_history_retrieve"];
+        get: operations["v1_logistics_rules_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4349,13 +4672,13 @@ export interface paths {
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        get: operations["api_v1_logistics_rules_bulk_retrieve"];
+        get: operations["v1_logistics_rules_bulk_retrieve"];
         put?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        post: operations["api_v1_logistics_rules_bulk_create"];
+        post: operations["v1_logistics_rules_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4369,7 +4692,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_market_offers_list"];
+        get: operations["v1_market_offers_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4385,7 +4708,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_market_offers_retrieve"];
+        get: operations["v1_market_offers_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4405,7 +4728,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_market_offers_history_retrieve"];
+        get: operations["v1_market_offers_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4421,7 +4744,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_market_offers_bulk_retrieve"];
+        get: operations["v1_market_offers_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4438,7 +4761,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Fica sob /api/v1/me/ (e não /auth/) porque precisa da conta resolvida. */
-        get: operations["api_v1_me_retrieve"];
+        get: operations["v1_me_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4455,10 +4778,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Campos da ficha técnica / metacampos. Ler é de todos (os formulários montam os campos). */
-        get: operations["api_v1_metafield_definitions_list"];
+        get: operations["v1_metafield_definitions_list"];
         put?: never;
         /** @description Campos da ficha técnica / metacampos. Ler é de todos (os formulários montam os campos). */
-        post: operations["api_v1_metafield_definitions_create"];
+        post: operations["v1_metafield_definitions_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4473,16 +4796,16 @@ export interface paths {
             cookie?: never;
         };
         /** @description Campos da ficha técnica / metacampos. Ler é de todos (os formulários montam os campos). */
-        get: operations["api_v1_metafield_definitions_retrieve"];
+        get: operations["v1_metafield_definitions_retrieve"];
         /** @description Campos da ficha técnica / metacampos. Ler é de todos (os formulários montam os campos). */
-        put: operations["api_v1_metafield_definitions_update"];
+        put: operations["v1_metafield_definitions_update"];
         post?: never;
         /** @description Campos da ficha técnica / metacampos. Ler é de todos (os formulários montam os campos). */
-        delete: operations["api_v1_metafield_definitions_destroy"];
+        delete: operations["v1_metafield_definitions_destroy"];
         options?: never;
         head?: never;
         /** @description Campos da ficha técnica / metacampos. Ler é de todos (os formulários montam os campos). */
-        patch: operations["api_v1_metafield_definitions_partial_update"];
+        patch: operations["v1_metafield_definitions_partial_update"];
         trace?: never;
     };
     "/api/v1/metafield-definitions/{id}/history/": {
@@ -4496,7 +4819,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_metafield_definitions_history_retrieve"];
+        get: operations["v1_metafield_definitions_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4513,10 +4836,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Campos da ficha técnica / metacampos. Ler é de todos (os formulários montam os campos). */
-        get: operations["api_v1_metafield_definitions_bulk_retrieve"];
+        get: operations["v1_metafield_definitions_bulk_retrieve"];
         put?: never;
         /** @description Campos da ficha técnica / metacampos. Ler é de todos (os formulários montam os campos). */
-        post: operations["api_v1_metafield_definitions_bulk_create"];
+        post: operations["v1_metafield_definitions_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4530,9 +4853,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_notifications_list"];
+        get: operations["v1_notifications_list"];
         put?: never;
-        post: operations["api_v1_notifications_create"];
+        post: operations["v1_notifications_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4546,7 +4869,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_notifications_retrieve"];
+        get: operations["v1_notifications_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4566,7 +4889,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_notifications_history_retrieve"];
+        get: operations["v1_notifications_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4584,7 +4907,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_notifications_read_create"];
+        post: operations["v1_notifications_read_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4598,9 +4921,41 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_notifications_bulk_retrieve"];
+        get: operations["v1_notifications_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_notifications_bulk_create"];
+        post: operations["v1_notifications_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/read-all/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["v1_notifications_read_all_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/notifications/unread-count/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["v1_notifications_unread_count_retrieve"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -4619,14 +4974,14 @@ export interface paths {
          *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
          *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
          */
-        get: operations["api_v1_payment_methods_list"];
+        get: operations["v1_payment_methods_list"];
         put?: never;
         /**
          * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
          *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
          *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
          */
-        post: operations["api_v1_payment_methods_create"];
+        post: operations["v1_payment_methods_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4645,20 +5000,20 @@ export interface paths {
          *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
          *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
          */
-        get: operations["api_v1_payment_methods_retrieve"];
+        get: operations["v1_payment_methods_retrieve"];
         /**
          * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
          *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
          *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
          */
-        put: operations["api_v1_payment_methods_update"];
+        put: operations["v1_payment_methods_update"];
         post?: never;
         /**
          * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
          *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
          *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
          */
-        delete: operations["api_v1_payment_methods_destroy"];
+        delete: operations["v1_payment_methods_destroy"];
         options?: never;
         head?: never;
         /**
@@ -4666,7 +5021,7 @@ export interface paths {
          *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
          *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
          */
-        patch: operations["api_v1_payment_methods_partial_update"];
+        patch: operations["v1_payment_methods_partial_update"];
         trace?: never;
     };
     "/api/v1/payment-methods/{id}/history/": {
@@ -4680,7 +5035,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_payment_methods_history_retrieve"];
+        get: operations["v1_payment_methods_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4701,14 +5056,77 @@ export interface paths {
          *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
          *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
          */
-        get: operations["api_v1_payment_methods_bulk_retrieve"];
+        get: operations["v1_payment_methods_bulk_retrieve"];
         put?: never;
         /**
          * @description Cadastro FIXO do sistema (formas de pagamento, perfis fiscais): a conta lê e ajusta
          *     (ativar, taxa, prazo), mas criar e excluir — inclusive a exclusão em massa — é só do
          *     superusuário (admin do Django). Os dados nascem com a conta (`services/system_data.py`).
          */
-        post: operations["api_v1_payment_methods_bulk_create"];
+        post: operations["v1_payment_methods_bulk_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pdv/acbr/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /pdv/acbr/ {"path": "/v1/nfe/emitir", "body": {"ini", "tp_emis", "modelo"...}}: a ponte do
+         *     PDV web para o Comunicador Fiscal em NUVEM (`services/acbr_cloud.py`). O backend troca o contexto
+         *     pelo da filial (CNPJ, UF, ambiente, certificado A1, CSC), cifra, chama e devolve
+         *     {"status", "data", "trusted"} — sempre 200 quando o pedido era válido, para o PDV decidir.
+         */
+        post: operations["v1_pdv_acbr_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pdv/acbr/health/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description GET /pdv/acbr/health/: o comunicador em nuvem está no ar? (sem segredo). */
+        get: operations["v1_pdv_acbr_health_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pdv/authorize/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /pdv/authorize/ {"code", "percent"?, "approval"?}: o PDV desktop monta a venda no
+         *     PC e só pergunta aqui se a ação passa (e quem autorizou). Mesmos erros da venda no servidor
+         *     (`*approval_required`, `approval_invalid`): o diálogo do gerente funciona igual.
+         *
+         *     Devolve quem autorizou e o que ele pode, para o PDV aprender e aceitar a mesma senha
+         *     quando o servidor estiver fora.
+         */
+        post: operations["v1_pdv_authorize_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4724,7 +5142,109 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_pdv_bootstrap_create"];
+        post: operations["v1_pdv_bootstrap_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pdv/catalog-snapshot/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /pdv/catalog-snapshot/: catálogo inteiro (vitrines), categorias e clientes, para o PDV
+         *     desktop vender quando o servidor não responder. O desktop baixa de tempos em tempos.
+         */
+        get: operations["v1_pdv_catalog_snapshot_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pdv/fiscal-emitter/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /pdv/fiscal-emitter/: certificado A1 + CSC para gravar no Comunicador Fiscal desktop do caixa
+         *     (`/v1/config/emitente`). Só `fiscal.manage`: o gerente/contador faz uma vez por comunicador.
+         */
+        get: operations["v1_pdv_fiscal_emitter_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pdv/fiscal-kit/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description GET /pdv/fiscal-kit/?installation_id=: o kit para o PDV (desktop ou web) montar a NFC-e/NF-e
+         *     que o Comunicador Fiscal emite, inclusive offline no desktop (`services/fiscal_emission.py`).
+         */
+        get: operations["v1_pdv_fiscal_kit_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pdv/offline-cash/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /pdv/offline-cash/ {"event": "open"|"movement"|"close", "offline_id", ...}: o turno
+         *     de caixa que o PDV desktop operou sem o servidor (`services/offline_cash.py`). 201 = gravado;
+         *     200 = já estava.
+         */
+        post: operations["v1_pdv_offline_cash_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pdv/offline-sales/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description POST /pdv/offline-sales/: a venda que o PDV desktop montou PRONTA (online na hora ou
+         *     da fila offline) — `services/offline_sales.py`. Com `invoice`, grava também a nota que o
+         *     PDV emitiu. 201 = importada; 200 = já estava. `?dry_run=1`: só valida/prévia (nada grava).
+         */
+        post: operations["v1_pdv_offline_sales_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4745,7 +5265,7 @@ export interface paths {
          *     com preço vigente, saldo e fotos, e os serviços que o produto oferece
          *     (`services/service_rules.py`).
          */
-        get: operations["api_v1_pdv_products_retrieve"];
+        get: operations["v1_pdv_products_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4767,7 +5287,7 @@ export interface paths {
          * @description Desbloqueia a tela do PDV: {"password"} — a senha do próprio operador ou a senha de
          *     ações do caixa da loja (a do gerente que veio liberar). Errou: 403 e fica bloqueado.
          */
-        post: operations["api_v1_pdv_unlock_create"];
+        post: operations["v1_pdv_unlock_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4781,7 +5301,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_permissions_list"];
+        get: operations["v1_permissions_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4797,7 +5317,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_permissions_retrieve"];
+        get: operations["v1_permissions_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4817,7 +5337,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_permissions_history_retrieve"];
+        get: operations["v1_permissions_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4833,7 +5353,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_permissions_bulk_retrieve"];
+        get: operations["v1_permissions_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4849,9 +5369,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_price_checks_list"];
+        get: operations["v1_price_checks_list"];
         put?: never;
-        post: operations["api_v1_price_checks_create"];
+        post: operations["v1_price_checks_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4865,7 +5385,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_price_checks_retrieve"];
+        get: operations["v1_price_checks_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4883,7 +5403,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_price_checks_approve_create"];
+        post: operations["v1_price_checks_approve_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4901,7 +5421,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_price_checks_history_retrieve"];
+        get: operations["v1_price_checks_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4919,7 +5439,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_price_checks_refresh_create"];
+        post: operations["v1_price_checks_refresh_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4935,7 +5455,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_price_checks_reject_create"];
+        post: operations["v1_price_checks_reject_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4949,9 +5469,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_price_checks_bulk_retrieve"];
+        get: operations["v1_price_checks_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_price_checks_bulk_create"];
+        post: operations["v1_price_checks_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4967,7 +5487,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_price_checks_product_create"];
+        post: operations["v1_price_checks_product_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4981,9 +5501,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_price_checks_rules_retrieve"];
+        get: operations["v1_price_checks_rules_retrieve"];
         put?: never;
-        post: operations["api_v1_price_checks_rules_create"];
+        post: operations["v1_price_checks_rules_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4999,7 +5519,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_price_checks_run_create"];
+        post: operations["v1_price_checks_run_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5013,7 +5533,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_price_checks_run_status_retrieve"];
+        get: operations["v1_price_checks_run_status_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5029,9 +5549,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_coupons_list"];
+        get: operations["v1_promotions_coupons_list"];
         put?: never;
-        post: operations["api_v1_promotions_coupons_create"];
+        post: operations["v1_promotions_coupons_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5045,13 +5565,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_coupons_retrieve"];
-        put: operations["api_v1_promotions_coupons_update"];
+        get: operations["v1_promotions_coupons_retrieve"];
+        put: operations["v1_promotions_coupons_update"];
         post?: never;
-        delete: operations["api_v1_promotions_coupons_destroy"];
+        delete: operations["v1_promotions_coupons_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_promotions_coupons_partial_update"];
+        patch: operations["v1_promotions_coupons_partial_update"];
         trace?: never;
     };
     "/api/v1/promotions/coupons/{id}/history/": {
@@ -5065,7 +5585,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_promotions_coupons_history_retrieve"];
+        get: operations["v1_promotions_coupons_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5081,9 +5601,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_coupons_bulk_retrieve"];
+        get: operations["v1_promotions_coupons_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_promotions_coupons_bulk_create"];
+        post: operations["v1_promotions_coupons_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5097,9 +5617,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_rule_products_list"];
+        get: operations["v1_promotions_rule_products_list"];
         put?: never;
-        post: operations["api_v1_promotions_rule_products_create"];
+        post: operations["v1_promotions_rule_products_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5113,13 +5633,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_rule_products_retrieve"];
-        put: operations["api_v1_promotions_rule_products_update"];
+        get: operations["v1_promotions_rule_products_retrieve"];
+        put: operations["v1_promotions_rule_products_update"];
         post?: never;
-        delete: operations["api_v1_promotions_rule_products_destroy"];
+        delete: operations["v1_promotions_rule_products_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_promotions_rule_products_partial_update"];
+        patch: operations["v1_promotions_rule_products_partial_update"];
         trace?: never;
     };
     "/api/v1/promotions/rule-products/{id}/history/": {
@@ -5133,7 +5653,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_promotions_rule_products_history_retrieve"];
+        get: operations["v1_promotions_rule_products_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5149,9 +5669,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_rule_products_bulk_retrieve"];
+        get: operations["v1_promotions_rule_products_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_promotions_rule_products_bulk_create"];
+        post: operations["v1_promotions_rule_products_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5165,9 +5685,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_rules_list"];
+        get: operations["v1_promotions_rules_list"];
         put?: never;
-        post: operations["api_v1_promotions_rules_create"];
+        post: operations["v1_promotions_rules_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5181,13 +5701,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_rules_retrieve"];
-        put: operations["api_v1_promotions_rules_update"];
+        get: operations["v1_promotions_rules_retrieve"];
+        put: operations["v1_promotions_rules_update"];
         post?: never;
-        delete: operations["api_v1_promotions_rules_destroy"];
+        delete: operations["v1_promotions_rules_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_promotions_rules_partial_update"];
+        patch: operations["v1_promotions_rules_partial_update"];
         trace?: never;
     };
     "/api/v1/promotions/rules/{id}/history/": {
@@ -5201,7 +5721,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_promotions_rules_history_retrieve"];
+        get: operations["v1_promotions_rules_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5217,9 +5737,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_rules_bulk_retrieve"];
+        get: operations["v1_promotions_rules_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_promotions_rules_bulk_create"];
+        post: operations["v1_promotions_rules_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5233,9 +5753,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_tables_list"];
+        get: operations["v1_promotions_tables_list"];
         put?: never;
-        post: operations["api_v1_promotions_tables_create"];
+        post: operations["v1_promotions_tables_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5249,13 +5769,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_tables_retrieve"];
-        put: operations["api_v1_promotions_tables_update"];
+        get: operations["v1_promotions_tables_retrieve"];
+        put: operations["v1_promotions_tables_update"];
         post?: never;
-        delete: operations["api_v1_promotions_tables_destroy"];
+        delete: operations["v1_promotions_tables_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_promotions_tables_partial_update"];
+        patch: operations["v1_promotions_tables_partial_update"];
         trace?: never;
     };
     "/api/v1/promotions/tables/{id}/history/": {
@@ -5269,7 +5789,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_promotions_tables_history_retrieve"];
+        get: operations["v1_promotions_tables_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5285,9 +5805,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_promotions_tables_bulk_retrieve"];
+        get: operations["v1_promotions_tables_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_promotions_tables_bulk_create"];
+        post: operations["v1_promotions_tables_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5302,10 +5822,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description O cliente avalia pelo link (sem login): só o tipo do link, uma vez, até a data limite. */
-        get: operations["api_v1_public_reviews_retrieve"];
+        get: operations["v1_public_reviews_retrieve"];
         put?: never;
         /** @description O cliente avalia pelo link (sem login): só o tipo do link, uma vez, até a data limite. */
-        post: operations["api_v1_public_reviews_create"];
+        post: operations["v1_public_reviews_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5324,7 +5844,7 @@ export interface paths {
          *
          *     A loja vem do header `X-Store-ID` (sem ele, a rede inteira).
          */
-        get: operations["api_v1_reports_retrieve"];
+        get: operations["v1_reports_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5344,7 +5864,7 @@ export interface paths {
          * @description GET /reports/book/<slug>/?date_from=&date_to= — um relatório do livro (Movimento, Mercadorias,
          *     Contábil, Relacionamento) no formato padrão (indicadores + blocos), ver `services/report_book`.
          */
-        get: operations["api_v1_reports_book_retrieve"];
+        get: operations["v1_reports_book_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5366,7 +5886,7 @@ export interface paths {
          *     Excel: resumo + uma aba por bloco (e uma por classe na Curva ABC). CSV: um bloco só
          *     (o pedido ou a primeira tabela). Mesmas permissões do relatório.
          */
-        get: operations["api_v1_reports_book_export_retrieve"];
+        get: operations["v1_reports_book_export_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5383,10 +5903,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Devolução nasce em POST /sales/{id}/returns/; aqui se lê e conclui. */
-        get: operations["api_v1_returns_list"];
+        get: operations["v1_returns_list"];
         put?: never;
         /** @description Devolução nasce em POST /sales/{id}/returns/; aqui se lê e conclui. */
-        post: operations["api_v1_returns_create"];
+        post: operations["v1_returns_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5401,7 +5921,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Devolução nasce em POST /sales/{id}/returns/; aqui se lê e conclui. */
-        get: operations["api_v1_returns_retrieve"];
+        get: operations["v1_returns_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5420,7 +5940,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Devolução nasce em POST /sales/{id}/returns/; aqui se lê e conclui. */
-        post: operations["api_v1_returns_cancel_create"];
+        post: operations["v1_returns_cancel_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5437,7 +5957,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Devolução nasce em POST /sales/{id}/returns/; aqui se lê e conclui. */
-        post: operations["api_v1_returns_complete_create"];
+        post: operations["v1_returns_complete_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5455,7 +5975,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_returns_history_retrieve"];
+        get: operations["v1_returns_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5472,10 +5992,10 @@ export interface paths {
             cookie?: never;
         };
         /** @description Devolução nasce em POST /sales/{id}/returns/; aqui se lê e conclui. */
-        get: operations["api_v1_returns_bulk_retrieve"];
+        get: operations["v1_returns_bulk_retrieve"];
         put?: never;
         /** @description Devolução nasce em POST /sales/{id}/returns/; aqui se lê e conclui. */
-        post: operations["api_v1_returns_bulk_create"];
+        post: operations["v1_returns_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5489,9 +6009,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_reviews_list"];
+        get: operations["v1_reviews_list"];
         put?: never;
-        post: operations["api_v1_reviews_create"];
+        post: operations["v1_reviews_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5505,10 +6025,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_reviews_retrieve"];
+        get: operations["v1_reviews_retrieve"];
         put?: never;
         post?: never;
-        delete: operations["api_v1_reviews_destroy"];
+        delete: operations["v1_reviews_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5523,7 +6043,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_reviews_approve_create"];
+        post: operations["v1_reviews_approve_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5541,7 +6061,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_reviews_history_retrieve"];
+        get: operations["v1_reviews_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5559,7 +6079,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_reviews_reject_create"];
+        post: operations["v1_reviews_reject_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5573,9 +6093,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_reviews_bulk_retrieve"];
+        get: operations["v1_reviews_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_reviews_bulk_create"];
+        post: operations["v1_reviews_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5593,13 +6113,13 @@ export interface paths {
          * @description GET: um item por tipo que a venda pode avaliar, com o link atual (se houver).
          *     POST {sale, kind, days}: gera o link do tipo (ou devolve o que ainda vale).
          */
-        get: operations["api_v1_reviews_links_retrieve"];
+        get: operations["v1_reviews_links_retrieve"];
         put?: never;
         /**
          * @description GET: um item por tipo que a venda pode avaliar, com o link atual (se houver).
          *     POST {sale, kind, days}: gera o link do tipo (ou devolve o que ainda vale).
          */
-        post: operations["api_v1_reviews_links_create"];
+        post: operations["v1_reviews_links_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5613,17 +6133,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
-         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
-         */
-        get: operations["api_v1_roles_list"];
+        /** @description Cargos fixos: o administrador ajusta desconto, ativo e a matriz de permissões. */
+        get: operations["v1_roles_list"];
         put?: never;
-        /**
-         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
-         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
-         */
-        post: operations["api_v1_roles_create"];
+        /** @description Cargos fixos: o administrador ajusta desconto, ativo e a matriz de permissões. */
+        post: operations["v1_roles_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5637,29 +6151,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
-         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
-         */
-        get: operations["api_v1_roles_retrieve"];
-        /**
-         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
-         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
-         */
-        put: operations["api_v1_roles_update"];
+        /** @description Cargos fixos: o administrador ajusta desconto, ativo e a matriz de permissões. */
+        get: operations["v1_roles_retrieve"];
+        /** @description Cargos fixos: o administrador ajusta desconto, ativo e a matriz de permissões. */
+        put: operations["v1_roles_update"];
         post?: never;
-        /**
-         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
-         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
-         */
-        delete: operations["api_v1_roles_destroy"];
+        /** @description Cargos fixos: o administrador ajusta desconto, ativo e a matriz de permissões. */
+        delete: operations["v1_roles_destroy"];
         options?: never;
         head?: never;
-        /**
-         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
-         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
-         */
-        patch: operations["api_v1_roles_partial_update"];
+        /** @description Cargos fixos: o administrador ajusta desconto, ativo e a matriz de permissões. */
+        patch: operations["v1_roles_partial_update"];
         trace?: never;
     };
     "/api/v1/roles/{id}/history/": {
@@ -5673,7 +6175,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_roles_history_retrieve"];
+        get: operations["v1_roles_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5689,17 +6191,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /**
-         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
-         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
-         */
-        get: operations["api_v1_roles_bulk_retrieve"];
+        /** @description Cargos fixos: o administrador ajusta desconto, ativo e a matriz de permissões. */
+        get: operations["v1_roles_bulk_retrieve"];
         put?: never;
-        /**
-         * @description Cargos FIXOS: nascem com a conta (catálogo em `services/access_catalog.py`). A conta lê
-         *     e ajusta desconto/ativo; criar, excluir e mudar permissões é do suporte.
-         */
-        post: operations["api_v1_roles_bulk_create"];
+        /** @description Cargos fixos: o administrador ajusta desconto, ativo e a matriz de permissões. */
+        post: operations["v1_roles_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5713,9 +6209,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sales_list"];
+        get: operations["v1_sales_list"];
         put?: never;
-        post: operations["api_v1_sales_create"];
+        post: operations["v1_sales_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5729,13 +6225,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sales_retrieve"];
+        get: operations["v1_sales_retrieve"];
         put?: never;
         post?: never;
-        delete: operations["api_v1_sales_destroy"];
+        delete: operations["v1_sales_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_sales_partial_update"];
+        patch: operations["v1_sales_partial_update"];
         trace?: never;
     };
     "/api/v1/sales/{id}/addresses/": {
@@ -5749,13 +6245,13 @@ export interface paths {
          * @description Endereços do pedido: GET; POST {delivery, billing, billing_same_as_delivery} corrige só o pedido
          *     (o cadastro do cliente fica como está). `inherit: true` copia de novo do cliente.
          */
-        get: operations["api_v1_sales_addresses_retrieve"];
+        get: operations["v1_sales_addresses_retrieve"];
         put?: never;
         /**
          * @description Endereços do pedido: GET; POST {delivery, billing, billing_same_as_delivery} corrige só o pedido
          *     (o cadastro do cliente fica como está). `inherit: true` copia de novo do cliente.
          */
-        post: operations["api_v1_sales_addresses_create"];
+        post: operations["v1_sales_addresses_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5771,7 +6267,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_sales_cancel_create"];
+        post: operations["v1_sales_cancel_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5787,7 +6283,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_sales_checkout_create"];
+        post: operations["v1_sales_checkout_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5803,7 +6299,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_sales_complete_create"];
+        post: operations["v1_sales_complete_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5819,8 +6315,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_sales_coupon_create"];
-        delete: operations["api_v1_sales_coupon_destroy"];
+        post: operations["v1_sales_coupon_create"];
+        delete: operations["v1_sales_coupon_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5835,7 +6331,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_sales_customer_create"];
+        post: operations["v1_sales_customer_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5852,9 +6348,9 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description POST {"address", "table"}: entrega com frete. DELETE: retirada na loja. */
-        post: operations["api_v1_sales_delivery_create"];
+        post: operations["v1_sales_delivery_create"];
         /** @description POST {"address", "table"}: entrega com frete. DELETE: retirada na loja. */
-        delete: operations["api_v1_sales_delivery_destroy"];
+        delete: operations["v1_sales_delivery_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -5869,7 +6365,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_sales_discount_create"];
+        post: operations["v1_sales_discount_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5886,7 +6382,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Venda concluída: {"reason", "pickup": true} ou {"reason", "address", "table"}. O frete cobrado fica. */
-        post: operations["api_v1_sales_edit_delivery_create"];
+        post: operations["v1_sales_edit_delivery_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5903,7 +6399,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description POST {"status": "ready"|"shipped"|"delivered", "note"}: anda (ou volta, com motivo) a entrega. */
-        post: operations["api_v1_sales_fulfillment_create"];
+        post: operations["v1_sales_fulfillment_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5921,7 +6417,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_sales_history_retrieve"];
+        get: operations["v1_sales_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5941,9 +6437,26 @@ export interface paths {
          * @description A nota do pedido para imprimir: quem vê o pedido imprime a nota dele (sem precisar do módulo
          *     fiscal). Código de barras da chave (Code 128) e QR da consulta (NFC-e) já em SVG.
          */
-        get: operations["api_v1_sales_invoices_danfe_retrieve"];
+        get: operations["v1_sales_invoices_danfe_retrieve"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/sales/{id}/invoices/register/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description A nota que o PDV desktop emitiu pelo comunicador ACBrLib local (`services/fiscal_emission.py`). */
+        post: operations["v1_sales_invoices_register_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5957,9 +6470,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sales_items_retrieve_2"];
+        get: operations["v1_sales_items_retrieve_2"];
         put?: never;
-        post: operations["api_v1_sales_items_create"];
+        post: operations["v1_sales_items_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -5976,10 +6489,10 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["api_v1_sales_items_destroy"];
+        delete: operations["v1_sales_items_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_sales_items_partial_update"];
+        patch: operations["v1_sales_items_partial_update"];
         trace?: never;
     };
     "/api/v1/sales/{id}/metafields/": {
@@ -5991,7 +6504,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_sales_metafields_create"];
+        post: operations["v1_sales_metafields_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6008,7 +6521,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Guarda o pedido (ou envia ao caixa): {"note": "cliente volta às 15h"}. */
-        post: operations["api_v1_sales_park_create"];
+        post: operations["v1_sales_park_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6024,7 +6537,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_sales_payments_create"];
+        post: operations["v1_sales_payments_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6041,7 +6554,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete: operations["api_v1_sales_payments_destroy"];
+        delete: operations["v1_sales_payments_destroy"];
         options?: never;
         head?: never;
         patch?: never;
@@ -6057,7 +6570,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Venda concluída: {"method", "reason", "installments"?, "nsu"?, "authorization_code"?}, mesmo valor. */
-        post: operations["api_v1_sales_payments_change_create"];
+        post: operations["v1_sales_payments_change_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6074,7 +6587,7 @@ export interface paths {
         get?: never;
         put?: never;
         /** @description Retoma um pedido guardado, no turno de caixa de quem retomou. */
-        post: operations["api_v1_sales_resume_create"];
+        post: operations["v1_sales_resume_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6090,7 +6603,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_sales_returns_create"];
+        post: operations["v1_sales_returns_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6104,9 +6617,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sales_bulk_retrieve"];
+        get: operations["v1_sales_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_sales_bulk_create"];
+        post: operations["v1_sales_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6124,7 +6637,7 @@ export interface paths {
          * @description Itens vendidos: `?variant__product=<id>&sale__status=completed` = vendas do produto;
          *     `?sale__customer=<id>` = o que o cliente comprou.
          */
-        get: operations["api_v1_sales_items_list"];
+        get: operations["v1_sales_items_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6144,7 +6657,7 @@ export interface paths {
          * @description Itens vendidos: `?variant__product=<id>&sale__status=completed` = vendas do produto;
          *     `?sale__customer=<id>` = o que o cliente comprou.
          */
-        get: operations["api_v1_sales_items_retrieve"];
+        get: operations["v1_sales_items_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6164,7 +6677,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_sales_items_history_retrieve"];
+        get: operations["v1_sales_items_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6184,7 +6697,7 @@ export interface paths {
          * @description Itens vendidos: `?variant__product=<id>&sale__status=completed` = vendas do produto;
          *     `?sale__customer=<id>` = o que o cliente comprou.
          */
-        get: operations["api_v1_sales_items_bulk_retrieve"];
+        get: operations["v1_sales_items_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6200,9 +6713,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_seo_checks_list"];
+        get: operations["v1_seo_checks_list"];
         put?: never;
-        post: operations["api_v1_seo_checks_create"];
+        post: operations["v1_seo_checks_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6216,7 +6729,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_seo_checks_retrieve"];
+        get: operations["v1_seo_checks_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6234,7 +6747,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_seo_checks_apply_create"];
+        post: operations["v1_seo_checks_apply_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6252,7 +6765,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_seo_checks_history_retrieve"];
+        get: operations["v1_seo_checks_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6270,7 +6783,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_seo_checks_refresh_create"];
+        post: operations["v1_seo_checks_refresh_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6286,7 +6799,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_seo_checks_reject_create"];
+        post: operations["v1_seo_checks_reject_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6300,9 +6813,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_seo_checks_bulk_retrieve"];
+        get: operations["v1_seo_checks_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_seo_checks_bulk_create"];
+        post: operations["v1_seo_checks_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6318,7 +6831,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_seo_checks_product_create"];
+        post: operations["v1_seo_checks_product_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6332,9 +6845,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_seo_checks_rules_retrieve"];
+        get: operations["v1_seo_checks_rules_retrieve"];
         put?: never;
-        post: operations["api_v1_seo_checks_rules_create"];
+        post: operations["v1_seo_checks_rules_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6350,7 +6863,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_seo_checks_run_create"];
+        post: operations["v1_seo_checks_run_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6364,7 +6877,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_seo_checks_run_status_retrieve"];
+        get: operations["v1_seo_checks_run_status_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6389,7 +6902,7 @@ export interface paths {
          *
          *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
          */
-        get: operations["api_v1_stock_advices_list"];
+        get: operations["v1_stock_advices_list"];
         put?: never;
         /**
          * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
@@ -6400,7 +6913,7 @@ export interface paths {
          *
          *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
          */
-        post: operations["api_v1_stock_advices_create"];
+        post: operations["v1_stock_advices_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6423,7 +6936,7 @@ export interface paths {
          *
          *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
          */
-        get: operations["api_v1_stock_advices_retrieve"];
+        get: operations["v1_stock_advices_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6450,7 +6963,7 @@ export interface paths {
          *
          *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
          */
-        post: operations["api_v1_stock_advices_apply_create"];
+        post: operations["v1_stock_advices_apply_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6475,7 +6988,7 @@ export interface paths {
          *
          *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
          */
-        post: operations["api_v1_stock_advices_dismiss_create"];
+        post: operations["v1_stock_advices_dismiss_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6493,7 +7006,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_advices_history_retrieve"];
+        get: operations["v1_stock_advices_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6518,7 +7031,7 @@ export interface paths {
          *
          *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
          */
-        get: operations["api_v1_stock_advices_bulk_retrieve"];
+        get: operations["v1_stock_advices_bulk_retrieve"];
         put?: never;
         /**
          * @description Organização do estoque: o que a Cosmos recomenda mudar nos endereços.
@@ -6529,7 +7042,7 @@ export interface paths {
          *
          *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
          */
-        post: operations["api_v1_stock_advices_bulk_create"];
+        post: operations["v1_stock_advices_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6554,7 +7067,7 @@ export interface paths {
          *
          *     Pede os módulos `stock` e `cosmos` e o interruptor da conta. Ver pede `stock.view`; o resto, `stock.manage`.
          */
-        post: operations["api_v1_stock_advices_run_create"];
+        post: operations["v1_stock_advices_run_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6568,7 +7081,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_balances_list"];
+        get: operations["v1_stock_balances_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6584,7 +7097,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_balances_retrieve"];
+        get: operations["v1_stock_balances_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6604,7 +7117,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_balances_history_retrieve"];
+        get: operations["v1_stock_balances_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6621,7 +7134,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Variantes abaixo do estoque mínimo (somando todos os depósitos da loja). */
-        get: operations["api_v1_stock_balances_alerts_retrieve"];
+        get: operations["v1_stock_balances_alerts_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6637,7 +7150,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_balances_bulk_retrieve"];
+        get: operations["v1_stock_balances_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6654,7 +7167,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Onde está cada produto: endereço, lote, validade e quantidade. */
-        get: operations["api_v1_stock_bin_balances_list"];
+        get: operations["v1_stock_bin_balances_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6671,7 +7184,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Onde está cada produto: endereço, lote, validade e quantidade. */
-        get: operations["api_v1_stock_bin_balances_retrieve"];
+        get: operations["v1_stock_bin_balances_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6691,7 +7204,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_bin_balances_history_retrieve"];
+        get: operations["v1_stock_bin_balances_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6708,7 +7221,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Onde está cada produto: endereço, lote, validade e quantidade. */
-        get: operations["api_v1_stock_bin_balances_bulk_retrieve"];
+        get: operations["v1_stock_bin_balances_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6724,9 +7237,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_bins_list"];
+        get: operations["v1_stock_bins_list"];
         put?: never;
-        post: operations["api_v1_stock_bins_create"];
+        post: operations["v1_stock_bins_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6740,13 +7253,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_bins_retrieve"];
-        put: operations["api_v1_stock_bins_update"];
+        get: operations["v1_stock_bins_retrieve"];
+        put: operations["v1_stock_bins_update"];
         post?: never;
-        delete: operations["api_v1_stock_bins_destroy"];
+        delete: operations["v1_stock_bins_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_stock_bins_partial_update"];
+        patch: operations["v1_stock_bins_partial_update"];
         trace?: never;
     };
     "/api/v1/stock/bins/{id}/history/": {
@@ -6760,7 +7273,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_bins_history_retrieve"];
+        get: operations["v1_stock_bins_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6776,9 +7289,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_bins_bulk_retrieve"];
+        get: operations["v1_stock_bins_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_stock_bins_bulk_create"];
+        post: operations["v1_stock_bins_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6794,7 +7307,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_stock_bins_generate_create"];
+        post: operations["v1_stock_bins_generate_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6809,7 +7322,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Erros de entrada: o que a nota dizia × o que chegou × o que entrou, com o motivo. */
-        get: operations["api_v1_stock_divergences_list"];
+        get: operations["v1_stock_divergences_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6826,7 +7339,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Erros de entrada: o que a nota dizia × o que chegou × o que entrou, com o motivo. */
-        get: operations["api_v1_stock_divergences_retrieve"];
+        get: operations["v1_stock_divergences_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6846,7 +7359,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_divergences_history_retrieve"];
+        get: operations["v1_stock_divergences_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6863,7 +7376,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Erros de entrada: o que a nota dizia × o que chegou × o que entrou, com o motivo. */
-        get: operations["api_v1_stock_divergences_bulk_retrieve"];
+        get: operations["v1_stock_divergences_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6879,9 +7392,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_documents_list"];
+        get: operations["v1_stock_documents_list"];
         put?: never;
-        post: operations["api_v1_stock_documents_create"];
+        post: operations["v1_stock_documents_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6895,13 +7408,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_documents_retrieve"];
-        put: operations["api_v1_stock_documents_update"];
+        get: operations["v1_stock_documents_retrieve"];
+        put: operations["v1_stock_documents_update"];
         post?: never;
-        delete: operations["api_v1_stock_documents_destroy"];
+        delete: operations["v1_stock_documents_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_stock_documents_partial_update"];
+        patch: operations["v1_stock_documents_partial_update"];
         trace?: never;
     };
     "/api/v1/stock/documents/{id}/cancel/": {
@@ -6913,7 +7426,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_stock_documents_cancel_create"];
+        post: operations["v1_stock_documents_cancel_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6935,7 +7448,7 @@ export interface paths {
          *     é a conferência manual (se a Logística permitir); sem nada, vale a quantidade digitada.
          *     Depois disso a entrada pode ser aprovada.
          */
-        post: operations["api_v1_stock_documents_check_create"];
+        post: operations["v1_stock_documents_check_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6955,7 +7468,7 @@ export interface paths {
          * @description Conferência por leitura: {"codes": [...]} com EAN/SKU (unidade) ou código
          *     de volume (caixa). Diz o que bate, o que falta e as caixas soltas.
          */
-        post: operations["api_v1_stock_documents_conference_create"];
+        post: operations["v1_stock_documents_conference_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -6973,7 +7486,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_documents_history_retrieve"];
+        get: operations["v1_stock_documents_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6990,7 +7503,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description O que dá para imprimir e o modelo sugerido (o padrão do sistema para lote, senão o de produto). */
-        get: operations["api_v1_stock_documents_label_options_retrieve"];
+        get: operations["v1_stock_documents_label_options_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7012,7 +7525,7 @@ export interface paths {
          *     com a data de entrada. Lote: uma por lote gerado, com a data de entrada e a validade. Volume: uma por
          *     caixa de cada unidade (2 guarda-roupas em 3 caixas = 6). Etapa sem nada para imprimir: 204.
          */
-        get: operations["api_v1_stock_documents_labels_retrieve"];
+        get: operations["v1_stock_documents_labels_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7029,7 +7542,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Onde pegar cada item (endereço/lote), na ordem do caminho do depósito. */
-        get: operations["api_v1_stock_documents_picking_list_retrieve"];
+        get: operations["v1_stock_documents_picking_list_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7047,7 +7560,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_stock_documents_post_create"];
+        post: operations["v1_stock_documents_post_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7061,9 +7574,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_documents_bulk_retrieve"];
+        get: operations["v1_stock_documents_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_stock_documents_bulk_create"];
+        post: operations["v1_stock_documents_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7077,9 +7590,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_label_templates_list"];
+        get: operations["v1_stock_label_templates_list"];
         put?: never;
-        post: operations["api_v1_stock_label_templates_create"];
+        post: operations["v1_stock_label_templates_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7093,13 +7606,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_label_templates_retrieve"];
-        put: operations["api_v1_stock_label_templates_update"];
+        get: operations["v1_stock_label_templates_retrieve"];
+        put: operations["v1_stock_label_templates_update"];
         post?: never;
-        delete: operations["api_v1_stock_label_templates_destroy"];
+        delete: operations["v1_stock_label_templates_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_stock_label_templates_partial_update"];
+        patch: operations["v1_stock_label_templates_partial_update"];
         trace?: never;
     };
     "/api/v1/stock/label-templates/{id}/history/": {
@@ -7113,7 +7626,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_label_templates_history_retrieve"];
+        get: operations["v1_stock_label_templates_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7129,9 +7642,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_label_templates_bulk_retrieve"];
+        get: operations["v1_stock_label_templates_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_stock_label_templates_bulk_create"];
+        post: operations["v1_stock_label_templates_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7152,7 +7665,7 @@ export interface paths {
          *
          *     O tipo de item (produto, lote ou endereço) vem do `subject` do modelo de etiqueta.
          */
-        post: operations["api_v1_stock_labels_print_create"];
+        post: operations["v1_stock_labels_print_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7166,7 +7679,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_lots_list"];
+        get: operations["v1_stock_lots_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7182,13 +7695,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_lots_retrieve"];
+        get: operations["v1_stock_lots_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch: operations["api_v1_stock_lots_partial_update"];
+        patch: operations["v1_stock_lots_partial_update"];
         trace?: never;
     };
     "/api/v1/stock/lots/{id}/history/": {
@@ -7202,7 +7715,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_lots_history_retrieve"];
+        get: operations["v1_stock_lots_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7218,7 +7731,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_lots_bulk_retrieve"];
+        get: operations["v1_stock_lots_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7235,7 +7748,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Kardex: o razão imutável. Não há escrita direta aqui. */
-        get: operations["api_v1_stock_movements_list"];
+        get: operations["v1_stock_movements_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7252,7 +7765,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Kardex: o razão imutável. Não há escrita direta aqui. */
-        get: operations["api_v1_stock_movements_retrieve"];
+        get: operations["v1_stock_movements_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7272,7 +7785,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_movements_history_retrieve"];
+        get: operations["v1_stock_movements_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7289,7 +7802,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Kardex: o razão imutável. Não há escrita direta aqui. */
-        get: operations["api_v1_stock_movements_bulk_retrieve"];
+        get: operations["v1_stock_movements_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7309,13 +7822,13 @@ export interface paths {
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        get: operations["api_v1_stock_rules_list"];
+        get: operations["v1_stock_rules_list"];
         put?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        post: operations["api_v1_stock_rules_create"];
+        post: operations["v1_stock_rules_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7333,25 +7846,25 @@ export interface paths {
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        get: operations["api_v1_stock_rules_retrieve"];
+        get: operations["v1_stock_rules_retrieve"];
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        put: operations["api_v1_stock_rules_update"];
+        put: operations["v1_stock_rules_update"];
         post?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        delete: operations["api_v1_stock_rules_destroy"];
+        delete: operations["v1_stock_rules_destroy"];
         options?: never;
         head?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        patch: operations["api_v1_stock_rules_partial_update"];
+        patch: operations["v1_stock_rules_partial_update"];
         trace?: never;
     };
     "/api/v1/stock/rules/{id}/history/": {
@@ -7365,7 +7878,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_rules_history_retrieve"];
+        get: operations["v1_stock_rules_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7385,13 +7898,13 @@ export interface paths {
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        get: operations["api_v1_stock_rules_bulk_retrieve"];
+        get: operations["v1_stock_rules_bulk_retrieve"];
         put?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        post: operations["api_v1_stock_rules_bulk_create"];
+        post: operations["v1_stock_rules_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7405,9 +7918,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_warehouses_list"];
+        get: operations["v1_stock_warehouses_list"];
         put?: never;
-        post: operations["api_v1_stock_warehouses_create"];
+        post: operations["v1_stock_warehouses_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7421,13 +7934,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_warehouses_retrieve"];
-        put: operations["api_v1_stock_warehouses_update"];
+        get: operations["v1_stock_warehouses_retrieve"];
+        put: operations["v1_stock_warehouses_update"];
         post?: never;
-        delete: operations["api_v1_stock_warehouses_destroy"];
+        delete: operations["v1_stock_warehouses_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_stock_warehouses_partial_update"];
+        patch: operations["v1_stock_warehouses_partial_update"];
         trace?: never;
     };
     "/api/v1/stock/warehouses/{id}/history/": {
@@ -7441,7 +7954,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stock_warehouses_history_retrieve"];
+        get: operations["v1_stock_warehouses_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7457,9 +7970,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stock_warehouses_bulk_retrieve"];
+        get: operations["v1_stock_warehouses_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_stock_warehouses_bulk_create"];
+        post: operations["v1_stock_warehouses_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7473,9 +7986,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stores_list"];
+        get: operations["v1_stores_list"];
         put?: never;
-        post: operations["api_v1_stores_create"];
+        post: operations["v1_stores_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7489,13 +8002,54 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stores_retrieve"];
-        put: operations["api_v1_stores_update"];
+        get: operations["v1_stores_retrieve"];
+        put: operations["v1_stores_update"];
         post?: never;
-        delete: operations["api_v1_stores_destroy"];
+        delete: operations["v1_stores_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_stores_partial_update"];
+        patch: operations["v1_stores_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/stores/{id}/fiscal/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description Aba "Nota fiscal" da filial. GET: a conferência da emissão (o que falta, o que cada PDV recebe).
+         *     POST: grava ambiente, regime, emissão no PDV, contingência e CSC nos dados fiscais (cria pelo CNPJ).
+         */
+        get: operations["v1_stores_fiscal_retrieve"];
+        put?: never;
+        /**
+         * @description Aba "Nota fiscal" da filial. GET: a conferência da emissão (o que falta, o que cada PDV recebe).
+         *     POST: grava ambiente, regime, emissão no PDV, contingência e CSC nos dados fiscais (cria pelo CNPJ).
+         */
+        post: operations["v1_stores_fiscal_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/stores/{id}/fiscal/certificate/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Certificado A1 (.pfx + senha) nos dados fiscais da filial (cria pelo CNPJ se faltar). */
+        post: operations["v1_stores_fiscal_certificate_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/stores/{id}/history/": {
@@ -7509,7 +8063,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stores_history_retrieve"];
+        get: operations["v1_stores_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7525,9 +8079,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_stores_bulk_retrieve"];
+        get: operations["v1_stores_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_stores_bulk_create"];
+        post: operations["v1_stores_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7545,13 +8099,13 @@ export interface paths {
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        get: operations["api_v1_stores_rules_list"];
+        get: operations["v1_stores_rules_list"];
         put?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        post: operations["api_v1_stores_rules_create"];
+        post: operations["v1_stores_rules_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7569,25 +8123,25 @@ export interface paths {
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        get: operations["api_v1_stores_rules_retrieve"];
+        get: operations["v1_stores_rules_retrieve"];
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        put: operations["api_v1_stores_rules_update"];
+        put: operations["v1_stores_rules_update"];
         post?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        delete: operations["api_v1_stores_rules_destroy"];
+        delete: operations["v1_stores_rules_destroy"];
         options?: never;
         head?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        patch: operations["api_v1_stores_rules_partial_update"];
+        patch: operations["v1_stores_rules_partial_update"];
         trace?: never;
     };
     "/api/v1/stores/rules/{id}/history/": {
@@ -7601,7 +8155,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_stores_rules_history_retrieve"];
+        get: operations["v1_stores_rules_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7621,13 +8175,13 @@ export interface paths {
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        get: operations["api_v1_stores_rules_bulk_retrieve"];
+        get: operations["v1_stores_rules_bulk_retrieve"];
         put?: never;
         /**
          * @description Cria, edita e exclui. A exclusão (inclusive em massa) passa por `check_deletable`:
          *     a padrão, a última e a regra em uso por filial ficam.
          */
-        post: operations["api_v1_stores_rules_bulk_create"];
+        post: operations["v1_stores_rules_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7641,9 +8195,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_suppliers_list"];
+        get: operations["v1_suppliers_list"];
         put?: never;
-        post: operations["api_v1_suppliers_create"];
+        post: operations["v1_suppliers_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7657,13 +8211,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_suppliers_retrieve"];
-        put: operations["api_v1_suppliers_update"];
+        get: operations["v1_suppliers_retrieve"];
+        put: operations["v1_suppliers_update"];
         post?: never;
-        delete: operations["api_v1_suppliers_destroy"];
+        delete: operations["v1_suppliers_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_suppliers_partial_update"];
+        patch: operations["v1_suppliers_partial_update"];
         trace?: never;
     };
     "/api/v1/suppliers/{id}/history/": {
@@ -7677,7 +8231,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_suppliers_history_retrieve"];
+        get: operations["v1_suppliers_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7693,9 +8247,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_suppliers_bulk_retrieve"];
+        get: operations["v1_suppliers_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_suppliers_bulk_create"];
+        post: operations["v1_suppliers_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7709,7 +8263,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sync_conflicts_list"];
+        get: operations["v1_sync_conflicts_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7725,7 +8279,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sync_conflicts_retrieve"];
+        get: operations["v1_sync_conflicts_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7741,7 +8295,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sync_events_list"];
+        get: operations["v1_sync_events_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7757,7 +8311,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sync_events_retrieve"];
+        get: operations["v1_sync_events_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7773,7 +8327,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sync_nodes_list"];
+        get: operations["v1_sync_nodes_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7789,7 +8343,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sync_nodes_retrieve"];
+        get: operations["v1_sync_nodes_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7805,7 +8359,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sync_runs_list"];
+        get: operations["v1_sync_runs_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7821,7 +8375,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_sync_runs_retrieve"];
+        get: operations["v1_sync_runs_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7838,7 +8392,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Sugestões para o campo de tags: `?scope=product&search=ver`. Grava-se pelo registro. */
-        get: operations["api_v1_tags_list"];
+        get: operations["v1_tags_list"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7855,7 +8409,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Sugestões para o campo de tags: `?scope=product&search=ver`. Grava-se pelo registro. */
-        get: operations["api_v1_tags_retrieve"];
+        get: operations["v1_tags_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7875,7 +8429,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_tags_history_retrieve"];
+        get: operations["v1_tags_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7892,7 +8446,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Sugestões para o campo de tags: `?scope=product&search=ver`. Grava-se pelo registro. */
-        get: operations["api_v1_tags_bulk_retrieve"];
+        get: operations["v1_tags_bulk_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7908,9 +8462,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_terminals_list"];
+        get: operations["v1_terminals_list"];
         put?: never;
-        post: operations["api_v1_terminals_create"];
+        post: operations["v1_terminals_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7924,13 +8478,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_terminals_retrieve"];
-        put: operations["api_v1_terminals_update"];
+        get: operations["v1_terminals_retrieve"];
+        put: operations["v1_terminals_update"];
         post?: never;
-        delete: operations["api_v1_terminals_destroy"];
+        delete: operations["v1_terminals_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_terminals_partial_update"];
+        patch: operations["v1_terminals_partial_update"];
         trace?: never;
     };
     "/api/v1/terminals/{id}/history/": {
@@ -7944,7 +8498,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_terminals_history_retrieve"];
+        get: operations["v1_terminals_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -7962,7 +8516,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        post: operations["api_v1_terminals_revoke_create"];
+        post: operations["v1_terminals_revoke_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7976,9 +8530,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_terminals_bulk_retrieve"];
+        get: operations["v1_terminals_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_terminals_bulk_create"];
+        post: operations["v1_terminals_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -7992,9 +8546,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_users_list"];
+        get: operations["v1_users_list"];
         put?: never;
-        post: operations["api_v1_users_create"];
+        post: operations["v1_users_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8008,13 +8562,13 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_users_retrieve"];
-        put: operations["api_v1_users_update"];
+        get: operations["v1_users_retrieve"];
+        put: operations["v1_users_update"];
         post?: never;
-        delete: operations["api_v1_users_destroy"];
+        delete: operations["v1_users_destroy"];
         options?: never;
         head?: never;
-        patch: operations["api_v1_users_partial_update"];
+        patch: operations["v1_users_partial_update"];
         trace?: never;
     };
     "/api/v1/users/{id}/history/": {
@@ -8028,7 +8582,7 @@ export interface paths {
          * @description Histórico do registro, paginado (`?page=&page_size=`): auditoria + acontecimentos
          *     do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`.
          */
-        get: operations["api_v1_users_history_retrieve"];
+        get: operations["v1_users_history_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -8044,9 +8598,9 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get: operations["api_v1_users_bulk_retrieve"];
+        get: operations["v1_users_bulk_retrieve"];
         put?: never;
-        post: operations["api_v1_users_bulk_create"];
+        post: operations["v1_users_bulk_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -8061,7 +8615,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Lista curta de vendedores ativos para o seletor do PDV. */
-        get: operations["api_v1_users_sellers_retrieve"];
+        get: operations["v1_users_sellers_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -8087,22 +8641,37 @@ export interface components {
         Asset: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
-            /** @description Código patrimonial impresso na plaqueta. Vazio = o próximo PAT-000001. */
+            /**
+             * Código
+             * @description Código patrimonial impresso na plaqueta. Vazio = o próximo PAT-000001.
+             */
             code?: string;
+            /** Descrição */
             description: string;
             serial_number?: string;
+            /** Marca */
             brand?: string;
             model?: string;
             /** Format: date */
             purchase_date?: string | null;
             /** Format: decimal */
             purchase_price?: string;
+            /** Situação */
             status?: components["schemas"]["AssetStatusEnum"];
             /** Format: date */
             warranty_until?: string | null;
@@ -8113,16 +8682,31 @@ export interface components {
             useful_life_months?: number | null;
             readonly qr_token: string;
             readonly source_nfe_cancelled: boolean;
+            /** Observações */
             notes?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
-            /** Format: uuid */
+            /**
+             * Produto
+             * Format: uuid
+             */
             product?: string | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string | null;
             /** Format: uuid */
             inbound_nfe?: string | null;
@@ -8135,20 +8719,36 @@ export interface components {
         AssetDisposal: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             kind: components["schemas"]["AssetDisposalKindEnum"];
             /** Format: decimal */
             sale_value?: string;
             reason: string;
+            /** Observações */
             notes?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             asset: string;
@@ -8167,16 +8767,30 @@ export interface components {
         AssetMovement: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             reason?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             asset: string;
@@ -8201,38 +8815,71 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly values: components["schemas"]["AttributeValue"][];
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
             /** Format: int64 */
             position?: number;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         AttributeValue: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Valor */
             value: string;
             readonly normalized: string;
-            /** @description Sufixo do SKU (AZ, P, 110V). Vazio = início do valor. */
+            /**
+             * Código
+             * @description Sufixo do SKU (AZ, P, 110V). Vazio = início do valor.
+             */
             code?: string;
             /** Format: int64 */
             position?: number;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             attribute: string;
@@ -8240,31 +8887,49 @@ export interface components {
         AuditLog: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             action: components["schemas"]["ActionEnum"];
             entity: string;
             object_id: string;
             reason?: string;
             changes?: unknown;
+            /** Metadados */
             metadata?: unknown;
             ip_address?: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string | null;
             actor?: number | null;
         };
         BackgroundTask: {
             /** Format: uuid */
             readonly id: string;
-            /** Tarefa */
+            /** Tipo */
             readonly kind: components["schemas"]["BackgroundTaskKindEnum"];
             readonly kind_display: string;
             /** Situação */
@@ -8291,7 +8956,10 @@ export interface components {
              * Format: date-time
              */
             readonly finished_at: string | null;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
         };
         /**
@@ -8313,6 +8981,7 @@ export interface components {
         Barcode: {
             /** Format: uuid */
             readonly id: string;
+            /** Código */
             code: string;
             is_primary?: boolean;
         };
@@ -8331,9 +9000,15 @@ export interface components {
             readonly lot_number: string;
             /** Format: date */
             readonly expires_at: string;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             quantity?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
         };
         /** @enum {unknown} */
@@ -8342,19 +9017,36 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly supplier_name: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /**
+             * Fornecedor
              * Format: uuid
              * @description De quem a loja compra esta marca.
              */
@@ -8363,25 +9055,46 @@ export interface components {
         CashDiscrepancy: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
-            /** Format: decimal */
+            /**
+             * Valor
+             * Format: decimal
+             */
             amount?: string;
             by_payment_method?: unknown;
             reason: string;
+            /** Situação */
             readonly status: components["schemas"]["CashDiscrepancyStatusEnum"];
             /** Format: date-time */
             readonly resolved_at: string | null;
             resolution_note?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             session: string;
@@ -8400,15 +9113,29 @@ export interface components {
             readonly id: string;
             readonly operator_name: string;
             readonly approved_by_name: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             readonly kind: components["schemas"]["CashMovementKindEnum"];
-            /** Format: decimal */
+            /**
+             * Valor
+             * Format: decimal
+             */
             readonly amount: string;
+            /** Situação */
             readonly status: components["schemas"]["CashMovementStatusEnum"];
             /** Format: date-time */
             readonly approved_at: string | null;
@@ -8418,11 +9145,21 @@ export interface components {
             readonly reason: string;
             /** @description Para onde foi a sangria. */
             readonly destination: string;
-            /** Format: uuid */
+            /** @description Lançado no PDV desktop sem o servidor (id do terminal). */
+            readonly offline_id: string;
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string;
             /** Format: uuid */
             readonly session: string;
@@ -8459,21 +9196,43 @@ export interface components {
             readonly operator_name: string;
             /** @description Quem está com o turno deste caixa agora (vazio = livre). */
             readonly in_use_by: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
-            /** @description Vazio = gerado pelo nome (CAIXA-01). */
+            /**
+             * Código
+             * @description Vazio = gerado pelo nome (CAIXA-01).
+             */
             code?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             operator?: number | null;
         };
@@ -8485,13 +9244,23 @@ export interface components {
             readonly expected_now: string;
             /** @description Sangrias/suprimentos aguardando aprovação (o fechamento espera por eles). */
             readonly pending_movements: number;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             readonly terminal_label: string;
+            /** Situação */
             readonly status: components["schemas"]["CashSessionStatusEnum"];
             /** Format: date-time */
             readonly opened_at: string;
@@ -8537,12 +9306,22 @@ export interface components {
             /** Format: date-time */
             readonly approved_at: string | null;
             readonly approval_reason: string;
+            /** Observações */
             readonly notes: string;
-            /** Format: uuid */
+            readonly offline_id: string;
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string;
             /** Format: uuid */
             readonly register: string;
@@ -8569,27 +9348,49 @@ export interface components {
         Category: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
             /** Format: int64 */
             position?: number;
-            /** @description Texto rico (HTML limpo). */
+            /**
+             * Descrição
+             * @description Texto rico (HTML limpo).
+             */
             description?: string;
-            /** @description Endereço na loja virtual (gerado pelo nome). */
+            /**
+             * Identificador
+             * @description Endereço na loja virtual (gerado pelo nome).
+             */
             slug?: string;
             /** @description Título no Google (até 70 caracteres). */
             seo_title?: string;
             /** @description Resumo no Google (até 160 caracteres). */
             seo_description?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             parent?: string | null;
@@ -8626,32 +9427,54 @@ export interface components {
             readonly id: string;
             readonly seller_name: string;
             readonly sale_number: number;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             /** Format: decimal */
             readonly base_amount: string;
             /** Format: decimal */
             readonly rate: string;
             /**
+             * Valor
              * Format: decimal
              * @description Negativo quando estorno de devolução.
              */
             readonly amount: string;
-            status?: components["schemas"]["CommissionStatusEnum"];
+            /** Situação */
+            readonly status: components["schemas"]["CommissionStatusEnum"];
             /** Format: date-time */
             readonly paid_at: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string;
             readonly seller: number;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             readonly sale: string;
             /** Format: uuid */
             readonly sale_item: string | null;
@@ -8674,17 +9497,23 @@ export interface components {
             readonly sku: string;
             /** @description Loja ou site concorrente. */
             competitor: string;
-            /** Format: decimal */
+            /**
+             * Preço
+             * Format: decimal
+             */
             price?: string;
             /**
              * Format: date
              * @description Dia em que o preço foi visto.
              */
             observed_on?: string;
-            /** Format: uri */
             url?: string;
+            /** Observações */
             notes?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
         };
         /**
@@ -8712,12 +9541,17 @@ export interface components {
         CosmosConversation: {
             /** Format: uuid */
             readonly id: string;
+            /** Título */
             title?: string;
             /** Format: date-time */
             readonly last_message_at: string | null;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
             /**
+             * Loja
              * Format: uuid
              * @description Filial ativa quando a conversa começou.
              */
@@ -8732,20 +9566,28 @@ export interface components {
             readonly id: string;
             readonly rule: string;
             readonly severity: components["schemas"]["SeverityEnum"];
+            /** Título */
             readonly title: string;
             readonly detail: string;
             readonly entity: string;
             readonly object_id: string;
             /** @description Recurso da API (a tela abre o cadastro). */
             readonly endpoint: string;
+            /** Situação */
             readonly status: components["schemas"]["CosmosFindingStatusEnum"];
             /** @description Quem fez o que foi apontado. */
             readonly actor: number | null;
             readonly actor_name: string;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string | null;
             readonly store_name: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
             /** Format: date-time */
             readonly resolved_at: string | null;
@@ -8760,22 +9602,40 @@ export interface components {
         Coupon: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Habilitado */
             is_enabled?: boolean;
             /** Format: date-time */
             starts_at?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
-            /** @description Guardado em MAIÚSCULAS. Vazio = gerado pelo nome (BLACKFRIDAY) ou aleatório. */
+            /**
+             * Código
+             * @description Guardado em MAIÚSCULAS. Vazio = gerado pelo nome (BLACKFRIDAY) ou aleatório.
+             */
             code?: string;
+            /** Nome */
             name?: string;
+            /** Tipo */
             kind?: components["schemas"]["CouponKindEnum"];
-            /** Format: decimal */
+            /**
+             * Valor
+             * Format: decimal
+             */
             value?: string;
             /**
              * Format: decimal
@@ -8803,11 +9663,17 @@ export interface components {
             /** @description Canais de venda aceitos. Vazio = todos. */
             channels?: unknown;
             combines_with_promotions?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -8839,23 +9705,41 @@ export interface components {
             tags?: string[];
             addresses?: components["schemas"]["CustomerAddress"][];
             readonly credit_balance: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             person_type?: components["schemas"]["PersonTypeEnum"];
-            /** @description Nome ou nome fantasia. */
+            /**
+             * Nome
+             * @description Nome ou nome fantasia.
+             */
             name: string;
             legal_name?: string;
-            /** @description CPF ou CNPJ, só dígitos. */
+            /**
+             * Documento
+             * @description CPF ou CNPJ, só dígitos.
+             */
             document?: string;
             state_registration?: string;
+            /** Telefone */
             phone?: string;
-            /** Format: email */
+            /** E-mail */
             email?: string;
+            /** Observações */
             notes?: string;
+            /** Ativo */
             is_active?: boolean;
             /** Format: date */
             birth_date?: string | null;
@@ -8867,9 +9751,14 @@ export interface components {
             billing_same_as_delivery?: boolean;
             /** @description Metacampos {chave: valor}. */
             metafields?: unknown;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             groups?: string[];
         };
@@ -8877,55 +9766,94 @@ export interface components {
         CustomerAddress: {
             /** Format: uuid */
             id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
             street?: string;
+            /** Número */
             number?: string;
             complement?: string;
             district?: string;
+            /** Cidade */
             city?: string;
             /** @description Código IBGE do município. */
             city_ibge?: string;
+            /** Estado */
             state?: string;
+            /** CEP */
             zip_code?: string;
             label?: string;
             reference?: string;
+            /** Padrão */
             is_default?: boolean;
             /** @description Endereço de cobrança (quando difere da entrega). */
             is_billing?: boolean;
-            /** Format: uuid */
+            /**
+             * Cliente
+             * Format: uuid
+             */
             customer?: string;
         };
         CustomerCredit: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             kind: components["schemas"]["CustomerCreditKindEnum"];
             /**
+             * Valor
              * Format: decimal
              * @description Positivo = crédito; negativo = uso.
              */
             amount?: string;
             /** Format: date */
             expires_at?: string | null;
+            /** Observações */
             notes?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Cliente
+             * Format: uuid
+             */
             customer: string;
             /** Format: uuid */
             sale_return?: string | null;
             /** Format: uuid */
             payment?: string | null;
+        };
+        CustomerCreditGrantInput: {
+            /** Format: decimal */
+            amount: string;
+            reason: string;
         };
         /**
          * @description * `return` - Crédito por devolução
@@ -8938,19 +9866,36 @@ export interface components {
         CustomerGroup: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
+            /** Descrição */
             description?: string;
             color?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         /**
@@ -8971,24 +9916,42 @@ export interface components {
             readonly id: string;
             rules?: components["schemas"]["Rule"][];
             readonly rule_count: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Habilitado */
             is_enabled?: boolean;
             /** Format: date-time */
             starts_at?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
+            /** Nome */
             name: string;
+            /** Descrição */
             description?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -9016,6 +9979,17 @@ export interface components {
          * @enum {string}
          */
         DriverEnum: "browser" | "escpos";
+        /**
+         * @description * `0` - Segunda
+         *     * `1` - Terça
+         *     * `2` - Quarta
+         *     * `3` - Quinta
+         *     * `4` - Sexta
+         *     * `5` - Sábado
+         *     * `6` - Domingo
+         * @enum {integer}
+         */
+        DueWeekdayEnum: 0 | 1 | 2 | 3 | 4 | 5 | 6;
         /**
          * @description * `1` - Normal
          *     * `9` - Contingência offline
@@ -9045,25 +10019,48 @@ export interface components {
         FinancialAccount: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
+            /** Tipo */
             kind?: components["schemas"]["FinancialAccountKindEnum"];
             bank_code?: string;
             agency?: string;
             account_number?: string;
             /** Format: decimal */
             opening_balance?: string;
+            /**
+             * Format: decimal
+             * @description Conta de reembolso de sócio: % dele no resultado (divisão do lucro).
+             */
+            partner_share?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -9074,26 +10071,45 @@ export interface components {
          *     * `bank` - Conta bancária
          *     * `acquirer` - Adquirente de cartão
          *     * `wallet` - Carteira digital
+         *     * `partner` - Conta de reembolso
          * @enum {string}
          */
-        FinancialAccountKindEnum: "cash" | "bank" | "acquirer" | "wallet";
+        FinancialAccountKindEnum: "cash" | "bank" | "acquirer" | "wallet" | "partner";
         FinancialCategory: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Código */
             code?: string;
+            /** Nome */
             name: string;
+            /** Tipo */
             kind: components["schemas"]["FinancialCategoryKindEnum"];
             system_key?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             parent?: string | null;
@@ -9118,81 +10134,187 @@ export interface components {
             installment_count: number;
             /** Format: date */
             first_due?: string;
-            /** Format: date-time */
+            payment_mode?: components["schemas"]["PaymentModeEnum"];
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
-            kind: components["schemas"]["FinancialTitleKindEnum"];
+            frequency?: components["schemas"]["FrequencyEnum"];
+            /**
+             * Format: int64
+             * @description Mensal: dia do vencimento (31 = último dia).
+             */
+            due_day?: number | null;
+            /**
+             * @description Semanal: dia da semana do vencimento.
+             *
+             *     * `0` - Segunda
+             *     * `1` - Terça
+             *     * `2` - Quarta
+             *     * `3` - Quinta
+             *     * `4` - Sexta
+             *     * `5` - Sábado
+             *     * `6` - Domingo
+             */
+            due_weekday?: (components["schemas"]["DueWeekdayEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * Format: time
+             * @description Horário do vencimento (opcional).
+             */
+            due_time?: string | null;
+            /**
+             * Format: decimal
+             * @description Multa por atraso (% sobre a parcela, uma vez).
+             */
+            fine_percent?: string;
+            /**
+             * Format: decimal
+             * @description Juros por atraso (% ao mês, proporcional aos dias).
+             */
+            interest_percent?: string;
+            /** Tipo */
+            kind: components["schemas"]["Kind1adEnum"];
+            /** Descrição */
             description: string;
             document_number?: string;
             /** Format: date */
-            readonly issue_date: string;
+            issue_date?: string;
             /** Format: decimal */
             total?: string;
-            readonly status: components["schemas"]["Status9c6Enum"];
+            /** Situação */
+            readonly status: components["schemas"]["Status54cEnum"];
+            /** Observações */
             notes?: string;
-            /** Format: uuid */
+            /** Format: date */
+            readonly recurring_period: string | null;
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
-            /** Format: uuid */
+            /**
+             * Cliente
+             * Format: uuid
+             */
             customer?: string | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string | null;
-            /** Format: uuid */
+            /**
+             * Categoria
+             * Format: uuid
+             */
             category?: string | null;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             readonly sale: string | null;
             /** Format: uuid */
             readonly payment: string | null;
             /** Format: uuid */
             readonly inbound_nfe: string | null;
+            /** Format: uuid */
+            readonly recurring: string | null;
         };
-        /**
-         * @description * `receivable` - A receber
-         *     * `payable` - A pagar
-         * @enum {string}
-         */
-        FinancialTitleKindEnum: "receivable" | "payable";
         FinancialTransaction: {
             /** Format: uuid */
             readonly id: string;
             readonly account_name: string;
             readonly category_name: string;
+            readonly customer_name: string;
+            readonly supplier_name: string;
+            readonly party_name: string;
             readonly is_reversal: boolean;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             kind: components["schemas"]["FinancialTransactionKindEnum"];
-            /** Format: decimal */
+            /**
+             * Valor
+             * Format: decimal
+             */
             amount?: string;
-            /** Format: date */
+            /**
+             * Data
+             * Format: date
+             */
             date: string;
+            /** Descrição */
             description: string;
             /** Format: uuid */
             readonly transfer_pair: string | null;
             readonly source_key: string;
             reconciled?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             financial_account: string;
-            /** Format: uuid */
+            /**
+             * Categoria
+             * Format: uuid
+             */
             category?: string | null;
             /** Format: uuid */
             readonly installment: string | null;
+            /**
+             * Cliente
+             * Format: uuid
+             */
+            customer?: string | null;
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
+            supplier?: string | null;
             /** Format: uuid */
             readonly cash_session: string | null;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             readonly sale: string | null;
             /** Format: uuid */
             readonly payment: string | null;
@@ -9216,22 +10338,38 @@ export interface components {
             stores?: string[];
             readonly has_certificate: string;
             readonly dfe: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             street?: string;
+            /** Número */
             number?: string;
             complement?: string;
             district?: string;
+            /** Cidade */
             city?: string;
             /** @description Código IBGE do município. */
             city_ibge?: string;
+            /** Estado */
             state?: string;
+            /** CEP */
             zip_code?: string;
-            /** @description Como aparece nas listas (ex.: Matriz). */
+            /**
+             * Nome
+             * @description Como aparece nas listas (ex.: Matriz).
+             */
             name: string;
             /** @description Razão social. */
             legal_name: string;
@@ -9241,10 +10379,11 @@ export interface components {
             /** @description Inscrição estadual (IE). */
             state_registration?: string;
             municipal_registration?: string;
+            /** Telefone */
             phone?: string;
-            /** Format: email */
+            /** E-mail */
             email?: string;
-            provider?: components["schemas"]["FiscalConfigProviderEnum"];
+            provider?: components["schemas"]["ProviderEnum"];
             environment?: components["schemas"]["Environment656Enum"];
             crt?: components["schemas"]["CrtEnum"];
             /** @description Recusa item com perfil incompleto. */
@@ -9255,9 +10394,7 @@ export interface components {
             local_fiscal_url?: string;
             csc_id?: string;
             csc_token?: string;
-            /** Format: uri */
             qr_base_url?: string;
-            /** Format: uri */
             portal_url?: string;
             certificate_password?: string;
             /** Format: date-time */
@@ -9278,30 +10415,39 @@ export interface components {
             dfe_auto_science?: boolean;
             /** @description Nota com todos os itens vinculados já vira entrada de estoque (rascunho). */
             dfe_auto_entry?: boolean;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             default_profile?: string | null;
         };
-        /**
-         * @description * `manual` - Manual (sem transmissão)
-         *     * `focus_nfe` - Focus NFe
-         *     * `acbrlib` - ACBrLib (comunicador próprio)
-         * @enum {string}
-         */
-        FiscalConfigProviderEnum: "manual" | "focus_nfe" | "acbrlib";
         FiscalProfile: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
             /** @description Pré-pronto do sistema: ajusta, mas não exclui. */
             is_system?: boolean;
@@ -9329,21 +10475,37 @@ export interface components {
              * @description Tributos aproximados (Lei 12.741) em %.
              */
             approx_tax_rate?: string;
+            /** Padrão */
             is_default?: boolean;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         FiscalSeries: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             document_model?: components["schemas"]["DocumentModelEnum"];
             /** Format: int64 */
@@ -9351,13 +10513,21 @@ export interface components {
             origin?: components["schemas"]["FiscalSeriesOriginEnum"];
             /** Format: int64 */
             next_number?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             config: string;
+            /** Format: uuid */
+            terminal?: string | null;
         };
         /**
          * @description * `store` - Loja / terminal
@@ -9380,13 +10550,24 @@ export interface components {
             ranges?: components["schemas"]["FreightZipRange"][];
             origin_zip?: string;
             readonly range_count: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
+            /** Tipo */
             kind?: components["schemas"]["FreightTableKindEnum"];
             /**
              * Format: int64
@@ -9412,12 +10593,19 @@ export interface components {
             max_distance_km?: string | null;
             /** Format: int64 */
             position?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -9434,7 +10622,10 @@ export interface components {
             id?: string;
             zip_start: string;
             zip_end: string;
-            /** Format: decimal */
+            /**
+             * Valor
+             * Format: decimal
+             */
             value?: string;
             /**
              * Format: int64
@@ -9444,6 +10635,13 @@ export interface components {
             /** @description Ex.: "Zona Sul", "Grande SP". */
             label?: string;
         };
+        /**
+         * @description * `monthly` - Todo mês
+         *     * `weekly` - Toda semana
+         *     * `daily` - Todo dia
+         * @enum {string}
+         */
+        FrequencyEnum: "monthly" | "weekly" | "daily";
         /**
          * @description * `pending` - Pendente
          *     * `ready` - Separado
@@ -9465,23 +10663,36 @@ export interface components {
             readonly width: number;
             readonly height: number;
             alt_text?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
         };
         ImportJob: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             /** @description Ex.: products, customers. */
             resource: string;
             /** @description Campo que identifica linha existente. */
             key_field?: string;
             rows?: unknown;
+            /** Situação */
             readonly status: components["schemas"]["ImportJobStatusEnum"];
             readonly total: number;
             readonly created_count: number;
@@ -9489,9 +10700,14 @@ export interface components {
             readonly errors: unknown;
             /** Format: date-time */
             readonly finished_at: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         /**
@@ -9512,14 +10728,25 @@ export interface components {
             readonly item_count: string;
             readonly pending_count: string;
             readonly entry: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Chave de acesso */
             readonly access_key: string;
             readonly nsu: string;
+            /** Número */
             readonly number: string;
             readonly series: string;
             /** Format: date-time */
@@ -9548,18 +10775,29 @@ export interface components {
             /** Format: date-time */
             readonly ignored_at: string | null;
             readonly ignored_reason: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string;
             /**
              * Format: uuid
              * @description CNPJ (dados fiscais) que recebeu a nota.
              */
             readonly fiscal_config: string | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string | null;
             readonly ignored_by: number | null;
         };
@@ -9570,22 +10808,36 @@ export interface components {
             readonly variant_sku: string;
             readonly stock_quantity: string;
             readonly volumes: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             readonly item_number: number;
             readonly supplier_code: string;
+            /** Código de barras */
             readonly barcode: string;
             readonly taxable_barcode: string;
+            /** Descrição */
             readonly description: string;
             readonly ncm: string;
             readonly cest: string;
             readonly cfop: string;
             readonly unit: string;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             readonly quantity: string;
             /** Format: decimal */
             readonly unit_value: string;
@@ -9610,9 +10862,14 @@ export interface components {
             conversion_factor?: string;
             ignored?: boolean;
             ignored_reason?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             readonly nfe: string;
@@ -9627,18 +10884,36 @@ export interface components {
             readonly title_description: string;
             readonly kind: string;
             readonly party_name: string;
-            /** Format: date-time */
+            /** Format: time */
+            readonly due_time: string;
+            /** @description Encargos de atraso de HOJE (multa + juros do título) e o saldo atualizado com eles. */
+            readonly late: {
+                [key: string]: unknown;
+            };
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
             /**
+             * Número
              * Format: int64
-             * @default 1
              */
-            number: number;
-            /** Format: date */
+            number?: number;
+            /**
+             * Vencimento
+             * Format: date
+             */
             due_date: string;
-            /** Format: decimal */
+            /**
+             * Valor
+             * Format: decimal
+             */
             amount?: string;
             /** Format: decimal */
             interest?: string;
@@ -9648,34 +10923,68 @@ export interface components {
             discount?: string;
             /** Format: decimal */
             readonly paid_amount: string;
+            /** Format: decimal */
+            credit_used?: string;
             /** Format: date */
             readonly paid_at: string | null;
-            readonly status: components["schemas"]["Status9c6Enum"];
-            /** Format: uuid */
+            /** Situação */
+            readonly status: components["schemas"]["Status54cEnum"];
+            /**
+             * Título
+             * Format: uuid
+             */
             readonly title: string;
         };
-        /** @description `credentials` entra; na saída só aparece quais chaves estão preenchidas. */
+        /**
+         * @description Integração da conta. `fields` entra com os valores das configurações do tipo (nomes fixos, ver
+         *     `services/integrations`); na saída os segredos viram máscara. `purposes` = o que ela faz.
+         */
         Integration: {
             /** Format: uuid */
             readonly id: string;
-            credentials?: {
+            fields?: {
                 [key: string]: unknown;
             };
-            readonly configured_keys: string;
-            /** Format: date-time */
+            purposes?: string[];
+            readonly kind_label: string;
+            readonly purpose_labels: string;
+            readonly webhook_url: string;
+            readonly webhook_ready: string;
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            provider: components["schemas"]["IntegrationProviderEnum"];
+            /** Tipo */
+            kind: string;
+            /**
+             * Nome
+             * @description Ex.: Asaas — Empresa A.
+             */
+            name: string;
+            /** Ativo */
             is_active?: boolean;
-            settings?: unknown;
+            /**
+             * Padrão
+             * @description A usada quando há mais de uma do mesmo tipo.
+             */
+            is_default?: boolean;
+            /** Observações */
+            notes?: string;
+            /** Format: date-time */
+            readonly last_check_at: string | null;
+            readonly last_check_ok: boolean | null;
+            readonly last_check_message: string;
+            /** Criado por */
+            readonly created_by: number | null;
+            /** Atualizado por */
+            readonly updated_by: number | null;
         };
-        /**
-         * @description * `focus_nfe` - Focus NFe
-         *     * `cosmos` - Bluesoft Cosmos (catálogo GTIN)
-         * @enum {string}
-         */
-        IntegrationProviderEnum: "focus_nfe" | "cosmos";
         Invoice: {
             /** Format: uuid */
             readonly id: string;
@@ -9683,20 +10992,32 @@ export interface components {
             readonly store_name: string;
             readonly fiscal_config_name: string;
             readonly sale_number: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             readonly document_model: components["schemas"]["DocumentModelEnum"];
             readonly series: number | null;
+            /** Número */
             readonly number: number | null;
             readonly environment: components["schemas"]["Environment656Enum"];
             readonly emission_type: components["schemas"]["EmissionTypeEnum"];
+            /** Situação */
             readonly status: components["schemas"]["InvoiceStatusEnum"];
             readonly provider: string;
             readonly provider_reference: string;
+            /** Chave de acesso */
             readonly access_key: string;
             readonly recipient_document: string;
             readonly recipient_name: string;
@@ -9726,13 +11047,24 @@ export interface components {
             readonly cancelled_at: string | null;
             readonly cancel_protocol: string;
             readonly cancel_reason: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             readonly sale: string | null;
             /** Format: uuid */
             readonly sale_return: string | null;
@@ -9747,16 +11079,28 @@ export interface components {
         InvoiceItem: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             /** Format: int64 */
             line_number?: number;
+            /** Código */
             code?: string;
+            /** Código de barras */
             barcode?: string;
+            /** Descrição */
             description: string;
             ncm?: string;
             cest?: string;
@@ -9765,7 +11109,10 @@ export interface components {
             cst_icms?: string;
             origin?: string;
             unit?: string;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             quantity?: string;
             /** Format: decimal */
             unit_price?: string;
@@ -9791,9 +11138,14 @@ export interface components {
             cofins_value?: string;
             /** Format: decimal */
             approx_tax_value?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             invoice: string;
@@ -9813,26 +11165,49 @@ export interface components {
          */
         InvoiceStatusEnum: "draft" | "processing" | "authorized" | "rejected" | "cancelled" | "error";
         /**
+         * @description * `receivable` - A receber
+         *     * `payable` - A pagar
+         * @enum {string}
+         */
+        Kind1adEnum: "receivable" | "payable";
+        /**
          * @description * `percent` - Percentual sobre o preço
          *     * `amount` - Valor abatido
          *     * `fixed` - Preço fixo
          * @enum {string}
          */
-        KindB2bEnum: "percent" | "amount" | "fixed";
+        KindFcaEnum: "percent" | "amount" | "fixed";
         KitComponent: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             quantity?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             kit: string;
@@ -9842,12 +11217,22 @@ export interface components {
         LabelTemplate: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
             subject?: components["schemas"]["SubjectEnum"];
             /** Format: decimal */
@@ -9864,13 +11249,20 @@ export interface components {
             /** @description Ex.: ["name", "price", "barcode"]. */
             fields?: unknown;
             custom_text?: string;
+            /** Padrão */
             is_default?: boolean;
+            /** Ativo */
             is_active?: boolean;
             /** @description Modelo pré-pronto do sistema: ajusta, mas não exclui. */
             is_system?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         /**
@@ -9889,15 +11281,29 @@ export interface components {
             readonly entry_lot_label_name: string;
             readonly entry_product_label_name: string;
             readonly conference_label_name: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
+            /** Descrição */
             description?: string;
-            /** @description Filial nova (ou sem escolha) fica com esta. */
+            /**
+             * Padrão
+             * @description Filial nova (ou sem escolha) fica com esta.
+             */
             is_default?: boolean;
             /** @description Permite conferir o recebimento manualmente, sem ler os códigos. */
             allow_manual_conference?: boolean;
@@ -9917,9 +11323,14 @@ export interface components {
              *     * `off` - Não imprime
              */
             conference_labels?: components["schemas"]["ConferenceLabelsEnum"];
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /**
              * Format: uuid
@@ -9960,12 +11371,17 @@ export interface components {
              * @description Quando a fonte trouxe esta oferta.
              */
             readonly observed_at: string | null;
+            /** ID externo */
             readonly external_id: string;
+            /** Título */
             readonly title: string;
             /** Format: uri */
             readonly url: string;
             readonly seller: string;
-            /** Format: decimal */
+            /**
+             * Preço
+             * Format: decimal
+             */
             readonly price: string;
             readonly free_shipping: boolean;
             /**
@@ -9982,17 +11398,33 @@ export interface components {
             readonly id: string;
             categories?: string[];
             options?: string[];
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             owner?: components["schemas"]["OwnerEnum"];
-            /** @description Chave em `metafields` (ex.: "tempo_montagem"). */
+            /**
+             * Chave
+             * @description Chave em `metafields` (ex.: "tempo_montagem").
+             */
             key?: string;
-            /** @description Rótulo na tela (ex.: "Tempo de montagem"). */
+            /**
+             * Nome
+             * @description Rótulo na tela (ex.: "Tempo de montagem").
+             */
             name: string;
+            /** Tipo */
             type?: components["schemas"]["MetafieldDefinitionTypeEnum"];
             /** @description Depois do valor: "h", "meses", "kg". */
             unit?: string;
@@ -10002,10 +11434,16 @@ export interface components {
             required?: boolean;
             /** Format: int64 */
             position?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         /**
@@ -10027,21 +11465,36 @@ export interface components {
         NFeEvent: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Chave de acesso */
             access_key: string;
             direction: components["schemas"]["NFeEventDirectionEnum"];
             /** @description 110111 cancelamento, 210200 confirmação... */
             event_code: string;
+            /** Descrição */
             description?: string;
-            /** Format: int64 */
+            /**
+             * Sequência
+             * Format: int64
+             */
             sequence?: number;
             /** Format: date-time */
             event_at?: string | null;
+            /** Situação */
             status?: components["schemas"]["NFeEventStatusEnum"];
             protocol?: string;
             cstat?: string;
@@ -10051,9 +11504,14 @@ export interface components {
             xml?: string;
             history?: unknown;
             error?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             nfe?: string | null;
@@ -10077,21 +11535,38 @@ export interface components {
         NFeIssue: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             kind: components["schemas"]["NFeIssueKindEnum"];
+            /** Situação */
             status?: components["schemas"]["NFeIssueStatusEnum"];
+            /** Descrição */
             description: string;
             /** Format: date-time */
             resolved_at?: string | null;
             resolution_notes?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             nfe: string;
@@ -10120,14 +11595,27 @@ export interface components {
         Notification: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Categoria */
             category?: components["schemas"]["CategoryEnum"];
+            /** @description Permissão necessária para receber a notificação. Vazio usa a categoria. */
+            permission?: string;
             level?: components["schemas"]["LevelEnum"];
+            /** Título */
             title: string;
             body?: string;
             url?: string;
@@ -10135,13 +11623,20 @@ export interface components {
             object_id?: string;
             /** Format: date-time */
             readonly read_at: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** @description Vazio = todos os administradores da conta. */
             recipient?: number | null;
         };
+        /** @enum {unknown} */
+        NullEnum: null;
         /**
          * @description * `CREATE` - Criação
          *     * `UPDATE` - Atualização
@@ -11026,6 +12521,21 @@ export interface components {
             previous?: string | null;
             results: components["schemas"]["ReceivingDivergence"][];
         };
+        PaginatedRecurringTitleList: {
+            /** @example 123 */
+            count: number;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=4
+             */
+            next?: string | null;
+            /**
+             * Format: uri
+             * @example http://api.example.org/accounts/?page=2
+             */
+            previous?: string | null;
+            results: components["schemas"]["RecurringTitle"][];
+        };
         PaginatedReviewList: {
             /** @example 123 */
             count: number;
@@ -11479,22 +12989,37 @@ export interface components {
         PatchedAsset: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
-            /** @description Código patrimonial impresso na plaqueta. Vazio = o próximo PAT-000001. */
+            /**
+             * Código
+             * @description Código patrimonial impresso na plaqueta. Vazio = o próximo PAT-000001.
+             */
             code?: string;
+            /** Descrição */
             description?: string;
             serial_number?: string;
+            /** Marca */
             brand?: string;
             model?: string;
             /** Format: date */
             purchase_date?: string | null;
             /** Format: decimal */
             purchase_price?: string;
+            /** Situação */
             status?: components["schemas"]["AssetStatusEnum"];
             /** Format: date */
             warranty_until?: string | null;
@@ -11505,16 +13030,31 @@ export interface components {
             useful_life_months?: number | null;
             readonly qr_token?: string;
             readonly source_nfe_cancelled?: boolean;
+            /** Observações */
             notes?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
-            /** Format: uuid */
+            /**
+             * Produto
+             * Format: uuid
+             */
             product?: string | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string | null;
             /** Format: uuid */
             inbound_nfe?: string | null;
@@ -11527,20 +13067,36 @@ export interface components {
         PatchedAssetDisposal: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Tipo */
             kind?: components["schemas"]["AssetDisposalKindEnum"];
             /** Format: decimal */
             sale_value?: string;
             reason?: string;
+            /** Observações */
             notes?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             asset?: string;
@@ -11549,16 +13105,30 @@ export interface components {
         PatchedAssetMovement: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             reason?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             asset?: string;
@@ -11572,38 +13142,71 @@ export interface components {
             /** Format: uuid */
             readonly id?: string;
             readonly values?: components["schemas"]["AttributeValue"][];
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
             /** Format: int64 */
             position?: number;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
         };
         PatchedAttributeValue: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Valor */
             value?: string;
             readonly normalized?: string;
-            /** @description Sufixo do SKU (AZ, P, 110V). Vazio = início do valor. */
+            /**
+             * Código
+             * @description Sufixo do SKU (AZ, P, 110V). Vazio = início do valor.
+             */
             code?: string;
             /** Format: int64 */
             position?: number;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             attribute?: string;
@@ -11612,50 +13215,40 @@ export interface components {
             /** Format: uuid */
             readonly id?: string;
             readonly supplier_name?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /**
+             * Fornecedor
              * Format: uuid
              * @description De quem a loja compra esta marca.
              */
             supplier?: string | null;
-        };
-        PatchedCashDiscrepancy: {
-            /** Format: uuid */
-            readonly id?: string;
-            /** Format: date-time */
-            readonly created_at?: string;
-            /** Format: date-time */
-            readonly updated_at?: string;
-            /** Format: date-time */
-            readonly deleted_at?: string | null;
-            /** Format: decimal */
-            amount?: string;
-            by_payment_method?: unknown;
-            reason?: string;
-            readonly status?: components["schemas"]["CashDiscrepancyStatusEnum"];
-            /** Format: date-time */
-            readonly resolved_at?: string | null;
-            resolution_note?: string;
-            /** Format: uuid */
-            readonly account?: string;
-            readonly created_by?: number | null;
-            readonly updated_by?: number | null;
-            /** Format: uuid */
-            store?: string;
-            /** Format: uuid */
-            session?: string;
-            readonly resolved_by?: number | null;
         };
         /**
          * @description Caixa e QUEM opera (`operator`, id do usuário): só ele abre, movimenta e fecha. Um operador
@@ -11667,21 +13260,43 @@ export interface components {
             readonly operator_name?: string;
             /** @description Quem está com o turno deste caixa agora (vazio = livre). */
             readonly in_use_by?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
-            /** @description Vazio = gerado pelo nome (CAIXA-01). */
+            /**
+             * Código
+             * @description Vazio = gerado pelo nome (CAIXA-01).
+             */
             code?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             operator?: number | null;
         };
@@ -11692,27 +13307,49 @@ export interface components {
         PatchedCategory: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
             /** Format: int64 */
             position?: number;
-            /** @description Texto rico (HTML limpo). */
+            /**
+             * Descrição
+             * @description Texto rico (HTML limpo).
+             */
             description?: string;
-            /** @description Endereço na loja virtual (gerado pelo nome). */
+            /**
+             * Identificador
+             * @description Endereço na loja virtual (gerado pelo nome).
+             */
             slug?: string;
             /** @description Título no Google (até 70 caracteres). */
             seo_title?: string;
             /** @description Resumo no Google (até 160 caracteres). */
             seo_description?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             parent?: string | null;
@@ -11724,32 +13361,54 @@ export interface components {
             readonly id?: string;
             readonly seller_name?: string;
             readonly sale_number?: number;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             /** Format: decimal */
             readonly base_amount?: string;
             /** Format: decimal */
             readonly rate?: string;
             /**
+             * Valor
              * Format: decimal
              * @description Negativo quando estorno de devolução.
              */
             readonly amount?: string;
-            status?: components["schemas"]["CommissionStatusEnum"];
+            /** Situação */
+            readonly status?: components["schemas"]["CommissionStatusEnum"];
             /** Format: date-time */
             readonly paid_at?: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store?: string;
             readonly seller?: number;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             readonly sale?: string;
             /** Format: uuid */
             readonly sale_item?: string | null;
@@ -11765,28 +13424,39 @@ export interface components {
             readonly sku?: string;
             /** @description Loja ou site concorrente. */
             competitor?: string;
-            /** Format: decimal */
+            /**
+             * Preço
+             * Format: decimal
+             */
             price?: string;
             /**
              * Format: date
              * @description Dia em que o preço foi visto.
              */
             observed_on?: string;
-            /** Format: uri */
             url?: string;
+            /** Observações */
             notes?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
         };
         PatchedCosmosConversation: {
             /** Format: uuid */
             readonly id?: string;
+            /** Título */
             title?: string;
             /** Format: date-time */
             readonly last_message_at?: string | null;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
             /**
+             * Loja
              * Format: uuid
              * @description Filial ativa quando a conversa começou.
              */
@@ -11799,22 +13469,40 @@ export interface components {
         PatchedCoupon: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Habilitado */
             is_enabled?: boolean;
             /** Format: date-time */
             starts_at?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
-            /** @description Guardado em MAIÚSCULAS. Vazio = gerado pelo nome (BLACKFRIDAY) ou aleatório. */
+            /**
+             * Código
+             * @description Guardado em MAIÚSCULAS. Vazio = gerado pelo nome (BLACKFRIDAY) ou aleatório.
+             */
             code?: string;
+            /** Nome */
             name?: string;
+            /** Tipo */
             kind?: components["schemas"]["CouponKindEnum"];
-            /** Format: decimal */
+            /**
+             * Valor
+             * Format: decimal
+             */
             value?: string;
             /**
              * Format: decimal
@@ -11842,11 +13530,17 @@ export interface components {
             /** @description Canais de venda aceitos. Vazio = todos. */
             channels?: unknown;
             combines_with_promotions?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -11864,23 +13558,41 @@ export interface components {
             tags?: string[];
             addresses?: components["schemas"]["CustomerAddress"][];
             readonly credit_balance?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             person_type?: components["schemas"]["PersonTypeEnum"];
-            /** @description Nome ou nome fantasia. */
+            /**
+             * Nome
+             * @description Nome ou nome fantasia.
+             */
             name?: string;
             legal_name?: string;
-            /** @description CPF ou CNPJ, só dígitos. */
+            /**
+             * Documento
+             * @description CPF ou CNPJ, só dígitos.
+             */
             document?: string;
             state_registration?: string;
+            /** Telefone */
             phone?: string;
-            /** Format: email */
+            /** E-mail */
             email?: string;
+            /** Observações */
             notes?: string;
+            /** Ativo */
             is_active?: boolean;
             /** Format: date */
             birth_date?: string | null;
@@ -11892,9 +13604,14 @@ export interface components {
             billing_same_as_delivery?: boolean;
             /** @description Metacampos {chave: valor}. */
             metafields?: unknown;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             groups?: string[];
         };
@@ -11902,43 +13619,74 @@ export interface components {
         PatchedCustomerAddress: {
             /** Format: uuid */
             id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
             street?: string;
+            /** Número */
             number?: string;
             complement?: string;
             district?: string;
+            /** Cidade */
             city?: string;
             /** @description Código IBGE do município. */
             city_ibge?: string;
+            /** Estado */
             state?: string;
+            /** CEP */
             zip_code?: string;
             label?: string;
             reference?: string;
+            /** Padrão */
             is_default?: boolean;
             /** @description Endereço de cobrança (quando difere da entrega). */
             is_billing?: boolean;
-            /** Format: uuid */
+            /**
+             * Cliente
+             * Format: uuid
+             */
             customer?: string;
         };
         PatchedCustomerGroup: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Descrição */
             description?: string;
             color?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
         };
         /**
@@ -11952,24 +13700,42 @@ export interface components {
             readonly id?: string;
             rules?: components["schemas"]["Rule"][];
             readonly rule_count?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Habilitado */
             is_enabled?: boolean;
             /** Format: date-time */
             starts_at?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Descrição */
             description?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -11978,25 +13744,48 @@ export interface components {
         PatchedFinancialAccount: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Tipo */
             kind?: components["schemas"]["FinancialAccountKindEnum"];
             bank_code?: string;
             agency?: string;
             account_number?: string;
             /** Format: decimal */
             opening_balance?: string;
+            /**
+             * Format: decimal
+             * @description Conta de reembolso de sócio: % dele no resultado (divisão do lucro).
+             */
+            partner_share?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -12005,20 +13794,38 @@ export interface components {
         PatchedFinancialCategory: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Código */
             code?: string;
+            /** Nome */
             name?: string;
+            /** Tipo */
             kind?: components["schemas"]["FinancialCategoryKindEnum"];
             system_key?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             parent?: string | null;
@@ -12037,39 +13844,110 @@ export interface components {
             installment_count: number;
             /** Format: date */
             first_due?: string;
-            /** Format: date-time */
+            payment_mode?: components["schemas"]["PaymentModeEnum"];
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
-            kind?: components["schemas"]["FinancialTitleKindEnum"];
+            frequency?: components["schemas"]["FrequencyEnum"];
+            /**
+             * Format: int64
+             * @description Mensal: dia do vencimento (31 = último dia).
+             */
+            due_day?: number | null;
+            /**
+             * @description Semanal: dia da semana do vencimento.
+             *
+             *     * `0` - Segunda
+             *     * `1` - Terça
+             *     * `2` - Quarta
+             *     * `3` - Quinta
+             *     * `4` - Sexta
+             *     * `5` - Sábado
+             *     * `6` - Domingo
+             */
+            due_weekday?: (components["schemas"]["DueWeekdayEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * Format: time
+             * @description Horário do vencimento (opcional).
+             */
+            due_time?: string | null;
+            /**
+             * Format: decimal
+             * @description Multa por atraso (% sobre a parcela, uma vez).
+             */
+            fine_percent?: string;
+            /**
+             * Format: decimal
+             * @description Juros por atraso (% ao mês, proporcional aos dias).
+             */
+            interest_percent?: string;
+            /** Tipo */
+            kind?: components["schemas"]["Kind1adEnum"];
+            /** Descrição */
             description?: string;
             document_number?: string;
             /** Format: date */
-            readonly issue_date?: string;
+            issue_date?: string;
             /** Format: decimal */
             total?: string;
-            readonly status?: components["schemas"]["Status9c6Enum"];
+            /** Situação */
+            readonly status?: components["schemas"]["Status54cEnum"];
+            /** Observações */
             notes?: string;
-            /** Format: uuid */
+            /** Format: date */
+            readonly recurring_period?: string | null;
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
-            /** Format: uuid */
+            /**
+             * Cliente
+             * Format: uuid
+             */
             customer?: string | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string | null;
-            /** Format: uuid */
+            /**
+             * Categoria
+             * Format: uuid
+             */
             category?: string | null;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             readonly sale?: string | null;
             /** Format: uuid */
             readonly payment?: string | null;
             /** Format: uuid */
             readonly inbound_nfe?: string | null;
+            /** Format: uuid */
+            readonly recurring?: string | null;
         };
         /**
          * @description Dados fiscais. Segredos só entram (na saída vira `has_<campo>`); o
@@ -12081,22 +13959,38 @@ export interface components {
             stores?: string[];
             readonly has_certificate?: string;
             readonly dfe?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             street?: string;
+            /** Número */
             number?: string;
             complement?: string;
             district?: string;
+            /** Cidade */
             city?: string;
             /** @description Código IBGE do município. */
             city_ibge?: string;
+            /** Estado */
             state?: string;
+            /** CEP */
             zip_code?: string;
-            /** @description Como aparece nas listas (ex.: Matriz). */
+            /**
+             * Nome
+             * @description Como aparece nas listas (ex.: Matriz).
+             */
             name?: string;
             /** @description Razão social. */
             legal_name?: string;
@@ -12106,10 +14000,11 @@ export interface components {
             /** @description Inscrição estadual (IE). */
             state_registration?: string;
             municipal_registration?: string;
+            /** Telefone */
             phone?: string;
-            /** Format: email */
+            /** E-mail */
             email?: string;
-            provider?: components["schemas"]["FiscalConfigProviderEnum"];
+            provider?: components["schemas"]["ProviderEnum"];
             environment?: components["schemas"]["Environment656Enum"];
             crt?: components["schemas"]["CrtEnum"];
             /** @description Recusa item com perfil incompleto. */
@@ -12120,9 +14015,7 @@ export interface components {
             local_fiscal_url?: string;
             csc_id?: string;
             csc_token?: string;
-            /** Format: uri */
             qr_base_url?: string;
-            /** Format: uri */
             portal_url?: string;
             certificate_password?: string;
             /** Format: date-time */
@@ -12143,10 +14036,16 @@ export interface components {
             dfe_auto_science?: boolean;
             /** @description Nota com todos os itens vinculados já vira entrada de estoque (rascunho). */
             dfe_auto_entry?: boolean;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             default_profile?: string | null;
@@ -12154,12 +14053,22 @@ export interface components {
         PatchedFiscalProfile: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
             /** @description Pré-pronto do sistema: ajusta, mas não exclui. */
             is_system?: boolean;
@@ -12187,21 +14096,37 @@ export interface components {
              * @description Tributos aproximados (Lei 12.741) em %.
              */
             approx_tax_rate?: string;
+            /** Padrão */
             is_default?: boolean;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
         };
         PatchedFiscalSeries: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             document_model?: components["schemas"]["DocumentModelEnum"];
             /** Format: int64 */
@@ -12209,13 +14134,21 @@ export interface components {
             origin?: components["schemas"]["FiscalSeriesOriginEnum"];
             /** Format: int64 */
             next_number?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             config?: string;
+            /** Format: uuid */
+            terminal?: string | null;
         };
         /** @description Tabela de frete. `ranges` é a lista completa das faixas (faixa de CEP). */
         PatchedFreightTable: {
@@ -12224,13 +14157,24 @@ export interface components {
             ranges?: components["schemas"]["FreightZipRange"][];
             origin_zip?: string;
             readonly range_count?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Tipo */
             kind?: components["schemas"]["FreightTableKindEnum"];
             /**
              * Format: int64
@@ -12256,12 +14200,19 @@ export interface components {
             max_distance_km?: string | null;
             /** Format: int64 */
             position?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -12277,7 +14228,10 @@ export interface components {
             readonly width?: number;
             readonly height?: number;
             alt_text?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
         };
         PatchedInboundNFe: {
@@ -12290,14 +14244,25 @@ export interface components {
             readonly item_count?: string;
             readonly pending_count?: string;
             readonly entry?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Chave de acesso */
             readonly access_key?: string;
             readonly nsu?: string;
+            /** Número */
             readonly number?: string;
             readonly series?: string;
             /** Format: date-time */
@@ -12326,51 +14291,113 @@ export interface components {
             /** Format: date-time */
             readonly ignored_at?: string | null;
             readonly ignored_reason?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store?: string;
             /**
              * Format: uuid
              * @description CNPJ (dados fiscais) que recebeu a nota.
              */
             readonly fiscal_config?: string | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string | null;
             readonly ignored_by?: number | null;
         };
-        /** @description `credentials` entra; na saída só aparece quais chaves estão preenchidas. */
+        /**
+         * @description Integração da conta. `fields` entra com os valores das configurações do tipo (nomes fixos, ver
+         *     `services/integrations`); na saída os segredos viram máscara. `purposes` = o que ela faz.
+         */
         PatchedIntegration: {
             /** Format: uuid */
             readonly id?: string;
-            credentials?: {
+            fields?: {
                 [key: string]: unknown;
             };
-            readonly configured_keys?: string;
-            /** Format: date-time */
+            purposes?: string[];
+            readonly kind_label?: string;
+            readonly purpose_labels?: string;
+            readonly webhook_url?: string;
+            readonly webhook_ready?: string;
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            provider?: components["schemas"]["IntegrationProviderEnum"];
+            /** Tipo */
+            kind?: string;
+            /**
+             * Nome
+             * @description Ex.: Asaas — Empresa A.
+             */
+            name?: string;
+            /** Ativo */
             is_active?: boolean;
-            settings?: unknown;
+            /**
+             * Padrão
+             * @description A usada quando há mais de uma do mesmo tipo.
+             */
+            is_default?: boolean;
+            /** Observações */
+            notes?: string;
+            /** Format: date-time */
+            readonly last_check_at?: string | null;
+            readonly last_check_ok?: boolean | null;
+            readonly last_check_message?: string;
+            /** Criado por */
+            readonly created_by?: number | null;
+            /** Atualizado por */
+            readonly updated_by?: number | null;
         };
         PatchedKitComponent: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             quantity?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             kit?: string;
@@ -12380,12 +14407,22 @@ export interface components {
         PatchedLabelTemplate: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
             subject?: components["schemas"]["SubjectEnum"];
             /** Format: decimal */
@@ -12402,13 +14439,20 @@ export interface components {
             /** @description Ex.: ["name", "price", "barcode"]. */
             fields?: unknown;
             custom_text?: string;
+            /** Padrão */
             is_default?: boolean;
+            /** Ativo */
             is_active?: boolean;
             /** @description Modelo pré-pronto do sistema: ajusta, mas não exclui. */
             is_system?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
         };
         PatchedLogisticsRule: {
@@ -12419,15 +14463,29 @@ export interface components {
             readonly entry_lot_label_name?: string;
             readonly entry_product_label_name?: string;
             readonly conference_label_name?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Descrição */
             description?: string;
-            /** @description Filial nova (ou sem escolha) fica com esta. */
+            /**
+             * Padrão
+             * @description Filial nova (ou sem escolha) fica com esta.
+             */
             is_default?: boolean;
             /** @description Permite conferir o recebimento manualmente, sem ler os códigos. */
             allow_manual_conference?: boolean;
@@ -12447,9 +14505,14 @@ export interface components {
              *     * `off` - Não imprime
              */
             conference_labels?: components["schemas"]["ConferenceLabelsEnum"];
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /**
              * Format: uuid
@@ -12472,17 +14535,33 @@ export interface components {
             readonly id?: string;
             categories?: string[];
             options?: string[];
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             owner?: components["schemas"]["OwnerEnum"];
-            /** @description Chave em `metafields` (ex.: "tempo_montagem"). */
+            /**
+             * Chave
+             * @description Chave em `metafields` (ex.: "tempo_montagem").
+             */
             key?: string;
-            /** @description Rótulo na tela (ex.: "Tempo de montagem"). */
+            /**
+             * Nome
+             * @description Rótulo na tela (ex.: "Tempo de montagem").
+             */
             name?: string;
+            /** Tipo */
             type?: components["schemas"]["MetafieldDefinitionTypeEnum"];
             /** @description Depois do valor: "h", "meses", "kg". */
             unit?: string;
@@ -12492,30 +14571,53 @@ export interface components {
             required?: boolean;
             /** Format: int64 */
             position?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
         };
         PatchedNFeIssue: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Tipo */
             kind?: components["schemas"]["NFeIssueKindEnum"];
+            /** Situação */
             status?: components["schemas"]["NFeIssueStatusEnum"];
+            /** Descrição */
             description?: string;
             /** Format: date-time */
             resolved_at?: string | null;
             resolution_notes?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             nfe?: string;
@@ -12524,13 +14626,24 @@ export interface components {
         PatchedPaymentMethod: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Tipo */
             kind?: components["schemas"]["PaymentMethodKindEnum"];
             /** @description Pede NSU/autorização/txid. */
             requires_reference?: boolean;
@@ -12549,12 +14662,19 @@ export interface components {
             opens_drawer?: boolean;
             /** Format: int64 */
             position?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -12565,30 +14685,52 @@ export interface components {
         PatchedPrintJob: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             /** Format: uuid */
             readonly serial?: string;
+            /** Tipo */
             kind?: components["schemas"]["PrintJobKindEnum"];
+            /** Situação */
             status?: components["schemas"]["PrintJobStatusEnum"];
             payload?: unknown;
             html_content?: string;
             error_message?: string;
             /** Format: date-time */
             readonly printed_at?: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             printer?: string | null;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             sale?: string | null;
             /** Format: uuid */
             original_job?: string | null;
@@ -12597,12 +14739,22 @@ export interface components {
         PatchedPrinter: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
             purpose?: components["schemas"]["PrinterPurposeEnum"];
             driver?: components["schemas"]["DriverEnum"];
@@ -12628,12 +14780,21 @@ export interface components {
             /** Format: int64 */
             cash_drawer_off_ms?: number;
             settings?: unknown;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             terminal?: string | null;
@@ -12687,15 +14848,26 @@ export interface components {
             readonly fiscal_ncm?: string;
             /** @description O CEST que vale: o do produto ou, sem ele, o do perfil. */
             readonly fiscal_cest?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Tipo */
             type?: components["schemas"]["ProductTypeEnum"];
             purpose?: components["schemas"]["ProductPurposeEnum"];
             sale_method?: components["schemas"]["SaleMethodEnum"];
+            /** Nome */
             name?: string;
             /** @description Referência do modelo; base do SKU das variantes. */
             reference?: string;
@@ -12704,9 +14876,15 @@ export interface components {
              * @description Modelo do fabricante (ex.: Tune 510BT).
              */
             model_name?: string;
-            /** @description Texto rico (HTML limpo). */
+            /**
+             * Descrição
+             * @description Texto rico (HTML limpo).
+             */
             description?: string;
-            /** @description Endereço na loja virtual (gerado pelo nome). */
+            /**
+             * Identificador
+             * @description Endereço na loja virtual (gerado pelo nome).
+             */
             slug?: string;
             /** @description Título no Google (até 70 caracteres). */
             seo_title?: string;
@@ -12729,15 +14907,27 @@ export interface components {
             track_lots?: boolean;
             /** @description Exige número de série por unidade. */
             track_serial?: boolean;
+            /** Ativo */
             is_active?: boolean;
             metafields?: unknown;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Categoria
+             * Format: uuid
+             */
             category?: string | null;
-            /** Format: uuid */
+            /**
+             * Marca
+             * Format: uuid
+             */
             brand?: string | null;
             /** Format: uuid */
             fiscal_profile?: string | null;
@@ -12745,19 +14935,36 @@ export interface components {
         PatchedProductImage: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             /** Format: int64 */
             position?: number;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Produto
+             * Format: uuid
+             */
             product?: string;
             /** Format: uuid */
             variant?: string | null;
@@ -12767,27 +14974,47 @@ export interface components {
         PatchedPromotion: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Habilitado */
             is_enabled?: boolean;
             /** Format: date-time */
             starts_at?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
+            /** Nome */
             name?: string;
             /** Format: int64 */
             position?: number;
             target?: components["schemas"]["TargetEnum"];
-            kind?: components["schemas"]["KindB2bEnum"];
-            /** Format: decimal */
+            /** Tipo */
+            kind?: components["schemas"]["KindFcaEnum"];
+            /**
+             * Valor
+             * Format: decimal
+             */
             value?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             table?: string;
@@ -12797,11 +15024,20 @@ export interface components {
         PatchedPromotionProduct: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             /**
              * Format: decimal
@@ -12813,19 +15049,145 @@ export interface components {
              * @description O "de" exibido riscado.
              */
             compare_at_price?: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             promotion?: string;
-            /** Format: uuid */
+            /**
+             * Produto
+             * Format: uuid
+             */
             product?: string;
         };
-        /**
-         * @description Cargo fixo: a conta só ajusta o desconto máximo e o "ativo"; o resto é do catálogo
-         *     (`services/access_catalog.SYSTEM_ROLES`). O superusuário (suporte) mexe em tudo.
-         */
+        PatchedRecurringTitle: {
+            /** Format: uuid */
+            readonly id?: string;
+            readonly customer_name?: string;
+            readonly supplier_name?: string;
+            readonly category_name?: string;
+            readonly upcoming?: unknown[];
+            readonly next_due?: string;
+            readonly party_name?: string;
+            readonly generated?: number;
+            /**
+             * Criado em
+             * Format: date-time
+             */
+            readonly created_at?: string;
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
+            readonly updated_at?: string;
+            /**
+             * Excluído em
+             * Format: date-time
+             */
+            readonly deleted_at?: string | null;
+            frequency?: components["schemas"]["FrequencyEnum"];
+            /**
+             * Format: int64
+             * @description Mensal: dia do vencimento (31 = último dia).
+             */
+            due_day?: number | null;
+            /**
+             * @description Semanal: dia da semana do vencimento.
+             *
+             *     * `0` - Segunda
+             *     * `1` - Terça
+             *     * `2` - Quarta
+             *     * `3` - Quinta
+             *     * `4` - Sexta
+             *     * `5` - Sábado
+             *     * `6` - Domingo
+             */
+            due_weekday?: (components["schemas"]["DueWeekdayEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * Format: time
+             * @description Horário do vencimento (opcional).
+             */
+            due_time?: string | null;
+            /**
+             * Format: decimal
+             * @description Multa por atraso (% sobre a parcela, uma vez).
+             */
+            fine_percent?: string;
+            /**
+             * Format: decimal
+             * @description Juros por atraso (% ao mês, proporcional aos dias).
+             */
+            interest_percent?: string;
+            /** Tipo */
+            kind?: components["schemas"]["Kind1adEnum"];
+            /** Descrição */
+            description?: string;
+            /**
+             * Valor
+             * Format: decimal
+             */
+            amount?: string;
+            /**
+             * Format: date
+             * @description Primeiro mês que gera.
+             */
+            start_date?: string;
+            /**
+             * Format: date
+             * @description Vazio = sem fim.
+             */
+            end_date?: string | null;
+            /**
+             * Format: int64
+             * @description Quantos dias antes do vencimento o título nasce.
+             */
+            lead_days?: number;
+            /**
+             * Format: date
+             * @description Próximo vencimento a gerar.
+             */
+            readonly next_period?: string | null;
+            /** Ativo */
+            is_active?: boolean;
+            /** Observações */
+            notes?: string;
+            /**
+             * Conta
+             * Format: uuid
+             */
+            readonly account?: string;
+            /** Criado por */
+            readonly created_by?: number | null;
+            /** Atualizado por */
+            readonly updated_by?: number | null;
+            /**
+             * Loja
+             * Format: uuid
+             */
+            store?: string;
+            /**
+             * Cliente
+             * Format: uuid
+             */
+            customer?: string | null;
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
+            supplier?: string | null;
+            /**
+             * Categoria
+             * Format: uuid
+             */
+            category?: string | null;
+        };
+        /** @description Cargo fixo: a conta ajusta desconto, ativo e permissões; identidade/hierarquia vêm do catálogo. */
         PatchedRole: {
             /** Format: uuid */
             readonly id?: string;
@@ -12833,17 +15195,31 @@ export interface components {
             readonly user_count?: string;
             /** @description Para ler: "Logística: gerenciar", "Estoque: ver". */
             readonly permission_names?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Código */
             code?: string;
+            /** Nome */
             name?: string;
             /** @description Agrupa na tela: Direção, Vendas, Logística... */
             area?: string;
-            /** @description O que o cargo faz no sistema. */
+            /**
+             * Descrição
+             * @description O que o cargo faz no sistema.
+             */
             description?: string;
             /** Format: int64 */
             rank?: number;
@@ -12855,10 +15231,16 @@ export interface components {
             is_account_admin?: boolean;
             /** @description Criado pela plataforma; não pode ser apagado. */
             readonly is_system?: boolean;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
         };
         PatchedSale: {
@@ -12868,6 +15250,13 @@ export interface components {
             readonly payments?: components["schemas"]["Payment"][];
             /** Format: decimal */
             readonly balance_due?: string;
+            /**
+             * Format: double
+             * @description Saldo atual da carteira do cliente; zero quando a venda não tem cliente.
+             */
+            readonly customer_credit_balance?: number;
+            /** @description A regra da filial permite devolver itens como crédito na carteira. */
+            readonly store_credit_refund_allowed?: boolean;
             readonly seller_name?: string;
             readonly shipping_address_detail?: string;
             /** @description Endereços do pedido: entrega e cobrança (herdados do cliente). */
@@ -12876,16 +15265,29 @@ export interface components {
             };
             /** @description Notas fiscais do pedido, a principal primeiro. */
             readonly invoices?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
-            /** @description Sequencial por loja. */
+            /**
+             * Número
+             * @description Sequencial por loja.
+             */
             readonly number?: number;
             readonly channel?: components["schemas"]["ChannelEnum"];
-            readonly status?: components["schemas"]["Status685Enum"];
+            /** Situação */
+            readonly status?: components["schemas"]["StatusC76Enum"];
             /**
              * Format: date-time
              * @description Quando o pedido foi guardado.
@@ -12915,6 +15317,7 @@ export interface components {
             readonly paid_amount?: string;
             /** Format: decimal */
             readonly change_amount?: string;
+            /** Observações */
             readonly notes?: string;
             readonly metafields?: unknown;
             readonly payment_status?: components["schemas"]["PaymentStatusEnum"];
@@ -12936,11 +15339,19 @@ export interface components {
             /** Format: date-time */
             readonly cancelled_at?: string | null;
             readonly cancel_reason?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store?: string;
             /** Format: uuid */
             readonly terminal?: string | null;
@@ -12952,7 +15363,10 @@ export interface components {
             readonly parked_by?: number | null;
             /** @description Vendedor que recebe a comissão. */
             readonly seller?: number | null;
-            /** Format: uuid */
+            /**
+             * Cliente
+             * Format: uuid
+             */
             readonly customer?: string | null;
             /** Format: uuid */
             readonly shipping_address?: string | null;
@@ -12968,12 +15382,22 @@ export interface components {
         PatchedScale: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
             protocol?: components["schemas"]["ProtocolEnum"];
             port?: string;
@@ -12983,12 +15407,21 @@ export interface components {
             /** Format: date-time */
             readonly agent_lease_expires_at?: string | null;
             settings?: unknown;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             terminal?: string | null;
@@ -13005,12 +15438,22 @@ export interface components {
             readonly default_price?: number;
             categories?: string[];
             products?: string[];
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Tipo */
             kind?: components["schemas"]["ServiceRuleKindEnum"];
             /**
              * Format: int64
@@ -13028,14 +15471,21 @@ export interface components {
              */
             price_max?: string | null;
             /**
+             * Preço
              * Format: decimal
              * @description Preço do serviço. Vazio = o padrão do serviço.
              */
             price?: string | null;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             service?: string;
@@ -13052,12 +15502,22 @@ export interface components {
             readonly inbound_nfe_number?: string;
             readonly item_count?: string;
             readonly manual_conference?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Tipo */
             kind?: components["schemas"]["StockDocumentKindEnum"];
             /**
              * @description Só em saída.
@@ -13067,7 +15527,9 @@ export interface components {
              *     * `expiration` - Vencimento
              */
             exit_reason?: components["schemas"]["ExitReasonEnum"] | components["schemas"]["BlankEnum"];
+            /** Situação */
             readonly status?: components["schemas"]["StockDocumentStatusEnum"];
+            /** Número */
             readonly number?: number;
             /** @description Número da nota/documento externo. */
             external_number?: string;
@@ -13081,17 +15543,28 @@ export interface components {
             readonly posted_at?: string | null;
             /** Format: date-time */
             readonly cancelled_at?: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             warehouse?: string;
             /** Format: uuid */
             destination?: string | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string | null;
             /** Format: uuid */
             readonly inbound_nfe?: string | null;
@@ -13099,18 +15572,33 @@ export interface components {
             readonly posted_by?: number | null;
             readonly cancelled_by?: number | null;
         };
+        /**
+         * @description Serializer com `cost_fields = (...)`: sem `catalog.view_costs`, eles não saem nem entram.
+         *
+         *     Sem requisição no contexto (tarefa, comando, serviço interno) mostra tudo: a regra é de tela.
+         */
         PatchedStockLot: {
             /** Format: uuid */
             readonly id?: string;
             readonly variant_name?: string;
             readonly sku?: string;
             readonly warehouse_name?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Código */
             readonly code?: string;
             /** @description Lote do fabricante. */
             lot_number?: string;
@@ -13125,14 +15613,23 @@ export interface components {
             readonly received_at?: string | null;
             /** Format: decimal */
             readonly initial_quantity?: string;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             readonly quantity?: string;
             /** Format: decimal */
             readonly unit_cost?: string;
+            /** Situação */
             status?: components["schemas"]["StockLotStatusEnum"];
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             readonly variant?: string;
@@ -13144,15 +15641,29 @@ export interface components {
             readonly id?: string;
             readonly store_names?: string;
             readonly store_count?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Descrição */
             description?: string;
-            /** @description Filial nova (ou sem escolha) fica com esta. */
+            /**
+             * Padrão
+             * @description Filial nova (ou sem escolha) fica com esta.
+             */
             is_default?: boolean;
             picking_strategy?: components["schemas"]["PickingStrategyEnum"];
             /** Format: int64 */
@@ -13161,21 +15672,37 @@ export interface components {
             allow_negative_stock?: boolean;
             /** @description Sem validade: guarda a data de entrada e dá saída no mais antigo primeiro. */
             fifo_by_entry?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
         };
         PatchedStorageBin: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Código */
             code?: string;
+            /** Tipo */
             kind?: components["schemas"]["StorageBinKindEnum"];
             /** @description Rua / corredor. */
             aisle?: string;
@@ -13184,12 +15711,21 @@ export interface components {
             /** @description Nível / altura. */
             level?: string;
             position?: string;
-            /** Format: int64 */
+            /**
+             * Sequência
+             * Format: int64
+             */
             sequence?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /** Format: uuid */
             warehouse?: string;
@@ -13202,39 +15738,63 @@ export interface components {
             readonly parent_name?: string;
             /** @default 0 */
             readonly children_count: number;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             street?: string;
+            /** Número */
             number?: string;
             complement?: string;
             district?: string;
+            /** Cidade */
             city?: string;
             /** @description Código IBGE do município. */
             city_ibge?: string;
+            /** Estado */
             state?: string;
+            /** CEP */
             zip_code?: string;
-            /** @description Nome fantasia. */
+            /**
+             * Nome
+             * @description Nome fantasia.
+             */
             name?: string;
+            /** Tipo */
             kind?: components["schemas"]["StoreKindEnum"];
             /** @description Razão social. */
             legal_name?: string;
             cnpj?: string;
             state_registration?: string;
             municipal_registration?: string;
+            /** Telefone */
             phone?: string;
-            /** Format: email */
+            /** E-mail */
             email?: string;
             local_server_url?: string;
             cloud_only?: boolean;
             settings?: unknown;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /**
              * Format: uuid
@@ -13270,15 +15830,29 @@ export interface components {
             readonly id?: string;
             readonly store_names?: string;
             readonly store_count?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Descrição */
             description?: string;
-            /** @description Filial nova (ou sem escolha) fica com esta. */
+            /**
+             * Padrão
+             * @description Filial nova (ou sem escolha) fica com esta.
+             */
             is_default?: boolean;
             require_open_cash_session?: boolean;
             /** Format: decimal */
@@ -13295,58 +15869,106 @@ export interface components {
             ask_print_danfe?: boolean;
             /** @description Só lança cartão/PIX com o NSU/autorização do comprovante. */
             require_payment_reference?: boolean;
+            /** @description Permite transformar devolução em crédito na carteira do cliente. */
+            allow_store_credit_refund?: boolean;
             print_cancellation_receipt?: boolean;
             scale_barcode_mode?: components["schemas"]["ScaleBarcodeModeEnum"] | components["schemas"]["BlankEnum"];
             scale_barcode_prefix?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
         };
         PatchedSupplier: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             street?: string;
+            /** Número */
             number?: string;
             complement?: string;
             district?: string;
+            /** Cidade */
             city?: string;
             /** @description Código IBGE do município. */
             city_ibge?: string;
+            /** Estado */
             state?: string;
+            /** CEP */
             zip_code?: string;
             person_type?: components["schemas"]["PersonTypeEnum"];
-            /** @description Nome ou nome fantasia. */
+            /**
+             * Nome
+             * @description Nome ou nome fantasia.
+             */
             name?: string;
             legal_name?: string;
-            /** @description CPF ou CNPJ, só dígitos. */
+            /**
+             * Documento
+             * @description CPF ou CNPJ, só dígitos.
+             */
             document?: string;
             state_registration?: string;
+            /** Telefone */
             phone?: string;
-            /** Format: email */
+            /** E-mail */
             email?: string;
+            /** Observações */
             notes?: string;
+            /** Ativo */
             is_active?: boolean;
             contact_name?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
         };
+        /**
+         * @description Serializer com `cost_fields = (...)`: sem `catalog.view_costs`, eles não saem nem entram.
+         *
+         *     Sem requisição no contexto (tarefa, comando, serviço interno) mostra tudo: a regra é de tela.
+         */
         PatchedSupplierProduct: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             supplier_code?: string;
             supplier_barcode?: string;
@@ -13363,11 +15985,19 @@ export interface components {
             last_purchase_at?: string | null;
             /** @description Falso = sugestão automática ainda não conferida. */
             confirmed?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string;
             /** Format: uuid */
             variant?: string;
@@ -13375,13 +16005,23 @@ export interface components {
         PatchedTerminal: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             installation_id?: string;
+            /** Nome */
             name?: string;
             device_type?: components["schemas"]["DeviceTypeEnum"];
             /** @description Caixa principal da loja. */
@@ -13389,15 +16029,24 @@ export interface components {
             app_version?: string;
             /** Format: date-time */
             readonly last_seen_at?: string | null;
+            /** Ativo */
             is_active?: boolean;
             /** Format: date-time */
             readonly revoked_at?: string | null;
             revoked_reason?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
         };
         /** @description Usuário da conta: cria/edita o login (auth.User) e o perfil juntos. */
@@ -13407,7 +16056,6 @@ export interface components {
             username?: string;
             first_name?: string;
             last_name?: string;
-            /** Format: email */
             email?: string;
             password?: string;
             readonly role_name?: string;
@@ -13417,25 +16065,46 @@ export interface components {
             readonly user_id?: number;
             readonly full_name?: string;
             extra_permissions?: string[];
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
             /** @description Acessa todas as lojas da conta, inclusive as futuras. */
             all_stores?: boolean;
+            /** Telefone */
             phone?: string;
+            /** Format: date-time */
+            readonly sessions_revoked_at?: string | null;
+            /** @description Exibe a assistente Cosmos para este usuário. Administradores da conta sempre têm acesso. */
+            cosmos_enabled?: boolean;
             is_seller?: boolean;
             seller_code?: string;
             /** Format: decimal */
             commission_percent?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
             /**
+             * Perfil de acesso
              * Format: uuid
              * @description Cargo principal.
              */
@@ -13451,23 +16120,44 @@ export interface components {
         PatchedWarehouse: {
             /** Format: uuid */
             readonly id?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at?: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at?: string | null;
+            /** Nome */
             name?: string;
+            /** Tipo */
             kind?: components["schemas"]["WarehouseKindEnum"];
+            /** Padrão */
             is_default?: boolean;
             /** @description Controla o estoque por endereço (WMS). */
             uses_bins?: boolean;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account?: string;
+            /** Criado por */
             readonly created_by?: number | null;
+            /** Atualizado por */
             readonly updated_by?: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             parent?: string | null;
@@ -13477,11 +16167,18 @@ export interface components {
             readonly id: string;
             readonly method_name: string;
             readonly method_kind: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
             /**
+             * Valor
              * Format: decimal
              * @description Valor que abate a venda (sem o troco).
              */
@@ -13495,6 +16192,7 @@ export interface components {
             change_amount?: string;
             /** Format: int64 */
             installments?: number;
+            /** Situação */
             status?: components["schemas"]["PaymentStatusEnum"];
             card_brand?: string;
             authorization_code?: string;
@@ -13503,10 +16201,17 @@ export interface components {
             reference?: string;
             /** Format: date-time */
             readonly paid_at: string;
+            /** Metadados */
             metadata?: unknown;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store: string;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             sale: string;
             /** Format: uuid */
             method: string;
@@ -13516,13 +16221,24 @@ export interface components {
         PaymentMethod: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
+            /** Tipo */
             kind: components["schemas"]["PaymentMethodKindEnum"];
             /** @description Pede NSU/autorização/txid. */
             requires_reference?: boolean;
@@ -13541,12 +16257,19 @@ export interface components {
             opens_drawer?: boolean;
             /** Format: int64 */
             position?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /**
+             * Loja
              * Format: uuid
              * @description Vazio = vale para todas as lojas.
              */
@@ -13568,6 +16291,12 @@ export interface components {
          */
         PaymentMethodKindEnum: "cash" | "credit_card" | "debit_card" | "pix" | "voucher" | "store_credit" | "installment_plan" | "bank_slip" | "other";
         /**
+         * @description * `single` - single
+         *     * `installments` - installments
+         * @enum {string}
+         */
+        PaymentModeEnum: "single" | "installments";
+        /**
          * @description * `pending` - Aguardando pagamento
          *     * `partial` - Pago em parte
          *     * `paid` - Pago
@@ -13578,8 +16307,11 @@ export interface components {
          */
         PaymentStatusEnum: "pending" | "partial" | "paid" | "partially_refunded" | "refunded" | "cancelled";
         Permission: {
+            /** Código */
             code: string;
+            /** Nome */
             name: string;
+            /** Descrição */
             description?: string;
             group?: string;
             module?: string;
@@ -13606,6 +16338,11 @@ export interface components {
          * @enum {string}
          */
         PositionEnum: "above" | "inside" | "below" | "unknown";
+        /**
+         * @description Serializer com `cost_fields = (...)`: sem `catalog.view_costs`, eles não saem nem entram.
+         *
+         *     Sem requisição no contexto (tarefa, comando, serviço interno) mostra tudo: a regra é de tela.
+         */
         PriceCheck: {
             /** Format: uuid */
             readonly id: string;
@@ -13629,6 +16366,7 @@ export interface components {
             /** Format: decimal */
             readonly current_price: string;
             /**
+             * Custo
              * Format: decimal
              * @description Custo médio (ou o último, sem média) usado na conta.
              */
@@ -13684,7 +16422,8 @@ export interface components {
             /** @description Mercado muito espalhado ou pareamento fraco. */
             readonly needs_review: boolean;
             readonly reason: string;
-            readonly status: components["schemas"]["Status2c2Enum"];
+            /** Situação */
+            readonly status: components["schemas"]["StatusEc1Enum"];
             readonly status_display: string;
             readonly decided_by: number | null;
             readonly decided_by_name: string;
@@ -13694,7 +16433,10 @@ export interface components {
             readonly applied_price: string | null;
             /** Format: decimal */
             readonly previous_price: string | null;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
         };
         /** @description O processo aberto: com o que foi achado no mercado, para conferir oferta por oferta. */
@@ -13721,6 +16463,7 @@ export interface components {
             /** Format: decimal */
             readonly current_price: string;
             /**
+             * Custo
              * Format: decimal
              * @description Custo médio (ou o último, sem média) usado na conta.
              */
@@ -13776,7 +16519,8 @@ export interface components {
             /** @description Mercado muito espalhado ou pareamento fraco. */
             readonly needs_review: boolean;
             readonly reason: string;
-            readonly status: components["schemas"]["Status2c2Enum"];
+            /** Situação */
+            readonly status: components["schemas"]["StatusEc1Enum"];
             readonly status_display: string;
             readonly decided_by: number | null;
             readonly decided_by_name: string;
@@ -13786,7 +16530,10 @@ export interface components {
             readonly applied_price: string | null;
             /** Format: decimal */
             readonly previous_price: string | null;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
             readonly searches: Record<string, never>[];
             readonly offers: components["schemas"]["MarketOffer"][];
@@ -13794,30 +16541,52 @@ export interface components {
         PrintJob: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             /** Format: uuid */
             readonly serial: string;
+            /** Tipo */
             kind: components["schemas"]["PrintJobKindEnum"];
+            /** Situação */
             status?: components["schemas"]["PrintJobStatusEnum"];
             payload?: unknown;
             html_content?: string;
             error_message?: string;
             /** Format: date-time */
             readonly printed_at: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             printer?: string | null;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             sale?: string | null;
             /** Format: uuid */
             original_job?: string | null;
@@ -13846,12 +16615,22 @@ export interface components {
         Printer: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
             purpose?: components["schemas"]["PrinterPurposeEnum"];
             driver?: components["schemas"]["DriverEnum"];
@@ -13877,12 +16656,21 @@ export interface components {
             /** Format: int64 */
             cash_drawer_off_ms?: number;
             settings?: unknown;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             terminal?: string | null;
@@ -13943,15 +16731,26 @@ export interface components {
             readonly fiscal_ncm: string;
             /** @description O CEST que vale: o do produto ou, sem ele, o do perfil. */
             readonly fiscal_cest: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             type?: components["schemas"]["ProductTypeEnum"];
             purpose?: components["schemas"]["ProductPurposeEnum"];
             sale_method?: components["schemas"]["SaleMethodEnum"];
+            /** Nome */
             name: string;
             /** @description Referência do modelo; base do SKU das variantes. */
             reference?: string;
@@ -13960,9 +16759,15 @@ export interface components {
              * @description Modelo do fabricante (ex.: Tune 510BT).
              */
             model_name?: string;
-            /** @description Texto rico (HTML limpo). */
+            /**
+             * Descrição
+             * @description Texto rico (HTML limpo).
+             */
             description?: string;
-            /** @description Endereço na loja virtual (gerado pelo nome). */
+            /**
+             * Identificador
+             * @description Endereço na loja virtual (gerado pelo nome).
+             */
             slug?: string;
             /** @description Título no Google (até 70 caracteres). */
             seo_title?: string;
@@ -13985,15 +16790,27 @@ export interface components {
             track_lots?: boolean;
             /** @description Exige número de série por unidade. */
             track_serial?: boolean;
+            /** Ativo */
             is_active?: boolean;
             metafields?: unknown;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Categoria
+             * Format: uuid
+             */
             category?: string | null;
-            /** Format: uuid */
+            /**
+             * Marca
+             * Format: uuid
+             */
             brand?: string | null;
             /** Format: uuid */
             fiscal_profile?: string | null;
@@ -14001,19 +16818,36 @@ export interface components {
         ProductImage: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             /** Format: int64 */
             position?: number;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Produto
+             * Format: uuid
+             */
             product: string;
             /** Format: uuid */
             variant?: string | null;
@@ -14043,27 +16877,47 @@ export interface components {
         Promotion: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Habilitado */
             is_enabled?: boolean;
             /** Format: date-time */
             starts_at?: string | null;
             /** Format: date-time */
             ends_at?: string | null;
+            /** Nome */
             name: string;
             /** Format: int64 */
             position?: number;
             target?: components["schemas"]["TargetEnum"];
-            kind?: components["schemas"]["KindB2bEnum"];
-            /** Format: decimal */
+            /** Tipo */
+            kind?: components["schemas"]["KindFcaEnum"];
+            /**
+             * Valor
+             * Format: decimal
+             */
             value?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             table: string;
@@ -14073,11 +16927,20 @@ export interface components {
         PromotionProduct: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             /**
              * Format: decimal
@@ -14089,13 +16952,21 @@ export interface components {
              * @description O "de" exibido riscado.
              */
             compare_at_price?: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             promotion: string;
-            /** Format: uuid */
+            /**
+             * Produto
+             * Format: uuid
+             */
             product: string;
         };
         /**
@@ -14106,6 +16977,13 @@ export interface components {
          * @enum {string}
          */
         ProtocolEnum: "generic" | "toledo" | "filizola" | "urano";
+        /**
+         * @description * `manual` - Manual (sem transmissão)
+         *     * `focus_nfe` - Focus NFe
+         *     * `acbrlib` - ACBrLib (comunicador próprio)
+         * @enum {string}
+         */
+        ProviderEnum: "manual" | "focus_nfe" | "acbrlib";
         /**
          * @description * `not_configured` - Não configurado
          *     * `pending` - Aguardando
@@ -14134,11 +17012,20 @@ export interface components {
             readonly nfe_number: string;
             readonly checked_by_name: string;
             readonly difference: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             /** Format: decimal */
             expected_quantity?: string;
@@ -14147,21 +17034,36 @@ export interface components {
             /** Format: decimal */
             accepted_quantity?: string;
             reason: components["schemas"]["ReasonEnum"];
+            /** Observações */
             notes?: string;
             mode?: components["schemas"]["ModeEnum"] | components["schemas"]["BlankEnum"];
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
-            /** Format: uuid */
+            /**
+             * Documento
+             * Format: uuid
+             */
             document: string;
             /** Format: uuid */
             document_item?: string | null;
             /** Format: uuid */
             inbound_nfe?: string | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string | null;
             /** Format: uuid */
             variant: string;
@@ -14175,6 +17077,127 @@ export interface components {
          * @enum {string}
          */
         ReceivingEnum: "not_started" | "partial" | "received" | "divergent";
+        RecurringTitle: {
+            /** Format: uuid */
+            readonly id: string;
+            readonly customer_name: string;
+            readonly supplier_name: string;
+            readonly category_name: string;
+            readonly upcoming: unknown[];
+            readonly next_due: string;
+            readonly party_name: string;
+            readonly generated: number;
+            /**
+             * Criado em
+             * Format: date-time
+             */
+            readonly created_at: string;
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
+            readonly updated_at: string;
+            /**
+             * Excluído em
+             * Format: date-time
+             */
+            readonly deleted_at: string | null;
+            frequency?: components["schemas"]["FrequencyEnum"];
+            /**
+             * Format: int64
+             * @description Mensal: dia do vencimento (31 = último dia).
+             */
+            due_day?: number | null;
+            /**
+             * @description Semanal: dia da semana do vencimento.
+             *
+             *     * `0` - Segunda
+             *     * `1` - Terça
+             *     * `2` - Quarta
+             *     * `3` - Quinta
+             *     * `4` - Sexta
+             *     * `5` - Sábado
+             *     * `6` - Domingo
+             */
+            due_weekday?: (components["schemas"]["DueWeekdayEnum"] | components["schemas"]["NullEnum"]) | null;
+            /**
+             * Format: time
+             * @description Horário do vencimento (opcional).
+             */
+            due_time?: string | null;
+            /**
+             * Format: decimal
+             * @description Multa por atraso (% sobre a parcela, uma vez).
+             */
+            fine_percent?: string;
+            /**
+             * Format: decimal
+             * @description Juros por atraso (% ao mês, proporcional aos dias).
+             */
+            interest_percent?: string;
+            /** Tipo */
+            kind: components["schemas"]["Kind1adEnum"];
+            /** Descrição */
+            description: string;
+            /**
+             * Valor
+             * Format: decimal
+             */
+            amount?: string;
+            /**
+             * Format: date
+             * @description Primeiro mês que gera.
+             */
+            start_date: string;
+            /**
+             * Format: date
+             * @description Vazio = sem fim.
+             */
+            end_date?: string | null;
+            /**
+             * Format: int64
+             * @description Quantos dias antes do vencimento o título nasce.
+             */
+            lead_days?: number;
+            /**
+             * Format: date
+             * @description Próximo vencimento a gerar.
+             */
+            readonly next_period: string | null;
+            /** Ativo */
+            is_active?: boolean;
+            /** Observações */
+            notes?: string;
+            /**
+             * Conta
+             * Format: uuid
+             */
+            readonly account: string;
+            /** Criado por */
+            readonly created_by: number | null;
+            /** Atualizado por */
+            readonly updated_by: number | null;
+            /**
+             * Loja
+             * Format: uuid
+             */
+            store?: string;
+            /**
+             * Cliente
+             * Format: uuid
+             */
+            customer?: string | null;
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
+            supplier?: string | null;
+            /**
+             * Categoria
+             * Format: uuid
+             */
+            category?: string | null;
+        };
         /**
          * @description * `store_credit` - Vale-troca (crédito do cliente)
          *     * `cash` - Dinheiro do caixa
@@ -14207,28 +17230,47 @@ export interface components {
             sale?: string | null;
             /** Format: uuid */
             customer?: string | null;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             kind?: components["schemas"]["ReviewKindEnum"];
             readonly public_name: string;
             /** Format: int64 */
             rating: number;
             comment?: string;
+            /** Situação */
             readonly status: components["schemas"]["ReviewStatusEnum"];
             readonly rejection_reason: string;
             /** Format: date-time */
             readonly moderated_at: string | null;
             readonly verified_purchase: boolean;
             readonly origin: components["schemas"]["ReviewOriginEnum"];
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string;
             readonly moderated_by: number | null;
             /** Format: uuid */
@@ -14253,10 +17295,7 @@ export interface components {
          * @enum {string}
          */
         ReviewStatusEnum: "pending" | "approved" | "rejected";
-        /**
-         * @description Cargo fixo: a conta só ajusta o desconto máximo e o "ativo"; o resto é do catálogo
-         *     (`services/access_catalog.SYSTEM_ROLES`). O superusuário (suporte) mexe em tudo.
-         */
+        /** @description Cargo fixo: a conta ajusta desconto, ativo e permissões; identidade/hierarquia vêm do catálogo. */
         Role: {
             /** Format: uuid */
             readonly id: string;
@@ -14264,17 +17303,31 @@ export interface components {
             readonly user_count: string;
             /** @description Para ler: "Logística: gerenciar", "Estoque: ver". */
             readonly permission_names: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Código */
             code: string;
+            /** Nome */
             name: string;
             /** @description Agrupa na tela: Direção, Vendas, Logística... */
             area?: string;
-            /** @description O que o cargo faz no sistema. */
+            /**
+             * Descrição
+             * @description O que o cargo faz no sistema.
+             */
             description?: string;
             /** Format: int64 */
             rank?: number;
@@ -14286,10 +17339,16 @@ export interface components {
             is_account_admin?: boolean;
             /** @description Criado pela plataforma; não pode ser apagado. */
             readonly is_system: boolean;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         /** @description Regra DENTRO da tabela de desconto. A ordem da lista é a prioridade (1ª = topo). */
@@ -14300,7 +17359,7 @@ export interface components {
             /** @default categories */
             target: components["schemas"]["TargetEnum"];
             /** @default percent */
-            kind: components["schemas"]["KindB2bEnum"];
+            kind: components["schemas"]["KindFcaEnum"];
             /** Format: decimal */
             value: string;
             categories?: string[];
@@ -14336,6 +17395,13 @@ export interface components {
             readonly payments: components["schemas"]["Payment"][];
             /** Format: decimal */
             readonly balance_due: string;
+            /**
+             * Format: double
+             * @description Saldo atual da carteira do cliente; zero quando a venda não tem cliente.
+             */
+            readonly customer_credit_balance: number;
+            /** @description A regra da filial permite devolver itens como crédito na carteira. */
+            readonly store_credit_refund_allowed: boolean;
             readonly seller_name: string;
             readonly shipping_address_detail: string;
             /** @description Endereços do pedido: entrega e cobrança (herdados do cliente). */
@@ -14344,16 +17410,29 @@ export interface components {
             };
             /** @description Notas fiscais do pedido, a principal primeiro. */
             readonly invoices: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
-            /** @description Sequencial por loja. */
+            /**
+             * Número
+             * @description Sequencial por loja.
+             */
             readonly number: number;
             readonly channel: components["schemas"]["ChannelEnum"];
-            readonly status: components["schemas"]["Status685Enum"];
+            /** Situação */
+            readonly status: components["schemas"]["StatusC76Enum"];
             /**
              * Format: date-time
              * @description Quando o pedido foi guardado.
@@ -14383,6 +17462,7 @@ export interface components {
             readonly paid_amount: string;
             /** Format: decimal */
             readonly change_amount: string;
+            /** Observações */
             readonly notes: string;
             readonly metafields: unknown;
             readonly payment_status: components["schemas"]["PaymentStatusEnum"];
@@ -14404,11 +17484,19 @@ export interface components {
             /** Format: date-time */
             readonly cancelled_at: string | null;
             readonly cancel_reason: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string;
             /** Format: uuid */
             readonly terminal: string | null;
@@ -14420,7 +17508,10 @@ export interface components {
             readonly parked_by: number | null;
             /** @description Vendedor que recebe a comissão. */
             readonly seller: number | null;
-            /** Format: uuid */
+            /**
+             * Cliente
+             * Format: uuid
+             */
             readonly customer: string | null;
             /** Format: uuid */
             readonly shipping_address: string | null;
@@ -14433,19 +17524,34 @@ export interface components {
             readonly cancelled_by: number | null;
             readonly cancel_approved_by: number | null;
         };
+        /**
+         * @description Serializer com `cost_fields = (...)`: sem `catalog.view_costs`, eles não saem nem entram.
+         *
+         *     Sem requisição no contexto (tarefa, comando, serviço interno) mostra tudo: a regra é de tela.
+         */
         SaleItem: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
             /** Format: int64 */
             position?: number;
+            /** Descrição */
             description: string;
             sku?: string;
             unit?: string;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             quantity?: string;
             /**
              * Format: decimal
@@ -14469,12 +17575,16 @@ export interface components {
              * @description Custo médio no momento da venda (margem).
              */
             unit_cost?: string;
+            /** Situação */
             status?: components["schemas"]["StatusCe6Enum"];
             /** Format: date-time */
             cancelled_at?: string | null;
             cancel_reason?: string;
             metafields?: unknown;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             sale: string;
             /** Format: uuid */
             variant: string;
@@ -14490,7 +17600,10 @@ export interface components {
         SaleItemReport: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             readonly sale: string;
             readonly sale_number: number;
             readonly sale_status: string;
@@ -14502,10 +17615,14 @@ export interface components {
             readonly variant: string;
             /** Format: uuid */
             readonly product: string;
+            /** Descrição */
             readonly description: string;
             readonly sku: string;
             readonly unit: string;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             readonly quantity: string;
             /**
              * Format: decimal
@@ -14525,6 +17642,7 @@ export interface components {
              */
             readonly unit_cost: string;
             readonly margin: string;
+            /** Situação */
             readonly status: components["schemas"]["StatusCe6Enum"];
             readonly cancel_reason: string;
         };
@@ -14532,13 +17650,18 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             /**
+             * Número
              * Format: int64
              * @description Sequencial por loja.
              */
             number: number;
             channel?: components["schemas"]["ChannelEnum"];
-            status?: components["schemas"]["Status685Enum"];
-            /** Format: uuid */
+            /** Situação */
+            status?: components["schemas"]["StatusC76Enum"];
+            /**
+             * Cliente
+             * Format: uuid
+             */
             customer?: string | null;
             customer_name?: string;
             customer_document?: string;
@@ -14560,11 +17683,17 @@ export interface components {
             total?: string;
             /** Format: decimal */
             paid_amount?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
             /** Format: date-time */
             completed_at?: string | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             terminal?: string | null;
@@ -14593,13 +17722,24 @@ export interface components {
             readonly id: string;
             readonly items: components["schemas"]["SaleReturnItem"][];
             readonly sale_number: number;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Número */
             readonly number: number;
+            /** Situação */
             readonly status: components["schemas"]["SaleReturnStatusEnum"];
             readonly refund_method: components["schemas"]["RefundMethodEnum"];
             readonly reason: string;
@@ -14607,15 +17747,29 @@ export interface components {
             readonly total: string;
             /** Format: date-time */
             readonly completed_at: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string;
-            /** Format: uuid */
+            /**
+             * Venda
+             * Format: uuid
+             */
             readonly sale: string;
-            /** Format: uuid */
+            /**
+             * Cliente
+             * Format: uuid
+             */
             readonly customer: string | null;
             /** Format: uuid */
             readonly cash_session: string | null;
@@ -14629,7 +17783,10 @@ export interface components {
             /** Format: uuid */
             sale_item: string;
             readonly description: string;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             quantity?: string;
             /**
              * Format: decimal
@@ -14651,12 +17808,22 @@ export interface components {
         Scale: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
             protocol?: components["schemas"]["ProtocolEnum"];
             port?: string;
@@ -14666,12 +17833,21 @@ export interface components {
             /** Format: date-time */
             readonly agent_lease_expires_at: string | null;
             settings?: unknown;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             terminal?: string | null;
@@ -14686,24 +17862,43 @@ export interface components {
         ScaleReading: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             /** Format: decimal */
             weight_kg?: string;
             /** Format: decimal */
             tare_kg?: string;
             is_stable?: boolean;
+            /** Fonte */
             source?: components["schemas"]["SourceEnum"];
+            /** Observações */
             notes?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             scale?: string | null;
@@ -14719,7 +17914,10 @@ export interface components {
         SeoCheck: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: uuid */
+            /**
+             * Produto
+             * Format: uuid
+             */
             readonly product: string;
             readonly product_name: string;
             /** Format: date-time */
@@ -14738,18 +17936,24 @@ export interface components {
             /** @description A nota considerou o volume de busca do Google. */
             readonly has_search_data: boolean;
             /** Situação */
-            readonly status: components["schemas"]["Status4f7Enum"];
+            readonly status: components["schemas"]["StatusE91Enum"];
             readonly status_display: string;
             readonly issues_count: number;
             readonly suggestions_count: number;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
         };
         /** @description A análise aberta: de onde veio a nota, o que melhorar, o antes e depois e os termos pesquisados. */
         SeoCheckDetail: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: uuid */
+            /**
+             * Produto
+             * Format: uuid
+             */
             readonly product: string;
             readonly product_name: string;
             /** Format: date-time */
@@ -14768,11 +17972,14 @@ export interface components {
             /** @description A nota considerou o volume de busca do Google. */
             readonly has_search_data: boolean;
             /** Situação */
-            readonly status: components["schemas"]["Status4f7Enum"];
+            readonly status: components["schemas"]["StatusE91Enum"];
             readonly status_display: string;
             readonly issues_count: number;
             readonly suggestions_count: number;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
             /** @description [{key, label, points, max}] */
             readonly breakdown: unknown;
@@ -14797,12 +18004,22 @@ export interface components {
             readonly default_price: number;
             categories?: string[];
             products?: string[];
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             kind?: components["schemas"]["ServiceRuleKindEnum"];
             /**
              * Format: int64
@@ -14820,14 +18037,21 @@ export interface components {
              */
             price_max?: string | null;
             /**
+             * Preço
              * Format: decimal
              * @description Preço do serviço. Vazio = o padrão do serviço.
              */
             price?: string | null;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             service: string;
@@ -14852,21 +18076,13 @@ export interface components {
          */
         SourceEnum: "agent" | "manual";
         /**
-         * @description * `none` - Sem sugestão
-         *     * `pending` - Aguardando aprovação
-         *     * `applied` - Preço aplicado
-         *     * `rejected` - Recusada
+         * @description * `open` - Em aberto
+         *     * `partial` - Pago parcialmente
+         *     * `paid` - Pago
+         *     * `cancelled` - Cancelado
          * @enum {string}
          */
-        Status2c2Enum: "none" | "pending" | "applied" | "rejected";
-        /**
-         * @description * `none` - Sem sugestão
-         *     * `pending` - Aguardando aprovação
-         *     * `applied` - Sugestões aplicadas
-         *     * `rejected` - Recusada
-         * @enum {string}
-         */
-        Status4f7Enum: "none" | "pending" | "applied" | "rejected";
+        Status54cEnum: "open" | "partial" | "paid" | "cancelled";
         /**
          * @description * `open` - Aberta
          *     * `draft` - Pedido guardado
@@ -14874,31 +18090,45 @@ export interface components {
          *     * `cancelled` - Cancelada
          * @enum {string}
          */
-        Status685Enum: "open" | "draft" | "completed" | "cancelled";
-        /**
-         * @description * `open` - Em aberto
-         *     * `partial` - Pago parcialmente
-         *     * `paid` - Pago
-         *     * `cancelled` - Cancelado
-         * @enum {string}
-         */
-        Status9c6Enum: "open" | "partial" | "paid" | "cancelled";
+        StatusC76Enum: "open" | "draft" | "completed" | "cancelled";
         /**
          * @description * `active` - Ativo
          *     * `cancelled` - Cancelado
          * @enum {string}
          */
         StatusCe6Enum: "active" | "cancelled";
+        /**
+         * @description * `none` - Sem sugestão
+         *     * `pending` - Aguardando aprovação
+         *     * `applied` - Sugestões aplicadas
+         *     * `rejected` - Recusada
+         * @enum {string}
+         */
+        StatusE91Enum: "none" | "pending" | "applied" | "rejected";
+        /**
+         * @description * `none` - Sem sugestão
+         *     * `pending` - Aguardando aprovação
+         *     * `applied` - Preço aplicado
+         *     * `rejected` - Recusada
+         * @enum {string}
+         */
+        StatusEc1Enum: "none" | "pending" | "applied" | "rejected";
         StockAdvice: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string;
             /** Format: uuid */
             readonly warehouse: string;
             readonly warehouse_name: string;
+            /** Tipo */
             readonly kind: components["schemas"]["StockAdviceKindEnum"];
+            /** Situação */
             readonly status: components["schemas"]["StockAdviceStatusEnum"];
+            /** Título */
             readonly title: string;
             readonly detail: string;
             /** @description Ordena a lista: quanto maior, mais urgente. */
@@ -14907,13 +18137,19 @@ export interface components {
             readonly moves: unknown;
             /** Format: date-time */
             readonly checked_at: string;
-            /** Format: uuid */
+            /**
+             * Documento
+             * Format: uuid
+             */
             readonly document: string | null;
             readonly document_number: number;
             readonly decided_by_name: string;
             /** Format: date-time */
             readonly decided_at: string | null;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
         };
         /**
@@ -14943,9 +18179,15 @@ export interface components {
             /** Format: uuid */
             warehouse: string;
             readonly warehouse_name: string;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             quantity?: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
         };
         /** @description Documento com itens aninhados. Itens só mudam enquanto rascunho. */
@@ -14960,12 +18202,22 @@ export interface components {
             readonly inbound_nfe_number: string;
             readonly item_count: string;
             readonly manual_conference: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             kind: components["schemas"]["StockDocumentKindEnum"];
             /**
              * @description Só em saída.
@@ -14975,7 +18227,9 @@ export interface components {
              *     * `expiration` - Vencimento
              */
             exit_reason?: components["schemas"]["ExitReasonEnum"] | components["schemas"]["BlankEnum"];
+            /** Situação */
             readonly status: components["schemas"]["StockDocumentStatusEnum"];
+            /** Número */
             readonly number: number;
             /** @description Número da nota/documento externo. */
             external_number?: string;
@@ -14989,17 +18243,28 @@ export interface components {
             readonly posted_at: string | null;
             /** Format: date-time */
             readonly cancelled_at: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             warehouse: string;
             /** Format: uuid */
             destination?: string | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier?: string | null;
             /** Format: uuid */
             readonly inbound_nfe: string | null;
@@ -15007,19 +18272,32 @@ export interface components {
             readonly posted_by: number | null;
             readonly cancelled_by: number | null;
         };
+        /**
+         * @description `TenantSerializer` (R2-03): produto, lote, endereço e item da nota precisam ser da MESMA conta e filial
+         *     (o `ModelSerializer` puro aceitava o id de outra conta e mexia no custo médio dela), e nada negativo.
+         */
         StockDocumentItem: {
             /** Format: uuid */
             id?: string;
             readonly variant_name: string;
             readonly sku: string;
             readonly volumes: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
             /** Format: decimal */
             expected_quantity?: string | null;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             quantity?: string;
             /** Format: decimal */
             unit_cost?: string;
@@ -15031,9 +18309,10 @@ export interface components {
             /** Format: date */
             expires_at?: string | null;
             serials?: unknown;
+            /** Observações */
             notes?: string;
             /** Format: decimal */
-            arrived_quantity?: string | null;
+            readonly arrived_quantity: string | null;
             divergence_reason?: components["schemas"]["DivergenceReasonEnum"] | components["schemas"]["BlankEnum"];
             divergence_notes?: string;
             /** Format: uuid */
@@ -15045,7 +18324,7 @@ export interface components {
             /** Format: uuid */
             destination_bin?: string | null;
             /** Format: uuid */
-            nfe_item?: string | null;
+            readonly nfe_item: string | null;
         };
         /**
          * @description * `entry` - Entrada / recebimento
@@ -15065,18 +18344,33 @@ export interface components {
          * @enum {string}
          */
         StockDocumentStatusEnum: "draft" | "posted" | "cancelled";
+        /**
+         * @description Serializer com `cost_fields = (...)`: sem `catalog.view_costs`, eles não saem nem entram.
+         *
+         *     Sem requisição no contexto (tarefa, comando, serviço interno) mostra tudo: a regra é de tela.
+         */
         StockLot: {
             /** Format: uuid */
             readonly id: string;
             readonly variant_name: string;
             readonly sku: string;
             readonly warehouse_name: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Código */
             readonly code: string;
             /** @description Lote do fabricante. */
             lot_number?: string;
@@ -15091,14 +18385,23 @@ export interface components {
             readonly received_at: string | null;
             /** Format: decimal */
             readonly initial_quantity: string;
-            /** Format: decimal */
+            /**
+             * Quantidade
+             * Format: decimal
+             */
             readonly quantity: string;
             /** Format: decimal */
             readonly unit_cost: string;
+            /** Situação */
             status?: components["schemas"]["StockLotStatusEnum"];
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             readonly variant: string;
@@ -15114,6 +18417,11 @@ export interface components {
          * @enum {string}
          */
         StockLotStatusEnum: "available" | "depleted" | "blocked" | "expired" | "discarded";
+        /**
+         * @description Serializer com `cost_fields = (...)`: sem `catalog.view_costs`, eles não saem nem entram.
+         *
+         *     Sem requisição no contexto (tarefa, comando, serviço interno) mostra tudo: a regra é de tela.
+         */
         StockMovement: {
             /** Format: uuid */
             readonly id: string;
@@ -15123,14 +18431,25 @@ export interface components {
             /** @default  */
             readonly operator_name: string;
             readonly kind_label: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Tipo */
             kind: components["schemas"]["StockMovementKindEnum"];
             /**
+             * Quantidade
              * Format: decimal
              * @description Com sinal: positivo entra, negativo sai.
              */
@@ -15146,9 +18465,14 @@ export interface components {
             total_cost?: string;
             source_key?: string;
             reason?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             variant: string;
@@ -15191,15 +18515,29 @@ export interface components {
             readonly id: string;
             readonly store_names: string;
             readonly store_count: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
+            /** Descrição */
             description?: string;
-            /** @description Filial nova (ou sem escolha) fica com esta. */
+            /**
+             * Padrão
+             * @description Filial nova (ou sem escolha) fica com esta.
+             */
             is_default?: boolean;
             picking_strategy?: components["schemas"]["PickingStrategyEnum"];
             /** Format: int64 */
@@ -15208,21 +18546,37 @@ export interface components {
             allow_negative_stock?: boolean;
             /** @description Sem validade: guarda a data de entrada e dá saída no mais antigo primeiro. */
             fifo_by_entry?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         StorageBin: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Código */
             code: string;
+            /** Tipo */
             kind?: components["schemas"]["StorageBinKindEnum"];
             /** @description Rua / corredor. */
             aisle?: string;
@@ -15231,12 +18585,21 @@ export interface components {
             /** @description Nível / altura. */
             level?: string;
             position?: string;
-            /** Format: int64 */
+            /**
+             * Sequência
+             * Format: int64
+             */
             sequence?: number;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /** Format: uuid */
             warehouse: string;
@@ -15257,39 +18620,63 @@ export interface components {
             readonly parent_name: string;
             /** @default 0 */
             readonly children_count: number;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             street?: string;
+            /** Número */
             number?: string;
             complement?: string;
             district?: string;
+            /** Cidade */
             city?: string;
             /** @description Código IBGE do município. */
             city_ibge?: string;
+            /** Estado */
             state?: string;
+            /** CEP */
             zip_code?: string;
-            /** @description Nome fantasia. */
+            /**
+             * Nome
+             * @description Nome fantasia.
+             */
             name: string;
+            /** Tipo */
             kind?: components["schemas"]["StoreKindEnum"];
             /** @description Razão social. */
             legal_name?: string;
             cnpj?: string;
             state_registration?: string;
             municipal_registration?: string;
+            /** Telefone */
             phone?: string;
-            /** Format: email */
+            /** E-mail */
             email?: string;
             local_server_url?: string;
             cloud_only?: boolean;
             settings?: unknown;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /**
              * Format: uuid
@@ -15333,15 +18720,29 @@ export interface components {
             readonly id: string;
             readonly store_names: string;
             readonly store_count: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
+            /** Descrição */
             description?: string;
-            /** @description Filial nova (ou sem escolha) fica com esta. */
+            /**
+             * Padrão
+             * @description Filial nova (ou sem escolha) fica com esta.
+             */
             is_default?: boolean;
             require_open_cash_session?: boolean;
             /** Format: decimal */
@@ -15358,12 +18759,19 @@ export interface components {
             ask_print_danfe?: boolean;
             /** @description Só lança cartão/PIX com o NSU/autorização do comprovante. */
             require_payment_reference?: boolean;
+            /** @description Permite transformar devolução em crédito na carteira do cliente. */
+            allow_store_credit_refund?: boolean;
             print_cancellation_receipt?: boolean;
             scale_barcode_mode?: components["schemas"]["ScaleBarcodeModeEnum"] | components["schemas"]["BlankEnum"];
             scale_barcode_prefix?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         /**
@@ -15377,47 +18785,88 @@ export interface components {
         Supplier: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             street?: string;
+            /** Número */
             number?: string;
             complement?: string;
             district?: string;
+            /** Cidade */
             city?: string;
             /** @description Código IBGE do município. */
             city_ibge?: string;
+            /** Estado */
             state?: string;
+            /** CEP */
             zip_code?: string;
             person_type?: components["schemas"]["PersonTypeEnum"];
-            /** @description Nome ou nome fantasia. */
+            /**
+             * Nome
+             * @description Nome ou nome fantasia.
+             */
             name: string;
             legal_name?: string;
-            /** @description CPF ou CNPJ, só dígitos. */
+            /**
+             * Documento
+             * @description CPF ou CNPJ, só dígitos.
+             */
             document?: string;
             state_registration?: string;
+            /** Telefone */
             phone?: string;
-            /** Format: email */
+            /** E-mail */
             email?: string;
+            /** Observações */
             notes?: string;
+            /** Ativo */
             is_active?: boolean;
             contact_name?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
+        /**
+         * @description Serializer com `cost_fields = (...)`: sem `catalog.view_costs`, eles não saem nem entram.
+         *
+         *     Sem requisição no contexto (tarefa, comando, serviço interno) mostra tudo: a regra é de tela.
+         */
         SupplierProduct: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             supplier_code?: string;
             supplier_barcode?: string;
@@ -15434,11 +18883,19 @@ export interface components {
             last_purchase_at?: string | null;
             /** @description Falso = sugestão automática ainda não conferida. */
             confirmed?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Fornecedor
+             * Format: uuid
+             */
             supplier: string;
             /** Format: uuid */
             variant: string;
@@ -15453,13 +18910,21 @@ export interface components {
             readonly local_payload: unknown;
             readonly remote_payload: unknown;
             readonly resolution: components["schemas"]["ResolutionEnum"];
+            /** Situação */
             readonly status: components["schemas"]["SyncConflictStatusEnum"];
             /** Format: date-time */
             readonly resolved_at: string | null;
+            /** Observações */
             readonly notes: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
             /** Format: uuid */
             readonly event: string | null;
@@ -15482,6 +18947,7 @@ export interface components {
             /** Format: uuid */
             readonly event_id: string;
             readonly direction: components["schemas"]["SyncEventDirectionEnum"];
+            /** Sequência */
             readonly sequence: number;
             readonly entity_type: string;
             readonly entity_id: string;
@@ -15491,6 +18957,7 @@ export interface components {
             readonly schema_version: number;
             readonly payload: unknown;
             readonly payload_checksum: string;
+            /** Situação */
             readonly status: components["schemas"]["SyncEventStatusEnum"];
             readonly attempts: number;
             /** Format: date-time */
@@ -15498,7 +18965,10 @@ export interface components {
             readonly last_error: string;
             /** Format: uuid */
             readonly correlation_id: string | null;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
             /** Format: date-time */
             readonly sent_at: string | null;
@@ -15508,7 +18978,10 @@ export interface components {
             readonly applied_at: string | null;
             /** Format: date-time */
             readonly acknowledged_at: string | null;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
             /** Format: uuid */
             readonly source_node: string;
@@ -15538,14 +19011,21 @@ export interface components {
         SyncNode: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
             /** Format: uuid */
             readonly pair_id: string;
             readonly node_type: components["schemas"]["NodeTypeEnum"];
             readonly environment: components["schemas"]["SyncNodeEnvironmentEnum"];
+            /** Nome */
             readonly name: string;
             /**
              * Format: uri
@@ -15557,6 +19037,7 @@ export interface components {
             readonly credential_rotated_at: string | null;
             readonly encryption_key_id: string;
             readonly secret_fingerprint: string;
+            /** Situação */
             readonly status: components["schemas"]["SyncNodeStatusEnum"];
             readonly app_version: string;
             readonly schema_version: number;
@@ -15570,13 +19051,20 @@ export interface components {
             readonly last_sent_cursor: number;
             readonly last_received_cursor: number;
             readonly sequence_counter: number;
+            /** Ativo */
             readonly is_active: boolean;
             /** @description Esta instalação. */
             readonly is_self: boolean;
             readonly last_error: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             readonly store: string | null;
             /** Format: uuid */
             readonly peer: string | null;
@@ -15600,6 +19088,7 @@ export interface components {
             /** Format: uuid */
             readonly id: string;
             readonly run_type: components["schemas"]["RunTypeEnum"];
+            /** Situação */
             readonly status: components["schemas"]["SyncRunStatusEnum"];
             readonly snapshot_cursor: number;
             readonly manifest: unknown;
@@ -15613,9 +19102,15 @@ export interface components {
             /** Format: date-time */
             readonly completed_at: string | null;
             readonly error: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
             /** Format: uuid */
             readonly source_node: string;
@@ -15637,18 +19132,33 @@ export interface components {
         Tag: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             scope: components["schemas"]["ScopeEnum"];
+            /** Nome */
             name: string;
             readonly normalized: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
         };
         /**
@@ -15662,13 +19172,23 @@ export interface components {
         Terminal: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             installation_id: string;
+            /** Nome */
             name?: string;
             device_type?: components["schemas"]["DeviceTypeEnum"];
             /** @description Caixa principal da loja. */
@@ -15676,15 +19196,24 @@ export interface components {
             app_version?: string;
             /** Format: date-time */
             readonly last_seen_at: string | null;
+            /** Ativo */
             is_active?: boolean;
             /** Format: date-time */
             readonly revoked_at: string | null;
             revoked_reason?: string;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
         };
         TokenObtainPair: {
@@ -15714,7 +19243,6 @@ export interface components {
             username: string;
             first_name?: string;
             last_name?: string;
-            /** Format: email */
             email?: string;
             password?: string;
             readonly role_name: string;
@@ -15724,25 +19252,46 @@ export interface components {
             readonly user_id: number;
             readonly full_name: string;
             extra_permissions?: string[];
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
             /** @description Acessa todas as lojas da conta, inclusive as futuras. */
             all_stores?: boolean;
+            /** Telefone */
             phone?: string;
+            /** Format: date-time */
+            readonly sessions_revoked_at: string | null;
+            /** @description Exibe a assistente Cosmos para este usuário. Administradores da conta sempre têm acesso. */
+            cosmos_enabled?: boolean;
             is_seller?: boolean;
             seller_code?: string;
             /** Format: decimal */
             commission_percent?: string;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
             /**
+             * Perfil de acesso
              * Format: uuid
              * @description Cargo principal.
              */
@@ -15769,15 +19318,26 @@ export interface components {
             barcodes?: components["schemas"]["Barcode"][];
             volumes?: components["schemas"]["Volume"][];
             images?: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** @description Nome da combinação ("M / Azul"). Vazio na padrão. */
+            /**
+             * Nome
+             * @description Nome da combinação ("M / Azul"). Vazio na padrão.
+             */
             name?: string;
+            /** Padrão */
             is_default?: boolean;
             readonly position: number;
             /**
+             * Preço
              * Format: decimal
              * @description Preço de venda. Por kg quando vendido na balança.
              */
@@ -15816,25 +19376,33 @@ export interface components {
             width_cm?: string | null;
             /** Format: decimal */
             length_cm?: string | null;
+            /** Ativo */
             is_active?: boolean;
         };
         /** @description Variante solta (busca do PDV, seleção em documentos e promoções). */
         VariantList: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: uuid */
+            /**
+             * Produto
+             * Format: uuid
+             */
             readonly product: string;
             readonly product_name: string;
             readonly product_type: string;
             /** Format: uuid */
             readonly category: string | null;
             readonly category_name: string;
-            /** @description Nome da combinação ("M / Azul"). Vazio na padrão. */
+            /**
+             * Nome
+             * @description Nome da combinação ("M / Azul"). Vazio na padrão.
+             */
             readonly name: string;
             readonly display_name: string;
             /** @description Código interno, único na conta. */
             readonly sku: string;
             /**
+             * Preço
              * Format: decimal
              * @description Preço de venda. Por kg quando vendido na balança.
              */
@@ -15850,7 +19418,9 @@ export interface components {
             readonly sold_by_weight: boolean;
             readonly barcodes: components["schemas"]["Barcode"][];
             readonly volume_count: number;
+            /** Ativo */
             readonly is_active: boolean;
+            /** Padrão */
             readonly is_default: boolean;
             /** Format: decimal */
             readonly stock_quantity: string;
@@ -15859,11 +19429,20 @@ export interface components {
         Volume: {
             /** Format: uuid */
             readonly id: string;
-            /** @description Ordem da caixa: 1, 2, 3... */
+            /**
+             * Número
+             * @description Ordem da caixa: 1, 2, 3...
+             */
             readonly number: number;
-            /** @description O que vai na caixa ("Portas"). */
+            /**
+             * Descrição
+             * @description O que vai na caixa ("Portas").
+             */
             description?: string;
-            /** @description Código da etiqueta desta caixa. */
+            /**
+             * Código de barras
+             * @description Código da etiqueta desta caixa.
+             */
             barcode?: string;
             /**
              * Format: decimal
@@ -15882,23 +19461,44 @@ export interface components {
         Warehouse: {
             /** Format: uuid */
             readonly id: string;
-            /** Format: date-time */
+            /**
+             * Criado em
+             * Format: date-time
+             */
             readonly created_at: string;
-            /** Format: date-time */
+            /**
+             * Atualizado em
+             * Format: date-time
+             */
             readonly updated_at: string;
-            /** Format: date-time */
+            /**
+             * Excluído em
+             * Format: date-time
+             */
             readonly deleted_at: string | null;
+            /** Nome */
             name: string;
+            /** Tipo */
             kind?: components["schemas"]["WarehouseKindEnum"];
+            /** Padrão */
             is_default?: boolean;
             /** @description Controla o estoque por endereço (WMS). */
             uses_bins?: boolean;
+            /** Ativo */
             is_active?: boolean;
-            /** Format: uuid */
+            /**
+             * Conta
+             * Format: uuid
+             */
             readonly account: string;
+            /** Criado por */
             readonly created_by: number | null;
+            /** Atualizado por */
             readonly updated_by: number | null;
-            /** Format: uuid */
+            /**
+             * Loja
+             * Format: uuid
+             */
             store?: string;
             /** Format: uuid */
             parent?: string | null;
@@ -15929,7 +19529,7 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    api_v1_account_logo_create: {
+    v1_account_logo_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -15947,7 +19547,7 @@ export interface operations {
             };
         };
     };
-    api_v1_account_logo_destroy: {
+    v1_account_logo_destroy: {
         parameters: {
             query?: never;
             header?: never;
@@ -15965,7 +19565,7 @@ export interface operations {
             };
         };
     };
-    api_v1_account_settings_retrieve: {
+    v1_account_settings_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -15983,7 +19583,7 @@ export interface operations {
             };
         };
     };
-    api_v1_account_settings_partial_update: {
+    v1_account_settings_partial_update: {
         parameters: {
             query?: never;
             header?: never;
@@ -16001,19 +19601,19 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_list: {
+    v1_assets_list: {
         parameters: {
             query?: {
                 location?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 product?: string;
                 responsible?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `in_stock` - Em estoque
@@ -16042,7 +19642,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_create: {
+    v1_assets_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16067,12 +19667,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_retrieve: {
+    v1_assets_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset. */
+                /** @description Um string UUID que identifica este Patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16089,12 +19689,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_update: {
+    v1_assets_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset. */
+                /** @description Um string UUID que identifica este Patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16117,12 +19717,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_destroy: {
+    v1_assets_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset. */
+                /** @description Um string UUID que identifica este Patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16138,12 +19738,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_partial_update: {
+    v1_assets_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset. */
+                /** @description Um string UUID que identifica este Patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16166,12 +19766,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_history_retrieve: {
+    v1_assets_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset. */
+                /** @description Um string UUID que identifica este Patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16188,7 +19788,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_bulk_retrieve: {
+    v1_assets_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -16207,7 +19807,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_bulk_create: {
+    v1_assets_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16232,7 +19832,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_disposals_list: {
+    v1_assets_disposals_list: {
         parameters: {
             query?: {
                 /**
@@ -16244,13 +19844,13 @@ export interface operations {
                  *     * `other` - Outro
                  */
                 kind?: "donated" | "lost" | "other" | "scrapped" | "sold" | "stolen";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -16269,7 +19869,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_disposals_create: {
+    v1_assets_disposals_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16294,12 +19894,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_disposals_retrieve: {
+    v1_assets_disposals_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset disposal. */
+                /** @description Um string UUID que identifica este Baixa de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16316,12 +19916,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_disposals_update: {
+    v1_assets_disposals_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset disposal. */
+                /** @description Um string UUID que identifica este Baixa de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16344,12 +19944,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_disposals_destroy: {
+    v1_assets_disposals_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset disposal. */
+                /** @description Um string UUID que identifica este Baixa de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16365,12 +19965,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_disposals_partial_update: {
+    v1_assets_disposals_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset disposal. */
+                /** @description Um string UUID que identifica este Baixa de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16393,12 +19993,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_disposals_history_retrieve: {
+    v1_assets_disposals_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset disposal. */
+                /** @description Um string UUID que identifica este Baixa de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16415,7 +20015,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_disposals_bulk_retrieve: {
+    v1_assets_disposals_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -16434,7 +20034,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_disposals_bulk_create: {
+    v1_assets_disposals_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16459,17 +20059,17 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_movements_list: {
+    v1_assets_movements_list: {
         parameters: {
             query?: {
                 asset?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -16488,7 +20088,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_movements_create: {
+    v1_assets_movements_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16513,12 +20113,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_movements_retrieve: {
+    v1_assets_movements_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset movement. */
+                /** @description Um string UUID que identifica este Movimentação de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16535,12 +20135,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_movements_update: {
+    v1_assets_movements_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset movement. */
+                /** @description Um string UUID que identifica este Movimentação de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16563,12 +20163,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_movements_destroy: {
+    v1_assets_movements_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset movement. */
+                /** @description Um string UUID que identifica este Movimentação de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16584,12 +20184,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_movements_partial_update: {
+    v1_assets_movements_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset movement. */
+                /** @description Um string UUID que identifica este Movimentação de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16612,12 +20212,12 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_movements_history_retrieve: {
+    v1_assets_movements_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this asset movement. */
+                /** @description Um string UUID que identifica este Movimentação de patrimônio. */
                 id: string;
             };
             cookie?: never;
@@ -16634,7 +20234,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_movements_bulk_retrieve: {
+    v1_assets_movements_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -16653,7 +20253,7 @@ export interface operations {
             };
         };
     };
-    api_v1_assets_movements_bulk_create: {
+    v1_assets_movements_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16678,7 +20278,7 @@ export interface operations {
             };
         };
     };
-    api_v1_audit_logs_list: {
+    v1_audit_logs_list: {
         parameters: {
             query?: {
                 /**
@@ -16693,13 +20293,13 @@ export interface operations {
                 actor?: number;
                 entity?: string;
                 object_id?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -16718,12 +20318,12 @@ export interface operations {
             };
         };
     };
-    api_v1_audit_logs_retrieve: {
+    v1_audit_logs_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this audit log. */
+                /** @description Um string UUID que identifica este Registro de auditoria. */
                 id: string;
             };
             cookie?: never;
@@ -16740,12 +20340,12 @@ export interface operations {
             };
         };
     };
-    api_v1_audit_logs_history_retrieve: {
+    v1_audit_logs_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this audit log. */
+                /** @description Um string UUID que identifica este Registro de auditoria. */
                 id: string;
             };
             cookie?: never;
@@ -16762,7 +20362,7 @@ export interface operations {
             };
         };
     };
-    api_v1_audit_logs_bulk_retrieve: {
+    v1_audit_logs_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -16781,7 +20381,7 @@ export interface operations {
             };
         };
     };
-    api_v1_auth_login_create: {
+    v1_auth_login_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16806,7 +20406,7 @@ export interface operations {
             };
         };
     };
-    api_v1_auth_logout_create: {
+    v1_auth_logout_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16824,7 +20424,7 @@ export interface operations {
             };
         };
     };
-    api_v1_auth_password_reset_create: {
+    v1_auth_password_reset_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16842,7 +20442,7 @@ export interface operations {
             };
         };
     };
-    api_v1_auth_password_reset_confirm_create: {
+    v1_auth_password_reset_confirm_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16860,7 +20460,7 @@ export interface operations {
             };
         };
     };
-    api_v1_auth_refresh_create: {
+    v1_auth_refresh_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16878,7 +20478,7 @@ export interface operations {
             };
         };
     };
-    api_v1_background_tasks_list: {
+    v1_background_tasks_list: {
         parameters: {
             query?: {
                 /**
@@ -16888,13 +20488,13 @@ export interface operations {
                  *     * `seo_read` - Analítico de SEO: análise de um produto
                  */
                 kind?: "price_read" | "price_round" | "seo_read" | "seo_round";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `running` - Em andamento
@@ -16920,7 +20520,7 @@ export interface operations {
             };
         };
     };
-    api_v1_background_tasks_create: {
+    v1_background_tasks_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -16945,12 +20545,12 @@ export interface operations {
             };
         };
     };
-    api_v1_background_tasks_retrieve: {
+    v1_background_tasks_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this background task. */
+                /** @description Um string UUID que identifica este Tarefa em segundo plano. */
                 id: string;
             };
             cookie?: never;
@@ -16967,12 +20567,12 @@ export interface operations {
             };
         };
     };
-    api_v1_background_tasks_history_retrieve: {
+    v1_background_tasks_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this background task. */
+                /** @description Um string UUID que identifica este Tarefa em segundo plano. */
                 id: string;
             };
             cookie?: never;
@@ -16989,12 +20589,12 @@ export interface operations {
             };
         };
     };
-    api_v1_background_tasks_stop_create: {
+    v1_background_tasks_stop_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this background task. */
+                /** @description Um string UUID que identifica este Tarefa em segundo plano. */
                 id: string;
             };
             cookie?: never;
@@ -17017,7 +20617,7 @@ export interface operations {
             };
         };
     };
-    api_v1_background_tasks_bulk_retrieve: {
+    v1_background_tasks_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -17036,7 +20636,7 @@ export interface operations {
             };
         };
     };
-    api_v1_background_tasks_bulk_create: {
+    v1_background_tasks_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -17061,16 +20661,16 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_discrepancies_list: {
+    v1_cash_discrepancies_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 session?: string;
                 /**
@@ -17097,7 +20697,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_discrepancies_create: {
+    v1_cash_discrepancies_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -17122,12 +20722,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_discrepancies_retrieve: {
+    v1_cash_discrepancies_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash discrepancy. */
+                /** @description Um string UUID que identifica este Divergência de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17144,12 +20744,34 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_discrepancies_update: {
+    v1_cash_discrepancies_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash discrepancy. */
+                /** @description Um string UUID que identifica este Divergência de caixa. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CashDiscrepancy"];
+                };
+            };
+        };
+    };
+    v1_cash_discrepancies_resolve_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Divergência de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17172,106 +20794,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_discrepancies_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this cash discrepancy. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_v1_cash_discrepancies_partial_update: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this cash discrepancy. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PatchedCashDiscrepancy"];
-                "application/x-www-form-urlencoded": components["schemas"]["PatchedCashDiscrepancy"];
-                "multipart/form-data": components["schemas"]["PatchedCashDiscrepancy"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CashDiscrepancy"];
-                };
-            };
-        };
-    };
-    api_v1_cash_discrepancies_history_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this cash discrepancy. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CashDiscrepancy"];
-                };
-            };
-        };
-    };
-    api_v1_cash_discrepancies_resolve_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this cash discrepancy. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CashDiscrepancy"];
-                "application/x-www-form-urlencoded": components["schemas"]["CashDiscrepancy"];
-                "multipart/form-data": components["schemas"]["CashDiscrepancy"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CashDiscrepancy"];
-                };
-            };
-        };
-    };
-    api_v1_cash_discrepancies_bulk_retrieve: {
+    v1_cash_discrepancies_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -17290,7 +20813,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_discrepancies_bulk_create: {
+    v1_cash_discrepancies_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -17315,7 +20838,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_movements_list: {
+    v1_cash_movements_list: {
         parameters: {
             query?: {
                 /**
@@ -17326,13 +20849,13 @@ export interface operations {
                  *     * `adjustment` - Ajuste
                  */
                 kind?: "adjustment" | "refund" | "sale" | "supply" | "withdrawal";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 session?: string;
                 /**
@@ -17358,7 +20881,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_movements_create: {
+    v1_cash_movements_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -17383,12 +20906,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_movements_retrieve: {
+    v1_cash_movements_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash movement. */
+                /** @description Um string UUID que identifica este Movimento de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17405,12 +20928,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_movements_approve_create: {
+    v1_cash_movements_approve_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash movement. */
+                /** @description Um string UUID que identifica este Movimento de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17433,12 +20956,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_movements_history_retrieve: {
+    v1_cash_movements_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash movement. */
+                /** @description Um string UUID que identifica este Movimento de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17455,12 +20978,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_movements_reject_create: {
+    v1_cash_movements_reject_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash movement. */
+                /** @description Um string UUID que identifica este Movimento de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17483,7 +21006,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_movements_bulk_retrieve: {
+    v1_cash_movements_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -17502,7 +21025,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_movements_bulk_create: {
+    v1_cash_movements_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -17527,17 +21050,17 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_registers_list: {
+    v1_cash_registers_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 store?: string;
             };
@@ -17557,7 +21080,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_registers_create: {
+    v1_cash_registers_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -17582,12 +21105,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_registers_retrieve: {
+    v1_cash_registers_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash register. */
+                /** @description Um string UUID que identifica este Caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17604,12 +21127,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_registers_update: {
+    v1_cash_registers_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash register. */
+                /** @description Um string UUID que identifica este Caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17632,12 +21155,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_registers_destroy: {
+    v1_cash_registers_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash register. */
+                /** @description Um string UUID que identifica este Caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17653,12 +21176,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_registers_partial_update: {
+    v1_cash_registers_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash register. */
+                /** @description Um string UUID que identifica este Caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17681,12 +21204,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_registers_history_retrieve: {
+    v1_cash_registers_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash register. */
+                /** @description Um string UUID que identifica este Caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17703,7 +21226,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_registers_bulk_retrieve: {
+    v1_cash_registers_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -17722,7 +21245,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_registers_bulk_create: {
+    v1_cash_registers_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -17747,20 +21270,20 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_list: {
+    v1_cash_sessions_list: {
         parameters: {
             query?: {
                 opened_at__gte?: string;
                 opened_at__lte?: string;
                 opened_by?: number;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 register?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `open` - Aberto
@@ -17787,7 +21310,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_create: {
+    v1_cash_sessions_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -17812,12 +21335,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_retrieve: {
+    v1_cash_sessions_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash session. */
+                /** @description Um string UUID que identifica este Sessão de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17834,12 +21357,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_approve_create: {
+    v1_cash_sessions_approve_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash session. */
+                /** @description Um string UUID que identifica este Sessão de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17862,12 +21385,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_approve_opening_create: {
+    v1_cash_sessions_approve_opening_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash session. */
+                /** @description Um string UUID que identifica este Sessão de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17890,12 +21413,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_close_create: {
+    v1_cash_sessions_close_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash session. */
+                /** @description Um string UUID que identifica este Sessão de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17918,12 +21441,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_history_retrieve: {
+    v1_cash_sessions_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash session. */
+                /** @description Um string UUID que identifica este Sessão de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17940,12 +21463,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_movements_retrieve: {
+    v1_cash_sessions_movements_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash session. */
+                /** @description Um string UUID que identifica este Sessão de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17962,12 +21485,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_movements_create: {
+    v1_cash_sessions_movements_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash session. */
+                /** @description Um string UUID que identifica este Sessão de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -17990,12 +21513,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_report_retrieve: {
+    v1_cash_sessions_report_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash session. */
+                /** @description Um string UUID que identifica este Sessão de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -18012,12 +21535,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_statement_retrieve: {
+    v1_cash_sessions_statement_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cash session. */
+                /** @description Um string UUID que identifica este Sessão de caixa. */
                 id: string;
             };
             cookie?: never;
@@ -18034,7 +21557,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_bulk_retrieve: {
+    v1_cash_sessions_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -18053,7 +21576,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_bulk_create: {
+    v1_cash_sessions_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -18078,7 +21601,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cash_sessions_current_retrieve: {
+    v1_cash_sessions_current_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -18097,17 +21620,17 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attribute_values_list: {
+    v1_catalog_attribute_values_list: {
         parameters: {
             query?: {
                 attribute?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -18126,7 +21649,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attribute_values_create: {
+    v1_catalog_attribute_values_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -18151,12 +21674,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attribute_values_retrieve: {
+    v1_catalog_attribute_values_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute value. */
+                /** @description Um string UUID que identifica este Valor de atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18173,12 +21696,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attribute_values_update: {
+    v1_catalog_attribute_values_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute value. */
+                /** @description Um string UUID que identifica este Valor de atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18201,12 +21724,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attribute_values_destroy: {
+    v1_catalog_attribute_values_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute value. */
+                /** @description Um string UUID que identifica este Valor de atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18222,12 +21745,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attribute_values_partial_update: {
+    v1_catalog_attribute_values_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute value. */
+                /** @description Um string UUID que identifica este Valor de atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18250,12 +21773,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attribute_values_history_retrieve: {
+    v1_catalog_attribute_values_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute value. */
+                /** @description Um string UUID que identifica este Valor de atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18272,7 +21795,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attribute_values_bulk_retrieve: {
+    v1_catalog_attribute_values_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -18291,7 +21814,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attribute_values_bulk_create: {
+    v1_catalog_attribute_values_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -18316,16 +21839,16 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attributes_list: {
+    v1_catalog_attributes_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -18344,7 +21867,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attributes_create: {
+    v1_catalog_attributes_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -18369,12 +21892,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attributes_retrieve: {
+    v1_catalog_attributes_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute. */
+                /** @description Um string UUID que identifica este Atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18391,12 +21914,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attributes_update: {
+    v1_catalog_attributes_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute. */
+                /** @description Um string UUID que identifica este Atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18419,12 +21942,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attributes_destroy: {
+    v1_catalog_attributes_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute. */
+                /** @description Um string UUID que identifica este Atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18440,12 +21963,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attributes_partial_update: {
+    v1_catalog_attributes_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute. */
+                /** @description Um string UUID que identifica este Atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18468,12 +21991,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attributes_history_retrieve: {
+    v1_catalog_attributes_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this attribute. */
+                /** @description Um string UUID que identifica este Atributo. */
                 id: string;
             };
             cookie?: never;
@@ -18490,7 +22013,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attributes_bulk_retrieve: {
+    v1_catalog_attributes_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -18509,7 +22032,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_attributes_bulk_create: {
+    v1_catalog_attributes_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -18534,17 +22057,17 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_brands_list: {
+    v1_catalog_brands_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 supplier?: string;
             };
@@ -18564,7 +22087,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_brands_create: {
+    v1_catalog_brands_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -18589,12 +22112,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_brands_retrieve: {
+    v1_catalog_brands_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this brand. */
+                /** @description Um string UUID que identifica este Marca. */
                 id: string;
             };
             cookie?: never;
@@ -18611,12 +22134,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_brands_update: {
+    v1_catalog_brands_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this brand. */
+                /** @description Um string UUID que identifica este Marca. */
                 id: string;
             };
             cookie?: never;
@@ -18639,12 +22162,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_brands_destroy: {
+    v1_catalog_brands_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this brand. */
+                /** @description Um string UUID que identifica este Marca. */
                 id: string;
             };
             cookie?: never;
@@ -18660,12 +22183,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_brands_partial_update: {
+    v1_catalog_brands_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this brand. */
+                /** @description Um string UUID que identifica este Marca. */
                 id: string;
             };
             cookie?: never;
@@ -18688,12 +22211,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_brands_history_retrieve: {
+    v1_catalog_brands_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this brand. */
+                /** @description Um string UUID que identifica este Marca. */
                 id: string;
             };
             cookie?: never;
@@ -18710,7 +22233,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_brands_bulk_retrieve: {
+    v1_catalog_brands_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -18729,7 +22252,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_brands_bulk_create: {
+    v1_catalog_brands_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -18754,18 +22277,18 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_categories_list: {
+    v1_catalog_categories_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 parent?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -18784,7 +22307,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_categories_create: {
+    v1_catalog_categories_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -18809,12 +22332,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_categories_retrieve: {
+    v1_catalog_categories_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this category. */
+                /** @description Um string UUID que identifica este Categoria. */
                 id: string;
             };
             cookie?: never;
@@ -18831,12 +22354,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_categories_update: {
+    v1_catalog_categories_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this category. */
+                /** @description Um string UUID que identifica este Categoria. */
                 id: string;
             };
             cookie?: never;
@@ -18859,12 +22382,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_categories_destroy: {
+    v1_catalog_categories_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this category. */
+                /** @description Um string UUID que identifica este Categoria. */
                 id: string;
             };
             cookie?: never;
@@ -18880,12 +22403,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_categories_partial_update: {
+    v1_catalog_categories_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this category. */
+                /** @description Um string UUID que identifica este Categoria. */
                 id: string;
             };
             cookie?: never;
@@ -18908,12 +22431,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_categories_history_retrieve: {
+    v1_catalog_categories_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this category. */
+                /** @description Um string UUID que identifica este Categoria. */
                 id: string;
             };
             cookie?: never;
@@ -18930,7 +22453,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_categories_bulk_retrieve: {
+    v1_catalog_categories_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -18949,7 +22472,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_categories_bulk_create: {
+    v1_catalog_categories_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -18974,18 +22497,18 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_components_list: {
+    v1_catalog_components_list: {
         parameters: {
             query?: {
                 component?: string;
                 kit?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -19004,7 +22527,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_components_create: {
+    v1_catalog_components_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -19029,12 +22552,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_components_retrieve: {
+    v1_catalog_components_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this kit component. */
+                /** @description Um string UUID que identifica este Componente do kit. */
                 id: string;
             };
             cookie?: never;
@@ -19051,12 +22574,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_components_update: {
+    v1_catalog_components_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this kit component. */
+                /** @description Um string UUID que identifica este Componente do kit. */
                 id: string;
             };
             cookie?: never;
@@ -19079,12 +22602,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_components_destroy: {
+    v1_catalog_components_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this kit component. */
+                /** @description Um string UUID que identifica este Componente do kit. */
                 id: string;
             };
             cookie?: never;
@@ -19100,12 +22623,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_components_partial_update: {
+    v1_catalog_components_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this kit component. */
+                /** @description Um string UUID que identifica este Componente do kit. */
                 id: string;
             };
             cookie?: never;
@@ -19128,12 +22651,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_components_history_retrieve: {
+    v1_catalog_components_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this kit component. */
+                /** @description Um string UUID que identifica este Componente do kit. */
                 id: string;
             };
             cookie?: never;
@@ -19150,7 +22673,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_components_bulk_retrieve: {
+    v1_catalog_components_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -19169,7 +22692,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_components_bulk_create: {
+    v1_catalog_components_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -19194,16 +22717,16 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_images_list: {
+    v1_catalog_images_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -19222,7 +22745,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_images_create: {
+    v1_catalog_images_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -19246,12 +22769,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_images_retrieve: {
+    v1_catalog_images_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this image. */
+                /** @description Um string UUID que identifica este Imagem. */
                 id: string;
             };
             cookie?: never;
@@ -19268,12 +22791,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_images_update: {
+    v1_catalog_images_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this image. */
+                /** @description Um string UUID que identifica este Imagem. */
                 id: string;
             };
             cookie?: never;
@@ -19295,12 +22818,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_images_destroy: {
+    v1_catalog_images_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this image. */
+                /** @description Um string UUID que identifica este Imagem. */
                 id: string;
             };
             cookie?: never;
@@ -19316,12 +22839,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_images_partial_update: {
+    v1_catalog_images_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this image. */
+                /** @description Um string UUID que identifica este Imagem. */
                 id: string;
             };
             cookie?: never;
@@ -19343,12 +22866,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_images_history_retrieve: {
+    v1_catalog_images_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this image. */
+                /** @description Um string UUID que identifica este Imagem. */
                 id: string;
             };
             cookie?: never;
@@ -19365,7 +22888,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_images_bulk_retrieve: {
+    v1_catalog_images_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -19384,7 +22907,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_images_bulk_create: {
+    v1_catalog_images_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -19408,17 +22931,17 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_product_images_list: {
+    v1_catalog_product_images_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 product?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 variant?: string;
             };
@@ -19438,7 +22961,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_product_images_create: {
+    v1_catalog_product_images_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -19463,12 +22986,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_product_images_retrieve: {
+    v1_catalog_product_images_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product image. */
+                /** @description Um string UUID que identifica este Imagem do produto. */
                 id: string;
             };
             cookie?: never;
@@ -19485,12 +23008,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_product_images_update: {
+    v1_catalog_product_images_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product image. */
+                /** @description Um string UUID que identifica este Imagem do produto. */
                 id: string;
             };
             cookie?: never;
@@ -19513,12 +23036,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_product_images_destroy: {
+    v1_catalog_product_images_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product image. */
+                /** @description Um string UUID que identifica este Imagem do produto. */
                 id: string;
             };
             cookie?: never;
@@ -19534,12 +23057,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_product_images_partial_update: {
+    v1_catalog_product_images_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product image. */
+                /** @description Um string UUID que identifica este Imagem do produto. */
                 id: string;
             };
             cookie?: never;
@@ -19562,12 +23085,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_product_images_history_retrieve: {
+    v1_catalog_product_images_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product image. */
+                /** @description Um string UUID que identifica este Imagem do produto. */
                 id: string;
             };
             cookie?: never;
@@ -19584,7 +23107,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_product_images_bulk_retrieve: {
+    v1_catalog_product_images_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -19603,7 +23126,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_product_images_bulk_create: {
+    v1_catalog_product_images_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -19628,16 +23151,16 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_list: {
+    v1_catalog_products_list: {
         parameters: {
             query?: {
                 brand?: string;
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 /**
                  * @description * `00` - Mercadoria para revenda
@@ -19656,7 +23179,7 @@ export interface operations {
                  *     * `fraction` - Fracionado (metro, litro...)
                  */
                 sale_method?: "fraction" | "unit" | "weight";
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 track_stock?: boolean;
                 /**
@@ -19685,7 +23208,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_create: {
+    v1_catalog_products_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -19710,12 +23233,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_retrieve: {
+    v1_catalog_products_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product. */
+                /** @description Um string UUID que identifica este Produto. */
                 id: string;
             };
             cookie?: never;
@@ -19732,12 +23255,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_update: {
+    v1_catalog_products_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product. */
+                /** @description Um string UUID que identifica este Produto. */
                 id: string;
             };
             cookie?: never;
@@ -19760,12 +23283,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_destroy: {
+    v1_catalog_products_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product. */
+                /** @description Um string UUID que identifica este Produto. */
                 id: string;
             };
             cookie?: never;
@@ -19781,12 +23304,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_partial_update: {
+    v1_catalog_products_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product. */
+                /** @description Um string UUID que identifica este Produto. */
                 id: string;
             };
             cookie?: never;
@@ -19809,12 +23332,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_generate_variants_create: {
+    v1_catalog_products_generate_variants_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product. */
+                /** @description Um string UUID que identifica este Produto. */
                 id: string;
             };
             cookie?: never;
@@ -19837,12 +23360,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_history_retrieve: {
+    v1_catalog_products_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product. */
+                /** @description Um string UUID que identifica este Produto. */
                 id: string;
             };
             cookie?: never;
@@ -19859,7 +23382,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_bulk_retrieve: {
+    v1_catalog_products_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -19878,7 +23401,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_products_bulk_create: {
+    v1_catalog_products_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -19903,7 +23426,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_service_rules_list: {
+    v1_catalog_service_rules_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
@@ -19912,13 +23435,13 @@ export interface operations {
                  *     * `product` - Por produto
                  */
                 kind?: "category" | "product";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 service?: string;
             };
@@ -19938,7 +23461,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_service_rules_create: {
+    v1_catalog_service_rules_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -19963,12 +23486,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_service_rules_retrieve: {
+    v1_catalog_service_rules_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this service rule. */
+                /** @description Um string UUID que identifica este Regra de serviço. */
                 id: string;
             };
             cookie?: never;
@@ -19985,12 +23508,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_service_rules_update: {
+    v1_catalog_service_rules_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this service rule. */
+                /** @description Um string UUID que identifica este Regra de serviço. */
                 id: string;
             };
             cookie?: never;
@@ -20013,12 +23536,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_service_rules_destroy: {
+    v1_catalog_service_rules_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this service rule. */
+                /** @description Um string UUID que identifica este Regra de serviço. */
                 id: string;
             };
             cookie?: never;
@@ -20034,12 +23557,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_service_rules_partial_update: {
+    v1_catalog_service_rules_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this service rule. */
+                /** @description Um string UUID que identifica este Regra de serviço. */
                 id: string;
             };
             cookie?: never;
@@ -20062,12 +23585,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_service_rules_history_retrieve: {
+    v1_catalog_service_rules_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this service rule. */
+                /** @description Um string UUID que identifica este Regra de serviço. */
                 id: string;
             };
             cookie?: never;
@@ -20084,7 +23607,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_service_rules_bulk_retrieve: {
+    v1_catalog_service_rules_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -20103,7 +23626,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_service_rules_bulk_create: {
+    v1_catalog_service_rules_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -20128,17 +23651,17 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_supplier_products_list: {
+    v1_catalog_supplier_products_list: {
         parameters: {
             query?: {
                 confirmed?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 supplier?: string;
                 variant?: string;
@@ -20159,7 +23682,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_supplier_products_create: {
+    v1_catalog_supplier_products_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -20184,12 +23707,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_supplier_products_retrieve: {
+    v1_catalog_supplier_products_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier product. */
+                /** @description Um string UUID que identifica este Produto do fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -20206,12 +23729,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_supplier_products_update: {
+    v1_catalog_supplier_products_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier product. */
+                /** @description Um string UUID que identifica este Produto do fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -20234,12 +23757,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_supplier_products_destroy: {
+    v1_catalog_supplier_products_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier product. */
+                /** @description Um string UUID que identifica este Produto do fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -20255,12 +23778,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_supplier_products_partial_update: {
+    v1_catalog_supplier_products_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier product. */
+                /** @description Um string UUID que identifica este Produto do fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -20283,12 +23806,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_supplier_products_history_retrieve: {
+    v1_catalog_supplier_products_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier product. */
+                /** @description Um string UUID que identifica este Produto do fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -20305,7 +23828,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_supplier_products_bulk_retrieve: {
+    v1_catalog_supplier_products_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -20324,7 +23847,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_supplier_products_bulk_create: {
+    v1_catalog_supplier_products_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -20349,15 +23872,15 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_variants_list: {
+    v1_catalog_variants_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 product?: string;
                 product__brand?: string;
@@ -20370,7 +23893,7 @@ export interface operations {
                  *     * `service` - Serviço
                  */
                 product__type?: "kit" | "service" | "simple" | "variable";
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -20389,12 +23912,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_variants_retrieve: {
+    v1_catalog_variants_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product variant. */
+                /** @description Um string UUID que identifica este Variação do produto. */
                 id: string;
             };
             cookie?: never;
@@ -20411,12 +23934,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_variants_history_retrieve: {
+    v1_catalog_variants_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product variant. */
+                /** @description Um string UUID que identifica este Variação do produto. */
                 id: string;
             };
             cookie?: never;
@@ -20433,7 +23956,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_variants_bulk_retrieve: {
+    v1_catalog_variants_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -20452,7 +23975,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_variants_lookup_retrieve: {
+    v1_catalog_variants_lookup_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -20471,16 +23994,16 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_volumes_list: {
+    v1_catalog_volumes_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 variant?: string;
                 variant__product?: string;
@@ -20501,12 +24024,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_volumes_retrieve: {
+    v1_catalog_volumes_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product volume. */
+                /** @description Um string UUID que identifica este Volume do produto. */
                 id: string;
             };
             cookie?: never;
@@ -20523,12 +24046,12 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_volumes_history_retrieve: {
+    v1_catalog_volumes_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this product volume. */
+                /** @description Um string UUID que identifica este Volume do produto. */
                 id: string;
             };
             cookie?: never;
@@ -20545,7 +24068,7 @@ export interface operations {
             };
         };
     };
-    api_v1_catalog_volumes_bulk_retrieve: {
+    v1_catalog_volumes_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -20564,18 +24087,18 @@ export interface operations {
             };
         };
     };
-    api_v1_commissions_list: {
+    v1_commissions_list: {
         parameters: {
             query?: {
                 created_at__gte?: string;
                 created_at__lte?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 seller?: number;
                 /**
@@ -20601,7 +24124,7 @@ export interface operations {
             };
         };
     };
-    api_v1_commissions_create: {
+    v1_commissions_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -20626,12 +24149,12 @@ export interface operations {
             };
         };
     };
-    api_v1_commissions_retrieve: {
+    v1_commissions_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this commission. */
+                /** @description Um string UUID que identifica este Comissão. */
                 id: string;
             };
             cookie?: never;
@@ -20648,12 +24171,12 @@ export interface operations {
             };
         };
     };
-    api_v1_commissions_partial_update: {
+    v1_commissions_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this commission. */
+                /** @description Um string UUID que identifica este Comissão. */
                 id: string;
             };
             cookie?: never;
@@ -20676,12 +24199,12 @@ export interface operations {
             };
         };
     };
-    api_v1_commissions_history_retrieve: {
+    v1_commissions_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this commission. */
+                /** @description Um string UUID que identifica este Comissão. */
                 id: string;
             };
             cookie?: never;
@@ -20698,7 +24221,7 @@ export interface operations {
             };
         };
     };
-    api_v1_commissions_bulk_retrieve: {
+    v1_commissions_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -20717,7 +24240,7 @@ export interface operations {
             };
         };
     };
-    api_v1_commissions_bulk_create: {
+    v1_commissions_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -20742,7 +24265,7 @@ export interface operations {
             };
         };
     };
-    api_v1_commissions_payout_create: {
+    v1_commissions_payout_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -20767,17 +24290,17 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_list: {
+    v1_competitor_prices_list: {
         parameters: {
             query?: {
                 competitor?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 variant?: string;
                 variant__product?: string;
@@ -20798,7 +24321,7 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_create: {
+    v1_competitor_prices_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -20823,12 +24346,12 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_retrieve: {
+    v1_competitor_prices_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this competitor price. */
+                /** @description Um string UUID que identifica este Preço do concorrente. */
                 id: string;
             };
             cookie?: never;
@@ -20845,12 +24368,12 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_update: {
+    v1_competitor_prices_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this competitor price. */
+                /** @description Um string UUID que identifica este Preço do concorrente. */
                 id: string;
             };
             cookie?: never;
@@ -20873,12 +24396,12 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_destroy: {
+    v1_competitor_prices_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this competitor price. */
+                /** @description Um string UUID que identifica este Preço do concorrente. */
                 id: string;
             };
             cookie?: never;
@@ -20894,12 +24417,12 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_partial_update: {
+    v1_competitor_prices_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this competitor price. */
+                /** @description Um string UUID que identifica este Preço do concorrente. */
                 id: string;
             };
             cookie?: never;
@@ -20922,12 +24445,12 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_history_retrieve: {
+    v1_competitor_prices_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this competitor price. */
+                /** @description Um string UUID que identifica este Preço do concorrente. */
                 id: string;
             };
             cookie?: never;
@@ -20944,7 +24467,7 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_bulk_retrieve: {
+    v1_competitor_prices_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -20963,7 +24486,7 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_bulk_create: {
+    v1_competitor_prices_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -20988,7 +24511,7 @@ export interface operations {
             };
         };
     };
-    api_v1_competitor_prices_import_create: {
+    v1_competitor_prices_import_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -21013,7 +24536,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_attachments_create: {
+    v1_cosmos_attachments_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -21031,16 +24554,16 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_conversations_list: {
+    v1_cosmos_conversations_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -21059,12 +24582,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_conversations_retrieve: {
+    v1_cosmos_conversations_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cosmos conversation. */
+                /** @description Um string UUID que identifica este Conversa do Cosmos. */
                 id: string;
             };
             cookie?: never;
@@ -21081,12 +24604,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_conversations_destroy: {
+    v1_cosmos_conversations_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cosmos conversation. */
+                /** @description Um string UUID que identifica este Conversa do Cosmos. */
                 id: string;
             };
             cookie?: never;
@@ -21102,12 +24625,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_conversations_partial_update: {
+    v1_cosmos_conversations_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cosmos conversation. */
+                /** @description Um string UUID que identifica este Conversa do Cosmos. */
                 id: string;
             };
             cookie?: never;
@@ -21130,12 +24653,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_conversations_history_retrieve: {
+    v1_cosmos_conversations_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cosmos conversation. */
+                /** @description Um string UUID que identifica este Conversa do Cosmos. */
                 id: string;
             };
             cookie?: never;
@@ -21152,12 +24675,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_conversations_messages_retrieve: {
+    v1_cosmos_conversations_messages_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cosmos conversation. */
+                /** @description Um string UUID que identifica este Conversa do Cosmos. */
                 id: string;
             };
             cookie?: never;
@@ -21174,7 +24697,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_conversations_bulk_retrieve: {
+    v1_cosmos_conversations_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -21193,18 +24716,18 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_findings_list: {
+    v1_cosmos_findings_list: {
         parameters: {
             query?: {
                 actor?: number;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 rule?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `info` - Informação
@@ -21235,7 +24758,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_findings_create: {
+    v1_cosmos_findings_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -21260,12 +24783,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_findings_retrieve: {
+    v1_cosmos_findings_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cosmos finding. */
+                /** @description Um string UUID que identifica este Apontamento do Cosmos. */
                 id: string;
             };
             cookie?: never;
@@ -21282,12 +24805,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_findings_history_retrieve: {
+    v1_cosmos_findings_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cosmos finding. */
+                /** @description Um string UUID que identifica este Apontamento do Cosmos. */
                 id: string;
             };
             cookie?: never;
@@ -21304,12 +24827,12 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_findings_resolve_create: {
+    v1_cosmos_findings_resolve_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this cosmos finding. */
+                /** @description Um string UUID que identifica este Apontamento do Cosmos. */
                 id: string;
             };
             cookie?: never;
@@ -21332,7 +24855,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_findings_bulk_retrieve: {
+    v1_cosmos_findings_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -21351,7 +24874,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_findings_bulk_create: {
+    v1_cosmos_findings_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -21376,7 +24899,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_reports_export_retrieve: {
+    v1_cosmos_reports_export_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -21396,7 +24919,7 @@ export interface operations {
             };
         };
     };
-    api_v1_cosmos_status_retrieve: {
+    v1_cosmos_status_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -21414,7 +24937,25 @@ export interface operations {
             };
         };
     };
-    api_v1_customer_credits_list: {
+    v1_cosmos_voice_transcribe_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_customer_credits_list: {
         parameters: {
             query?: {
                 customer?: string;
@@ -21425,13 +24966,13 @@ export interface operations {
                  *     * `expiration` - Expiração
                  */
                 kind?: "adjustment" | "expiration" | "return" | "usage";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -21450,37 +24991,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customer_credits_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CustomerCredit"];
-                "application/x-www-form-urlencoded": components["schemas"]["CustomerCredit"];
-                "multipart/form-data": components["schemas"]["CustomerCredit"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomerCredit"];
-                };
-            };
-        };
-    };
-    api_v1_customer_credits_retrieve: {
+    v1_customer_credits_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer credit. */
+                /** @description Um string UUID que identifica este Crédito do cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21497,12 +25013,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customer_credits_history_retrieve: {
+    v1_customer_credits_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer credit. */
+                /** @description Um string UUID que identifica este Crédito do cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21519,7 +25035,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customer_credits_bulk_retrieve: {
+    v1_customer_credits_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -21538,48 +25054,23 @@ export interface operations {
             };
         };
     };
-    api_v1_customer_credits_bulk_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CustomerCredit"];
-                "application/x-www-form-urlencoded": components["schemas"]["CustomerCredit"];
-                "multipart/form-data": components["schemas"]["CustomerCredit"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomerCredit"];
-                };
-            };
-        };
-    };
-    api_v1_customers_list: {
+    v1_customers_list: {
         parameters: {
             query?: {
                 groups?: string[];
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 /**
                  * @description * `F` - Pessoa física
                  *     * `J` - Pessoa jurídica
                  */
                 person_type?: "F" | "J";
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -21598,7 +25089,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_create: {
+    v1_customers_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -21623,12 +25114,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_retrieve: {
+    v1_customers_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer. */
+                /** @description Um string UUID que identifica este Cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21645,12 +25136,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_update: {
+    v1_customers_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer. */
+                /** @description Um string UUID que identifica este Cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21673,12 +25164,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_destroy: {
+    v1_customers_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer. */
+                /** @description Um string UUID que identifica este Cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21694,12 +25185,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_partial_update: {
+    v1_customers_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer. */
+                /** @description Um string UUID que identifica este Cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21722,12 +25213,40 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_history_retrieve: {
+    v1_customers_grant_credit_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer. */
+                /** @description Um string UUID que identifica este Cliente. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CustomerCreditGrantInput"];
+                "application/x-www-form-urlencoded": components["schemas"]["CustomerCreditGrantInput"];
+                "multipart/form-data": components["schemas"]["CustomerCreditGrantInput"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CustomerCredit"];
+                };
+            };
+        };
+    };
+    v1_customers_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21744,17 +25263,17 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_addresses_list: {
+    v1_customers_addresses_list: {
         parameters: {
             query?: {
                 customer?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -21773,7 +25292,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_addresses_create: {
+    v1_customers_addresses_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -21798,12 +25317,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_addresses_retrieve: {
+    v1_customers_addresses_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer address. */
+                /** @description Um string UUID que identifica este Endereço do cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21820,12 +25339,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_addresses_update: {
+    v1_customers_addresses_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer address. */
+                /** @description Um string UUID que identifica este Endereço do cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21848,12 +25367,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_addresses_destroy: {
+    v1_customers_addresses_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer address. */
+                /** @description Um string UUID que identifica este Endereço do cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21869,12 +25388,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_addresses_partial_update: {
+    v1_customers_addresses_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer address. */
+                /** @description Um string UUID que identifica este Endereço do cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21897,12 +25416,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_addresses_history_retrieve: {
+    v1_customers_addresses_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer address. */
+                /** @description Um string UUID que identifica este Endereço do cliente. */
                 id: string;
             };
             cookie?: never;
@@ -21919,7 +25438,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_addresses_bulk_retrieve: {
+    v1_customers_addresses_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -21938,7 +25457,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_addresses_bulk_create: {
+    v1_customers_addresses_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -21963,7 +25482,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_bulk_retrieve: {
+    v1_customers_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -21982,7 +25501,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_bulk_create: {
+    v1_customers_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22007,17 +25526,17 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_groups_list: {
+    v1_customers_groups_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -22036,7 +25555,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_groups_create: {
+    v1_customers_groups_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22061,12 +25580,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_groups_retrieve: {
+    v1_customers_groups_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer group. */
+                /** @description Um string UUID que identifica este Grupo de clientes. */
                 id: string;
             };
             cookie?: never;
@@ -22083,12 +25602,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_groups_update: {
+    v1_customers_groups_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer group. */
+                /** @description Um string UUID que identifica este Grupo de clientes. */
                 id: string;
             };
             cookie?: never;
@@ -22111,12 +25630,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_groups_destroy: {
+    v1_customers_groups_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer group. */
+                /** @description Um string UUID que identifica este Grupo de clientes. */
                 id: string;
             };
             cookie?: never;
@@ -22132,12 +25651,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_groups_partial_update: {
+    v1_customers_groups_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer group. */
+                /** @description Um string UUID que identifica este Grupo de clientes. */
                 id: string;
             };
             cookie?: never;
@@ -22160,12 +25679,12 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_groups_history_retrieve: {
+    v1_customers_groups_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this customer group. */
+                /** @description Um string UUID que identifica este Grupo de clientes. */
                 id: string;
             };
             cookie?: never;
@@ -22182,7 +25701,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_groups_bulk_retrieve: {
+    v1_customers_groups_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -22201,7 +25720,7 @@ export interface operations {
             };
         };
     };
-    api_v1_customers_groups_bulk_create: {
+    v1_customers_groups_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22226,7 +25745,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_print_jobs_list: {
+    v1_devices_print_jobs_list: {
         parameters: {
             query?: {
                 /**
@@ -22239,15 +25758,15 @@ export interface operations {
                  *     * `label` - Etiquetas
                  */
                 kind?: "cancellation" | "cash_closing" | "cash_movement" | "fiscal" | "label" | "receipt" | "return_receipt";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 printer?: string;
                 sale?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `pending` - Na fila
@@ -22274,7 +25793,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_print_jobs_create: {
+    v1_devices_print_jobs_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22299,12 +25818,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_print_jobs_retrieve: {
+    v1_devices_print_jobs_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this print job. */
+                /** @description Um string UUID que identifica este Trabalho de impressão. */
                 id: string;
             };
             cookie?: never;
@@ -22321,12 +25840,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_print_jobs_update: {
+    v1_devices_print_jobs_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this print job. */
+                /** @description Um string UUID que identifica este Trabalho de impressão. */
                 id: string;
             };
             cookie?: never;
@@ -22349,12 +25868,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_print_jobs_destroy: {
+    v1_devices_print_jobs_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this print job. */
+                /** @description Um string UUID que identifica este Trabalho de impressão. */
                 id: string;
             };
             cookie?: never;
@@ -22370,12 +25889,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_print_jobs_partial_update: {
+    v1_devices_print_jobs_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this print job. */
+                /** @description Um string UUID que identifica este Trabalho de impressão. */
                 id: string;
             };
             cookie?: never;
@@ -22398,12 +25917,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_print_jobs_history_retrieve: {
+    v1_devices_print_jobs_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this print job. */
+                /** @description Um string UUID que identifica este Trabalho de impressão. */
                 id: string;
             };
             cookie?: never;
@@ -22420,7 +25939,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_print_jobs_bulk_retrieve: {
+    v1_devices_print_jobs_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -22439,7 +25958,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_print_jobs_bulk_create: {
+    v1_devices_print_jobs_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22464,15 +25983,15 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_printers_list: {
+    v1_devices_printers_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 /**
                  * @description * `receipt` - Cupom / recibo
@@ -22480,7 +25999,7 @@ export interface operations {
                  *     * `report` - Relatórios (A4)
                  */
                 purpose?: "label" | "receipt" | "report";
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 terminal?: string;
             };
@@ -22500,7 +26019,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_printers_create: {
+    v1_devices_printers_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22525,12 +26044,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_printers_retrieve: {
+    v1_devices_printers_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this printer. */
+                /** @description Um string UUID que identifica este Impressora. */
                 id: string;
             };
             cookie?: never;
@@ -22547,12 +26066,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_printers_update: {
+    v1_devices_printers_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this printer. */
+                /** @description Um string UUID que identifica este Impressora. */
                 id: string;
             };
             cookie?: never;
@@ -22575,12 +26094,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_printers_destroy: {
+    v1_devices_printers_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this printer. */
+                /** @description Um string UUID que identifica este Impressora. */
                 id: string;
             };
             cookie?: never;
@@ -22596,12 +26115,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_printers_partial_update: {
+    v1_devices_printers_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this printer. */
+                /** @description Um string UUID que identifica este Impressora. */
                 id: string;
             };
             cookie?: never;
@@ -22624,12 +26143,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_printers_history_retrieve: {
+    v1_devices_printers_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this printer. */
+                /** @description Um string UUID que identifica este Impressora. */
                 id: string;
             };
             cookie?: never;
@@ -22646,7 +26165,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_printers_bulk_retrieve: {
+    v1_devices_printers_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -22665,7 +26184,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_printers_bulk_create: {
+    v1_devices_printers_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22690,17 +26209,17 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scale_readings_list: {
+    v1_devices_scale_readings_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 scale?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -22719,7 +26238,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scale_readings_create: {
+    v1_devices_scale_readings_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22744,12 +26263,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scale_readings_retrieve: {
+    v1_devices_scale_readings_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this scale reading. */
+                /** @description Um string UUID que identifica este Leitura da balança. */
                 id: string;
             };
             cookie?: never;
@@ -22766,12 +26285,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scale_readings_history_retrieve: {
+    v1_devices_scale_readings_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this scale reading. */
+                /** @description Um string UUID que identifica este Leitura da balança. */
                 id: string;
             };
             cookie?: never;
@@ -22788,7 +26307,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scale_readings_bulk_retrieve: {
+    v1_devices_scale_readings_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -22807,7 +26326,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scale_readings_bulk_create: {
+    v1_devices_scale_readings_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22832,17 +26351,17 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scales_list: {
+    v1_devices_scales_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 terminal?: string;
             };
@@ -22862,7 +26381,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scales_create: {
+    v1_devices_scales_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -22887,12 +26406,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scales_retrieve: {
+    v1_devices_scales_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this scale. */
+                /** @description Um string UUID que identifica este Balança. */
                 id: string;
             };
             cookie?: never;
@@ -22909,12 +26428,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scales_update: {
+    v1_devices_scales_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this scale. */
+                /** @description Um string UUID que identifica este Balança. */
                 id: string;
             };
             cookie?: never;
@@ -22937,12 +26456,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scales_destroy: {
+    v1_devices_scales_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this scale. */
+                /** @description Um string UUID que identifica este Balança. */
                 id: string;
             };
             cookie?: never;
@@ -22958,12 +26477,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scales_partial_update: {
+    v1_devices_scales_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this scale. */
+                /** @description Um string UUID que identifica este Balança. */
                 id: string;
             };
             cookie?: never;
@@ -22986,12 +26505,12 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scales_history_retrieve: {
+    v1_devices_scales_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this scale. */
+                /** @description Um string UUID que identifica este Balança. */
                 id: string;
             };
             cookie?: never;
@@ -23008,7 +26527,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scales_bulk_retrieve: {
+    v1_devices_scales_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -23027,7 +26546,7 @@ export interface operations {
             };
         };
     };
-    api_v1_devices_scales_bulk_create: {
+    v1_devices_scales_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23052,7 +26571,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_list: {
+    v1_finance_accounts_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
@@ -23061,15 +26580,16 @@ export interface operations {
                  *     * `bank` - Conta bancária
                  *     * `acquirer` - Adquirente de cartão
                  *     * `wallet` - Carteira digital
+                 *     * `partner` - Conta de reembolso
                  */
-                kind?: "acquirer" | "bank" | "cash" | "wallet";
-                /** @description Which field to use when ordering the results. */
+                kind?: "acquirer" | "bank" | "cash" | "partner" | "wallet";
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 store?: string;
             };
@@ -23089,7 +26609,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_create: {
+    v1_finance_accounts_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23114,12 +26634,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_retrieve: {
+    v1_finance_accounts_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial account. */
+                /** @description Um string UUID que identifica este Conta financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23136,12 +26656,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_update: {
+    v1_finance_accounts_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial account. */
+                /** @description Um string UUID que identifica este Conta financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23164,12 +26684,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_destroy: {
+    v1_finance_accounts_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial account. */
+                /** @description Um string UUID que identifica este Conta financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23185,12 +26705,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_partial_update: {
+    v1_finance_accounts_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial account. */
+                /** @description Um string UUID que identifica este Conta financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23213,12 +26733,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_history_retrieve: {
+    v1_finance_accounts_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial account. */
+                /** @description Um string UUID que identifica este Conta financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23235,12 +26755,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_statement_retrieve: {
+    v1_finance_accounts_statement_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial account. */
+                /** @description Um string UUID que identifica este Conta financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23257,7 +26777,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_bulk_retrieve: {
+    v1_finance_accounts_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -23276,7 +26796,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_bulk_create: {
+    v1_finance_accounts_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23301,7 +26821,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_accounts_transfer_create: {
+    v1_finance_accounts_transfer_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23326,7 +26846,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_categories_list: {
+    v1_finance_categories_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
@@ -23335,14 +26855,14 @@ export interface operations {
                  *     * `expense` - Despesa
                  */
                 kind?: "expense" | "income";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 parent?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -23361,7 +26881,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_categories_create: {
+    v1_finance_categories_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23386,12 +26906,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_categories_retrieve: {
+    v1_finance_categories_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial category. */
+                /** @description Um string UUID que identifica este Categoria financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23408,12 +26928,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_categories_update: {
+    v1_finance_categories_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial category. */
+                /** @description Um string UUID que identifica este Categoria financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23436,12 +26956,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_categories_destroy: {
+    v1_finance_categories_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial category. */
+                /** @description Um string UUID que identifica este Categoria financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23457,12 +26977,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_categories_partial_update: {
+    v1_finance_categories_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial category. */
+                /** @description Um string UUID que identifica este Categoria financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23485,12 +27005,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_categories_history_retrieve: {
+    v1_finance_categories_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial category. */
+                /** @description Um string UUID que identifica este Categoria financeira. */
                 id: string;
             };
             cookie?: never;
@@ -23507,7 +27027,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_categories_bulk_retrieve: {
+    v1_finance_categories_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -23526,7 +27046,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_categories_bulk_create: {
+    v1_finance_categories_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23551,18 +27071,18 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_installments_list: {
+    v1_finance_installments_list: {
         parameters: {
             query?: {
                 due_date__gte?: string;
                 due_date__lte?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `open` - Em aberto
@@ -23596,7 +27116,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_installments_create: {
+    v1_finance_installments_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23621,12 +27141,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_installments_retrieve: {
+    v1_finance_installments_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this installment. */
+                /** @description Um string UUID que identifica este Parcela. */
                 id: string;
             };
             cookie?: never;
@@ -23643,12 +27163,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_installments_history_retrieve: {
+    v1_finance_installments_credit_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this installment. */
+                /** @description Um string UUID que identifica este Parcela. */
                 id: string;
             };
             cookie?: never;
@@ -23665,12 +27185,34 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_installments_settle_create: {
+    v1_finance_installments_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this installment. */
+                /** @description Um string UUID que identifica este Parcela. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Installment"];
+                };
+            };
+        };
+    };
+    v1_finance_installments_settle_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Parcela. */
                 id: string;
             };
             cookie?: never;
@@ -23693,7 +27235,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_installments_bulk_retrieve: {
+    v1_finance_installments_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -23712,7 +27254,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_installments_bulk_create: {
+    v1_finance_installments_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23737,7 +27279,287 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_titles_list: {
+    v1_finance_recurring_list: {
+        parameters: {
+            query?: {
+                category?: string;
+                customer?: string;
+                is_active?: boolean;
+                /**
+                 * @description * `receivable` - A receber
+                 *     * `payable` - A pagar
+                 */
+                kind?: "payable" | "receivable";
+                /** @description Qual campo usar ao ordenar os resultados. */
+                ordering?: string;
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
+                page?: number;
+                /** @description Número de resultados a serem retornados por página. */
+                page_size?: number;
+                /** @description Um termo de busca. */
+                search?: string;
+                supplier?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PaginatedRecurringTitleList"];
+                };
+            };
+        };
+    };
+    v1_finance_recurring_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecurringTitle"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecurringTitle"];
+                "multipart/form-data": components["schemas"]["RecurringTitle"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_recurring_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este recurring title. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_recurring_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este recurring title. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecurringTitle"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecurringTitle"];
+                "multipart/form-data": components["schemas"]["RecurringTitle"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_recurring_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este recurring title. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_finance_recurring_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este recurring title. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedRecurringTitle"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedRecurringTitle"];
+                "multipart/form-data": components["schemas"]["PatchedRecurringTitle"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_recurring_generate_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este recurring title. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecurringTitle"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecurringTitle"];
+                "multipart/form-data": components["schemas"]["RecurringTitle"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_recurring_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este recurring title. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_recurring_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_recurring_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecurringTitle"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecurringTitle"];
+                "multipart/form-data": components["schemas"]["RecurringTitle"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_recurring_generate_all_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecurringTitle"];
+                "application/x-www-form-urlencoded": components["schemas"]["RecurringTitle"];
+                "multipart/form-data": components["schemas"]["RecurringTitle"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecurringTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_titles_list: {
         parameters: {
             query?: {
                 customer?: string;
@@ -23748,13 +27570,13 @@ export interface operations {
                  *     * `payable` - A pagar
                  */
                 kind?: "payable" | "receivable";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `open` - Em aberto
@@ -23781,7 +27603,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_titles_create: {
+    v1_finance_titles_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23806,12 +27628,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_titles_retrieve: {
+    v1_finance_titles_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial title. */
+                /** @description Um string UUID que identifica este Título financeiro. */
                 id: string;
             };
             cookie?: never;
@@ -23828,12 +27650,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_titles_partial_update: {
+    v1_finance_titles_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial title. */
+                /** @description Um string UUID que identifica este Título financeiro. */
                 id: string;
             };
             cookie?: never;
@@ -23856,12 +27678,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_titles_history_retrieve: {
+    v1_finance_titles_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial title. */
+                /** @description Um string UUID que identifica este Título financeiro. */
                 id: string;
             };
             cookie?: never;
@@ -23878,7 +27700,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_titles_bulk_retrieve: {
+    v1_finance_titles_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -23897,7 +27719,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_titles_bulk_create: {
+    v1_finance_titles_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23922,11 +27744,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_transactions_list: {
+    v1_finance_transactions_list: {
         parameters: {
             query?: {
                 cash_session?: string;
                 category?: string;
+                customer?: string;
                 date__gte?: string;
                 date__lte?: string;
                 financial_account?: string;
@@ -23935,16 +27758,17 @@ export interface operations {
                  *     * `out` - Saída
                  */
                 kind?: "in" | "out";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 reconciled?: boolean;
                 sale?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
+                supplier?: string;
             };
             header?: never;
             path?: never;
@@ -23962,7 +27786,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_transactions_create: {
+    v1_finance_transactions_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -23987,12 +27811,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_transactions_retrieve: {
+    v1_finance_transactions_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial transaction. */
+                /** @description Um string UUID que identifica este Transação financeira. */
                 id: string;
             };
             cookie?: never;
@@ -24009,12 +27833,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_transactions_history_retrieve: {
+    v1_finance_transactions_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial transaction. */
+                /** @description Um string UUID que identifica este Transação financeira. */
                 id: string;
             };
             cookie?: never;
@@ -24031,12 +27855,12 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_transactions_reverse_create: {
+    v1_finance_transactions_reverse_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this financial transaction. */
+                /** @description Um string UUID que identifica este Transação financeira. */
                 id: string;
             };
             cookie?: never;
@@ -24059,7 +27883,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_transactions_bulk_retrieve: {
+    v1_finance_transactions_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -24078,7 +27902,7 @@ export interface operations {
             };
         };
     };
-    api_v1_finance_transactions_bulk_create: {
+    v1_finance_transactions_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -24103,7 +27927,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_list: {
+    v1_fiscal_configs_list: {
         parameters: {
             query?: {
                 dfe_enabled?: boolean;
@@ -24113,13 +27937,13 @@ export interface operations {
                  */
                 environment?: "1" | "2";
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -24138,7 +27962,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_create: {
+    v1_fiscal_configs_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -24163,12 +27987,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_retrieve: {
+    v1_fiscal_configs_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal config. */
+                /** @description Um string UUID que identifica este Configuração fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24185,12 +28009,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_update: {
+    v1_fiscal_configs_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal config. */
+                /** @description Um string UUID que identifica este Configuração fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24213,12 +28037,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_destroy: {
+    v1_fiscal_configs_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal config. */
+                /** @description Um string UUID que identifica este Configuração fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24234,12 +28058,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_partial_update: {
+    v1_fiscal_configs_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal config. */
+                /** @description Um string UUID que identifica este Configuração fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24262,12 +28086,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_certificate_create: {
+    v1_fiscal_configs_certificate_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal config. */
+                /** @description Um string UUID que identifica este Configuração fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24290,12 +28114,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_history_retrieve: {
+    v1_fiscal_configs_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal config. */
+                /** @description Um string UUID que identifica este Configuração fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24312,12 +28136,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_sync_dfe_create: {
+    v1_fiscal_configs_sync_dfe_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal config. */
+                /** @description Um string UUID que identifica este Configuração fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24340,7 +28164,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_bulk_retrieve: {
+    v1_fiscal_configs_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -24359,7 +28183,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_bulk_create: {
+    v1_fiscal_configs_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -24384,7 +28208,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_configs_from_stores_create: {
+    v1_fiscal_configs_from_stores_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -24409,7 +28233,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_invoices_list: {
+    v1_fiscal_invoices_list: {
         parameters: {
             query?: {
                 created_at__gte?: string;
@@ -24420,14 +28244,14 @@ export interface operations {
                  */
                 document_model?: "55" | "65";
                 fiscal_config?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 sale?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `draft` - Rascunho
@@ -24455,7 +28279,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_invoices_create: {
+    v1_fiscal_invoices_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -24480,12 +28304,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_invoices_retrieve: {
+    v1_fiscal_invoices_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this invoice. */
+                /** @description Um string UUID que identifica este Nota fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24502,12 +28326,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_invoices_cancel_create: {
+    v1_fiscal_invoices_cancel_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this invoice. */
+                /** @description Um string UUID que identifica este Nota fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24530,12 +28354,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_invoices_danfe_retrieve: {
+    v1_fiscal_invoices_danfe_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this invoice. */
+                /** @description Um string UUID que identifica este Nota fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24552,12 +28376,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_invoices_history_retrieve: {
+    v1_fiscal_invoices_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this invoice. */
+                /** @description Um string UUID que identifica este Nota fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24574,7 +28398,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_invoices_bulk_retrieve: {
+    v1_fiscal_invoices_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -24593,7 +28417,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_invoices_bulk_create: {
+    v1_fiscal_invoices_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -24618,18 +28442,18 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_profiles_list: {
+    v1_fiscal_profiles_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
                 is_system?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -24648,7 +28472,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_profiles_create: {
+    v1_fiscal_profiles_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -24673,12 +28497,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_profiles_retrieve: {
+    v1_fiscal_profiles_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal profile. */
+                /** @description Um string UUID que identifica este Perfil fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24695,12 +28519,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_profiles_update: {
+    v1_fiscal_profiles_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal profile. */
+                /** @description Um string UUID que identifica este Perfil fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24723,12 +28547,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_profiles_destroy: {
+    v1_fiscal_profiles_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal profile. */
+                /** @description Um string UUID que identifica este Perfil fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24744,12 +28568,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_profiles_partial_update: {
+    v1_fiscal_profiles_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal profile. */
+                /** @description Um string UUID que identifica este Perfil fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24772,12 +28596,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_profiles_history_retrieve: {
+    v1_fiscal_profiles_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal profile. */
+                /** @description Um string UUID que identifica este Perfil fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24794,7 +28618,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_profiles_bulk_retrieve: {
+    v1_fiscal_profiles_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -24813,7 +28637,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_profiles_bulk_create: {
+    v1_fiscal_profiles_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -24838,7 +28662,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_series_list: {
+    v1_fiscal_series_list: {
         parameters: {
             query?: {
                 config?: string;
@@ -24847,13 +28671,13 @@ export interface operations {
                  *     * `55` - NF-e (modelo 55)
                  */
                 document_model?: "55" | "65";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -24872,7 +28696,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_series_create: {
+    v1_fiscal_series_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -24897,12 +28721,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_series_retrieve: {
+    v1_fiscal_series_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal series. */
+                /** @description Um string UUID que identifica este Série fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24919,12 +28743,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_series_update: {
+    v1_fiscal_series_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal series. */
+                /** @description Um string UUID que identifica este Série fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24947,12 +28771,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_series_destroy: {
+    v1_fiscal_series_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal series. */
+                /** @description Um string UUID que identifica este Série fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24968,12 +28792,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_series_partial_update: {
+    v1_fiscal_series_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal series. */
+                /** @description Um string UUID que identifica este Série fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -24996,12 +28820,12 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_series_history_retrieve: {
+    v1_fiscal_series_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this fiscal series. */
+                /** @description Um string UUID que identifica este Série fiscal. */
                 id: string;
             };
             cookie?: never;
@@ -25018,7 +28842,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_series_bulk_retrieve: {
+    v1_fiscal_series_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -25037,7 +28861,7 @@ export interface operations {
             };
         };
     };
-    api_v1_fiscal_series_bulk_create: {
+    v1_fiscal_series_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -25062,16 +28886,16 @@ export interface operations {
             };
         };
     };
-    api_v1_imports_list: {
+    v1_imports_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -25090,7 +28914,7 @@ export interface operations {
             };
         };
     };
-    api_v1_imports_create: {
+    v1_imports_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -25115,12 +28939,12 @@ export interface operations {
             };
         };
     };
-    api_v1_imports_retrieve: {
+    v1_imports_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this import job. */
+                /** @description Um string UUID que identifica este Importação. */
                 id: string;
             };
             cookie?: never;
@@ -25137,12 +28961,12 @@ export interface operations {
             };
         };
     };
-    api_v1_imports_history_retrieve: {
+    v1_imports_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this import job. */
+                /** @description Um string UUID que identifica este Importação. */
                 id: string;
             };
             cookie?: never;
@@ -25159,7 +28983,7 @@ export interface operations {
             };
         };
     };
-    api_v1_imports_bulk_retrieve: {
+    v1_imports_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -25178,7 +29002,7 @@ export interface operations {
             };
         };
     };
-    api_v1_imports_bulk_create: {
+    v1_imports_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -25203,7 +29027,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_list: {
+    v1_inbound_nfe_list: {
         parameters: {
             query?: {
                 fiscal_config?: string;
@@ -25225,11 +29049,11 @@ export interface operations {
                  *     * `error` - Erro na manifestação
                  */
                 manifestation?: "confirmed" | "error" | "none" | "not_performed" | "science" | "unknown";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 /**
                  * @description * `not_started` - Não iniciado
@@ -25238,7 +29062,7 @@ export interface operations {
                  *     * `divergent` - Recebido com divergência
                  */
                 receiving?: "divergent" | "not_started" | "partial" | "received";
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 store?: string;
                 supplier?: string;
@@ -25266,7 +29090,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_create: {
+    v1_inbound_nfe_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -25291,12 +29115,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_retrieve: {
+    v1_inbound_nfe_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25313,12 +29137,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_partial_update: {
+    v1_inbound_nfe_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25341,12 +29165,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_discard_entry_create: {
+    v1_inbound_nfe_discard_entry_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25369,12 +29193,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_download_create: {
+    v1_inbound_nfe_download_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25397,12 +29221,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_history_retrieve: {
+    v1_inbound_nfe_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25419,12 +29243,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_ignore_create: {
+    v1_inbound_nfe_ignore_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25447,12 +29271,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_manifest_create: {
+    v1_inbound_nfe_manifest_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25475,12 +29299,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_map_item_create: {
+    v1_inbound_nfe_map_item_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25503,12 +29327,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_receive_create: {
+    v1_inbound_nfe_receive_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25531,12 +29355,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_rematch_create: {
+    v1_inbound_nfe_rematch_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25559,12 +29383,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_restore_create: {
+    v1_inbound_nfe_restore_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25587,12 +29411,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_science_create: {
+    v1_inbound_nfe_science_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25615,12 +29439,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_undo_receipt_create: {
+    v1_inbound_nfe_undo_receipt_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe. */
+                /** @description Um string UUID que identifica este NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -25643,7 +29467,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_bulk_retrieve: {
+    v1_inbound_nfe_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -25662,7 +29486,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_bulk_create: {
+    v1_inbound_nfe_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -25687,7 +29511,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_events_list: {
+    v1_inbound_nfe_events_list: {
         parameters: {
             query?: {
                 /**
@@ -25697,13 +29521,13 @@ export interface operations {
                 direction?: "received" | "sent";
                 event_code?: string;
                 nfe?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `pending` - Pendente
@@ -25731,12 +29555,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_events_retrieve: {
+    v1_inbound_nfe_events_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this n fe event. */
+                /** @description Um string UUID que identifica este Evento da NF-e. */
                 id: string;
             };
             cookie?: never;
@@ -25753,12 +29577,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_events_history_retrieve: {
+    v1_inbound_nfe_events_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this n fe event. */
+                /** @description Um string UUID que identifica este Evento da NF-e. */
                 id: string;
             };
             cookie?: never;
@@ -25775,7 +29599,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_events_bulk_retrieve: {
+    v1_inbound_nfe_events_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -25794,7 +29618,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_import_create: {
+    v1_inbound_nfe_import_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -25819,17 +29643,17 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_issues_list: {
+    v1_inbound_nfe_issues_list: {
         parameters: {
             query?: {
                 nfe?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `open` - Aberta
@@ -25854,12 +29678,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_issues_retrieve: {
+    v1_inbound_nfe_issues_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this n fe issue. */
+                /** @description Um string UUID que identifica este Emissão de NF-e. */
                 id: string;
             };
             cookie?: never;
@@ -25876,12 +29700,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_issues_partial_update: {
+    v1_inbound_nfe_issues_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this n fe issue. */
+                /** @description Um string UUID que identifica este Emissão de NF-e. */
                 id: string;
             };
             cookie?: never;
@@ -25904,12 +29728,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_issues_history_retrieve: {
+    v1_inbound_nfe_issues_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this n fe issue. */
+                /** @description Um string UUID que identifica este Emissão de NF-e. */
                 id: string;
             };
             cookie?: never;
@@ -25926,7 +29750,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_issues_bulk_retrieve: {
+    v1_inbound_nfe_issues_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -25945,18 +29769,18 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_list: {
+    v1_inbound_nfe_items_list: {
         parameters: {
             query?: {
                 ignored?: boolean;
                 nfe?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 variant?: string;
             };
@@ -25976,7 +29800,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_create: {
+    v1_inbound_nfe_items_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -26001,12 +29825,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_retrieve: {
+    v1_inbound_nfe_items_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe item. */
+                /** @description Um string UUID que identifica este Item da NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -26023,12 +29847,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_create_product_create: {
+    v1_inbound_nfe_items_create_product_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe item. */
+                /** @description Um string UUID que identifica este Item da NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -26051,12 +29875,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_history_retrieve: {
+    v1_inbound_nfe_items_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe item. */
+                /** @description Um string UUID que identifica este Item da NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -26073,12 +29897,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_ignore_create: {
+    v1_inbound_nfe_items_ignore_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe item. */
+                /** @description Um string UUID que identifica este Item da NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -26101,12 +29925,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_unignore_create: {
+    v1_inbound_nfe_items_unignore_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe item. */
+                /** @description Um string UUID que identifica este Item da NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -26129,12 +29953,12 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_unmap_create: {
+    v1_inbound_nfe_items_unmap_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this inbound n fe item. */
+                /** @description Um string UUID que identifica este Item da NF-e de entrada. */
                 id: string;
             };
             cookie?: never;
@@ -26157,7 +29981,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_bulk_retrieve: {
+    v1_inbound_nfe_items_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -26176,7 +30000,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_items_bulk_create: {
+    v1_inbound_nfe_items_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -26201,7 +30025,7 @@ export interface operations {
             };
         };
     };
-    api_v1_inbound_nfe_sync_create: {
+    v1_inbound_nfe_sync_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -26226,16 +30050,18 @@ export interface operations {
             };
         };
     };
-    api_v1_integrations_list: {
+    v1_integrations_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                is_active?: boolean;
+                kind?: string;
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -26254,7 +30080,7 @@ export interface operations {
             };
         };
     };
-    api_v1_integrations_create: {
+    v1_integrations_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -26279,12 +30105,12 @@ export interface operations {
             };
         };
     };
-    api_v1_integrations_retrieve: {
+    v1_integrations_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this integration. */
+                /** @description Um string UUID que identifica este Integração. */
                 id: string;
             };
             cookie?: never;
@@ -26301,12 +30127,12 @@ export interface operations {
             };
         };
     };
-    api_v1_integrations_update: {
+    v1_integrations_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this integration. */
+                /** @description Um string UUID que identifica este Integração. */
                 id: string;
             };
             cookie?: never;
@@ -26329,12 +30155,12 @@ export interface operations {
             };
         };
     };
-    api_v1_integrations_destroy: {
+    v1_integrations_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this integration. */
+                /** @description Um string UUID que identifica este Integração. */
                 id: string;
             };
             cookie?: never;
@@ -26350,12 +30176,12 @@ export interface operations {
             };
         };
     };
-    api_v1_integrations_partial_update: {
+    v1_integrations_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this integration. */
+                /** @description Um string UUID que identifica este Integração. */
                 id: string;
             };
             cookie?: never;
@@ -26378,7 +30204,145 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_list: {
+    v1_integrations_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Integração. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+        };
+    };
+    v1_integrations_test_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Integração. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Integration"];
+                "application/x-www-form-urlencoded": components["schemas"]["Integration"];
+                "multipart/form-data": components["schemas"]["Integration"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+        };
+    };
+    v1_integrations_bulk_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+        };
+    };
+    v1_integrations_bulk_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Integration"];
+                "application/x-www-form-urlencoded": components["schemas"]["Integration"];
+                "multipart/form-data": components["schemas"]["Integration"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+        };
+    };
+    v1_integrations_check_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Integration"];
+                "application/x-www-form-urlencoded": components["schemas"]["Integration"];
+                "multipart/form-data": components["schemas"]["Integration"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+        };
+    };
+    v1_integrations_types_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Integration"];
+                };
+            };
+        };
+    };
+    v1_logistics_freight_tables_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
@@ -26387,13 +30351,13 @@ export interface operations {
                  *     * `zip_range` - Por faixa de CEP
                  */
                 kind?: "distance" | "zip_range";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 store?: string;
             };
@@ -26413,7 +30377,7 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_create: {
+    v1_logistics_freight_tables_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -26438,12 +30402,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_retrieve: {
+    v1_logistics_freight_tables_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this freight table. */
+                /** @description Um string UUID que identifica este Tabela de frete. */
                 id: string;
             };
             cookie?: never;
@@ -26460,12 +30424,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_update: {
+    v1_logistics_freight_tables_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this freight table. */
+                /** @description Um string UUID que identifica este Tabela de frete. */
                 id: string;
             };
             cookie?: never;
@@ -26488,12 +30452,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_destroy: {
+    v1_logistics_freight_tables_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this freight table. */
+                /** @description Um string UUID que identifica este Tabela de frete. */
                 id: string;
             };
             cookie?: never;
@@ -26509,12 +30473,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_partial_update: {
+    v1_logistics_freight_tables_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this freight table. */
+                /** @description Um string UUID que identifica este Tabela de frete. */
                 id: string;
             };
             cookie?: never;
@@ -26537,12 +30501,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_history_retrieve: {
+    v1_logistics_freight_tables_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this freight table. */
+                /** @description Um string UUID que identifica este Tabela de frete. */
                 id: string;
             };
             cookie?: never;
@@ -26559,7 +30523,7 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_bulk_retrieve: {
+    v1_logistics_freight_tables_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -26578,7 +30542,7 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_bulk_create: {
+    v1_logistics_freight_tables_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -26603,7 +30567,7 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_estimate_retrieve: {
+    v1_logistics_freight_tables_estimate_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -26622,7 +30586,7 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_freight_tables_quote_retrieve: {
+    v1_logistics_freight_tables_quote_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -26641,17 +30605,17 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_rules_list: {
+    v1_logistics_rules_list: {
         parameters: {
             query?: {
                 is_default?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -26670,7 +30634,7 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_rules_create: {
+    v1_logistics_rules_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -26695,12 +30659,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_rules_retrieve: {
+    v1_logistics_rules_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this logistics rule. */
+                /** @description Um string UUID que identifica este Regra logística. */
                 id: string;
             };
             cookie?: never;
@@ -26717,12 +30681,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_rules_update: {
+    v1_logistics_rules_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this logistics rule. */
+                /** @description Um string UUID que identifica este Regra logística. */
                 id: string;
             };
             cookie?: never;
@@ -26745,12 +30709,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_rules_destroy: {
+    v1_logistics_rules_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this logistics rule. */
+                /** @description Um string UUID que identifica este Regra logística. */
                 id: string;
             };
             cookie?: never;
@@ -26766,12 +30730,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_rules_partial_update: {
+    v1_logistics_rules_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this logistics rule. */
+                /** @description Um string UUID que identifica este Regra logística. */
                 id: string;
             };
             cookie?: never;
@@ -26794,12 +30758,12 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_rules_history_retrieve: {
+    v1_logistics_rules_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this logistics rule. */
+                /** @description Um string UUID que identifica este Regra logística. */
                 id: string;
             };
             cookie?: never;
@@ -26816,7 +30780,7 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_rules_bulk_retrieve: {
+    v1_logistics_rules_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -26835,7 +30799,7 @@ export interface operations {
             };
         };
     };
-    api_v1_logistics_rules_bulk_create: {
+    v1_logistics_rules_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -26860,17 +30824,17 @@ export interface operations {
             };
         };
     };
-    api_v1_market_offers_list: {
+    v1_market_offers_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 price_check?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 used?: boolean;
             };
@@ -26890,12 +30854,12 @@ export interface operations {
             };
         };
     };
-    api_v1_market_offers_retrieve: {
+    v1_market_offers_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this market offer. */
+                /** @description Um string UUID que identifica este Oferta do mercado. */
                 id: string;
             };
             cookie?: never;
@@ -26912,12 +30876,12 @@ export interface operations {
             };
         };
     };
-    api_v1_market_offers_history_retrieve: {
+    v1_market_offers_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this market offer. */
+                /** @description Um string UUID que identifica este Oferta do mercado. */
                 id: string;
             };
             cookie?: never;
@@ -26934,7 +30898,7 @@ export interface operations {
             };
         };
     };
-    api_v1_market_offers_bulk_retrieve: {
+    v1_market_offers_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -26953,7 +30917,7 @@ export interface operations {
             };
         };
     };
-    api_v1_me_retrieve: {
+    v1_me_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -26971,11 +30935,11 @@ export interface operations {
             };
         };
     };
-    api_v1_metafield_definitions_list: {
+    v1_metafield_definitions_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
                 /**
                  * @description * `product` - Produto
@@ -26983,11 +30947,11 @@ export interface operations {
                  *     * `sale` - Pedido
                  */
                 owner?: "customer" | "product" | "sale";
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 show_in_specs?: boolean;
                 /**
@@ -27015,7 +30979,7 @@ export interface operations {
             };
         };
     };
-    api_v1_metafield_definitions_create: {
+    v1_metafield_definitions_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27040,12 +31004,12 @@ export interface operations {
             };
         };
     };
-    api_v1_metafield_definitions_retrieve: {
+    v1_metafield_definitions_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this metafield definition. */
+                /** @description Um string UUID que identifica este Definição de metacampo. */
                 id: string;
             };
             cookie?: never;
@@ -27062,12 +31026,12 @@ export interface operations {
             };
         };
     };
-    api_v1_metafield_definitions_update: {
+    v1_metafield_definitions_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this metafield definition. */
+                /** @description Um string UUID que identifica este Definição de metacampo. */
                 id: string;
             };
             cookie?: never;
@@ -27090,12 +31054,12 @@ export interface operations {
             };
         };
     };
-    api_v1_metafield_definitions_destroy: {
+    v1_metafield_definitions_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this metafield definition. */
+                /** @description Um string UUID que identifica este Definição de metacampo. */
                 id: string;
             };
             cookie?: never;
@@ -27111,12 +31075,12 @@ export interface operations {
             };
         };
     };
-    api_v1_metafield_definitions_partial_update: {
+    v1_metafield_definitions_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this metafield definition. */
+                /** @description Um string UUID que identifica este Definição de metacampo. */
                 id: string;
             };
             cookie?: never;
@@ -27139,12 +31103,12 @@ export interface operations {
             };
         };
     };
-    api_v1_metafield_definitions_history_retrieve: {
+    v1_metafield_definitions_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this metafield definition. */
+                /** @description Um string UUID que identifica este Definição de metacampo. */
                 id: string;
             };
             cookie?: never;
@@ -27161,7 +31125,7 @@ export interface operations {
             };
         };
     };
-    api_v1_metafield_definitions_bulk_retrieve: {
+    v1_metafield_definitions_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -27180,7 +31144,7 @@ export interface operations {
             };
         };
     };
-    api_v1_metafield_definitions_bulk_create: {
+    v1_metafield_definitions_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27205,16 +31169,16 @@ export interface operations {
             };
         };
     };
-    api_v1_notifications_list: {
+    v1_notifications_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -27233,7 +31197,7 @@ export interface operations {
             };
         };
     };
-    api_v1_notifications_create: {
+    v1_notifications_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27258,12 +31222,12 @@ export interface operations {
             };
         };
     };
-    api_v1_notifications_retrieve: {
+    v1_notifications_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this notification. */
+                /** @description Um string UUID que identifica este Notificação. */
                 id: string;
             };
             cookie?: never;
@@ -27280,12 +31244,12 @@ export interface operations {
             };
         };
     };
-    api_v1_notifications_history_retrieve: {
+    v1_notifications_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this notification. */
+                /** @description Um string UUID que identifica este Notificação. */
                 id: string;
             };
             cookie?: never;
@@ -27302,12 +31266,12 @@ export interface operations {
             };
         };
     };
-    api_v1_notifications_read_create: {
+    v1_notifications_read_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this notification. */
+                /** @description Um string UUID que identifica este Notificação. */
                 id: string;
             };
             cookie?: never;
@@ -27330,7 +31294,7 @@ export interface operations {
             };
         };
     };
-    api_v1_notifications_bulk_retrieve: {
+    v1_notifications_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -27349,7 +31313,7 @@ export interface operations {
             };
         };
     };
-    api_v1_notifications_bulk_create: {
+    v1_notifications_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27374,7 +31338,51 @@ export interface operations {
             };
         };
     };
-    api_v1_payment_methods_list: {
+    v1_notifications_read_all_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Notification"];
+                "application/x-www-form-urlencoded": components["schemas"]["Notification"];
+                "multipart/form-data": components["schemas"]["Notification"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
+                };
+            };
+        };
+    };
+    v1_notifications_unread_count_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
+                };
+            };
+        };
+    };
+    v1_payment_methods_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
@@ -27390,13 +31398,13 @@ export interface operations {
                  *     * `other` - Outro
                  */
                 kind?: "bank_slip" | "cash" | "credit_card" | "debit_card" | "installment_plan" | "other" | "pix" | "store_credit" | "voucher";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 store?: string;
             };
@@ -27416,7 +31424,7 @@ export interface operations {
             };
         };
     };
-    api_v1_payment_methods_create: {
+    v1_payment_methods_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27441,12 +31449,12 @@ export interface operations {
             };
         };
     };
-    api_v1_payment_methods_retrieve: {
+    v1_payment_methods_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this payment method. */
+                /** @description Um string UUID que identifica este Forma de pagamento. */
                 id: string;
             };
             cookie?: never;
@@ -27463,12 +31471,12 @@ export interface operations {
             };
         };
     };
-    api_v1_payment_methods_update: {
+    v1_payment_methods_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this payment method. */
+                /** @description Um string UUID que identifica este Forma de pagamento. */
                 id: string;
             };
             cookie?: never;
@@ -27491,12 +31499,12 @@ export interface operations {
             };
         };
     };
-    api_v1_payment_methods_destroy: {
+    v1_payment_methods_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this payment method. */
+                /** @description Um string UUID que identifica este Forma de pagamento. */
                 id: string;
             };
             cookie?: never;
@@ -27512,12 +31520,12 @@ export interface operations {
             };
         };
     };
-    api_v1_payment_methods_partial_update: {
+    v1_payment_methods_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this payment method. */
+                /** @description Um string UUID que identifica este Forma de pagamento. */
                 id: string;
             };
             cookie?: never;
@@ -27540,12 +31548,12 @@ export interface operations {
             };
         };
     };
-    api_v1_payment_methods_history_retrieve: {
+    v1_payment_methods_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this payment method. */
+                /** @description Um string UUID que identifica este Forma de pagamento. */
                 id: string;
             };
             cookie?: never;
@@ -27562,7 +31570,7 @@ export interface operations {
             };
         };
     };
-    api_v1_payment_methods_bulk_retrieve: {
+    v1_payment_methods_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -27581,7 +31589,7 @@ export interface operations {
             };
         };
     };
-    api_v1_payment_methods_bulk_create: {
+    v1_payment_methods_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27606,7 +31614,7 @@ export interface operations {
             };
         };
     };
-    api_v1_pdv_bootstrap_create: {
+    v1_pdv_acbr_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27624,7 +31632,151 @@ export interface operations {
             };
         };
     };
-    api_v1_pdv_products_retrieve: {
+    v1_pdv_acbr_health_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_pdv_authorize_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_pdv_bootstrap_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_pdv_catalog_snapshot_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_pdv_fiscal_emitter_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_pdv_fiscal_kit_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_pdv_offline_cash_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_pdv_offline_sales_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_pdv_products_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -27644,7 +31796,7 @@ export interface operations {
             };
         };
     };
-    api_v1_pdv_unlock_create: {
+    v1_pdv_unlock_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27662,16 +31814,16 @@ export interface operations {
             };
         };
     };
-    api_v1_permissions_list: {
+    v1_permissions_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -27690,12 +31842,12 @@ export interface operations {
             };
         };
     };
-    api_v1_permissions_retrieve: {
+    v1_permissions_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique value identifying this permission. */
+                /** @description Um valor único que identifica este Permissão. */
                 code: string;
             };
             cookie?: never;
@@ -27712,12 +31864,12 @@ export interface operations {
             };
         };
     };
-    api_v1_permissions_history_retrieve: {
+    v1_permissions_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A unique value identifying this permission. */
+                /** @description Um valor único que identifica este Permissão. */
                 code: string;
             };
             cookie?: never;
@@ -27734,7 +31886,7 @@ export interface operations {
             };
         };
     };
-    api_v1_permissions_bulk_retrieve: {
+    v1_permissions_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -27753,15 +31905,15 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_list: {
+    v1_price_checks_list: {
         parameters: {
             query?: {
                 needs_review?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 /**
                  * @description * `above` - Acima do mercado
@@ -27770,7 +31922,7 @@ export interface operations {
                  *     * `unknown` - Sem dados suficientes
                  */
                 position?: "above" | "below" | "inside" | "unknown";
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `none` - Sem sugestão
@@ -27799,7 +31951,7 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_create: {
+    v1_price_checks_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27824,12 +31976,12 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_retrieve: {
+    v1_price_checks_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this price check. */
+                /** @description Um string UUID que identifica este Verificação de preço. */
                 id: string;
             };
             cookie?: never;
@@ -27846,62 +31998,12 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_approve_create: {
+    v1_price_checks_approve_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this price check. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["PriceCheckDetail"];
-                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
-                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PriceCheckDetail"];
-                };
-            };
-        };
-    };
-    api_v1_price_checks_history_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this price check. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PriceCheckDetail"];
-                };
-            };
-        };
-    };
-    api_v1_price_checks_refresh_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this price check. */
+                /** @description Um string UUID que identifica este Verificação de preço. */
                 id: string;
             };
             cookie?: never;
@@ -27924,12 +32026,34 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_reject_create: {
+    v1_price_checks_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this price check. */
+                /** @description Um string UUID que identifica este Verificação de preço. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    v1_price_checks_refresh_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Verificação de preço. */
                 id: string;
             };
             cookie?: never;
@@ -27952,7 +32076,35 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_bulk_retrieve: {
+    v1_price_checks_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Verificação de preço. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PriceCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["PriceCheckDetail"];
+                "multipart/form-data": components["schemas"]["PriceCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PriceCheckDetail"];
+                };
+            };
+        };
+    };
+    v1_price_checks_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -27971,7 +32123,7 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_bulk_create: {
+    v1_price_checks_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -27996,7 +32148,7 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_product_create: {
+    v1_price_checks_product_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28021,7 +32173,7 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_rules_retrieve: {
+    v1_price_checks_rules_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -28040,7 +32192,7 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_rules_create: {
+    v1_price_checks_rules_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28065,7 +32217,7 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_run_create: {
+    v1_price_checks_run_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28090,7 +32242,7 @@ export interface operations {
             };
         };
     };
-    api_v1_price_checks_run_status_retrieve: {
+    v1_price_checks_run_status_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -28109,7 +32261,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_coupons_list: {
+    v1_promotions_coupons_list: {
         parameters: {
             query?: {
                 is_enabled?: boolean;
@@ -28119,13 +32271,13 @@ export interface operations {
                  *     * `free_shipping` - Frete grátis
                  */
                 kind?: "amount" | "free_shipping" | "percent";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 store?: string;
             };
@@ -28145,7 +32297,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_coupons_create: {
+    v1_promotions_coupons_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28170,12 +32322,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_coupons_retrieve: {
+    v1_promotions_coupons_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this coupon. */
+                /** @description Um string UUID que identifica este Cupom. */
                 id: string;
             };
             cookie?: never;
@@ -28192,12 +32344,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_coupons_update: {
+    v1_promotions_coupons_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this coupon. */
+                /** @description Um string UUID que identifica este Cupom. */
                 id: string;
             };
             cookie?: never;
@@ -28220,12 +32372,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_coupons_destroy: {
+    v1_promotions_coupons_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this coupon. */
+                /** @description Um string UUID que identifica este Cupom. */
                 id: string;
             };
             cookie?: never;
@@ -28241,12 +32393,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_coupons_partial_update: {
+    v1_promotions_coupons_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this coupon. */
+                /** @description Um string UUID que identifica este Cupom. */
                 id: string;
             };
             cookie?: never;
@@ -28269,12 +32421,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_coupons_history_retrieve: {
+    v1_promotions_coupons_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this coupon. */
+                /** @description Um string UUID que identifica este Cupom. */
                 id: string;
             };
             cookie?: never;
@@ -28291,7 +32443,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_coupons_bulk_retrieve: {
+    v1_promotions_coupons_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -28310,7 +32462,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_coupons_bulk_create: {
+    v1_promotions_coupons_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28335,18 +32487,18 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rule_products_list: {
+    v1_promotions_rule_products_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 product?: string;
                 promotion?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -28365,7 +32517,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rule_products_create: {
+    v1_promotions_rule_products_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28390,12 +32542,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rule_products_retrieve: {
+    v1_promotions_rule_products_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion product. */
+                /** @description Um string UUID que identifica este Produto da promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28412,12 +32564,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rule_products_update: {
+    v1_promotions_rule_products_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion product. */
+                /** @description Um string UUID que identifica este Produto da promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28440,12 +32592,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rule_products_destroy: {
+    v1_promotions_rule_products_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion product. */
+                /** @description Um string UUID que identifica este Produto da promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28461,12 +32613,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rule_products_partial_update: {
+    v1_promotions_rule_products_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion product. */
+                /** @description Um string UUID que identifica este Produto da promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28489,12 +32641,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rule_products_history_retrieve: {
+    v1_promotions_rule_products_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion product. */
+                /** @description Um string UUID que identifica este Produto da promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28511,7 +32663,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rule_products_bulk_retrieve: {
+    v1_promotions_rule_products_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -28530,7 +32682,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rule_products_bulk_create: {
+    v1_promotions_rule_products_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28555,17 +32707,17 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rules_list: {
+    v1_promotions_rules_list: {
         parameters: {
             query?: {
                 is_enabled?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 table?: string;
                 /**
@@ -28592,7 +32744,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rules_create: {
+    v1_promotions_rules_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28617,12 +32769,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rules_retrieve: {
+    v1_promotions_rules_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion. */
+                /** @description Um string UUID que identifica este Promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28639,12 +32791,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rules_update: {
+    v1_promotions_rules_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion. */
+                /** @description Um string UUID que identifica este Promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28667,12 +32819,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rules_destroy: {
+    v1_promotions_rules_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion. */
+                /** @description Um string UUID que identifica este Promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28688,12 +32840,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rules_partial_update: {
+    v1_promotions_rules_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion. */
+                /** @description Um string UUID que identifica este Promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28716,12 +32868,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rules_history_retrieve: {
+    v1_promotions_rules_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this promotion. */
+                /** @description Um string UUID que identifica este Promoção. */
                 id: string;
             };
             cookie?: never;
@@ -28738,7 +32890,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rules_bulk_retrieve: {
+    v1_promotions_rules_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -28757,7 +32909,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_rules_bulk_create: {
+    v1_promotions_rules_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28782,17 +32934,17 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_tables_list: {
+    v1_promotions_tables_list: {
         parameters: {
             query?: {
                 is_enabled?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 store?: string;
             };
@@ -28812,7 +32964,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_tables_create: {
+    v1_promotions_tables_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -28837,12 +32989,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_tables_retrieve: {
+    v1_promotions_tables_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this discount table. */
+                /** @description Um string UUID que identifica este Tabela de desconto. */
                 id: string;
             };
             cookie?: never;
@@ -28859,12 +33011,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_tables_update: {
+    v1_promotions_tables_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this discount table. */
+                /** @description Um string UUID que identifica este Tabela de desconto. */
                 id: string;
             };
             cookie?: never;
@@ -28887,12 +33039,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_tables_destroy: {
+    v1_promotions_tables_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this discount table. */
+                /** @description Um string UUID que identifica este Tabela de desconto. */
                 id: string;
             };
             cookie?: never;
@@ -28908,12 +33060,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_tables_partial_update: {
+    v1_promotions_tables_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this discount table. */
+                /** @description Um string UUID que identifica este Tabela de desconto. */
                 id: string;
             };
             cookie?: never;
@@ -28936,12 +33088,12 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_tables_history_retrieve: {
+    v1_promotions_tables_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this discount table. */
+                /** @description Um string UUID que identifica este Tabela de desconto. */
                 id: string;
             };
             cookie?: never;
@@ -28958,7 +33110,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_tables_bulk_retrieve: {
+    v1_promotions_tables_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -28977,7 +33129,7 @@ export interface operations {
             };
         };
     };
-    api_v1_promotions_tables_bulk_create: {
+    v1_promotions_tables_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29002,7 +33154,7 @@ export interface operations {
             };
         };
     };
-    api_v1_public_reviews_retrieve: {
+    v1_public_reviews_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -29022,7 +33174,7 @@ export interface operations {
             };
         };
     };
-    api_v1_public_reviews_create: {
+    v1_public_reviews_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29042,7 +33194,7 @@ export interface operations {
             };
         };
     };
-    api_v1_reports_retrieve: {
+    v1_reports_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -29062,7 +33214,7 @@ export interface operations {
             };
         };
     };
-    api_v1_reports_book_retrieve: {
+    v1_reports_book_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -29082,7 +33234,7 @@ export interface operations {
             };
         };
     };
-    api_v1_reports_book_export_retrieve: {
+    v1_reports_book_export_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -29102,15 +33254,15 @@ export interface operations {
             };
         };
     };
-    api_v1_returns_list: {
+    v1_returns_list: {
         parameters: {
             query?: {
                 customer?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 /**
                  * @description * `store_credit` - Vale-troca (crédito do cliente)
@@ -29120,7 +33272,7 @@ export interface operations {
                  */
                 refund_method?: "cash" | "exchange" | "original_payment" | "store_credit";
                 sale?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `draft` - Rascunho
@@ -29145,7 +33297,7 @@ export interface operations {
             };
         };
     };
-    api_v1_returns_create: {
+    v1_returns_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29170,12 +33322,12 @@ export interface operations {
             };
         };
     };
-    api_v1_returns_retrieve: {
+    v1_returns_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale return. */
+                /** @description Um string UUID que identifica este Devolução de venda. */
                 id: string;
             };
             cookie?: never;
@@ -29192,12 +33344,12 @@ export interface operations {
             };
         };
     };
-    api_v1_returns_cancel_create: {
+    v1_returns_cancel_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale return. */
+                /** @description Um string UUID que identifica este Devolução de venda. */
                 id: string;
             };
             cookie?: never;
@@ -29220,12 +33372,12 @@ export interface operations {
             };
         };
     };
-    api_v1_returns_complete_create: {
+    v1_returns_complete_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale return. */
+                /** @description Um string UUID que identifica este Devolução de venda. */
                 id: string;
             };
             cookie?: never;
@@ -29248,12 +33400,12 @@ export interface operations {
             };
         };
     };
-    api_v1_returns_history_retrieve: {
+    v1_returns_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale return. */
+                /** @description Um string UUID que identifica este Devolução de venda. */
                 id: string;
             };
             cookie?: never;
@@ -29270,7 +33422,7 @@ export interface operations {
             };
         };
     };
-    api_v1_returns_bulk_retrieve: {
+    v1_returns_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -29289,7 +33441,7 @@ export interface operations {
             };
         };
     };
-    api_v1_returns_bulk_create: {
+    v1_returns_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29314,7 +33466,7 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_list: {
+    v1_reviews_list: {
         parameters: {
             query?: {
                 created_at__gte?: string;
@@ -29325,18 +33477,18 @@ export interface operations {
                  *     * `delivery` - Entrega
                  */
                 kind?: "delivery" | "product";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 product?: string;
                 rating?: number;
                 rating__gte?: number;
                 rating__lte?: number;
                 sale?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `pending` - Pendente
@@ -29362,7 +33514,7 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_create: {
+    v1_reviews_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29387,12 +33539,12 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_retrieve: {
+    v1_reviews_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this review. */
+                /** @description Um string UUID que identifica este Avaliação. */
                 id: string;
             };
             cookie?: never;
@@ -29409,12 +33561,12 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_destroy: {
+    v1_reviews_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this review. */
+                /** @description Um string UUID que identifica este Avaliação. */
                 id: string;
             };
             cookie?: never;
@@ -29430,12 +33582,12 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_approve_create: {
+    v1_reviews_approve_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this review. */
+                /** @description Um string UUID que identifica este Avaliação. */
                 id: string;
             };
             cookie?: never;
@@ -29458,12 +33610,12 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_history_retrieve: {
+    v1_reviews_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this review. */
+                /** @description Um string UUID que identifica este Avaliação. */
                 id: string;
             };
             cookie?: never;
@@ -29480,12 +33632,12 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_reject_create: {
+    v1_reviews_reject_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this review. */
+                /** @description Um string UUID que identifica este Avaliação. */
                 id: string;
             };
             cookie?: never;
@@ -29508,7 +33660,7 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_bulk_retrieve: {
+    v1_reviews_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -29527,7 +33679,7 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_bulk_create: {
+    v1_reviews_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29552,7 +33704,7 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_links_retrieve: {
+    v1_reviews_links_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -29571,7 +33723,7 @@ export interface operations {
             };
         };
     };
-    api_v1_reviews_links_create: {
+    v1_reviews_links_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29596,19 +33748,19 @@ export interface operations {
             };
         };
     };
-    api_v1_roles_list: {
+    v1_roles_list: {
         parameters: {
             query?: {
                 area?: string;
                 is_active?: boolean;
                 is_system?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -29627,7 +33779,7 @@ export interface operations {
             };
         };
     };
-    api_v1_roles_create: {
+    v1_roles_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29652,12 +33804,12 @@ export interface operations {
             };
         };
     };
-    api_v1_roles_retrieve: {
+    v1_roles_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this role. */
+                /** @description Um string UUID que identifica este Perfil de acesso. */
                 id: string;
             };
             cookie?: never;
@@ -29674,12 +33826,12 @@ export interface operations {
             };
         };
     };
-    api_v1_roles_update: {
+    v1_roles_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this role. */
+                /** @description Um string UUID que identifica este Perfil de acesso. */
                 id: string;
             };
             cookie?: never;
@@ -29702,12 +33854,12 @@ export interface operations {
             };
         };
     };
-    api_v1_roles_destroy: {
+    v1_roles_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this role. */
+                /** @description Um string UUID que identifica este Perfil de acesso. */
                 id: string;
             };
             cookie?: never;
@@ -29723,12 +33875,12 @@ export interface operations {
             };
         };
     };
-    api_v1_roles_partial_update: {
+    v1_roles_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this role. */
+                /** @description Um string UUID que identifica este Perfil de acesso. */
                 id: string;
             };
             cookie?: never;
@@ -29751,12 +33903,12 @@ export interface operations {
             };
         };
     };
-    api_v1_roles_history_retrieve: {
+    v1_roles_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this role. */
+                /** @description Um string UUID que identifica este Perfil de acesso. */
                 id: string;
             };
             cookie?: never;
@@ -29773,7 +33925,7 @@ export interface operations {
             };
         };
     };
-    api_v1_roles_bulk_retrieve: {
+    v1_roles_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -29792,7 +33944,7 @@ export interface operations {
             };
         };
     };
-    api_v1_roles_bulk_create: {
+    v1_roles_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29817,7 +33969,7 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_list: {
+    v1_sales_list: {
         parameters: {
             query?: {
                 cash_session?: string;
@@ -29846,7 +33998,7 @@ export interface operations {
                 fulfillment_status?: "cancelled" | "delivered" | "pending" | "picked_up" | "ready" | "returned" | "shipped";
                 /** @description Valores múltiplos podem ser separados por vírgulas. */
                 fulfillment_status__in?: string[];
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
                 /**
                  * @description * `draft` - Pedido guardado
@@ -29862,9 +34014,9 @@ export interface operations {
                 overall_status?: "awaiting_payment" | "awaiting_picking" | "cancelled" | "completed" | "draft" | "in_transit" | "open" | "ready" | "returned";
                 /** @description Valores múltiplos podem ser separados por vírgulas. */
                 overall_status__in?: string[];
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 parked_by?: number;
                 /**
@@ -29878,7 +34030,7 @@ export interface operations {
                 payment_status?: "cancelled" | "paid" | "partial" | "partially_refunded" | "pending" | "refunded";
                 /** @description Valores múltiplos podem ser separados por vírgulas. */
                 payment_status__in?: string[];
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 seller?: number;
                 /**
@@ -29908,7 +34060,7 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_create: {
+    v1_sales_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -29933,12 +34085,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_retrieve: {
+    v1_sales_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -29955,12 +34107,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_destroy: {
+    v1_sales_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -29976,12 +34128,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_partial_update: {
+    v1_sales_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30004,12 +34156,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_addresses_retrieve: {
+    v1_sales_addresses_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30026,12 +34178,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_addresses_create: {
+    v1_sales_addresses_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30054,12 +34206,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_cancel_create: {
+    v1_sales_cancel_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30082,12 +34234,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_checkout_create: {
+    v1_sales_checkout_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30110,12 +34262,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_complete_create: {
+    v1_sales_complete_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30138,12 +34290,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_coupon_create: {
+    v1_sales_coupon_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30166,89 +34318,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_coupon_destroy: {
+    v1_sales_coupon_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description No response body */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-        };
-    };
-    api_v1_sales_customer_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this sale. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["Sale"];
-                "application/x-www-form-urlencoded": components["schemas"]["Sale"];
-                "multipart/form-data": components["schemas"]["Sale"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Sale"];
-                };
-            };
-        };
-    };
-    api_v1_sales_delivery_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this sale. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["Sale"];
-                "application/x-www-form-urlencoded": components["schemas"]["Sale"];
-                "multipart/form-data": components["schemas"]["Sale"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Sale"];
-                };
-            };
-        };
-    };
-    api_v1_sales_delivery_destroy: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30264,12 +34339,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_discount_create: {
+    v1_sales_customer_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30292,12 +34367,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_edit_delivery_create: {
+    v1_sales_delivery_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30320,12 +34395,33 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_fulfillment_create: {
+    v1_sales_delivery_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    v1_sales_discount_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30348,12 +34444,68 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_history_retrieve: {
+    v1_sales_edit_delivery_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Sale"];
+                "application/x-www-form-urlencoded": components["schemas"]["Sale"];
+                "multipart/form-data": components["schemas"]["Sale"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
+    v1_sales_fulfillment_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Venda. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Sale"];
+                "application/x-www-form-urlencoded": components["schemas"]["Sale"];
+                "multipart/form-data": components["schemas"]["Sale"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
+    v1_sales_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30370,12 +34522,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_invoices_danfe_retrieve: {
+    v1_sales_invoices_danfe_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
                 invoice_id: string;
             };
@@ -30393,34 +34545,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_items_retrieve_2: {
+    v1_sales_invoices_register_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Sale"];
-                };
-            };
-        };
-    };
-    api_v1_sales_items_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30443,12 +34573,62 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_items_destroy: {
+    v1_sales_items_retrieve_2: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
+    v1_sales_items_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Venda. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["Sale"];
+                "application/x-www-form-urlencoded": components["schemas"]["Sale"];
+                "multipart/form-data": components["schemas"]["Sale"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Sale"];
+                };
+            };
+        };
+    };
+    v1_sales_items_destroy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
                 item_id: string;
             };
@@ -30465,12 +34645,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_items_partial_update: {
+    v1_sales_items_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
                 item_id: string;
             };
@@ -30494,12 +34674,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_metafields_create: {
+    v1_sales_metafields_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30522,12 +34702,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_park_create: {
+    v1_sales_park_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30550,12 +34730,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_payments_create: {
+    v1_sales_payments_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30578,12 +34758,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_payments_destroy: {
+    v1_sales_payments_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
                 payment_id: string;
             };
@@ -30600,12 +34780,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_payments_change_create: {
+    v1_sales_payments_change_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
                 payment_id: string;
             };
@@ -30629,12 +34809,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_resume_create: {
+    v1_sales_resume_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30657,12 +34837,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_returns_create: {
+    v1_sales_returns_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale. */
+                /** @description Um string UUID que identifica este Venda. */
                 id: string;
             };
             cookie?: never;
@@ -30685,7 +34865,7 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_bulk_retrieve: {
+    v1_sales_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -30704,7 +34884,7 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_bulk_create: {
+    v1_sales_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -30729,14 +34909,14 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_items_list: {
+    v1_sales_items_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 sale?: string;
                 sale__cash_session?: string;
@@ -30750,7 +34930,7 @@ export interface operations {
                  *     * `cancelled` - Cancelada
                  */
                 sale__status?: "cancelled" | "completed" | "draft" | "open";
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `active` - Ativo
@@ -30776,12 +34956,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_items_retrieve: {
+    v1_sales_items_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale item. */
+                /** @description Um string UUID que identifica este Item da venda. */
                 id: string;
             };
             cookie?: never;
@@ -30798,12 +34978,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_items_history_retrieve: {
+    v1_sales_items_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sale item. */
+                /** @description Um string UUID que identifica este Item da venda. */
                 id: string;
             };
             cookie?: never;
@@ -30820,7 +35000,7 @@ export interface operations {
             };
         };
     };
-    api_v1_sales_items_bulk_retrieve: {
+    v1_sales_items_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -30839,17 +35019,17 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_list: {
+    v1_seo_checks_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 product?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `none` - Sem sugestão
@@ -30875,7 +35055,7 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_create: {
+    v1_seo_checks_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -30900,12 +35080,12 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_retrieve: {
+    v1_seo_checks_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this seo check. */
+                /** @description Um string UUID que identifica este Verificação de SEO. */
                 id: string;
             };
             cookie?: never;
@@ -30922,62 +35102,12 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_apply_create: {
+    v1_seo_checks_apply_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this seo check. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["SeoCheckDetail"];
-                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
-                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SeoCheckDetail"];
-                };
-            };
-        };
-    };
-    api_v1_seo_checks_history_retrieve: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this seo check. */
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SeoCheckDetail"];
-                };
-            };
-        };
-    };
-    api_v1_seo_checks_refresh_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description A UUID string identifying this seo check. */
+                /** @description Um string UUID que identifica este Verificação de SEO. */
                 id: string;
             };
             cookie?: never;
@@ -31000,12 +35130,34 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_reject_create: {
+    v1_seo_checks_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this seo check. */
+                /** @description Um string UUID que identifica este Verificação de SEO. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    v1_seo_checks_refresh_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Verificação de SEO. */
                 id: string;
             };
             cookie?: never;
@@ -31028,7 +35180,35 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_bulk_retrieve: {
+    v1_seo_checks_reject_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Verificação de SEO. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["SeoCheckDetail"];
+                "application/x-www-form-urlencoded": components["schemas"]["SeoCheckDetail"];
+                "multipart/form-data": components["schemas"]["SeoCheckDetail"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SeoCheckDetail"];
+                };
+            };
+        };
+    };
+    v1_seo_checks_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -31047,7 +35227,7 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_bulk_create: {
+    v1_seo_checks_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -31072,7 +35252,7 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_product_create: {
+    v1_seo_checks_product_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -31097,7 +35277,7 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_rules_retrieve: {
+    v1_seo_checks_rules_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -31116,7 +35296,7 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_rules_create: {
+    v1_seo_checks_rules_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -31141,7 +35321,7 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_run_create: {
+    v1_seo_checks_run_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -31166,7 +35346,7 @@ export interface operations {
             };
         };
     };
-    api_v1_seo_checks_run_status_retrieve: {
+    v1_seo_checks_run_status_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -31185,7 +35365,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_advices_list: {
+    v1_stock_advices_list: {
         parameters: {
             query?: {
                 /**
@@ -31196,13 +35376,13 @@ export interface operations {
                  *     * `idle` - Não sai
                  */
                 kind?: "dock" | "fast" | "idle" | "scattered" | "together";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `open` - Para decidir
@@ -31229,7 +35409,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_advices_create: {
+    v1_stock_advices_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -31254,12 +35434,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_advices_retrieve: {
+    v1_stock_advices_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock advice. */
+                /** @description Um string UUID que identifica este Sugestão de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -31276,12 +35456,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_advices_apply_create: {
+    v1_stock_advices_apply_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock advice. */
+                /** @description Um string UUID que identifica este Sugestão de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -31304,12 +35484,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_advices_dismiss_create: {
+    v1_stock_advices_dismiss_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock advice. */
+                /** @description Um string UUID que identifica este Sugestão de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -31332,12 +35512,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_advices_history_retrieve: {
+    v1_stock_advices_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock advice. */
+                /** @description Um string UUID que identifica este Sugestão de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -31354,7 +35534,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_advices_bulk_retrieve: {
+    v1_stock_advices_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -31373,32 +35553,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_advices_bulk_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["StockAdvice"];
-                "application/x-www-form-urlencoded": components["schemas"]["StockAdvice"];
-                "multipart/form-data": components["schemas"]["StockAdvice"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StockAdvice"];
-                };
-            };
-        };
-    };
-    api_v1_stock_advices_run_create: {
+    v1_stock_advices_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -31423,16 +35578,41 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_balances_list: {
+    v1_stock_advices_run_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["StockAdvice"];
+                "application/x-www-form-urlencoded": components["schemas"]["StockAdvice"];
+                "multipart/form-data": components["schemas"]["StockAdvice"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StockAdvice"];
+                };
+            };
+        };
+    };
+    v1_stock_balances_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 variant?: string;
                 variant__product?: string;
@@ -31454,12 +35634,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_balances_retrieve: {
+    v1_stock_balances_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock balance. */
+                /** @description Um string UUID que identifica este Saldo de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -31476,12 +35656,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_balances_history_retrieve: {
+    v1_stock_balances_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock balance. */
+                /** @description Um string UUID que identifica este Saldo de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -31498,7 +35678,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_balances_alerts_retrieve: {
+    v1_stock_balances_alerts_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -31517,7 +35697,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_balances_bulk_retrieve: {
+    v1_stock_balances_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -31536,20 +35716,20 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bin_balances_list: {
+    v1_stock_bin_balances_list: {
         parameters: {
             query?: {
                 bin?: string;
                 bin__warehouse?: string;
                 lot?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 quantity__gt?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 variant?: string;
             };
@@ -31569,12 +35749,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bin_balances_retrieve: {
+    v1_stock_bin_balances_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this bin balance. */
+                /** @description Um string UUID que identifica este Saldo por endereço. */
                 id: string;
             };
             cookie?: never;
@@ -31591,12 +35771,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bin_balances_history_retrieve: {
+    v1_stock_bin_balances_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this bin balance. */
+                /** @description Um string UUID que identifica este Saldo por endereço. */
                 id: string;
             };
             cookie?: never;
@@ -31613,7 +35793,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bin_balances_bulk_retrieve: {
+    v1_stock_bin_balances_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -31632,7 +35812,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_list: {
+    v1_stock_bins_list: {
         parameters: {
             query?: {
                 aisle?: string;
@@ -31644,13 +35824,13 @@ export interface operations {
                  *     * `shipping` - Expedição
                  */
                 kind?: "picking" | "receiving" | "shipping" | "storage";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 warehouse?: string;
             };
@@ -31670,7 +35850,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_create: {
+    v1_stock_bins_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -31695,12 +35875,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_retrieve: {
+    v1_stock_bins_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this storage bin. */
+                /** @description Um string UUID que identifica este Endereço de armazenagem. */
                 id: string;
             };
             cookie?: never;
@@ -31717,12 +35897,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_update: {
+    v1_stock_bins_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this storage bin. */
+                /** @description Um string UUID que identifica este Endereço de armazenagem. */
                 id: string;
             };
             cookie?: never;
@@ -31745,12 +35925,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_destroy: {
+    v1_stock_bins_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this storage bin. */
+                /** @description Um string UUID que identifica este Endereço de armazenagem. */
                 id: string;
             };
             cookie?: never;
@@ -31766,12 +35946,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_partial_update: {
+    v1_stock_bins_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this storage bin. */
+                /** @description Um string UUID que identifica este Endereço de armazenagem. */
                 id: string;
             };
             cookie?: never;
@@ -31794,12 +35974,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_history_retrieve: {
+    v1_stock_bins_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this storage bin. */
+                /** @description Um string UUID que identifica este Endereço de armazenagem. */
                 id: string;
             };
             cookie?: never;
@@ -31816,7 +35996,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_bulk_retrieve: {
+    v1_stock_bins_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -31835,7 +36015,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_bulk_create: {
+    v1_stock_bins_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -31860,7 +36040,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_bins_generate_create: {
+    v1_stock_bins_generate_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -31885,18 +36065,18 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_divergences_list: {
+    v1_stock_divergences_list: {
         parameters: {
             query?: {
                 created_at__gte?: string;
                 created_at__lte?: string;
                 document?: string;
                 inbound_nfe?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 /**
                  * @description * `missing` - Faltou
@@ -31907,7 +36087,7 @@ export interface operations {
                  *     * `other` - Outro
                  */
                 reason?: "damaged" | "expired" | "extra" | "missing" | "other" | "wrong_product";
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 supplier?: string;
                 variant?: string;
@@ -31928,12 +36108,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_divergences_retrieve: {
+    v1_stock_divergences_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this receiving divergence. */
+                /** @description Um string UUID que identifica este Divergência no recebimento. */
                 id: string;
             };
             cookie?: never;
@@ -31950,12 +36130,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_divergences_history_retrieve: {
+    v1_stock_divergences_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this receiving divergence. */
+                /** @description Um string UUID que identifica este Divergência no recebimento. */
                 id: string;
             };
             cookie?: never;
@@ -31972,7 +36152,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_divergences_bulk_retrieve: {
+    v1_stock_divergences_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -31991,7 +36171,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_list: {
+    v1_stock_documents_list: {
         parameters: {
             query?: {
                 effective_date__gte?: string;
@@ -32007,13 +36187,13 @@ export interface operations {
                  *     * `relocation` - Movimentação entre endereços (WMS)
                  */
                 kind?: "adjustment" | "entry" | "exit" | "inventory" | "relocation" | "supplier_return" | "transfer";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `draft` - Rascunho
@@ -32040,7 +36220,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_create: {
+    v1_stock_documents_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -32065,12 +36245,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_retrieve: {
+    v1_stock_documents_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32087,12 +36267,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_update: {
+    v1_stock_documents_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32115,12 +36295,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_destroy: {
+    v1_stock_documents_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32136,12 +36316,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_partial_update: {
+    v1_stock_documents_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32164,12 +36344,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_cancel_create: {
+    v1_stock_documents_cancel_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32192,12 +36372,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_check_create: {
+    v1_stock_documents_check_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32220,12 +36400,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_conference_create: {
+    v1_stock_documents_conference_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32248,12 +36428,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_history_retrieve: {
+    v1_stock_documents_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32270,12 +36450,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_label_options_retrieve: {
+    v1_stock_documents_label_options_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32292,12 +36472,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_labels_retrieve: {
+    v1_stock_documents_labels_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32314,12 +36494,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_picking_list_retrieve: {
+    v1_stock_documents_picking_list_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32336,12 +36516,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_post_create: {
+    v1_stock_documents_post_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock document. */
+                /** @description Um string UUID que identifica este Documento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32364,7 +36544,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_bulk_retrieve: {
+    v1_stock_documents_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -32383,7 +36563,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_documents_bulk_create: {
+    v1_stock_documents_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -32408,19 +36588,19 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_label_templates_list: {
+    v1_stock_label_templates_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
                 is_default?: boolean;
                 is_system?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `product` - Produto / gôndola
@@ -32448,7 +36628,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_label_templates_create: {
+    v1_stock_label_templates_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -32473,12 +36653,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_label_templates_retrieve: {
+    v1_stock_label_templates_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this label template. */
+                /** @description Um string UUID que identifica este Modelo de etiqueta. */
                 id: string;
             };
             cookie?: never;
@@ -32495,12 +36675,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_label_templates_update: {
+    v1_stock_label_templates_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this label template. */
+                /** @description Um string UUID que identifica este Modelo de etiqueta. */
                 id: string;
             };
             cookie?: never;
@@ -32523,12 +36703,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_label_templates_destroy: {
+    v1_stock_label_templates_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this label template. */
+                /** @description Um string UUID que identifica este Modelo de etiqueta. */
                 id: string;
             };
             cookie?: never;
@@ -32544,12 +36724,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_label_templates_partial_update: {
+    v1_stock_label_templates_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this label template. */
+                /** @description Um string UUID que identifica este Modelo de etiqueta. */
                 id: string;
             };
             cookie?: never;
@@ -32572,12 +36752,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_label_templates_history_retrieve: {
+    v1_stock_label_templates_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this label template. */
+                /** @description Um string UUID que identifica este Modelo de etiqueta. */
                 id: string;
             };
             cookie?: never;
@@ -32594,7 +36774,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_label_templates_bulk_retrieve: {
+    v1_stock_label_templates_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -32613,7 +36793,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_label_templates_bulk_create: {
+    v1_stock_label_templates_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -32638,7 +36818,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_labels_print_create: {
+    v1_stock_labels_print_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -32656,18 +36836,18 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_lots_list: {
+    v1_stock_lots_list: {
         parameters: {
             query?: {
                 expires_at__gte?: string;
                 expires_at__lte?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `available` - Disponível
@@ -32697,12 +36877,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_lots_retrieve: {
+    v1_stock_lots_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock lot. */
+                /** @description Um string UUID que identifica este Lote de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32719,12 +36899,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_lots_partial_update: {
+    v1_stock_lots_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock lot. */
+                /** @description Um string UUID que identifica este Lote de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32747,12 +36927,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_lots_history_retrieve: {
+    v1_stock_lots_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock lot. */
+                /** @description Um string UUID que identifica este Lote de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32769,7 +36949,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_lots_bulk_retrieve: {
+    v1_stock_lots_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -32788,7 +36968,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_movements_list: {
+    v1_stock_movements_list: {
         parameters: {
             query?: {
                 created_at__gte?: string;
@@ -32811,13 +36991,13 @@ export interface operations {
                  *     * `reversal` - Estorno
                  */
                 kind?: "adjustment" | "asset_disposal" | "consumption" | "expiration" | "initial" | "loss" | "purchase" | "relocation" | "reversal" | "sale" | "sale_return" | "supplier_return" | "transfer_in" | "transfer_out";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 variant?: string;
                 variant__product?: string;
@@ -32839,12 +37019,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_movements_retrieve: {
+    v1_stock_movements_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock movement. */
+                /** @description Um string UUID que identifica este Movimento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32861,12 +37041,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_movements_history_retrieve: {
+    v1_stock_movements_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock movement. */
+                /** @description Um string UUID que identifica este Movimento de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32883,7 +37063,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_movements_bulk_retrieve: {
+    v1_stock_movements_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -32902,17 +37082,17 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_rules_list: {
+    v1_stock_rules_list: {
         parameters: {
             query?: {
                 is_default?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -32931,7 +37111,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_rules_create: {
+    v1_stock_rules_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -32956,12 +37136,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_rules_retrieve: {
+    v1_stock_rules_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock rule. */
+                /** @description Um string UUID que identifica este Regra de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -32978,12 +37158,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_rules_update: {
+    v1_stock_rules_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock rule. */
+                /** @description Um string UUID que identifica este Regra de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -33006,12 +37186,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_rules_destroy: {
+    v1_stock_rules_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock rule. */
+                /** @description Um string UUID que identifica este Regra de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -33027,12 +37207,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_rules_partial_update: {
+    v1_stock_rules_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock rule. */
+                /** @description Um string UUID que identifica este Regra de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -33055,12 +37235,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_rules_history_retrieve: {
+    v1_stock_rules_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this stock rule. */
+                /** @description Um string UUID que identifica este Regra de estoque. */
                 id: string;
             };
             cookie?: never;
@@ -33077,7 +37257,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_rules_bulk_retrieve: {
+    v1_stock_rules_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -33096,7 +37276,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_rules_bulk_create: {
+    v1_stock_rules_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -33121,7 +37301,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_warehouses_list: {
+    v1_stock_warehouses_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
@@ -33134,13 +37314,13 @@ export interface operations {
                  *     * `disposal` - Descarte
                  */
                 kind?: "damaged" | "disposal" | "maintenance" | "sales_floor" | "storage";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 uses_bins?: boolean;
             };
@@ -33160,7 +37340,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_warehouses_create: {
+    v1_stock_warehouses_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -33185,12 +37365,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_warehouses_retrieve: {
+    v1_stock_warehouses_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this warehouse. */
+                /** @description Um string UUID que identifica este Depósito. */
                 id: string;
             };
             cookie?: never;
@@ -33207,12 +37387,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_warehouses_update: {
+    v1_stock_warehouses_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this warehouse. */
+                /** @description Um string UUID que identifica este Depósito. */
                 id: string;
             };
             cookie?: never;
@@ -33235,12 +37415,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_warehouses_destroy: {
+    v1_stock_warehouses_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this warehouse. */
+                /** @description Um string UUID que identifica este Depósito. */
                 id: string;
             };
             cookie?: never;
@@ -33256,12 +37436,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_warehouses_partial_update: {
+    v1_stock_warehouses_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this warehouse. */
+                /** @description Um string UUID que identifica este Depósito. */
                 id: string;
             };
             cookie?: never;
@@ -33284,12 +37464,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_warehouses_history_retrieve: {
+    v1_stock_warehouses_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this warehouse. */
+                /** @description Um string UUID que identifica este Depósito. */
                 id: string;
             };
             cookie?: never;
@@ -33306,7 +37486,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_warehouses_bulk_retrieve: {
+    v1_stock_warehouses_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -33325,7 +37505,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stock_warehouses_bulk_create: {
+    v1_stock_warehouses_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -33350,7 +37530,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_list: {
+    v1_stores_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
@@ -33361,14 +37541,14 @@ export interface operations {
                  *     * `distribution` - Centro de distribuição
                  */
                 kind?: "branch" | "distribution" | "headquarters" | "regional";
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 parent?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 state?: string;
             };
@@ -33388,7 +37568,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_create: {
+    v1_stores_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -33413,12 +37593,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_retrieve: {
+    v1_stores_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store. */
+                /** @description Um string UUID que identifica este Loja. */
                 id: string;
             };
             cookie?: never;
@@ -33435,12 +37615,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_update: {
+    v1_stores_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store. */
+                /** @description Um string UUID que identifica este Loja. */
                 id: string;
             };
             cookie?: never;
@@ -33463,12 +37643,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_destroy: {
+    v1_stores_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store. */
+                /** @description Um string UUID que identifica este Loja. */
                 id: string;
             };
             cookie?: never;
@@ -33484,12 +37664,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_partial_update: {
+    v1_stores_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store. */
+                /** @description Um string UUID que identifica este Loja. */
                 id: string;
             };
             cookie?: never;
@@ -33512,12 +37692,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_history_retrieve: {
+    v1_stores_fiscal_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store. */
+                /** @description Um string UUID que identifica este Loja. */
                 id: string;
             };
             cookie?: never;
@@ -33534,7 +37714,85 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_bulk_retrieve: {
+    v1_stores_fiscal_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Loja. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Store"];
+                "application/x-www-form-urlencoded": components["schemas"]["Store"];
+                "multipart/form-data": components["schemas"]["Store"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Store"];
+                };
+            };
+        };
+    };
+    v1_stores_fiscal_certificate_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Loja. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Store"];
+                "application/x-www-form-urlencoded": components["schemas"]["Store"];
+                "application/json": components["schemas"]["Store"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Store"];
+                };
+            };
+        };
+    };
+    v1_stores_history_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Loja. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Store"];
+                };
+            };
+        };
+    };
+    v1_stores_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -33553,7 +37811,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_bulk_create: {
+    v1_stores_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -33578,17 +37836,17 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_rules_list: {
+    v1_stores_rules_list: {
         parameters: {
             query?: {
                 is_default?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -33607,7 +37865,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_rules_create: {
+    v1_stores_rules_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -33632,12 +37890,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_rules_retrieve: {
+    v1_stores_rules_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store rule. */
+                /** @description Um string UUID que identifica este Regra da loja. */
                 id: string;
             };
             cookie?: never;
@@ -33654,12 +37912,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_rules_update: {
+    v1_stores_rules_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store rule. */
+                /** @description Um string UUID que identifica este Regra da loja. */
                 id: string;
             };
             cookie?: never;
@@ -33682,12 +37940,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_rules_destroy: {
+    v1_stores_rules_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store rule. */
+                /** @description Um string UUID que identifica este Regra da loja. */
                 id: string;
             };
             cookie?: never;
@@ -33703,12 +37961,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_rules_partial_update: {
+    v1_stores_rules_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store rule. */
+                /** @description Um string UUID que identifica este Regra da loja. */
                 id: string;
             };
             cookie?: never;
@@ -33731,12 +37989,12 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_rules_history_retrieve: {
+    v1_stores_rules_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this store rule. */
+                /** @description Um string UUID que identifica este Regra da loja. */
                 id: string;
             };
             cookie?: never;
@@ -33753,7 +38011,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_rules_bulk_retrieve: {
+    v1_stores_rules_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -33772,7 +38030,7 @@ export interface operations {
             };
         };
     };
-    api_v1_stores_rules_bulk_create: {
+    v1_stores_rules_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -33797,17 +38055,17 @@ export interface operations {
             };
         };
     };
-    api_v1_suppliers_list: {
+    v1_suppliers_list: {
         parameters: {
             query?: {
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -33826,7 +38084,7 @@ export interface operations {
             };
         };
     };
-    api_v1_suppliers_create: {
+    v1_suppliers_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -33851,12 +38109,12 @@ export interface operations {
             };
         };
     };
-    api_v1_suppliers_retrieve: {
+    v1_suppliers_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier. */
+                /** @description Um string UUID que identifica este Fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -33873,12 +38131,12 @@ export interface operations {
             };
         };
     };
-    api_v1_suppliers_update: {
+    v1_suppliers_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier. */
+                /** @description Um string UUID que identifica este Fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -33901,12 +38159,12 @@ export interface operations {
             };
         };
     };
-    api_v1_suppliers_destroy: {
+    v1_suppliers_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier. */
+                /** @description Um string UUID que identifica este Fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -33922,12 +38180,12 @@ export interface operations {
             };
         };
     };
-    api_v1_suppliers_partial_update: {
+    v1_suppliers_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier. */
+                /** @description Um string UUID que identifica este Fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -33950,12 +38208,12 @@ export interface operations {
             };
         };
     };
-    api_v1_suppliers_history_retrieve: {
+    v1_suppliers_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this supplier. */
+                /** @description Um string UUID que identifica este Fornecedor. */
                 id: string;
             };
             cookie?: never;
@@ -33972,7 +38230,7 @@ export interface operations {
             };
         };
     };
-    api_v1_suppliers_bulk_retrieve: {
+    v1_suppliers_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -33991,7 +38249,7 @@ export interface operations {
             };
         };
     };
-    api_v1_suppliers_bulk_create: {
+    v1_suppliers_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -34016,16 +38274,16 @@ export interface operations {
             };
         };
     };
-    api_v1_sync_conflicts_list: {
+    v1_sync_conflicts_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -34044,12 +38302,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sync_conflicts_retrieve: {
+    v1_sync_conflicts_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sync conflict. */
+                /** @description Um string UUID que identifica este Conflito de sincronização. */
                 id: string;
             };
             cookie?: never;
@@ -34066,7 +38324,7 @@ export interface operations {
             };
         };
     };
-    api_v1_sync_events_list: {
+    v1_sync_events_list: {
         parameters: {
             query?: {
                 /**
@@ -34075,13 +38333,13 @@ export interface operations {
                  */
                 direction?: "INBOUND" | "OUTBOUND";
                 entity_type?: string;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 /**
                  * @description * `PENDING` - Na fila
@@ -34111,12 +38369,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sync_events_retrieve: {
+    v1_sync_events_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sync event. */
+                /** @description Um string UUID que identifica este Evento de sincronização. */
                 id: string;
             };
             cookie?: never;
@@ -34133,16 +38391,16 @@ export interface operations {
             };
         };
     };
-    api_v1_sync_nodes_list: {
+    v1_sync_nodes_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -34161,12 +38419,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sync_nodes_retrieve: {
+    v1_sync_nodes_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sync node. */
+                /** @description Um string UUID que identifica este Nó de sincronização. */
                 id: string;
             };
             cookie?: never;
@@ -34183,16 +38441,16 @@ export interface operations {
             };
         };
     };
-    api_v1_sync_runs_list: {
+    v1_sync_runs_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -34211,12 +38469,12 @@ export interface operations {
             };
         };
     };
-    api_v1_sync_runs_retrieve: {
+    v1_sync_runs_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this sync run. */
+                /** @description Um string UUID que identifica este Execução de sincronização. */
                 id: string;
             };
             cookie?: never;
@@ -34233,21 +38491,21 @@ export interface operations {
             };
         };
     };
-    api_v1_tags_list: {
+    v1_tags_list: {
         parameters: {
             query?: {
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 /**
                  * @description * `product` - Produto
                  *     * `customer` - Cliente
                  */
                 scope?: "customer" | "product";
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -34266,12 +38524,12 @@ export interface operations {
             };
         };
     };
-    api_v1_tags_retrieve: {
+    v1_tags_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this tag. */
+                /** @description Um string UUID que identifica este Tag. */
                 id: string;
             };
             cookie?: never;
@@ -34288,12 +38546,12 @@ export interface operations {
             };
         };
     };
-    api_v1_tags_history_retrieve: {
+    v1_tags_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this tag. */
+                /** @description Um string UUID que identifica este Tag. */
                 id: string;
             };
             cookie?: never;
@@ -34310,7 +38568,7 @@ export interface operations {
             };
         };
     };
-    api_v1_tags_bulk_retrieve: {
+    v1_tags_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -34329,7 +38587,7 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_list: {
+    v1_terminals_list: {
         parameters: {
             query?: {
                 /**
@@ -34339,13 +38597,13 @@ export interface operations {
                  */
                 device_type?: "desktop" | "mobile" | "web";
                 is_active?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
             };
             header?: never;
@@ -34364,7 +38622,7 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_create: {
+    v1_terminals_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -34389,12 +38647,12 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_retrieve: {
+    v1_terminals_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this terminal. */
+                /** @description Um string UUID que identifica este Terminal. */
                 id: string;
             };
             cookie?: never;
@@ -34411,12 +38669,12 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_update: {
+    v1_terminals_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this terminal. */
+                /** @description Um string UUID que identifica este Terminal. */
                 id: string;
             };
             cookie?: never;
@@ -34439,12 +38697,12 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_destroy: {
+    v1_terminals_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this terminal. */
+                /** @description Um string UUID que identifica este Terminal. */
                 id: string;
             };
             cookie?: never;
@@ -34460,12 +38718,12 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_partial_update: {
+    v1_terminals_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this terminal. */
+                /** @description Um string UUID que identifica este Terminal. */
                 id: string;
             };
             cookie?: never;
@@ -34488,12 +38746,12 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_history_retrieve: {
+    v1_terminals_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this terminal. */
+                /** @description Um string UUID que identifica este Terminal. */
                 id: string;
             };
             cookie?: never;
@@ -34510,12 +38768,12 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_revoke_create: {
+    v1_terminals_revoke_create: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this terminal. */
+                /** @description Um string UUID que identifica este Terminal. */
                 id: string;
             };
             cookie?: never;
@@ -34538,7 +38796,7 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_bulk_retrieve: {
+    v1_terminals_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -34557,7 +38815,7 @@ export interface operations {
             };
         };
     };
-    api_v1_terminals_bulk_create: {
+    v1_terminals_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -34582,20 +38840,20 @@ export interface operations {
             };
         };
     };
-    api_v1_users_list: {
+    v1_users_list: {
         parameters: {
             query?: {
                 all_stores?: boolean;
                 is_active?: boolean;
                 is_seller?: boolean;
-                /** @description Which field to use when ordering the results. */
+                /** @description Qual campo usar ao ordenar os resultados. */
                 ordering?: string;
-                /** @description A page number within the paginated result set. */
+                /** @description Um número de página dentro do conjunto de resultados paginado. */
                 page?: number;
-                /** @description Number of results to return per page. */
+                /** @description Número de resultados a serem retornados por página. */
                 page_size?: number;
                 role?: string;
-                /** @description A search term. */
+                /** @description Um termo de busca. */
                 search?: string;
                 stores?: string[];
             };
@@ -34615,7 +38873,7 @@ export interface operations {
             };
         };
     };
-    api_v1_users_create: {
+    v1_users_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -34640,12 +38898,12 @@ export interface operations {
             };
         };
     };
-    api_v1_users_retrieve: {
+    v1_users_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this user profile. */
+                /** @description Um string UUID que identifica este Perfil de usuário. */
                 id: string;
             };
             cookie?: never;
@@ -34662,12 +38920,12 @@ export interface operations {
             };
         };
     };
-    api_v1_users_update: {
+    v1_users_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this user profile. */
+                /** @description Um string UUID que identifica este Perfil de usuário. */
                 id: string;
             };
             cookie?: never;
@@ -34690,12 +38948,12 @@ export interface operations {
             };
         };
     };
-    api_v1_users_destroy: {
+    v1_users_destroy: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this user profile. */
+                /** @description Um string UUID que identifica este Perfil de usuário. */
                 id: string;
             };
             cookie?: never;
@@ -34711,12 +38969,12 @@ export interface operations {
             };
         };
     };
-    api_v1_users_partial_update: {
+    v1_users_partial_update: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this user profile. */
+                /** @description Um string UUID que identifica este Perfil de usuário. */
                 id: string;
             };
             cookie?: never;
@@ -34739,12 +38997,12 @@ export interface operations {
             };
         };
     };
-    api_v1_users_history_retrieve: {
+    v1_users_history_retrieve: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                /** @description A UUID string identifying this user profile. */
+                /** @description Um string UUID que identifica este Perfil de usuário. */
                 id: string;
             };
             cookie?: never;
@@ -34761,7 +39019,7 @@ export interface operations {
             };
         };
     };
-    api_v1_users_bulk_retrieve: {
+    v1_users_bulk_retrieve: {
         parameters: {
             query?: never;
             header?: never;
@@ -34780,7 +39038,7 @@ export interface operations {
             };
         };
     };
-    api_v1_users_bulk_create: {
+    v1_users_bulk_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -34805,7 +39063,7 @@ export interface operations {
             };
         };
     };
-    api_v1_users_sellers_retrieve: {
+    v1_users_sellers_retrieve: {
         parameters: {
             query?: never;
             header?: never;

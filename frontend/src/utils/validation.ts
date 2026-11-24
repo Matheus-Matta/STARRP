@@ -4,7 +4,7 @@
  * É a validação de CONVENIÊNCIA (avisar antes de enviar). A que vale é a do
  * backend: os erros por campo que ele devolve aparecem no mesmo lugar.
  */
-import { z, type ZodTypeAny } from "zod";
+import { z, type ZodType } from "zod";
 
 import type { FieldDef } from "@/resources/types";
 
@@ -15,16 +15,16 @@ import { formatOf, maskError } from "./formats";
 const NUMERIC = new Set(["number", "money", "percent", "quantity", "measure"]);
 
 /** Toda variante precisa de preço (zero vale: brinde, item de kit). */
-const variants = z.array(z.record(z.any())).optional().refine(
+const variants = z.array(z.record(z.string(), z.any())).optional().refine(
   (rows) => !rows || rows.every((row) => row.price !== null && row.price !== undefined && row.price !== ""),
   "Informe o preço de todas as variantes.",
 );
 
-function fieldSchema(field: FieldDef): ZodTypeAny {
+function fieldSchema(field: FieldDef): ZodType {
   if (field.type === "boolean") return z.boolean().optional();
   if (field.type === "variants") return variants;
   if (field.type === "grid" || field.type === "seo-preview") return z.any();  // prévia não é dado
-  if (field.type === "metafields") return z.record(z.any()).optional().nullable();  // conferido no backend (definições)
+  if (field.type === "metafields") return z.record(z.string(), z.any()).optional().nullable();  // conferido no backend (definições)
   if (["multirelation", "barcodes", "volumes", "tags", "multiselect", "stock-items", "installments", "images",
        "addresses", "zip-ranges", "promotion-rules"]
     .includes(field.type)) {
@@ -34,7 +34,7 @@ function fieldSchema(field: FieldDef): ZodTypeAny {
   if (NUMERIC.has(field.type)) {
     const { min, max } = boundsOf(field);
     return z.union([z.number(), z.string(), z.null()]).optional().superRefine((v, ctx) => {
-      const fail = (message: string) => ctx.addIssue({ code: z.ZodIssueCode.custom, message });
+      const fail = (message: string) => ctx.addIssue({ code: "custom", message });
       if (v === null || v === undefined || v === "") return field.required ? fail("Campo obrigatório.") : undefined;
       const n = Number(v);
       if (Number.isNaN(n)) return fail("Número inválido.");
@@ -42,20 +42,23 @@ function fieldSchema(field: FieldDef): ZodTypeAny {
       if (max !== undefined && n > max) fail(`Máximo ${max.toLocaleString("pt-BR")}${field.type === "percent" ? " %" : ""}.`);
     });
   }
-  let text = z.string({ invalid_type_error: "Valor inválido." });
+  let text = z.string({ error: "Valor inválido." });
   if (field.maxLength) text = text.max(field.maxLength, `Máximo de ${field.maxLength} caracteres.`);
   if (field.type === "email") return text.email("E-mail inválido.").or(z.literal("")).optional();
-  const schema = field.required ? text.min(1, "Campo obrigatório.") : text.optional().nullable();
+  const schema: ZodType<string | null | undefined> = field.required
+    ? text.min(1, "Campo obrigatório.") : text.optional().nullable();
   if (field.type === "document") {
-    return schema.refine((v) => !v || documentError(String(v)) === null, (v) => ({
-      message: documentError(String(v)) ?? "Documento inválido.",
-    }));
+    return schema.refine((v) => !v || documentError(String(v)) === null, {
+      error: (issue) => documentError(String(issue.input)) ?? "Documento inválido.",
+    });
   }
   // Máscara (CEP, telefone, NCM, CFOP...): incompleto ou código que não confere não sai daqui.
   const format = formatOf(field);
   const mask = field.mask ?? format?.mask;
   if (mask) {
-    return schema.refine((v) => !maskError(v, mask, format), (v) => ({ message: maskError(v, mask, format) ?? "" }));
+    return schema.refine((v) => !maskError(v, mask, format), {
+      error: (issue) => maskError(issue.input as string | null | undefined, mask, format) ?? "",
+    });
   }
   return schema;
 }

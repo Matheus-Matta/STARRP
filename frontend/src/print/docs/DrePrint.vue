@@ -28,6 +28,7 @@ const lines = computed<Line[]>(() => {
     { label: "Frete cobrado", value: x.freight, sign: "+" },
     { label: "Descontos concedidos", value: x.discounts, sign: "−" },
     { label: "Devoluções", value: x.returns, sign: "−" },
+    ...(x.other_revenue ?? []).map((e) => ({ label: `Serviços: ${e.category}`, value: e.amount, sign: "+", indent: true })),
     { label: "Receita líquida", value: x.net_revenue, total: true },
     { label: "Custo das mercadorias vendidas (CMV)", value: x.cmv, sign: "−" },
     { label: "Lucro bruto", value: x.gross_profit, total: true },

@@ -12,10 +12,13 @@ import { computed, ref, watch } from "vue";
 
 import { stockApi } from "@/api/operations";
 import { resourceApi } from "@/api/resource";
+import { useNotify } from "@/composables/useNotify";
 import type { FormActionContext } from "@/resources/types";
 import { date as formatDate } from "@/utils/format";
+import { openLabelsHtml } from "@/utils/labels";
 
 const props = defineProps<{ ctx: FormActionContext }>();
+const notify = useNotify();
 const emit = defineEmits<{ close: [] }>();
 const SUBJECT: Record<string, string> = { product: "Produto / gôndola", lot: "Lote (entrada e validade)", volume: "Caixa (volume)" };
 const COUNT: Record<string, string> = { product: "uma por unidade", lot: "uma por lote", volume: "uma por caixa" };
@@ -39,9 +42,16 @@ watch([() => options.data.value, usable], () => {
   chosen.value = usable.value.find((t) => t.id === suggested)?.id as string ?? null;
 }, { immediate: true });
 
-function print() {
+async function print() {
   if (!chosen.value) return;
-  window.open(stockApi.labelsUrl(props.ctx.id, chosen.value), "_blank");
+  const win = window.open("", "_blank"); // no clique: depois da chamada à API o navegador bloquearia a aba
+  try {
+    openLabelsHtml(await stockApi.labelsHtml(props.ctx.id, chosen.value), win);
+  } catch (error) {
+    win?.close();
+    notify.error(error, "Etiquetas não geradas");
+    return;
+  }
   emit("close");
 }
 </script>

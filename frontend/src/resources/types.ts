@@ -36,7 +36,9 @@ export type FieldType =
   // Endereços de entrega do cliente; faixas de CEP da tabela de frete; metacampos (padrão do StarHub).
   | "addresses" | "zip-ranges" | "metafields"
   // Regras da tabela de desconto (dentro da própria tabela).
-  | "promotion-rules";
+  | "promotion-rules"
+  // Cargos: matriz Ver / Criar / Editar / Excluir e ações especiais.
+  | "permission-matrix";
 
 export type FieldDef = {
   name: string;
@@ -311,7 +313,7 @@ export type ResourceDef = {
   title: string;
   singular: string;
   endpoint: string;
-  /** Área de permissão do backend: lista exige `<area>.view`, gravar `<area>.manage`. */
+  /** Área de permissão do backend: `<area>.view/create/update/delete`. */
   permission: string;
   module?: string;
   icon: string;
@@ -331,6 +333,8 @@ export type ResourceDef = {
   creatable?: boolean;
   /** `false`: registro salvo não se edita (lançamento financeiro se corrige com estorno). */
   editable?: boolean;
+  /** Mesmo com permissão da área, somente administrador da conta/suporte pode gravar. */
+  accountAdminOnlyWrite?: boolean;
   /** Trava o formulário conforme o estado (ex.: documento confirmado não se edita mais). */
   lockedWhen?: (values: Record<string, unknown>) => boolean;
   /** Parâmetros fixos da lista e valores fixos do cadastro (ex.: { kind: "payable" }). */

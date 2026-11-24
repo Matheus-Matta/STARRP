@@ -44,7 +44,7 @@ export const priceChecks = defineResource({
   singular: "precificação",
   feminine: true,
   endpoint: "/price-checks/",
-  permission: "catalog",
+  permission: "pricing",
   module: "pricing",
   icon: "pi pi-chart-scatter",
   group: "Vendas",
@@ -167,31 +167,31 @@ export const priceChecks = defineResource({
     ],
   },
   formActions: [
-    { label: "Aprovar novo preço", icon: "pi pi-check", severity: "success", permission: "catalog.manage", visible: pending,
+    { label: "Aprovar novo preço", icon: "pi pi-check", severity: "success", permission: "pricing.full", visible: pending,
       confirm: "Aplicar o preço sugerido no cadastro do produto?", success: "Preço aplicado",
       run: ({ id }) => pricingApi.approve(id) },
-    { label: "Outro preço", icon: "pi pi-pencil", severity: "secondary", permission: "catalog.manage", visible: pending,
+    { label: "Outro preço", icon: "pi pi-pencil", severity: "secondary", permission: "pricing.full", visible: pending,
       dialog: ApprovePriceDialog },
-    { label: "Recusar", icon: "pi pi-times", severity: "danger", permission: "catalog.manage", visible: pending,
+    { label: "Recusar", icon: "pi pi-times", severity: "danger", permission: "pricing.full", visible: pending,
       success: "Sugestão recusada", run: ({ id }) => pricingApi.reject(id) },
-    { label: "Ler o mercado agora", icon: "pi pi-refresh", severity: "secondary", permission: "catalog.manage",
+    { label: "Ler o mercado agora", icon: "pi pi-refresh", severity: "secondary", permission: "pricing.full",
       visible: (v) => !reading(v), success: "Leitura iniciada. Aguarde", run: ({ id }) => pricingApi.refresh(id) },
   ],
   rowActions: [
-    { label: "Aprovar novo preço", icon: "pi pi-check", permission: "catalog.manage", visible: pending,
+    { label: "Aprovar novo preço", icon: "pi pi-check", permission: "pricing.full", visible: pending,
       confirm: "Aplicar o preço sugerido no cadastro do produto?", success: "Preço aplicado",
       run: (row) => pricingApi.approve(String(row.id)) },
-    { label: "Recusar", icon: "pi pi-times", danger: true, permission: "catalog.manage", visible: pending,
+    { label: "Recusar", icon: "pi pi-times", danger: true, permission: "pricing.full", visible: pending,
       success: "Sugestão recusada", run: (row) => pricingApi.reject(String(row.id)) },
   ],
   listActions: [
-    { label: "Preços de concorrentes", icon: "pi pi-users", severity: "secondary", permission: "catalog.view",
+    { label: "Preços de concorrentes", icon: "pi pi-users", severity: "secondary", permission: "pricing.access",
       run: async () => {
         const { router } = await import("@/router");
         await router.push("/cadastros/precos-de-concorrentes");
       } },
-    { label: "Regras", icon: "pi pi-filter", severity: "secondary", permission: "catalog.manage", dialog: PriceRulesDialog },
-    { label: "Ler o mercado agora", icon: "pi pi-refresh", severity: "secondary", permission: "catalog.manage",
+    { label: "Regras", icon: "pi pi-filter", severity: "secondary", permission: "pricing.full", dialog: PriceRulesDialog },
+    { label: "Ler o mercado agora", icon: "pi pi-refresh", severity: "secondary", permission: "pricing.full",
       success: "Leitura iniciada, de 10 em 10. A lista se atualiza sozinha", run: () => pricingApi.run() },
   ],
 });
@@ -201,7 +201,7 @@ export const competitorPrices = defineResource({
   title: "Preços de concorrentes",
   singular: "preço de concorrente",
   endpoint: "/competitor-prices/",
-  permission: "catalog",
+  permission: "pricing",
   module: "pricing",
   icon: "pi pi-users",
   group: "Precificação",
@@ -231,7 +231,7 @@ export const competitorPrices = defineResource({
     { name: "notes", label: "Observação", type: "text", maxLength: 200, section: "Preço", span: 6 },
   ],
   listActions: [
-    { label: "Importar planilha", icon: "pi pi-upload", severity: "secondary", permission: "catalog.manage",
+    { label: "Importar planilha", icon: "pi pi-upload", severity: "secondary", permission: "pricing.full",
       dialog: ImportCompetitorPricesDialog },
   ],
 });

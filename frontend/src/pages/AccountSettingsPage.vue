@@ -1,8 +1,8 @@
 <script setup lang="ts">
 /**
  * Configurações da conta — uma página só, do administrador:
- * empresa · PDV e caixa (vale para TODAS as lojas) · estoque · Cosmos (resumo diário e precificação)
- * · plano e módulos (leitura).
+ * empresa · PDV e caixa (vale para TODAS as lojas) · estoque · Cosmos · Analítico de SEO
+ * · precificação · plano e módulos (leitura).
  * Ajuste fino de uma loja continua em Configurações → Lojas. Ctrl+S salva.
  */
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
@@ -85,8 +85,10 @@ const seoOn = session.hasModule("seo");
 const stockOn = session.hasModule("stock");
 const tracking = (v: Record<string, unknown>) => pricing && v.price_tracking_enabled === true;
 const picking = choices({ fefo: "FEFO (vence primeiro, sai primeiro)", fifo: "FIFO (entrou primeiro, sai primeiro)" });
-const SECTIONS: { key: Section; title: string; icon: string; description: string; fields: FieldDef[] }[] = [
-  { key: "account", title: "Empresa", icon: "pi pi-building",
+type SettingsSection = { id: string; key: Section; title: string; icon: string; description: string;
+                         fields: FieldDef[]; visible?: () => boolean };
+const SECTIONS: SettingsSection[] = [
+  { id: "account", key: "account", title: "Empresa", icon: "pi pi-building",
     description: "Dados da empresa titular da conta (cada filial tem os seus em Filiais).", fields: [
       { name: "name", label: "Nome da empresa", type: "text", required: true, span: 3 },
       { name: "document", label: "CNPJ / CPF", type: "document", span: 3 },
@@ -97,7 +99,7 @@ const SECTIONS: { key: Section; title: string; icon: string; description: string
         { label: "Cuiabá", value: "America/Cuiaba" }, { label: "Rio Branco", value: "America/Rio_Branco" },
         { label: "Fernando de Noronha", value: "America/Noronha" }] },
     ] },
-  { key: "pdv", title: "PDV e caixa", icon: "pi pi-shopping-cart",
+  { id: "pdv", key: "pdv", title: "PDV e caixa", icon: "pi pi-shopping-cart",
     description: "Edita a regra PADRÃO das filiais. Filial que trabalha diferente usa outra regra (Configurações › "
       + "Regras das filiais).", fields: [
       { name: "require_open_cash_session", label: "Exige caixa aberto para vender", type: "boolean", span: 3 },
@@ -112,8 +114,10 @@ const SECTIONS: { key: Section; title: string; icon: string; description: string
       { name: "print_cancellation_receipt", label: "Imprimir comprovante de cancelamento", type: "boolean", span: 3 },
       { name: "require_payment_reference", label: "Exigir NSU/autorização no cartão e PIX", type: "boolean", span: 3,
         hint: "Desligado, o campo aparece no pagamento mas é opcional" },
+      { name: "allow_store_credit_refund", label: "Permitir reembolso em crédito na loja", type: "boolean", span: 3,
+        hint: "A devolução entra na carteira do cliente e pode abater compras futuras" },
     ] },
-  { key: "stock", title: "Estoque", icon: "pi pi-box",
+  { id: "stock", key: "stock", title: "Estoque", icon: "pi pi-box",
     description: "Edita a regra de estoque PADRÃO. Filial diferente usa outra (Estoque › Regras de estoque).", fields: [
       { name: "picking_strategy", label: "Ordem de saída", type: "select", options: picking.options, span: 3 },
       { name: "expiry_warning_days", label: "Avisar vencimento com (dias)", type: "number", span: 3 },
@@ -122,21 +126,26 @@ const SECTIONS: { key: Section; title: string; icon: string; description: string
       { name: "fifo_by_entry", label: "Sem validade: sai o mais antigo", type: "boolean", span: 3,
         hint: "Guarda a data de entrada (FIFO)" },
     ] },
-  { key: "cosmos", title: cosmosOn ? "Cosmos" : "Precificação", icon: "pi pi-sparkles",
-    description: pricing
-      ? "Precificação: compara o preço de cada produto com o mercado, "
-        + "olha o custo e deixa o novo preço esperando aprovação em Vendas › Precificação. Nada muda sem aprovação."
-      : "A assistente de IA.", fields: [
-      { name: "cosmos_daily_digest", label: "Resumo diário da equipe", type: "boolean", span: 6, visible: () => cosmosOn,
+  { id: "cosmos", key: "cosmos", title: "Cosmos", icon: "pi pi-sparkles", visible: () => cosmosOn,
+    description: "Recursos gerais da assistente de IA para a equipe e para a operação diária.", fields: [
+      { name: "cosmos_daily_digest", label: "Resumo diário da equipe", type: "boolean", span: 3,
         hint: "Quem supervisiona recebe toda manhã o resumo do dia anterior (não gasta tokens)" },
-      { name: "cosmos_seo_ai", label: "Cosmos no Analítico de SEO", type: "boolean", span: 3, visible: () => cosmosOn && seoOn,
-        hint: "Sugere o texto e avisa nos alertas. Gasta tokens" },
-      { name: "cosmos_stock_advice", label: "Cosmos no estoque", type: "boolean", span: 6, visible: () => cosmosOn && stockOn,
+      { name: "cosmos_voice_enabled", label: "Entrada por voz", type: "boolean", span: 3,
+        hint: "Mostra o microfone para falar em vez de digitar; a resposta continua em texto" },
+      { name: "cosmos_stock_advice", label: "Cosmos no estoque", type: "boolean", span: 3, visible: () => stockOn,
         hint: "Recomenda como organizar os endereços e avisa de entregas e recebimentos parados (não gasta tokens)" },
-      { name: "cosmos_pricing_ai", label: "Cosmos na Precificação", type: "boolean", span: 3, visible: () => cosmosOn && pricing,
+    ] },
+  { id: "seo", key: "cosmos", title: "Analítico de SEO", icon: "pi pi-chart-line", visible: () => cosmosOn && seoOn,
+    description: "Define como a Cosmos participa da análise e da melhoria dos textos dos produtos.", fields: [
+      { name: "cosmos_seo_ai", label: "Sugestões da Cosmos", type: "boolean", span: 6,
+        hint: "Sugere nome, título e resumo e avisa nos alertas. Gasta tokens" },
+    ] },
+  { id: "pricing", key: "cosmos", title: "Precificação", icon: "pi pi-tags", visible: () => pricing,
+    description: "Compara cada produto com o mercado e deixa o novo preço aguardando aprovação. Nada muda sozinho.", fields: [
+      { name: "cosmos_pricing_ai", label: "Cosmos na Precificação", type: "boolean", span: 6, visible: () => cosmosOn,
         hint: "Confere se a oferta é o mesmo produto. Gasta tokens" },
       { name: "price_tracking_enabled", label: "Rastrear preços no mercado (precificação)", type: "boolean", span: 6,
-        visible: () => pricing, hint: "Compara o título com marca e modelo, parte por parte. Sem nenhuma oferta aceita, procura pelo código de barras (EAN)" },
+        hint: "Compara o título com marca e modelo, parte por parte. Sem nenhuma oferta aceita, procura pelo código de barras (EAN)" },
       { name: "price_tracking_hours", label: "Reler cada produto a cada", type: "select", span: 2, visible: tracking,
         options: [{ label: "6 horas", value: "6" }, { label: "12 horas", value: "12" }, { label: "Dia", value: "24" },
                   { label: "3 dias", value: "72" }, { label: "Semana", value: "168" }] },
@@ -205,7 +214,8 @@ const MODULES: Record<string, string> = {
                 subtitle="Tudo que vale para a empresa inteira, num lugar só. Só o administrador vê esta página." />
     <div v-if="query.isPending.value" class="muted"><i class="pi pi-spin pi-spinner" /> Carregando…</div>
     <template v-else-if="query.data.value">
-      <SectionCard v-for="section in SECTIONS.filter((s) => s.key !== 'cosmos' || cosmosOn || pricing)" :key="section.key" :title="section.title" :icon="section.icon"
+      <SectionCard v-for="section in SECTIONS.filter((s) => !s.visible || s.visible())" :key="section.id"
+                   :title="section.title" :icon="section.icon"
                    :description="section.description">
         <div v-if="section.key === 'account'" class="logo">
           <span class="logo__box" :class="{ 'logo__box--empty': !logoUrl }">

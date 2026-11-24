@@ -148,14 +148,14 @@ export const products = defineResource({
     { name: "is_active", label: "Ativo", type: "boolean", default: true, section: "Estoque" },
   ],
   formActions: [
-    { label: "Precificar", icon: "pi pi-chart-scatter", severity: "secondary", permission: "catalog.manage", module: "pricing",
+    { label: "Precificar", icon: "pi pi-chart-scatter", severity: "secondary", permission: "pricing.full", module: "pricing",
       visible: stocks, success: "Item da precificação criado. Aguarde a leitura do mercado",
       run: async ({ id }) => {
         const { ids } = await pricingApi.product(id);
         const { router } = await import("@/router");
         await router.push(ids.length === 1 ? `/cadastros/precificacao/${ids[0]}` : `/cadastros/precificacao?variant__product=${id}`);
       } },
-    { label: "Analisar SEO", icon: "pi pi-search-plus", severity: "secondary", permission: "catalog.manage", module: "seo",
+    { label: "Analisar SEO", icon: "pi pi-search-plus", severity: "secondary", permission: "seo.full", module: "seo",
       success: "Análise de SEO criada. Aguarde o resultado",
       run: async ({ id }) => {
         const check = await seoApi.product(id);

@@ -9,6 +9,7 @@ import { computed, ref } from "vue";
 
 import { financeApi } from "@/api/operations";
 import type { ColumnDef } from "@/resources/types";
+import { isCostEntry } from "@/utils/costs";
 import { dateTime, money } from "@/utils/format";
 
 import PrintMeta from "../PrintMeta.vue";
@@ -64,8 +65,8 @@ const filename = computed(() => `fechamento-${s.value?.session.register ?? "caix
 
       <div class="doc-kpis">
         <div><small>Vendido</small><b>{{ money(s.sales.total) }}</b></div>
-        <div><small>Custo</small><b>{{ money(s.sales.cost) }}</b></div>
-        <div><small>Margem bruta</small><b>{{ money(s.sales.gross_margin) }}</b></div>
+        <div v-if="s.sales.cost != null"><small>Custo</small><b>{{ money(s.sales.cost) }}</b></div>
+        <div v-if="s.sales.gross_margin != null"><small>Margem bruta</small><b>{{ money(s.sales.gross_margin) }}</b></div>
         <div><small>Cancelado</small><b>{{ s.sales.cancelled_count }} · {{ money(s.sales.cancelled_total) }}</b></div>
       </div>
 
@@ -104,7 +105,7 @@ const filename = computed(() => `fechamento-${s.value?.session.register ?? "caix
         </section>
         <section class="doc-section">
           <h2>Itens vendidos</h2>
-          <PrintTable :columns="itemColumns" :rows="s.items"
+          <PrintTable :columns="s.sales.cost != null ? itemColumns : itemColumns.filter((c) => !isCostEntry(c))" :rows="s.items"
                       :totals="{ description: 'Total', total: sum(s.items, 'total'), cost: sum(s.items, 'cost'), margin: sum(s.items, 'margin') }" />
         </section>
       </template>
