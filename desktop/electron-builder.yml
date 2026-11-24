@@ -1,0 +1,58 @@
+appId: br.com.starrp.pdv
+productName: Starrp PDV
+directories:
+  buildResources: build
+  output: dist
+files:
+  - out/**/*
+  - package.json
+extraResources:
+  - from: build/icon.ico
+    to: icon.ico
+  - from: build/icon.png
+    to: icon.png
+# Código do app dentro do .asar (conferido na abertura, ver electronFuses).
+asar: true
+# O instalador é publicado à mão (ou pelo CI); sem isto o electron-builder tenta adivinhar onde publicar.
+publish: null
+# Sem espaço no nome (vai para a Release do GitHub): Starrp-PDV-1.0.0-win-x64.zip, Starrp-PDV-1.0.0-linux-x64.zip.
+artifactName: "Starrp-PDV-${version}-${os}-${arch}.${ext}"
+
+# Travas gravadas no executável do Electron (não dá para desligar depois sem reassinar):
+electronFuses:
+  runAsNode: false                            # o .exe não vira um "node.exe" (ELECTRON_RUN_AS_NODE)
+  enableNodeOptionsEnvironmentVariable: false # NODE_OPTIONS não injeta código
+  enableNodeCliInspectArguments: false        # --inspect não abre depurador no processo principal
+  enableCookieEncryption: true                # cookies do Chromium cifrados no disco
+  enableEmbeddedAsarIntegrityValidation: true # app.asar alterado não abre
+  onlyLoadAppFromAsar: true                   # só carrega o app de dentro do .asar
+
+win:
+  # Instalador (.exe) e a versão portátil em .zip (descompacta e roda o "Starrp PDV.exe").
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: zip
+      arch: [x64]
+  icon: build/icon.ico
+  # Assinatura: com CSC_LINK (certificado .pfx em base64 ou caminho) e CSC_KEY_PASSWORD no ambiente,
+  # o electron-builder assina o .exe e o instalador. Sem assinatura o Windows SmartScreen avisa
+  # "editor desconhecido" na instalação.
+linux:
+  # .zip com o executável "starrp-pdv" (descompacta e roda). Gerado num runner Linux (release-desktop.yml).
+  target:
+    - target: zip
+      arch: [x64]
+  icon: build/icon.png
+  category: Office
+  executableName: starrp-pdv
+nsis:
+  artifactName: "Starrp-PDV-Setup-${version}.${ext}"
+  installerIcon: build/icon.ico
+  uninstallerIcon: build/icon.ico
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  shortcutName: Starrp PDV
+  # Desinstalar mantém %APPDATA%\Starrp PDV: fila offline, notas emitidas e configuração não se perdem.
+  deleteAppDataOnUninstall: false

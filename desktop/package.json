@@ -1,0 +1,40 @@
+{
+  "name": "starrp-pdv",
+  "productName": "Starrp PDV",
+  "version": "0.1.0",
+  "private": true,
+  "description": "PDV desktop do Starrp (Electron + React + Tailwind).",
+  "main": "./out/main/index.js",
+  "scripts": {
+    "postinstall": "install-electron",
+    "dev": "node scripts/electron-vite.mjs dev",
+    "build": "npm run typecheck && npm run test:rules && npm run test:security && electron-vite build",
+    "preview": "node scripts/electron-vite.mjs preview",
+    "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
+    "dist": "npm run build && electron-builder --win",
+    "test:rules": "node scripts/test-rules.mjs",
+    "test:security": "node scripts/test-security.mjs"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "^5.107.1",
+    "primeicons": "^8.0.2",
+    "qrcode": "^1.5.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.5",
+    "@types/node": "^26.6.6",
+    "@types/qrcode": "^1.5.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "electron": "^45.3.1",
+    "electron-builder": "^26.18.0",
+    "electron-vite": "^6.0.0",
+    "tailwindcss": "^4.3.5",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8"
+  },
+  "author": "Starrp"
+}
