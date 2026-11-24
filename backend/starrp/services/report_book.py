@@ -22,13 +22,14 @@ from django.db.models import Count, DecimalField, ExpressionWrapper, F, Max, Min
 from django.db.models.functions import Abs, Coalesce, TruncDate
 from django.utils import timezone
 
+from starrp.core.errors import BusinessError
 from starrp.models import (
     Brand, Category, Commission, Customer, CustomerGroup, FinancialAccount, Installment, Payment, PaymentMethod,
     ReceivingDivergence, Sale, SaleItem, StockBalance, StockMovement, Supplier, TitleStatus,
     UserProfile, Warehouse,
 )
 from starrp.services import cash_flow, dre, reports
-from starrp.services.store_access import include_empty, scope_to_allowed, visible_stores
+from starrp.services.store_access import include_empty, scope_own_sales, scope_to_allowed, visible_stores
 
 ZERO = Decimal("0")
 OTHERS = "Outros"
@@ -92,7 +93,8 @@ def _top(rows, limit=6, label="label", value="value"):
 
 
 def _scoped(qs, store, field="store"):
-    return qs.filter(**{field: store}) if store is not None else scope_to_allowed(qs, field)
+    qs = qs.filter(**{field: store}) if store is not None else scope_to_allowed(qs, field)
+    return scope_own_sales(qs)  # vendedor (sem `sales.view_all`): só as vendas dele
 
 
 def _report(title, subtitle, params, kpis, blocks, filters=()):
@@ -116,15 +118,20 @@ def _bucket(day, grain):
     return day
 
 
+MAX_SERIES_DAYS = 3660
+
+
 def _buckets(params):
     """As chaves (início de cada dia/semana/mês) e a data ISO de cada uma, na ordem. O gráfico
     recebe a data + o `grain` e formata sozinho (eixo curto, balão por extenso)."""
     start, end = _window(params)
     grain = _grain(params)
+    if (end - start).days > MAX_SERIES_DAYS:  # R2-17: séculos, dia a dia, travavam o processo
+        raise BusinessError("Período grande demais para o gráfico: até 10 anos.", code="period_too_long")
     keys, cursor = [], start
     while cursor <= end:
         key = _bucket(cursor, grain)
-        if key not in keys:
+        if not keys or keys[-1] != key:  # em ordem: basta olhar o último
             keys.append(key)
         cursor += timedelta(days=1)
     return keys, [k.isoformat() for k in keys]
@@ -838,6 +845,7 @@ def ledger_dre(account, store, params):
         {"label": "Frete", "value": d["freight"], "kind": "add"},
         {"label": "Descontos", "value": -d["discounts"], "kind": "sub"},
         {"label": "Devoluções", "value": -d["returns"], "kind": "sub"},
+        {"label": "Serviços e outras receitas", "value": d["other_revenue_total"], "kind": "add"},
         {"label": "Receita líquida", "value": d["net_revenue"], "kind": "total"},
         {"label": "CMV", "value": -d["cmv"], "kind": "sub"},
         {"label": "Lucro bruto", "value": d["gross_profit"], "kind": "total"},
@@ -886,9 +894,12 @@ def ledger_cash_flow(account, store, params):
     opening = flow["opening_balance"]
     if account_id:  # uma conta só: recalcula só com ela
         from starrp.models import FinancialTransaction
-        acc = FinancialAccount.all_objects.filter(pk=account_id, account=account).first()
+        # Só conta VISÍVEL (conta + filiais, R2-04): o id sozinho trazia lançamentos de outra filial/conta.
+        acc = cash_flow.visible_accounts(account, store).filter(pk=account_id).first()
         start, end = _window(params)
-        txs = FinancialTransaction.all_objects.filter(financial_account_id=account_id, deleted_at__isnull=True)
+        txs = FinancialTransaction.all_objects.filter(financial_account=acc, deleted_at__isnull=True)
+        if acc is None:
+            txs = txs.none()
         net = lambda qs: (qs.filter(kind="in").aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]  # noqa: E731
                           - qs.filter(kind="out").aggregate(t=Coalesce(Sum("amount"), ZERO))["t"])
         opening = (acc.opening_balance if acc else ZERO) + net(txs.filter(date__lt=start))
@@ -933,7 +944,7 @@ def ledger_due(account, store, params):
     today = timezone.localdate()
     parts = Installment.all_objects.filter(account=account, status__in=[TitleStatus.OPEN, TitleStatus.PARTIAL],
                                            deleted_at__isnull=True, title__deleted_at__isnull=True)
-    parts = parts.filter(title__store=store) if store is not None else parts
+    parts = parts.filter(title__store=store) if store is not None else scope_to_allowed(parts, "title__store")
     if params.get("kind"):
         parts = parts.filter(title__kind=params["kind"])
     open_amount = ExpressionWrapper(F("amount") - F("paid_amount"), output_field=DecimalField(max_digits=18, decimal_places=2))
@@ -1010,6 +1021,12 @@ def ledger_balances(account, store, params):
             {"key": "name", "label": "Conta"}, {"key": "kind", "label": "Tipo"},
             {"key": "balance", "label": "Saldo", "format": "money"}], "rows": rows},
     ], [_choice("account_kind", "Tipo de conta", FinancialAccount.Kind.choices)])
+
+
+def ledger_closing(account, store, params):
+    from starrp.services import report_closing  # usa as peças deste módulo
+
+    return report_closing.closing(account, store, params)
 
 
 # ── Relacionamento ──────────────────────────────────────────────────────────
@@ -1150,14 +1167,23 @@ def relationship_reviews(account, store, params):
     p_start, p_end = _window(_previous(params))
     before = counted.filter(created_at__date__range=(p_start, p_end))
 
-    def avg(qs):
-        n = qs.count()
-        return (Decimal(sum(qs.values_list("rating", flat=True))) / n).quantize(Decimal("0.1")) if n else ZERO
+    def stats(qs):
+        """Contagens, somas e distribuição de estrelas numa agregação só (antes: ~16 consultas)."""
+        kinds = ("product", "delivery")
+        return qs.aggregate(
+            total=Count("id"), promoters=Count("id", filter=Q(rating__gte=4)),
+            **{f"n_{k}": Count("id", filter=Q(kind=k)) for k in kinds},
+            **{f"sum_{k}": Sum("rating", filter=Q(kind=k)) for k in kinds},
+            **{f"{k}_{n}": Count("id", filter=Q(kind=k, rating=n)) for k in kinds for n in range(1, 6)})
 
-    products, deliveries = period.filter(kind="product"), period.filter(kind="delivery")
-    total = period.count()
-    promoters = period.filter(rating__gte=4).count()
-    dist = {kind: [period.filter(kind=kind, rating=n).count() for n in range(1, 6)] for kind in ("product", "delivery")}
+    def avg(agg, kind):
+        n = agg[f"n_{kind}"]
+        return (Decimal(agg[f"sum_{kind}"] or 0) / n).quantize(Decimal("0.1")) if n else ZERO
+
+    now, prev = stats(period), stats(before)
+    products = period.filter(kind="product")
+    total, promoters = now["total"], now["promoters"]
+    dist = {kind: [now[f"{kind}_{n}"] for n in range(1, 6)] for kind in ("product", "delivery")}
     grain, (keys, labels) = _grain(params), _buckets(params)
     sums, counts = defaultdict(lambda: ZERO), defaultdict(int)
     for created, rating in period.values_list("created_at", "rating"):
@@ -1174,11 +1200,11 @@ def relationship_reviews(account, store, params):
     labels_status = dict(Review.Status.choices)
     per_product = _reviewed_products(account, store, products, params)
     return _report("Avaliações", "O que os clientes acharam dos produtos e da entrega (nota de 1 a 5 estrelas).", params, [
-        kpi("Nota média dos produtos", avg(products), "decimal", previous=avg(before.filter(kind="product")) or None,
-            hint=f"{products.count()} avaliação(ões)"),
-        kpi("Nota média da entrega", avg(deliveries), "decimal", previous=avg(before.filter(kind="delivery")) or None,
-            hint=f"{deliveries.count()} avaliação(ões)"),
-        kpi("Avaliações recebidas", total, "number", previous=before.count()),
+        kpi("Nota média dos produtos", avg(now, "product"), "decimal", previous=avg(prev, "product") or None,
+            hint=f"{now['n_product']} avaliação(ões)"),
+        kpi("Nota média da entrega", avg(now, "delivery"), "decimal", previous=avg(prev, "delivery") or None,
+            hint=f"{now['n_delivery']} avaliação(ões)"),
+        kpi("Avaliações recebidas", total, "number", previous=prev["total"]),
         kpi("Satisfeitos (4 e 5 estrelas)", _pct(promoters, total), "percent"),
         kpi("Aguardando moderação", base.filter(status=Review.Status.PENDING).count(), "number", good="down",
             hint="aprove ou rejeite em Vendas › Avaliações"),
@@ -1394,8 +1420,9 @@ def movement_cancellations(account, store, params):
     returns = _scoped(SaleReturn.all_objects.filter(account=account, status=SaleReturn.Status.COMPLETED,
                                                     completed_at__date__range=(start, end)), store)
     if params.get("seller"):
-        cancelled = cancelled.filter(seller_id=params["seller"])
-        returns = returns.filter(sale__seller_id=params["seller"])
+        seller = reports.int_or_zero(params["seller"])
+        cancelled = cancelled.filter(seller_id=seller)
+        returns = returns.filter(sale__seller_id=seller)
     if params.get("channel"):
         cancelled = cancelled.filter(channel=params["channel"])
         returns = returns.filter(sale__channel=params["channel"])
@@ -1451,13 +1478,13 @@ from starrp.services import report_cross, report_promotions  # noqa: E402
 
 # slug → (função, permissão, módulo). A tela usa o mesmo slug (frontend/src/reports/catalog.ts).
 BOOK = {
-    "vendas": (movement_sales, "reports.view", "base"),
-    "horarios": (movement_hours, "reports.view", "base"),
-    "recebimentos": (movement_payments, "reports.view", "base"),
-    "vendedores": (movement_sellers, "reports.view", "base"),
+    "vendas": (movement_sales, "sales.view", "base"),
+    "horarios": (movement_hours, "sales.view", "base"),
+    "recebimentos": (movement_payments, "cash.view", "base"),
+    "vendedores": (movement_sellers, "sales.view", "base"),
     "filiais": (movement_branches, "reports.view", "base"),
-    "curva-abc": (goods_abc, "reports.view", "base"),
-    "categorias": (goods_categories, "reports.view", "base"),
+    "curva-abc": (goods_abc, "catalog.view", "base"),
+    "categorias": (goods_categories, "catalog.view", "base"),
     "posicao-de-estoque": (goods_stock, "stock.view", "stock"),
     "entradas-e-saidas": (goods_movements, "stock.view", "stock"),
     "erros-de-entrada": (goods_receiving_errors, "stock.view", "stock"),
@@ -1465,17 +1492,18 @@ BOOK = {
     "fluxo-de-caixa": (ledger_cash_flow, "finance.view", "finance"),
     "vencimentos": (ledger_due, "finance.view", "finance"),
     "saldos": (ledger_balances, "finance.view", "finance"),
-    "clientes": (relationship_customers, "reports.view", "base"),
-    "curva-abc-clientes": (relationship_customers_abc, "reports.view", "base"),
-    "avaliacoes": (relationship_reviews, "reports.view", "base"),
-    "entregas": (logistics_deliveries, "reports.view", "base"),
-    "cancelamentos": (movement_cancellations, "reports.view", "base"),
-    "cruzamento-clientes": (report_cross.cross_customers, "reports.view", "base"),
-    "cruzamento-entregas": (report_cross.cross_deliveries, "reports.view", "base"),
-    "cruzamento-vendedores": (report_cross.cross_sellers, "reports.view", "base"),
-    "cruzamento-produtos": (report_cross.cross_products, "reports.view", "base"),
-    "cruzamento-descontos": (report_cross.cross_discounts, "reports.view", "base"),
-    "descontos": (report_promotions.overview, "reports.view", "base"),
-    "promocoes-de-produto": (report_promotions.products, "reports.view", "base"),
-    "cupons": (report_promotions.coupons, "reports.view", "base"),
+    "fechamento": (ledger_closing, "finance.view", "finance"),
+    "clientes": (relationship_customers, "partners.view", "base"),
+    "curva-abc-clientes": (relationship_customers_abc, "partners.view", "base"),
+    "avaliacoes": (relationship_reviews, "sales.view", "base"),
+    "entregas": (logistics_deliveries, "logistics.view", "base"),
+    "cancelamentos": (movement_cancellations, "sales.view", "base"),
+    "cruzamento-clientes": (report_cross.cross_customers, "partners.view", "base"),
+    "cruzamento-entregas": (report_cross.cross_deliveries, "logistics.view", "base"),
+    "cruzamento-vendedores": (report_cross.cross_sellers, "sales.view", "base"),
+    "cruzamento-produtos": (report_cross.cross_products, "catalog.view", "base"),
+    "cruzamento-descontos": (report_cross.cross_discounts, "promotions.view", "base"),
+    "descontos": (report_promotions.overview, "promotions.view", "base"),
+    "promocoes-de-produto": (report_promotions.products, "promotions.view", "base"),
+    "cupons": (report_promotions.coupons, "promotions.view", "base"),
 }

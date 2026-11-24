@@ -47,14 +47,27 @@ def post(financial_account, kind, amount, *, description, category_key=None, sou
     )
 
 
+@transaction.atomic
 def reverse(tx, *, description="", user=None):
+    # Travado: dois estornos ao mesmo tempo passavam os dois na conferência.
+    tx = FinancialTransaction.all_objects.select_for_update().get(pk=tx.pk)
+    if tx.transfer_pair:  # as DUAS pernas (R2-19): estornar uma só cria ou some com dinheiro
+        others = FinancialTransaction.all_objects.select_for_update().filter(
+            account_id=tx.account_id, transfer_pair=tx.transfer_pair, reversal_of__isnull=True,
+            deleted_at__isnull=True).exclude(pk=tx.pk)
+        for other in others:
+            _reverse_one(other, description=description, user=user)
+    return _reverse_one(tx, description=description, user=user)
+
+
+def _reverse_one(tx, *, description="", user=None):
     if tx.reversals.exists():
         return tx.reversals.first()
     return FinancialTransaction.all_objects.create(
         account_id=tx.account_id, financial_account=tx.financial_account, kind=OUT if tx.kind == IN else IN,
         amount=tx.amount, date=timezone.localdate(), description=(description or f"Estorno: {tx.description}")[:255],
         category=tx.category, reversal_of=tx, sale=tx.sale, payment=tx.payment, cash_session=tx.cash_session,
-        operator=user, created_by=user,
+        customer=tx.customer, supplier=tx.supplier, operator=user, created_by=user,
     )
 
 
@@ -121,7 +134,9 @@ def payment_received(payment, user=None):
 
 def payment_undone(payment, description, user=None):
     """Estorna o que `payment_received` lançou para este pagamento."""
-    for tx in FinancialTransaction.all_objects.filter(payment=payment, reversal_of__isnull=True, deleted_at__isnull=True):
+    # O reembolso de uma devolução também é ligado ao pagamento, mas não é dele: estorná-lo inflaria o saldo.
+    own = FinancialTransaction.all_objects.filter(payment=payment, reversal_of__isnull=True, deleted_at__isnull=True)
+    for tx in own.exclude(source_key__startswith="return_refund:"):
         reverse(tx, description=f"{description}: {tx.description}", user=user)
 
 
@@ -132,9 +147,18 @@ def sale_cancelled(sale, user=None):
 
 def refund_to_original(sale_return, user=None):
     """Devolução "na forma original": sai da conta onde o pagamento entrou."""
-    payment = sale_return.sale.payments.filter(status="approved").exclude(
-        method__kind__in=NO_LEDGER).select_related("method__financial_account").first()
-    if payment is None or payment.method.financial_account is None:
+    payments = list(sale_return.sale.payments.filter(status="approved").select_related("method__financial_account"))
+    # Só há "forma original" quando UM pagamento à vista cobre a devolução. Dinheiro sai pela gaveta, crediário e
+    # cartão a prazo se abatem no título, e misto precisa de escolha: antes concluía sem registrar reembolso, ou
+    # tirava tudo do primeiro com o título ainda cobrando.
+    payment = payments[0] if len(payments) == 1 else next(
+        (p for p in payments if p.amount >= sale_return.total and p.method.kind not in NO_LEDGER
+         and not p.method.generates_receivable and len({q.method_id for q in payments}) == 1), None)
+    if payment is None or payment.method.kind in NO_LEDGER or payment.method.generates_receivable:
+        raise BusinessError("Esta venda não tem uma forma única à vista para estornar: devolva em dinheiro ou em "
+                            "vale-troca (crediário/cartão a prazo: ajuste as parcelas no financeiro).",
+                            code="original_payment_unavailable")
+    if payment.method.financial_account is None:
         return None
     return post(payment.method.financial_account, OUT, sale_return.total, category_key="sales",
                 description=f"Estorno da devolução {sale_return.number} (venda {sale_return.sale.number})",

@@ -4,7 +4,7 @@ from datetime import timedelta
 import pytest
 from django.utils import timezone
 
-from starrp.models import BackgroundTask, SeoCheck
+from starrp.models import BackgroundTask, Notification, SeoCheck
 from starrp.services import background, batches
 from starrp.services.seo import analyzer
 from starrp.tasks import batches as batch_tasks
@@ -169,9 +169,13 @@ def test_uma_conta_nao_ve_nem_para_a_tarefa_da_outra(ctx, other):
 
 
 def test_quem_so_ve_nao_para_e_sem_login_nao_entra(ctx):
-    task = background.begin(ctx.account, Kind.SEO_ROUND, 3)
-    auditor = ctx.client(ctx.user("auditor-tarefa", "auditor"))
+    user = ctx.user("auditor-tarefa", "auditor")
+    task = background.begin(ctx.account, Kind.SEO_ROUND, 3, user=user)
+    other_task = background.begin(ctx.account, Kind.SEO_READ, 1)
+    auditor = ctx.client(user)
     assert auditor.get(f"{TASKS}{task.pk}/").status_code == 200
+    assert auditor.get(f"{TASKS}{other_task.pk}/").status_code == 404
+    assert [row["id"] for row in auditor.get(TASKS).json()["results"]] == [str(task.pk)]
     assert auditor.post(f"{TASKS}{task.pk}/stop/").status_code == 403
     from rest_framework.test import APIClient
 
@@ -184,6 +188,19 @@ def test_tarefa_nao_e_criada_nem_alterada_pela_api(ctx):
     assert api.post(TASKS, {"kind": "seo_round"}, format="json").status_code == 422
     assert api.patch(f"{TASKS}{task.pk}/", {"status": "completed"}, format="json").status_code == 405
     assert api.delete(f"{TASKS}{task.pk}/").status_code == 405
+
+
+def test_fim_da_tarefa_notifica_apenas_quem_iniciou(ctx):
+    user = ctx.user("dono-tarefa", "auditor")
+    task = background.begin(ctx.account, Kind.SEO_READ, 2, user=user)
+    background.complete(task.pk, 2)
+
+    item = Notification.all_objects.get(recipient=user)
+    assert item.level == Notification.Level.SUCCESS and item.object_id == str(task.pk)
+    api = ctx.client(user)
+    assert api.get("/api/v1/notifications/unread-count/").json() == {"count": 1}
+    assert api.post(f"/api/v1/notifications/{item.pk}/read/").status_code == 200
+    assert api.get("/api/v1/notifications/unread-count/").json() == {"count": 0}
 
 
 def test_fila_fora_do_ar_marca_falha_e_avisa(ctx, monkeypatch):

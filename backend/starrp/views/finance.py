@@ -5,12 +5,16 @@
     /finance/titles/, /finance/installments/{id}/settle/    contas a pagar/receber e baixa
     /finance/transactions/                lançamento avulso (despesa/receita sem título)
     POST /finance/transactions/{id}/reverse/                estorno (lançamento não se edita)
+    /finance/recurring/ (+ POST {id}/generate/, POST generate-all/)  contas recorrentes
+    GET /finance/installments/{id}/credit/  crédito disponível do cliente/fornecedor da parcela
     Relatórios: /reports/dre/, /reports/cash-flow/, /reports/balances/, /reports/aging/
 """
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.db import transaction
+from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
+from django.utils.dateparse import parse_date
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -18,10 +22,12 @@ from starrp.core.bulk import bulk_action
 from starrp.core.errors import BusinessError, StateConflict
 from starrp.core.text import decimals_as_text
 from starrp.core.viewsets import TenantViewSet
-from starrp.models import FinancialAccount, FinancialCategory, FinancialTitle, FinancialTransaction, Installment
+from starrp.models import (
+    FinancialAccount, FinancialCategory, FinancialTitle, FinancialTransaction, Installment, RecurringTitle,
+)
 from starrp.models.platform import Module
 from starrp.serializers import finance as s
-from starrp.services import cash_flow, finance, ledger
+from starrp.services import cash_flow, finance, ledger, recurring
 
 
 class FinanceView:
@@ -43,11 +49,18 @@ class FinancialAccountViewSet(FinanceView, TenantViewSet):
     def transfer(self, request):
         source = get_object_or_404(FinancialAccount.objects, pk=request.data.get("source"))
         target = get_object_or_404(FinancialAccount.objects, pk=request.data.get("target"))
-        amount = Decimal(str(request.data.get("amount") or "0"))
+        try:
+            amount = Decimal(str(request.data.get("amount") or "0"))
+        except InvalidOperation:
+            raise BusinessError("Informe um valor válido.") from None
+        if not amount.is_finite() or amount > Decimal("1e12"):
+            raise BusinessError("Informe um valor válido.")
+        amount = amount.quantize(Decimal("0.01"))
         if amount <= 0:
             raise BusinessError("Informe um valor maior que zero.")
+        day = parse_date(str(request.data.get("date") or "")) or None
         ledger.transfer(source, target, amount, description=str(request.data.get("description", "")),
-                        user=request.user)
+                        user=request.user, date=day)
         return Response(decimals_as_text(cash_flow.balances(request.account, request.store)), status=201)
 
 
@@ -73,6 +86,12 @@ class FinancialTitleViewSet(FinanceView, TenantViewSet):
                         "issue_date": ["gte", "lte"]}
     search_fields = ["description", "document_number", "customer__name", "supplier__name"]
 
+    def list(self, request, *args, **kwargs):
+        from starrp.services.report_closing import ensure_recurring
+
+        ensure_recurring(request.account)  # sem Celery, as recorrências do dia nascem aqui
+        return super().list(request, *args, **kwargs)
+
 
 class InstallmentViewSet(FinanceView, TenantViewSet):
     model = Installment
@@ -87,9 +106,17 @@ class InstallmentViewSet(FinanceView, TenantViewSet):
         body = s.SettleSerializer(data=request.data, context=self.get_serializer_context())
         body.is_valid(raise_exception=True)
         data = dict(body.validated_data)
-        part = finance.settle(self.get_object(), data.pop("financial_account"), data.pop("amount"), request.user,
+        part = finance.settle(self.get_object(), data.pop("financial_account", None), data.pop("amount"), request.user,
                               **data)
         return Response(self.get_serializer(part).data)
+
+    @action(detail=True, methods=["get"])
+    def credit(self, request, pk=None):
+        title = self.get_object().title
+        party = finance._party(title)
+        value = finance.party_credit(**party) if party else Decimal("0")
+        return Response({"credit": str(max(value, Decimal("0")).quantize(Decimal("0.01"))),
+                         "party": (title.customer or title.supplier).name if party else None})
 
 
 class FinancialTransactionViewSet(FinanceView, TenantViewSet):
@@ -98,15 +125,16 @@ class FinancialTransactionViewSet(FinanceView, TenantViewSet):
     model = FinancialTransaction
     serializer_class = s.FinancialTransactionSerializer
     http_method_names = ["get", "post", "head", "options"]
-    select_related = ("financial_account", "category")
+    select_related = ("financial_account", "category", "customer", "supplier")
     filterset_fields = {"financial_account": ["exact"], "kind": ["exact"], "date": ["gte", "lte"],
-                        "category": ["exact"], "reconciled": ["exact"], "sale": ["exact"], "cash_session": ["exact"]}
+                        "category": ["exact"], "reconciled": ["exact"], "sale": ["exact"], "cash_session": ["exact"],
+                        "customer": ["exact"], "supplier": ["exact"]}
     search_fields = ["description"]
 
     def save_kwargs(self, serializer, creating):
         return {**super().save_kwargs(serializer, creating), "operator": self.request.user}
 
-    @bulk_action("Estornar", icon="pi pi-undo", danger=True,
+    @bulk_action("Estornar", icon="pi pi-undo", danger=True, permission="manage",
                  confirm="Estornar os lançamentos selecionados? Cada um ganha um lançamento inverso.")
     def bulk_reverse(self, request, queryset, params):
         done, skipped = 0, []
@@ -130,3 +158,27 @@ class FinancialTransactionViewSet(FinanceView, TenantViewSet):
             raise StateConflict("Baixa de parcela se estorna pelo título.")
         reversal = ledger.reverse(tx, description=str(request.data.get("reason") or ""), user=request.user)
         return Response(self.get_serializer(reversal).data, status=201)
+
+
+class RecurringTitleViewSet(FinanceView, TenantViewSet):
+    """Conta recorrente: gera um título por mês (tarefa diária ou "Gerar agora")."""
+
+    model = RecurringTitle
+    serializer_class = s.RecurringTitleSerializer
+    select_related = ("customer", "supplier", "category")
+    filterset_fields = ["kind", "is_active", "customer", "supplier", "category"]
+    search_fields = ["description", "customer__name", "supplier__name"]
+
+    def get_queryset(self):
+        # `generated` do serializer na mesma query (antes: uma contagem por recorrência).
+        return super().get_queryset().annotate(
+            generated_count=Count("titles", filter=Q(titles__deleted_at__isnull=True), distinct=True))
+
+    @action(detail=True, methods=["post"])
+    def generate(self, request, pk=None):
+        created = recurring.generate_one(self.get_object(), user=request.user)
+        return Response({"created": len(created), "titles": [str(t.pk) for t in created]})
+
+    @action(detail=False, methods=["post"], url_path="generate-all")
+    def generate_all(self, request):
+        return Response({"created": recurring.generate_all(request.account)})

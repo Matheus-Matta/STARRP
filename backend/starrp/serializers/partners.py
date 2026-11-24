@@ -1,12 +1,19 @@
+from decimal import Decimal
+
 from django.db import transaction
 from rest_framework import serializers
 
-from starrp.core.text import only_digits
 from starrp.core.serializers import TenantSerializer, tenant_serializer
+from starrp.core.text import only_digits
 from starrp.models import Customer, CustomerAddress, CustomerGroup, Supplier, Tag
 from starrp.serializers.tags import TaggedSerializerMixin
 
 CustomerGroupSerializer = tenant_serializer(CustomerGroup)
+
+
+class CustomerCreditGrantInput(serializers.Serializer):
+    amount = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal("0.01"))
+    reason = serializers.CharField(min_length=3, max_length=255, trim_whitespace=True)
 
 
 class CustomerAddressSerializer(TenantSerializer):
@@ -59,6 +66,17 @@ class CustomerSerializer(TaggedSerializerMixin, DocumentMixin, TenantSerializer)
 
         return metafields.clean(self.context["request"].account.pk, "customer", value)
 
+    def validate_credit_limit(self, value):
+        """O limite de crediário é dinheiro emprestado (R2-06): caixa e vendedor cadastram cliente, não o limite."""
+        from starrp.core.permissions import has_permission_code
+
+        request = self.context.get("request")
+        current = self.instance.credit_limit if self.instance is not None else Decimal("0")
+        if request is not None and value != current and not any(
+                has_permission_code(request.user, code) for code in ("finance.manage", "partners.credit")):
+            raise serializers.ValidationError("Só quem gerencia o financeiro muda o limite de crediário.")
+        return value
+
     @transaction.atomic
     def create(self, validated_data):
         rows = validated_data.pop("addresses", None)
@@ -99,7 +117,10 @@ class CustomerSerializer(TaggedSerializerMixin, DocumentMixin, TenantSerializer)
 
     def get_credit_balance(self, obj):
         from starrp.services.checkout import credit_balance
+        from starrp.services.sales import cents
 
+        if hasattr(obj, "credit_total"):  # anotado pela CustomerViewSet
+            return str(cents(obj.credit_total or 0))
         return str(credit_balance(obj))
 
 

@@ -1,0 +1,114 @@
+/* Somente as pontes entre os componentes originais do StarHub e o Starrp. */
+
+/* A logo oficial do sistema tem proporção mais larga que a marca do StarHub. */
+.brand .brand-logo { height: 25px; }
+.brand .brand-simbolo { object-fit: contain; }
+
+/* A busca do cabeçalho filtra o próprio menu do admin. */
+.header-search input[type="search"] { box-shadow: none; }
+.menu-secao[hidden], .menu-link[hidden] { display: none !important; }
+.menu-empty { padding: 24px 10px; color: var(--muted-foreground); font-size: .75rem; text-align: center; }
+
+/* Ícones genéricos mantêm o mesmo peso visual dos ícones por módulo do StarHub. */
+.sidebar-menu .menu-link > .icon { width: 1rem; height: 1rem; }
+
+/* Dashboard: lista de atividade no mesmo card/tabela do tema. */
+.dashboard-actions { display: grid; margin: 0; padding: 0; list-style: none; }
+.dashboard-actions li { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+.dashboard-actions li:last-child { border-bottom: 0; }
+.dashboard-actions li > div { display: grid; min-width: 0; gap: 2px; }
+.dashboard-actions a, .dashboard-actions strong { overflow: hidden; color: var(--mono); font-size: .8125rem; font-weight: 500; text-overflow: ellipsis; white-space: nowrap; }
+.dashboard-actions small { color: var(--muted-foreground); font-size: .6875rem; }
+.dashboard-action-icon { display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; flex: 0 0 auto; border-radius: var(--radius-md); background: var(--primary-soft); color: var(--primary); }
+.dashboard-action-icon.destructive { background: var(--destructive-soft); color: var(--destructive); }
+.dashboard .card .module:last-child tr:last-child td, .dashboard .card .module:last-child tr:last-child th { border-bottom: 0; }
+.admin-group-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.admin-group-links { display: grid; }
+.admin-group-links a { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 40px; padding: 0 16px; border-bottom: 1px solid var(--border); color: var(--foreground); font-size: .8125rem; }
+.admin-group-links a:last-child { border-bottom: 0; }
+.admin-group-links a:hover { background: var(--muted); color: var(--primary); }
+.admin-group-links .icon { color: var(--muted-foreground); }
+
+/* Os três canais da arte de login representam os módulos nativos do ERP. */
+.auth-channel { align-content: center; gap: 5px; color: var(--primary); font-size: .6875rem; font-weight: 600; }
+.auth-module-icon { width: 27px; height: 27px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.auth-content .alert { margin-bottom: 14px; }
+.auth-content .field input { width: 100%; }
+.auth-theme .theme-icon { display: none; }
+html[data-theme="auto"] .auth-theme .when-auto,
+html[data-theme="light"] .auth-theme .when-light,
+html[data-theme="dark"] .auth-theme .when-dark { display: inline-block; }
+
+/* O Django padrão não adiciona o wrapper .celula usado pelo workspace StarHub. */
+.form-card-grid fieldset.module:not(:has(.fieldset-heading)) { padding-top: 16px; }
+.form-card-grid .celula { min-width: 0; }
+.form-card-grid .celula > .flex-container { min-width: 0; }
+
+/* Formulários genéricos: seções semânticas em uma grade de cards. */
+.form-card-grid {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: start;
+}
+.form-card-grid > fieldset.module {
+  position: relative;
+  grid-column: span 6;
+  scroll-margin-top: 84px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-xs);
+}
+.form-card-grid > fieldset.module.wide { grid-column: 1 / -1; }
+.form-card-grid > fieldset.module::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  background: var(--primary);
+  opacity: .7;
+}
+.form-card-grid .fieldset-heading > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.form-card-grid .fieldset-heading .icon { transition: transform .16s ease; }
+.form-card-grid details[open] .fieldset-heading .icon { transform: rotate(180deg); }
+.form-card-grid fieldset.module:target { border-color: var(--ring); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 16%, transparent); }
+
+.form-section-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  scrollbar-width: thin;
+}
+.form-section-nav > span { padding: 0 8px; color: var(--muted-foreground); font-size: .6875rem; font-weight: 600; text-transform: uppercase; white-space: nowrap; }
+.form-section-nav a { flex: 0 0 auto; padding: 7px 10px; border-radius: var(--radius-md); color: var(--secondary-foreground); font-size: .75rem; font-weight: 500; white-space: nowrap; }
+.form-section-nav a:hover { background: var(--accent); color: var(--primary); }
+
+.form-save-state { display: inline-flex; align-items: center; gap: 6px; color: #b45309; font-size: .75rem; white-space: nowrap; }
+.form-save-state::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.form-error-summary { display: grid; gap: 3px; }
+.form-error-summary > span { color: var(--foreground); }
+
+/* Inlines seguem a mesma linguagem de cards e ações das seções principais. */
+.inline-group h2,
+.inline-group .inline-heading { min-height: 42px; margin: 0; padding: 0 16px; background: color-mix(in srgb, var(--accent) 60%, transparent); color: var(--mono); font-size: .8125rem; font-weight: 600; line-height: 42px; }
+.inline-related { border-top: 1px solid var(--border); }
+.inline-related h3 { margin: 0; padding: 10px 16px; background: var(--muted); font-size: .75rem; }
+.inline-group .add-row a { display: inline-flex; align-items: center; min-height: 32px; padding: 0 12px; border-radius: var(--radius-md); background: var(--primary-soft); color: var(--primary); font-size: .75rem; font-weight: 600; }
+
+/* Botão explícito da busca: o StarHub envia automaticamente; aqui o envio é nativo. */
+.list-search form .btn { flex: 0 0 auto; }
+
+@media (max-width: 767px) {
+  .header-search { display: none; }
+  .dashboard .grid-3 { grid-template-columns: minmax(0, 1fr); }
+  .admin-group-grid { grid-template-columns: minmax(0, 1fr); }
+  .form-card-grid { grid-template-columns: minmax(0, 1fr); }
+  .form-card-grid > fieldset.module,
+  .form-card-grid > fieldset.module.wide { grid-column: 1 / -1; }
+  .form-section-nav { margin-inline: -4px; }
+  .form-save-state { width: 100%; order: 10; }
+}

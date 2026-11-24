@@ -3,6 +3,7 @@
 Só lê; quem grava é `services.inbound_nfe`. Usa o parser seguro da
 biblioteca padrão com entidades bloqueadas (XML vem de fora: o fornecedor).
 """
+import defusedxml.ElementTree as safe_xml
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
@@ -62,9 +63,12 @@ def _text(node, path, default=""):
 
 def _dec(node, path):
     try:
-        return Decimal(_text(node, path, "0") or "0")
+        value = Decimal(_text(node, path, "0") or "0")
     except InvalidOperation:
         return Decimal("0")
+    if not value.is_finite() or value < 0:  # R2-21: NF-e não tem valor negativo (nem "NaN")
+        raise BusinessError("O XML tem valor ou quantidade negativa.", code="nfe_invalid")
+    return value
 
 
 def _barcode(value):
@@ -124,7 +128,7 @@ def parse(content: bytes) -> NFeData:
     if b"<!ENTITY" in content or b"<!DOCTYPE" in content:
         raise BusinessError("XML com declarações de entidade não é aceito.", code="nfe_invalid")
     try:
-        root = ElementTree.fromstring(content)
+        root = safe_xml.fromstring(content)  # XML enviado pelo usuário: defusedxml
     except ElementTree.ParseError as exc:
         raise BusinessError(f"Arquivo não é um XML válido: {exc}", code="nfe_invalid") from None
     inf = root.find(".//n:infNFe", NS)

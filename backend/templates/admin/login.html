@@ -1,51 +1,13 @@
-{% extends "admin/base_site.html" %}
-{% load i18n static %}
-
-{% block title %}Entrar | Starrp Admin{% endblock %}
-{% block bodyclass %}{{ block.super }} login{% endblock %}
-{% block usertools %}{% endblock %}
-{% block nav-sidebar %}{% endblock %}
-{% block nav-breadcrumbs %}{% endblock %}
-{% block content_title %}{% endblock %}
-
-{% block content %}
-<div class="starrp-login">
-  <section class="starrp-login__intro">
-    <a class="starrp-brand starrp-login__brand" href="{% url 'admin:index' %}" aria-label="Starrp">
-      {% include 'admin/includes/brand.html' %}
-    </a>
-    <div class="starrp-login__copy">
-      <span>Gestão conectada</span>
-      <h1>Seu negócio sob controle, em um só lugar.</h1>
-      <p>Administração segura dos cadastros, integrações e configurações da plataforma Starrp.</p>
-    </div>
-    <p class="starrp-login__foot">Ambiente administrativo · Acesso restrito</p>
-  </section>
-  <section class="starrp-login__form-wrap">
-    <div class="starrp-login__mobile-brand"><span class="starrp-brand">{% include 'admin/includes/brand.html' %}</span></div>
-    <div class="starrp-login__card">
-      <div class="starrp-login__heading"><span>Área segura</span><h2>Bem-vindo de volta</h2><p>Entre com suas credenciais administrativas.</p></div>
-      {% if form.errors and not form.non_field_errors %}<p class="errornote">Confira os campos abaixo e tente novamente.</p>{% endif %}
-      {% if form.non_field_errors %}{% for error in form.non_field_errors %}<p class="errornote">{{ error }}</p>{% endfor %}{% endif %}
-      {% if user.is_authenticated %}<p class="errornote">Sua conta não tem acesso a esta página. Entre com outro usuário.</p>{% endif %}
-      <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
-        <div class="form-row">
-          {{ form.username.errors }}
-          <label for="{{ form.username.id_for_label }}">Usuário</label>
-          <div class="starrp-login-field"><span aria-hidden="true">@</span>{{ form.username }}</div>
-        </div>
-        <div class="form-row">
-          {{ form.password.errors }}
-          <label for="{{ form.password.id_for_label }}">Senha</label>
-          <div class="starrp-login-field"><span aria-hidden="true">●</span>{{ form.password }}</div>
-          <input type="hidden" name="next" value="{{ next }}">
-        </div>
-        {% url 'admin_password_reset' as password_reset_url %}
-        {% if password_reset_url %}<div class="password-reset-link"><a href="{{ password_reset_url }}">Esqueceu sua senha?</a></div>{% endif %}
-        <div class="submit-row"><input type="submit" value="Entrar no admin"></div>
-      </form>
-      <p class="starrp-login__help">Problemas para acessar? Fale com o responsável pela plataforma.</p>
-    </div>
-  </section>
-</div>
-{% endblock %}
+{% load i18n static %}<!DOCTYPE html>
+{% static 'starrp/admin/starhub/img/icones.svg' as icon_sprite %}
+<html lang="pt-br" data-theme="auto" data-sprite="{{ icon_sprite }}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="robots" content="NONE,NOARCHIVE"><title>Entrar | Starrp Admin</title><script src="{% static 'admin/js/theme.js' %}"></script>{% include 'components/styles.html' %}{{ form.media }}</head>
+<body class="login-page"><div class="auth-theme"><button type="button" class="theme-toggle btn btn-ghost btn-icon btn-circle" title="Trocar tema"><svg class="icon theme-icon when-auto"><use href="{{ icon_sprite }}#monitor"></use></svg><svg class="icon theme-icon when-light"><use href="{{ icon_sprite }}#sun"></use></svg><svg class="icon theme-icon when-dark"><use href="{{ icon_sprite }}#moon"></use></svg></button></div>
+  <main class="auth"><section class="auth-form-side" aria-label="Acesso ao Starrp"><div class="auth-card">
+    <a class="brand" href="{% url 'admin:index' %}">{% include 'admin/includes/brand.html' %}</a><div class="auth-heading"><span class="auth-eyebrow">Painel administrativo</span><h1>Entrar</h1><p class="auth-subtitle">Use seu usuário e senha do Starrp.</p></div>
+    <div class="auth-content">{% if form.errors and not form.non_field_errors %}<div class="alert alert-error">Confira os campos abaixo e tente novamente.</div>{% endif %}{% if form.non_field_errors %}{% for error in form.non_field_errors %}<div class="alert alert-error">{{ error }}</div>{% endfor %}{% endif %}{% if user.is_authenticated %}<div class="alert alert-warning">Sua conta não possui acesso a esta página. Entre com outro usuário.</div>{% endif %}
+      <form action="{{ app_path }}" method="post" id="login-form" novalidate>{% csrf_token %}<div class="field"><label for="{{ form.username.id_for_label }}">Usuário</label>{{ form.username.errors }}<div class="input-icon"><svg class="icon icon-sm"><use href="{{ icon_sprite }}#user"></use></svg>{{ form.username }}</div></div><div class="field"><label for="{{ form.password.id_for_label }}">Senha</label>{{ form.password.errors }}<div class="input-icon"><svg class="icon icon-sm"><use href="{{ icon_sprite }}#lock"></use></svg>{{ form.password }}</div><input type="hidden" name="next" value="{{ next }}"></div>{% url 'admin_password_reset' as password_reset_url %}{% if password_reset_url %}<div class="auth-links"><a href="{{ password_reset_url }}">Esqueceu a senha?</a></div>{% endif %}<button type="submit" class="btn btn-primary btn-block">Entrar</button></form>
+    </div><div class="auth-security"><span class="auth-security-icon"><svg class="icon"><use href="{{ icon_sprite }}#shield"></use></svg></span><span><strong>Ambiente seguro</strong>Seus dados de acesso são protegidos.</span></div>
+  </div></section>
+  <aside class="auth-showcase"><div class="auth-showcase-copy"><span class="auth-showcase-label">Operação conectada</span><h2>Todo o seu negócio.<br>Uma única gestão.</h2><p>Centralize vendas, estoque, fiscal e financeiro enquanto o Starrp mantém sua operação organizada.</p></div><div class="auth-network"><div class="auth-network-hub"><img src="{% static 'brand/mark.png' %}" alt="Starrp" width="44" height="44"></div><div class="auth-network-line auth-network-line-top"></div><div class="auth-network-line auth-network-line-left"></div><div class="auth-network-line auth-network-line-right"></div><div class="auth-channel auth-channel-woo"><svg class="auth-module-icon"><use href="{{ icon_sprite }}#shopping-cart"></use></svg><span>Vendas</span></div><div class="auth-channel auth-channel-shopify"><svg class="auth-module-icon"><use href="{{ icon_sprite }}#package"></use></svg><span>Estoque</span></div><div class="auth-channel auth-channel-shopee"><svg class="auth-module-icon"><use href="{{ icon_sprite }}#wallet"></use></svg><span>Financeiro</span></div></div><div class="auth-benefits"><span><svg class="icon"><use href="{{ icon_sprite }}#check"></use></svg> Estoque atualizado</span><span><svg class="icon"><use href="{{ icon_sprite }}#check"></use></svg> Vendas centralizadas</span><span><svg class="icon"><use href="{{ icon_sprite }}#check"></use></svg> Gestão integrada</span></div></aside>
+  </main>
+</body></html>

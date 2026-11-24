@@ -8,4 +8,7 @@ class StarrpConfig(AppConfig):
 
     def ready(self):
         from starrp import signals  # noqa: F401
+        from starrp.core import dry_run
+
+        dry_run.install()  # ensaio da Cosmos sem efeito externo (S-05)
         from starrp.core import schema  # noqa: F401

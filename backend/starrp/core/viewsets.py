@@ -33,6 +33,26 @@ def _store_field(model):
         return None
 
 
+NETWORK_MESSAGE = "Este cadastro vale para todas as filiais; só quem acessa a rede pode alterá-lo."
+
+
+def _is_shared(instance):
+    """Vale para a rede (sem filial)? Segue o `store_lookup` (A-11): a regra de promoção é da filial da TABELA dela."""
+    model = type(instance)
+    field = _store_field(model)
+    if field is not None:
+        return field.null and instance.store_id is None
+    lookup = getattr(model, "store_lookup", None)
+    if not lookup or not getattr(model, "store_shared_when_null", False):
+        return False
+    value = instance
+    for name in lookup.split("__"):
+        value = getattr(value, name, None)
+        if value is None:
+            return True
+    return False
+
+
 class TenantViewSet(BulkActionsMixin, viewsets.ModelViewSet):
     model = None
     select_related = ()
@@ -93,7 +113,10 @@ class TenantViewSet(BulkActionsMixin, viewsets.ModelViewSet):
 
     def _delta(self, qs):
         raw = self.request.query_params.get("updated_after")
-        moment = parse_datetime(raw) if raw else None
+        try:
+            moment = parse_datetime(raw) if raw else None
+        except ValueError:  # "2026-99-99T00:00:00"
+            raise ValidationError({"updated_after": "Data inválida."}) from None
         return qs.filter(updated_at__gt=moment) if moment else qs
 
     def initial(self, request, *args, **kwargs):
@@ -105,6 +128,7 @@ class TenantViewSet(BulkActionsMixin, viewsets.ModelViewSet):
         model = serializer.Meta.model
         names = {f.name for f in model._meta.fields}
         extra = {"updated_by": self.request.user} if "updated_by" in names else {}
+        self._check_network(serializer, model, creating)
         if creating:
             extra["account"] = self.request.account
             if "created_by" in names:
@@ -121,14 +145,29 @@ class TenantViewSet(BulkActionsMixin, viewsets.ModelViewSet):
                 extra["store"] = store
         return extra
 
+    def _check_network(self, serializer, model, creating):
+        """Usuário de filial não transforma o cadastro dela em cadastro da rede (A-12), nem pendura um filho num
+        cadastro da rede (A-11)."""
+        if not self._restricted():
+            return
+        data, field = serializer.validated_data, _store_field(model)
+        if field is not None:
+            if field.null and not creating and "store" in data and data["store"] is None:
+                raise PermissionDenied(NETWORK_MESSAGE)
+            return
+        lookup = getattr(model, "store_lookup", None)
+        if lookup and getattr(model, "store_shared_when_null", False):
+            parent = data.get(lookup.split("__")[0])
+            if parent is not None and _is_shared(parent):
+                raise PermissionDenied(NETWORK_MESSAGE)
+
     def _restricted(self):
         return getattr(self.request, "allowed_store_ids", None) is not None
 
     def check_writable(self, instance):
         """Usuário de filial não altera cadastro que vale para a rede inteira."""
-        field = _store_field(type(instance))
-        if field is not None and field.null and instance.store_id is None and self._restricted():
-            raise PermissionDenied("Este cadastro vale para todas as filiais; só quem acessa a rede pode alterá-lo.")
+        if self._restricted() and _is_shared(instance):
+            raise PermissionDenied(NETWORK_MESSAGE)
 
     @transaction.atomic
     def perform_create(self, serializer):
@@ -156,7 +195,7 @@ class TenantViewSet(BulkActionsMixin, viewsets.ModelViewSet):
         do próprio registro (confirmado, conferido, cancelado...). Ver `services/history.py`."""
         from starrp.services import history
 
-        rows = history.events(self.get_object())
+        rows = history.events(self.get_object(), request.user)
         page = self.paginate_queryset(rows)
         return self.get_paginated_response(page) if page is not None else Response(rows)
 

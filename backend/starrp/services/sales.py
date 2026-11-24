@@ -98,14 +98,64 @@ def _discount_percent(discount, gross):
     return (Decimal(discount) / gross * 100) if gross else Decimal("0")
 
 
+def _limit_of(user_id):
+    from starrp.models import UserProfile
+    from starrp.services.approvals import max_discount_percent
+
+    profile = UserProfile.all_objects.select_related("user").filter(user_id=user_id, deleted_at__isnull=True).first()
+    if profile is None:
+        return Decimal("0")
+    profile.user.profile = profile
+    return max_discount_percent(profile.user)
+
+
+def _granted_percent(item):
+    """Até quanto o desconto deste item já foi autorizado: o limite de quem o autorizou."""
+    by = (item.metafields or {}).get("_discount_by")
+    return _limit_of(by) if by else Decimal("0")
+
+
+def check_discounts(sale, user, items):
+    """Na conclusão, nenhum desconto pode estar acima do limite de quem o autorizou (R2-05): tirar ou reduzir
+    itens depois do desconto mudava o percentual sem pedir ninguém. Venda feita no PDV sem servidor já
+    aconteceu e tem a própria conferência (`offline_sales._Checks`)."""
+    from starrp.core.errors import ApprovalRequired
+    from starrp.services.approvals import max_discount_percent
+
+    if (sale.metafields or {}).get("_offline_id"):
+        return
+    own = max_discount_percent(user)
+
+    def allowed(*ids):
+        return max([own, *(_limit_of(pk) for pk in set(ids) if pk)]) + Decimal("0.01")
+
+    def refuse(percent, limit):
+        raise ApprovalRequired(f"Desconto de {percent:.2f}% acima do limite autorizado ({limit:.2f}%): refaça o "
+                               "desconto com a autorização do gerente.", code="discount_approval_required")
+
+    if sale.discount and sale.subtotal:
+        percent = _discount_percent(sale.discount, sale.subtotal)
+        if percent > own + Decimal("0.01") and percent > (limit := allowed(sale.discount_approved_by_id)):
+            refuse(percent, limit)
+    for item in items:
+        if not item.discount:
+            continue
+        percent = _discount_percent(item.discount, cents(item.quantity * item.unit_price))
+        if percent > own + Decimal("0.01"):
+            limit = allowed((item.metafields or {}).get("_discount_by"), item.created_by_id)
+            if percent > limit:
+                refuse(percent, limit)
+
+
 @transaction.atomic
 def add_item(sale, variant, quantity, user, *, seller=None, discount=Decimal("0"), unit_price=None,
-             approval=None, metafields=None, parent_item=None):
+             approval=None, metafields=None, parent_item=None, check_sellable=True):
     sale = lock_open(sale)
-    _check_sellable(variant)
+    if check_sellable:  # venda feita no PDV sem servidor já aconteceu: produto inativado depois vale
+        _check_sellable(variant)
     quantity = Decimal(quantity)
     if quantity <= 0:
-        raise BusinessError("Quantidade precisa ser maior que zero.")
+        raise BusinessError("Quantidade precisa ser maior que zero.", code="quantity_invalid")
     quote = pricing.quote(variant, sale.store_id)
     price = quote.unit_price
     if parent_item is not None:
@@ -116,8 +166,13 @@ def add_item(sale, variant, quantity, user, *, seller=None, discount=Decimal("0"
         authorize(user, sale.account, sale.store, "sales.price_override", approval)
         price = Decimal(unit_price)
     gross = cents(quantity * price)
+    if price > 0 and gross == 0:  # B-08: 0,001 un. saía de graça
+        raise BusinessError("Quantidade pequena demais: o item sairia por R$ 0,00.", code="quantity_invalid")
+    # "_" é do sistema (quem autorizou o desconto): nunca vem de quem chama a API.
+    metafields = {k: v for k, v in (metafields or {}).items() if not str(k).startswith("_")}
     if discount:
-        authorize_discount(user, sale.account, sale.store, _discount_percent(discount, gross), approval)
+        approver = authorize_discount(user, sale.account, sale.store, _discount_percent(discount, gross), approval)
+        metafields["_discount_by"] = approver.pk
     position = (sale.items.aggregate(m=Max("position"))["m"] or 0) + 1
     item = SaleItem.all_objects.create(
         account_id=sale.account_id,
@@ -135,7 +190,7 @@ def add_item(sale, variant, quantity, user, *, seller=None, discount=Decimal("0"
         unit_cost=unit_cost_of(variant),
         promotion=quote.promotion if unit_price is None else None,
         seller=seller,
-        metafields=metafields or {},
+        metafields=metafields,
         parent_item=parent_item,
         created_by=user,
     )
@@ -171,8 +226,13 @@ def update_item(item, user, *, quantity=None, discount=None, approval=None):
         item.quantity = Decimal(quantity)
     gross = cents(item.quantity * item.unit_price)
     if discount is not None:
-        authorize_discount(user, sale.account, sale.store, _discount_percent(discount, gross), approval)
         item.discount = cents(discount)
+    # Também quando só a QUANTIDADE muda (R2-05): R$ 50 em 100 un. é 5%; em 5 un. seria o item de graça.
+    if item.discount and (discount is not None or quantity is not None):
+        percent = _discount_percent(item.discount, gross)
+        if discount is not None or percent > _granted_percent(item):
+            approver = authorize_discount(user, sale.account, sale.store, percent, approval)
+            item.metafields = {**(item.metafields or {}), "_discount_by": approver.pk}
     item.total = max(gross - item.discount, Decimal("0"))
     item.updated_by = user
     item.save()
@@ -259,6 +319,8 @@ def quote_delivery(sale, address, table):
         raise BusinessError("Identifique o cliente antes de lançar a entrega.", code="customer_required")
     if address.customer_id != sale.customer_id:
         raise BusinessError("Esse endereço não é do cliente da venda.", code="address_mismatch")
+    if table.account_id != sale.account_id or table.store_id not in (None, sale.store_id):  # M-05
+        raise BusinessError("Esta tabela de frete é de outra filial.", code="freight_other_store")
     try:
         return freight.quote(table, address.zip_code)
     except freight.FreightUnavailable as error:
@@ -373,11 +435,28 @@ def unit_cost_of(variant):
     return sum((c.component.average_cost * c.quantity for c in components), Decimal("0"))
 
 
+def header_discount(sale):
+    """Desconto do cabeçalho que pesa nos PRODUTOS. Cupom de frete grátis abate o frete: rateado nos itens, o
+    cliente que pagou R$ 100 na mercadoria receberia menos na devolução."""
+    free_shipping = sale.coupon_id is not None and sale.coupon.kind == sale.coupon.Kind.FREE_SHIPPING
+    return sale.discount + (Decimal("0") if free_shipping else sale.coupon_discount)
+
+
+def net_total(item, quantity):
+    """Quanto foi pago por `quantity` unidades deste item. Arredonda UMA vez, no fim: por unidade, 1.000 un. de
+    R$ 0,045 viravam R$ 50 em vez de R$ 45."""
+    sale = item.sale
+    if not item.quantity:
+        return Decimal("0")
+    share = (item.total / sale.subtotal * header_discount(sale)) if sale.subtotal else Decimal("0")
+    return cents((item.total - share) * Decimal(quantity) / item.quantity)
+
+
 def net_unit_price(item):
     """Preço pago por unidade com os descontos do cabeçalho rateados: é a base
     da devolução e da comissão (o cliente não recebe de volta o que não pagou)."""
     sale = item.sale
-    header = sale.discount + sale.coupon_discount
+    header = header_discount(sale)
     share = (item.total / sale.subtotal * header) if sale.subtotal else Decimal("0")
     return cents((item.total - share) / item.quantity) if item.quantity else Decimal("0")
 

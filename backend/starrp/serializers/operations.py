@@ -1,13 +1,14 @@
 """Serializers de devolução, pagamento e caixa."""
 from decimal import Decimal
+
 from rest_framework import serializers
 
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, tenant_serializer
-from starrp.serializers.sales import ApprovalField
 from starrp.models import (
     CashDiscrepancy, CashMovement, CashRegister, CashSession, CustomerCredit, PaymentMethod, SaleItem, SaleReturn,
     SaleReturnItem, Terminal,
 )
+from starrp.serializers.sales import ApprovalField
 
 Money = {"max_digits": 14, "decimal_places": 2}
 
@@ -113,10 +114,16 @@ class CashSessionSerializer(TenantSerializer):
 
     def get_pending_movements(self, obj) -> int:
         """Sangrias/suprimentos aguardando aprovação (o fechamento espera por eles)."""
+        if hasattr(obj, "pending_count"):  # anotado pela CashSessionViewSet
+            return obj.pending_count
         return obj.movements.filter(status=CashMovement.Status.PENDING).count()
 
     def get_expected_now(self, obj):
-        from starrp.services.cash import expected_cash
+        from starrp.services.cash import expected_cash, sees_drawer
+
+        request = self.context.get("request")
+        if request is None or not sees_drawer(request.user):
+            return None  # fechamento cego: to_representation esconde; não calcula à toa
 
         return str(expected_cash(obj)) if obj.status == CashSession.Status.OPEN else str(obj.expected_amount)
 

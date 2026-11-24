@@ -10,6 +10,7 @@ PDV) e é validada contra o perfil: quem está preso a uma loja não troca.
 """
 import logging
 
+from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ValidationError
 from django.http import JsonResponse
@@ -23,6 +24,25 @@ from starrp.core.tenant import clear_current_account, set_current_account
 logger = logging.getLogger(__name__)
 
 ALL_STORES = "*"
+SAFE_METHODS = ("GET", "HEAD", "OPTIONS")
+
+
+def _cross_site_cookie_write(request):
+    """CSRF com o login por cookie (S-12): o SameSite já barra a maioria, mas é configurável. Gravação que leva
+    o cookie de login e vem de OUTRA origem (o navegador sempre manda `Origin` num POST de outro site) é
+    recusada. Sem cookie (PDV desktop/app móvel, Bearer) ou sem Origin (não é navegador), segue."""
+    if request.method in SAFE_METHODS:
+        return False
+    if not (request.COOKIES.get(settings.JWT_AUTH_COOKIE) or request.COOKIES.get(settings.JWT_AUTH_REFRESH_COOKIE)):
+        return False
+    origin = request.META.get("HTTP_ORIGIN") or ""
+    if not origin:
+        return False
+    if origin == "null":
+        return True  # página sandbox/arquivo local: nunca é o app
+    own = f"{'https' if request.is_secure() else 'http'}://{request.get_host()}"
+    trusted = {o.rstrip("/") for o in getattr(settings, "CSRF_TRUSTED_ORIGINS", [])}
+    return origin.rstrip("/") not in trusted | {own}
 PUBLIC_PREFIXES = ("/admin/", "/static/", "/media/", "/health/", "/api/schema/", "/api/v1/auth/", "/api/v1/public/")
 
 
@@ -38,6 +58,8 @@ class TenantMiddleware:
     def __call__(self, request):
         request.account = None
         request.store = None
+        if request.path.startswith("/api/") and _cross_site_cookie_write(request):
+            return _deny(403, "Origem não confiável para esta gravação.", "csrf_origin")
         try:
             if request.path.startswith("/api/") and not request.path.startswith(PUBLIC_PREFIXES):
                 denied = self._resolve(request)
@@ -74,12 +96,29 @@ def bind_user(request):
         return _deny(403, "A conta não está ativa.", "account_inactive")
     request.account = account
     request.profile = profile
+    if _revoked(request, profile):
+        return _deny(401, "Sua sessão foi encerrada (senha alterada). Entre de novo.", "session_revoked")
     allowed = profile.allowed_store_ids() if profile is not None else None
     if allowed is not None and not allowed:
         return _deny(403, "Seu usuário não tem acesso a nenhuma filial. Peça ao administrador.", "no_store_access")
     request.allowed_store_ids = allowed
     set_current_account(account, allowed)
+    # Vendedor (sem `sales.view_all`): lista, consultas e relatórios de venda mostram só as dele.
+    from starrp.core.permissions import has_permission_code
+    from starrp.core.tenant import set_own_sales_user
+
+    set_own_sales_user(None if has_permission_code(request.user, "sales.view_all") else request.user.pk)
     return _resolve_store(request, profile, allowed)
+
+
+def _revoked(request, profile):
+    """Token emitido antes de `sessions_revoked_at` (troca/redefinição de senha) não vale mais (S-12)."""
+    revoked = getattr(profile, "sessions_revoked_at", None)
+    token = getattr(request, "auth", None)
+    if revoked is None or token is None or not hasattr(token, "get"):
+        return False
+    issued = token.get("iat")
+    return issued is not None and int(issued) < int(revoked.timestamp())
 
 
 def _account_for(request):
@@ -93,7 +132,12 @@ def _account_for(request):
         .filter(user=user, is_active=True)
         .first()
     )
-    return (profile.account, profile) if profile else (None, None)
+    if profile is None:
+        return None, None
+    # O mesmo objeto em `user.profile`: as checagens de permissão da requisição usam este perfil
+    # (e o cache de cargos/permissões dele) em vez de buscar o perfil de novo.
+    user.profile = profile
+    return profile.account, profile
 
 
 def _resolve_store(request, profile, allowed):

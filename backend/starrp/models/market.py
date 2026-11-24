@@ -22,6 +22,7 @@ from datetime import timedelta
 from django.db import models
 from django.utils import timezone
 
+from starrp.core.secrets import EncryptedTextField
 from starrp.models.base import TenantModel, TimeStampedModel, alive, user_fk
 from starrp.models.fields import MoneyField, PercentField, UnitCostField
 
@@ -38,7 +39,7 @@ class PriceSourceToken(TimeStampedModel):
 
     account = models.ForeignKey("starrp.Account", related_name="price_tokens", on_delete=models.CASCADE)
     source = models.CharField("Fonte", max_length=30, choices=Source.choices)
-    token = models.CharField("Chave", max_length=255)
+    token = EncryptedTextField("Chave")  # cifrado no banco
     option = models.CharField("Zona ou endereço", max_length=255, blank=True,
                               help_text="Bright Data: a zona. Google Shopping: o endereço da ferramenta. Vazio = o global.")
 

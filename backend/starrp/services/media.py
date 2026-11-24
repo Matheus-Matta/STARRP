@@ -28,6 +28,21 @@ MAX_SIDE = 2000
 FORMATS = {"JPEG": "jpg", "PNG": "png", "WEBP": "webp", "GIF": "gif"}
 
 
+MAX_PIXELS = 50_000_000  # foto de celular tem 12–50 MP; um PNG de poucos KB pode declarar 170 MP e ocupar 500 MB
+
+
+def _open(data, message):
+    """Abre a imagem conferindo o TAMANHO antes de descomprimir (R2-15: bomba de pixels)."""
+    try:
+        picture = Pillow.open(BytesIO(data))
+        if picture.width * picture.height > MAX_PIXELS:
+            raise BusinessError("Imagem com resolução grande demais.", code="image_too_large")
+        picture.load()
+        return picture
+    except (UnidentifiedImageError, OSError, SyntaxError, ValueError, Pillow.DecompressionBombError):
+        raise BusinessError(message, code="image_invalid") from None
+
+
 def _shrink(data, picture):
     """Reduz o lado maior para MAX_SIDE mantendo o formato (GIF animado fica como veio)."""
     if max(picture.size) <= MAX_SIDE or picture.format == "GIF":
@@ -48,12 +63,7 @@ def square_logo(upload):
     data = upload.read()
     if len(data) > MAX_BYTES:
         raise BusinessError("Imagem grande demais: o limite é 8 MB.", code="image_too_large")
-    try:
-        picture = Pillow.open(BytesIO(data))
-        picture.load()
-    except (UnidentifiedImageError, OSError, SyntaxError):
-        raise BusinessError("O arquivo não é uma imagem (use JPG, PNG ou WEBP).", code="image_invalid") from None
-    picture = picture.convert("RGBA")
+    picture = _open(data, "O arquivo não é uma imagem (use JPG, PNG ou WEBP).").convert("RGBA")
     side = min(picture.size)
     left, top = (picture.width - side) // 2, (picture.height - side) // 2
     picture = picture.crop((left, top, left + side, top + side)).resize((LOGO_SIDE, LOGO_SIDE), Pillow.LANCZOS)
@@ -67,12 +77,7 @@ def store_upload(account, user, upload, alt=""):
     data = upload.read()
     if len(data) > MAX_BYTES:
         raise BusinessError("Imagem grande demais: o limite é 8 MB.", code="image_too_large")
-    try:
-        Pillow.open(BytesIO(data)).verify()
-        picture = Pillow.open(BytesIO(data))
-        picture.load()
-    except (UnidentifiedImageError, OSError, SyntaxError):
-        raise BusinessError("O arquivo não é uma imagem (use JPG, PNG, WEBP ou GIF).", code="image_invalid") from None
+    picture = _open(data, "O arquivo não é uma imagem (use JPG, PNG, WEBP ou GIF).")
     if picture.format not in FORMATS:
         raise BusinessError("Formato não aceito: use JPG, PNG, WEBP ou GIF.", code="image_invalid")
     checksum = hashlib.sha256(data).hexdigest()

@@ -4,6 +4,8 @@
   + Frete cobrado
   − Descontos e cupons
   − Devoluções
+  + Serviços e outras receitas      (títulos a receber lançados à mão, emitidos no período,
+                                     e entradas avulsas com categoria de receita)
   = Receita líquida
   − CMV (custo médio no momento da venda; devolução que volta ao estoque estorna)
   = Lucro bruto
@@ -19,13 +21,14 @@ números de telas diferentes não podem discordar.
 """
 from decimal import Decimal
 
-from django.db.models import DecimalField, ExpressionWrapper, F, Sum, Value
+from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum, Value
 
 from starrp.models import (
-    CashSession, Commission, FinancialTitle, FinancialTransaction, Payment, SaleItem, SaleReturn, SaleReturnItem,
-    TitleStatus,
+    CashSession, Commission, FinancialCategory, FinancialTitle, FinancialTransaction, Payment, SaleItem, SaleReturn,
+    SaleReturnItem, TitleStatus,
 )
 from starrp.services.reports import completed_sales, period
+from starrp.core.tenant import get_allowed_store_ids
 from starrp.services.store_access import scope_to_allowed
 
 ZERO = Decimal("0")
@@ -45,16 +48,41 @@ def _cost(prefix=""):
                                                                                                  decimal_places=4))
 
 
+def _direct(account, store, kind, start, end):
+    """Lançamentos avulsos do período (sem título, venda, caixa, transferência ou estorno). Avulso de
+    cliente/fornecedor SEM categoria é crédito/adiantamento: não é receita nem despesa."""
+    qs = FinancialTransaction.all_objects.filter(
+        account=account, kind=kind, date__range=(start.date(), end.date()),
+        deleted_at__isnull=True, installment__isnull=True, sale__isnull=True, cash_session__isnull=True,
+        transfer_pair__isnull=True, reversal_of__isnull=True,
+    ).exclude(category__system_key__in=AUTOMATIC).exclude(
+        Q(category__isnull=True) & (Q(customer__isnull=False) | Q(supplier__isnull=False)))
+    if store is not None:  # contas da rede (sem filial) valem para todas as filiais
+        return qs.filter(Q(financial_account__store=store) | Q(financial_account__store__isnull=True))
+    allowed = get_allowed_store_ids()
+    return qs if allowed is None else qs.filter(Q(financial_account__store__in=allowed) | Q(financial_account__store__isnull=True))
+
+
+def _other_revenue(account, store, start, end):
+    """Receita que não é venda do PDV: serviços cobrados por título/boleto e entradas avulsas de receita."""
+    titles = _scoped(FinancialTitle.all_objects.filter(
+        account=account, kind=FinancialTitle.Kind.RECEIVABLE, issue_date__range=(start.date(), end.date()),
+        deleted_at__isnull=True, sale__isnull=True, payment__isnull=True).exclude(status=TitleStatus.CANCELLED), store)
+    direct = _direct(account, store, FinancialTransaction.Kind.IN, start, end).filter(
+        category__kind=FinancialCategory.Kind.INCOME)
+    lines = {}
+    for qs, field in ((titles, "total"), (direct, "amount")):
+        for row in qs.values("category__name").annotate(total=Sum(field)):
+            name = row["category__name"] or "Sem categoria"
+            lines[name] = lines.get(name, ZERO) + row["total"]
+    return sorted(({"category": k, "amount": v} for k, v in lines.items()), key=lambda r: -r["amount"])
+
+
 def _expenses(account, store, start, end):
     titles = _scoped(FinancialTitle.all_objects.filter(
         account=account, kind=FinancialTitle.Kind.PAYABLE, issue_date__range=(start.date(), end.date()),
         deleted_at__isnull=True).exclude(status=TitleStatus.CANCELLED), store)
-    direct = FinancialTransaction.all_objects.filter(
-        account=account, kind=FinancialTransaction.Kind.OUT, date__range=(start.date(), end.date()),
-        deleted_at__isnull=True, installment__isnull=True, sale__isnull=True, cash_session__isnull=True,
-        transfer_pair__isnull=True, reversal_of__isnull=True,
-    ).exclude(category__system_key__in=AUTOMATIC)
-    direct = _scoped(direct, store, "financial_account__store")
+    direct = _direct(account, store, FinancialTransaction.Kind.OUT, start, end)
     lines = {}
     for qs, field in ((titles, "total"), (direct, "amount")):
         for row in qs.values("category__name").annotate(total=Sum(field)):
@@ -75,7 +103,9 @@ def build(account, store, params):
     freight = _sum(sales, "freight")
     discounts = _sum(sales, "discount") + _sum(sales, "coupon_discount")
     returned = _sum(returns, "total")
-    net_revenue = gross + freight - discounts - returned
+    other = _other_revenue(account, store, start, end)
+    other_total = sum((line["amount"] for line in other), ZERO)
+    net_revenue = gross + freight - discounts - returned + other_total
     cmv = _sum(items, _cost()) - _sum(restocked, _cost("sale_item__"))
     gross_profit = net_revenue - cmv
 
@@ -97,6 +127,7 @@ def build(account, store, params):
     return {
         "period": {"from": start.date(), "to": end.date()},
         "gross_revenue": gross, "freight": freight, "discounts": discounts, "returns": returned,
+        "other_revenue": other, "other_revenue_total": other_total,
         "net_revenue": net_revenue, "cmv": cmv, "gross_profit": gross_profit, "gross_margin_percent": pct(gross_profit),
         "card_fees": card_fees, "commissions": commissions, "cash_differences": cash_diff,
         "expenses": expenses, "expenses_total": expenses_total,

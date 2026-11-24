@@ -79,6 +79,22 @@ class Ctx:
 
 
 @pytest.fixture(autouse=True)
+def _clean_cache():
+    """Contadores de tentativas (services/attempts.py) e afins não passam de um teste para outro."""
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
+
+
+@pytest.fixture(autouse=True)
+def _private_files(settings, tmp_path):
+    """Certificados (pasta privada) de cada teste numa pasta temporária, nunca em backend/private."""
+    settings.PRIVATE_MEDIA_ROOT = tmp_path / "private"
+
+
+@pytest.fixture(autouse=True)
 def _no_search_service(settings):
     """O serviço de busca do `.env` de quem roda os testes não entra: quem testa o serviço liga ele."""
     settings.SHOPPING_SEARCH_URL, settings.SHOPPING_SEARCH_TOKEN = "", ""

@@ -13,6 +13,7 @@ Exemplo de uso (o que `services.dfe` faz):
     event = send_event(config, chave, "210210")    # ciência → libera o XML
     page = distribution(config, access_key=chave)  # a nota completa
 """
+import defusedxml.ElementTree as safe_xml
 import base64
 import gzip
 import hashlib
@@ -153,7 +154,7 @@ def distribution(config, *, last_nsu=None, nsu=None, access_key=None) -> Distrib
 
 
 def parse_distribution(text) -> DistributionPage:
-    root = ET.fromstring(text)
+    root = safe_xml.fromstring(text)  # resposta de fora: defusedxml
     ret = root.find(".//nfe:retDistDFeInt", NS)
     if ret is None:
         raise BusinessError("Resposta inesperada da SEFAZ na distribuição.", code="sefaz_bad_response")
@@ -230,7 +231,7 @@ def send_event(config, access_key, code, reason="") -> EventResult:
 
 
 def parse_event(text, request_xml="") -> EventResult:
-    root = ET.fromstring(text)
+    root = safe_xml.fromstring(text)  # resposta de fora: defusedxml
     node = root.find(".//nfe:retEvento/nfe:infEvento", NS)
     if node is None:  # lote recusado inteiro: o motivo vem no retEnvEvento
         node = root.find(".//nfe:retEnvEvento", NS)

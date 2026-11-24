@@ -6,26 +6,61 @@ O operador pode ter a permissão; se não tiver, o corpo da requisição traz
 """
 from decimal import Decimal
 
-from django.contrib.auth import authenticate
+from django.contrib.auth.hashers import check_password, make_password
 
 from starrp.core.errors import ApprovalRequired
 from starrp.core.permissions import has_permission_code, is_account_admin
 from starrp.models import UserProfile
+from starrp.services import attempts
+
+INVALID = "Usuário ou senha de autorização inválidos."
+# Conferir uma senha leva o mesmo tempo achando ou não o usuário (o tempo não diz se o login existe).
+_DUMMY_HASH = make_password("starrp-sem-usuario")
 
 
-def _approver_from_credentials(account, credentials, code):
+def _actor(user):
+    return getattr(user, "pk", None) or "anon"
+
+
+def _approver_from_credentials(account, credentials, code, actor=None):
+    """Só quem é DESTA conta autoriza (S-04): o superusuário não, e usuário de outra conta recebe a mesma
+    resposta de senha errada. Tentativas limitadas por autorizador e por quem pede."""
     username, password = credentials.get("username"), credentials.get("password")
     if not (username and password):
         return None
-    user = authenticate(username=username, password=password)
-    if user is None:
-        raise ApprovalRequired("Usuário ou senha de autorização inválidos.", code="approval_invalid")
-    profile = UserProfile.all_objects.filter(user=user, account=account, is_active=True).first()
-    if not user.is_superuser and profile is None:
-        raise ApprovalRequired("O autorizador não pertence a esta conta.", code="approval_invalid")
+    target = ("approver", getattr(account, "pk", account), username)
+    attempts.check(_actor(actor), target)
+    profile = (UserProfile.all_objects.select_related("user")
+               .filter(account=account, user__username=username, is_active=True, user__is_active=True,
+                       user__is_superuser=False, deleted_at__isnull=True).first())
+    if profile is None:
+        check_password(password, _DUMMY_HASH)
+        attempts.failed(_actor(actor), target)
+        raise ApprovalRequired(INVALID, code="approval_invalid")
+    user = profile.user
+    if not user.check_password(password):
+        attempts.failed(_actor(actor), target)
+        raise ApprovalRequired(INVALID, code="approval_invalid")
+    attempts.succeeded(target, _actor(actor))
+    user.profile = profile
     if not has_permission_code(user, code):
-        raise ApprovalRequired("O autorizador não tem permissão para esta ação.", code="approval_invalid")
+        # A MESMA resposta da senha errada (rodada 1, P-11): "não tem permissão" confirmaria que a senha do
+        # colega está certa.
+        raise ApprovalRequired(INVALID, code="approval_invalid")
     return user
+
+
+def check_cash_password(store, password, actor=None):
+    """Senha de ações do caixa da loja, com limite de tentativas (S-04)."""
+    if store is None or not password:
+        return False
+    target = ("cash", store.pk)
+    attempts.check(_actor(actor), target)
+    if store.check_cash_action_password(password):
+        attempts.succeeded(target, _actor(actor))
+        return True
+    attempts.failed(_actor(actor), target)
+    return False
 
 
 def authorize(user, account, store, code, approval=None):
@@ -34,11 +69,11 @@ def authorize(user, account, store, code, approval=None):
     if has_permission_code(user, code):
         return user
     approval = approval or {}
-    approver = _approver_from_credentials(account, approval, code)
+    approver = _approver_from_credentials(account, approval, code, actor=user)
     if approver is not None:
         return approver
     cash_password = approval.get("cash_password")
-    if cash_password and store is not None and store.check_cash_action_password(cash_password):
+    if cash_password and check_cash_password(store, cash_password, actor=user):
         return None
     raise ApprovalRequired(code="approval_required")
 
@@ -54,7 +89,7 @@ def authorize_discount(user, account, store, percent, approval=None):
     """Desconto até o limite do cargo passa; acima, exige quem tenha limite maior."""
     if percent <= max_discount_percent(user):
         return user
-    approver = _approver_from_credentials(account, approval or {}, "sales.discount")
+    approver = _approver_from_credentials(account, approval or {}, "sales.discount", actor=user)
     if approver is not None and percent <= max_discount_percent(approver):
         return approver
     raise ApprovalRequired(

@@ -18,6 +18,16 @@ from contextvars import ContextVar
 
 _current_account = ContextVar("current_account", default=None)
 _allowed_stores = ContextVar("allowed_stores", default=None)
+# Quem só vê as PRÓPRIAS vendas (sem `sales.view_all`): o id do usuário; `None` = vê as da equipe.
+_own_sales_user = ContextVar("own_sales_user", default=None)
+
+
+def set_own_sales_user(user_id):
+    _own_sales_user.set(user_id)
+
+
+def get_own_sales_user():
+    return _own_sales_user.get()
 
 
 def get_current_account():
@@ -42,6 +52,7 @@ def store_allowed(store_id):
 def clear_current_account():
     _current_account.set(None)
     _allowed_stores.set(None)
+    _own_sales_user.set(None)
 
 
 @contextmanager
@@ -49,8 +60,10 @@ def tenant_context(account, allowed_store_ids=None):
     """Executa o bloco como a conta `account` (por padrão, todas as lojas)."""
     account_token = _current_account.set(account)
     stores_token = _allowed_stores.set(frozenset(allowed_store_ids) if allowed_store_ids is not None else None)
+    own_token = _own_sales_user.set(None)
     try:
         yield
     finally:
         _current_account.reset(account_token)
         _allowed_stores.reset(stores_token)
+        _own_sales_user.reset(own_token)

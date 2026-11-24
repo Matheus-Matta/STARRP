@@ -42,7 +42,14 @@ class ApiErrorEnvelopeMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        response = self.get_response(request)
+        response = self._envelope(request, self.get_response(request))
+        # Dado da API é privado (por conta/usuário; o certificado A1 sai por aqui): nem navegador nem
+        # proxy guardam em cache. Quem quiser cache (ex.: imagem) define o próprio Cache-Control.
+        if request.path.startswith(API_PREFIX) and not response.has_header("Cache-Control"):
+            response["Cache-Control"] = "no-store"
+        return response
+
+    def _envelope(self, request, response):
         if response.status_code < 400 or not request.path.startswith(API_PREFIX):
             return response
         if getattr(response, "streaming", False):

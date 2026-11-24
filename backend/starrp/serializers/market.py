@@ -3,12 +3,16 @@ from decimal import Decimal
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from starrp.core.costs import HideCostFieldsMixin
 from starrp.core.serializers import TenantSerializer
 from starrp.models import Brand, Category, CompetitorPrice, MarketOffer, PriceCheck, Product
 from starrp.services.market import sources
 
 
-class PriceCheckSerializer(serializers.ModelSerializer):
+class PriceCheckSerializer(HideCostFieldsMixin, serializers.ModelSerializer):
+    # O preço mínimo é custo + margem mínima: mostrá-lo entregaria o custo.
+    cost_fields = ("cost", "current_margin", "suggested_margin", "floor_price")
+
     product = serializers.CharField(source="variant.product_id", read_only=True)
     product_name = serializers.CharField(source="variant.display_name", read_only=True)
     sku = serializers.CharField(source="variant.sku", read_only=True)

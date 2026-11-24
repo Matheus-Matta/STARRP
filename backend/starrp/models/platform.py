@@ -7,16 +7,16 @@ assinatura, e toda integração é uma linha de `Integration`.
 """
 from django.db import models
 
-from starrp.models.base import MoneyField, TimeStampedModel
+from starrp.core.secrets import EncryptedJSONField
+from starrp.models.base import MoneyField, TenantModel, TimeStampedModel, alive
 
 MODULE_BASE = "base"
 
 
 class Module(models.TextChoices):
-    BASE = MODULE_BASE, "Base (PDV, vendas, produtos, clientes)"
+    BASE = MODULE_BASE, "Base (PDV, vendas, produtos, clientes e fiscal NFC-e/NF-e)"
     STOCK = "stock", "Estoque e compras"
     FINANCE = "finance", "Financeiro"
-    FISCAL = "fiscal", "Fiscal (NFC-e/NF-e)"
     INBOUND_NFE = "inbound_nfe", "NF-e de entrada (DF-e)"
     ASSETS = "assets", "Patrimônio"
     SYNC = "sync", "Servidor local (loja offline)"
@@ -67,10 +67,6 @@ class Account(TimeStampedModel):
     extra_modules = models.JSONField(default=list, blank=True)
     # Logo da empresa: quadrado 1080×1080 (o envio já ajusta). Vai no canto das impressões.
     logo = models.ForeignKey("starrp.Image", null=True, blank=True, related_name="+", on_delete=models.SET_NULL)
-    # Trava de cima da emissão fiscal no terminal; a de baixo é por loja
-    # (`FiscalConfig.local_fiscal_enabled`). Documento fiscal emitido não se
-    # apaga — ligar por engano custa nota real no CNPJ do cliente.
-    local_fiscal_allowed = models.BooleanField(default=False)
     # Cosmos (IA): controle da PLATAFORMA, só pelo admin do Django — a conta não vê nem altera.
     # Três limites independentes de tokens (entrada + saída); 0 = sem limite naquele período.
     # Use um, dois ou os três (ex.: 50 mil por dia E 1 milhão por mês). Consumo em `CosmosUsage`.
@@ -84,6 +80,9 @@ class Account(TimeStampedModel):
     cosmos_daily_digest = models.BooleanField(
         "Resumo diário da equipe", default=True,
         help_text="Quem supervisiona recebe na Cosmos, toda manhã, o resumo do dia anterior (não gasta tokens).")
+    cosmos_voice_enabled = models.BooleanField(
+        "Entrada por voz", default=False,
+        help_text="Permite falar com a Cosmos em vez de digitar; as respostas continuam em texto.")
     # A Cosmos nas telas, em segundo plano. A conta desliga para economizar tokens (ver services/cosmos/light.py).
     cosmos_seo_ai = models.BooleanField("Cosmos no Analítico de SEO", default=True, help_text="Sugere nome, título e resumo com os pontos e os termos.")
     cosmos_pricing_ai = models.BooleanField("Cosmos na Precificação", default=True, help_text="Confere se as ofertas são mesmo o mesmo produto.")
@@ -199,28 +198,69 @@ class SystemSetting(TimeStampedModel):
         return self.key
 
 
-class Integration(TimeStampedModel):
-    """Credenciais de um serviço externo para uma conta.
+class Integration(TenantModel):
+    """Uma integração da conta com um serviço externo (Asaas, Shopify...).
 
-    `credentials` guarda segredos (nunca vão para a API em claro); `settings`
-    guarda parâmetros (URL, timeout). Chaves esperadas por provedor ficam em
-    `starrp.services.integrations`.
+    O TIPO (`kind`) é uma classe em `starrp.services.integrations` que declara as configurações (nomes
+    fixos, obrigatórias, segredos) e o que a integração pode fazer. Aqui ficam só os valores:
+    - `fields`: {nome da configuração: valor}. Segredos (chave da API, tokens) nunca voltam para a tela;
+    - `purposes`: o que a conta ligou (ex.: ["receivable_boleto", "auto_settle"]).
+    A conta pode ter várias do mesmo tipo (duas contas do Asaas): `name` as distingue e `is_default`
+    diz qual usar quando o título não escolhe.
     """
 
-    class Provider(models.TextChoices):
-        FOCUS_NFE = "focus_nfe", "Focus NFe"
-        COSMOS = "cosmos", "Bluesoft Cosmos (catálogo GTIN)"
-
-    account = models.ForeignKey(Account, related_name="integrations", on_delete=models.CASCADE)
-    provider = models.CharField(max_length=30, choices=Provider.choices)
-    is_active = models.BooleanField(default=False)
-    credentials = models.JSONField(default=dict, blank=True)
-    settings = models.JSONField(default=dict, blank=True)
+    kind = models.CharField("Tipo", max_length=40)
+    name = models.CharField("Nome", max_length=120, help_text="Ex.: Asaas — Empresa A.")
+    is_active = models.BooleanField(default=True)
+    is_default = models.BooleanField(default=False, help_text="A usada quando há mais de uma do mesmo tipo.")
+    fields = EncryptedJSONField(default=dict, blank=True)  # cifrado: leva chave da API e tokens
+    purposes = models.JSONField(default=list, blank=True)
+    notes = models.TextField(blank=True)
+    last_check_at = models.DateTimeField(null=True, blank=True)
+    last_check_ok = models.BooleanField(null=True, blank=True)
+    last_check_message = models.CharField(max_length=255, blank=True)
 
     class Meta:
+        ordering = ["kind", "name"]
         constraints = [
-            models.UniqueConstraint(fields=["account", "provider"], name="uniq_integration_provider"),
+            models.UniqueConstraint(fields=["account", "name"], condition=alive(), name="uniq_integration_name"),
         ]
 
     def __str__(self):
-        return f"{self.get_provider_display()} - {self.account}"
+        return self.name  # nunca os valores
+
+
+class IntegrationWebhookEvent(TimeStampedModel):
+    """Entrega recebida de um provedor, persistida antes da resposta HTTP 200.
+
+    O identificador do provedor é único por integração para que reenvios sejam
+    confirmados sem executar a regra de negócio novamente.
+    """
+
+    class Status(models.TextChoices):
+        RECEIVED = "received", "Recebido"
+        PROCESSED = "processed", "Processado"
+        IGNORED = "ignored", "Ignorado"
+        FAILED = "failed", "Falhou"
+
+    account = models.ForeignKey(Account, related_name="+", on_delete=models.PROTECT)
+    integration = models.ForeignKey(Integration, related_name="webhook_events", on_delete=models.PROTECT)
+    provider = models.CharField(max_length=40, db_index=True)
+    provider_event_id = models.CharField(max_length=255)
+    event_type = models.CharField(max_length=120, db_index=True)
+    payload = models.JSONField(default=dict)
+    headers = models.JSONField(default=dict, blank=True)
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.RECEIVED, db_index=True)
+    processed_at = models.DateTimeField(null=True, blank=True)
+    error = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["integration", "provider_event_id"], name="uniq_integration_webhook_event"
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.provider}: {self.event_type} ({self.provider_event_id})"

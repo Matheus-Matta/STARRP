@@ -48,8 +48,25 @@ def note(task_id, text):
 
 def _end(task_id, status, **fields):
     """Só quem ainda está em andamento muda: quem já foi parada continua parada."""
-    return BackgroundTask.all_objects.filter(pk=task_id, status=Status.RUNNING).update(
+    changed = BackgroundTask.all_objects.filter(pk=task_id, status=Status.RUNNING).update(
         status=status, finished_at=timezone.now(), updated_at=timezone.now(), **fields)
+    if changed:
+        task = BackgroundTask.all_objects.select_related("started_by", "account").get(pk=task_id)
+        if task.started_by_id:
+            from starrp.models import Notification
+            from starrp.services.notifications import send
+
+            labels = {
+                Status.COMPLETED: ("Tarefa concluída", Notification.Level.SUCCESS),
+                Status.FAILED: ("Tarefa com falha", Notification.Level.ERROR),
+                Status.STOPPED: ("Tarefa interrompida", Notification.Level.WARNING),
+            }
+            title, level = labels[status]
+            send(account=task.account, recipient=task.started_by, title=title,
+                 body=f"{task.get_kind_display()}: {task.done} de {task.total} itens processados.",
+                 category=Notification.Category.SYSTEM, level=level, url="/cadastros/tarefas",
+                 entity="backgroundtask", object_id=task.pk)
+    return changed
 
 
 def complete(task_id, done=None):

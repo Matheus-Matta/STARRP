@@ -10,8 +10,9 @@ from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import TruncDate
 from django.utils import timezone
 
+from starrp.core.errors import BusinessError
 from starrp.models import Commission, Payment, Sale, SaleItem, SaleReturn
-from starrp.services.store_access import scope_to_allowed
+from starrp.services.store_access import scope_own_sales, scope_to_allowed
 
 
 def period(params):
@@ -19,17 +20,27 @@ def period(params):
     start = params.get("date_from") or str(today - timedelta(days=29))
     end = params.get("date_to") or str(today)
     tz = timezone.get_current_timezone()
-    start_dt = timezone.make_aware(datetime.combine(datetime.fromisoformat(start).date(), time.min), tz)
-    end_dt = timezone.make_aware(datetime.combine(datetime.fromisoformat(end).date(), time.max), tz)
+    try:
+        first, last = datetime.fromisoformat(start).date(), datetime.fromisoformat(end).date()
+        start_dt = timezone.make_aware(datetime.combine(first, time.min), tz)
+        end_dt = timezone.make_aware(datetime.combine(last, time.max), tz)
+    except (ValueError, OverflowError):
+        raise BusinessError("Período inválido.", code="period_invalid") from None
     return start_dt, end_dt
+
+
+def int_or_zero(value):
+    """Id numérico vindo da URL; lixo não acha nada (em vez de erro 500, B-07)."""
+    return int(value) if str(value).isascii() and str(value).isdigit() and len(str(value)) < 15 else 0
 
 
 def completed_sales(account, store, params):
     start, end = period(params)
     qs = Sale.all_objects.filter(account=account, status=Sale.Status.COMPLETED, completed_at__range=(start, end))
     qs = qs.filter(store=store) if store is not None else scope_to_allowed(qs)
+    qs = scope_own_sales(qs)  # vendedor (sem `sales.view_all`): só as vendas dele
     if params.get("seller"):
-        qs = qs.filter(seller_id=params["seller"])
+        qs = qs.filter(seller_id=int_or_zero(params["seller"]))
     return qs
 
 
@@ -47,6 +58,8 @@ def summary(account, store, params):
         returns, cancelled = returns.filter(store=store), cancelled.filter(store=store)
     else:
         returns, cancelled = scope_to_allowed(returns), scope_to_allowed(cancelled)
+    returns, cancelled = scope_own_sales(returns), scope_own_sales(cancelled)
+    returns, cancelled = scope_own_sales(returns), scope_own_sales(cancelled)
     return {
         "sales_count": count,
         "revenue": revenue,
@@ -108,6 +121,6 @@ def dashboard(account, store, params):
         "by_payment_method": by_payment_method(account, store, params),
         "top_products": top_products(account, store, params, limit=10),
         "by_seller": by_seller(account, store, params),
-        "open_sales": scope_to_allowed(Sale.all_objects.filter(account=account, status=Sale.Status.OPEN).filter(
-            Q(store=store) if store else Q())).count(),
+        "open_sales": scope_own_sales(scope_to_allowed(Sale.all_objects.filter(account=account, status=Sale.Status.OPEN)
+                                                       .filter(Q(store=store) if store else Q()))).count(),
     }

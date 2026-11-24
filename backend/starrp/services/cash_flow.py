@@ -15,6 +15,7 @@ from django.utils import timezone
 from starrp.core.tenant import get_allowed_store_ids
 from starrp.models import FinancialAccount, FinancialTitle, FinancialTransaction, Installment, TitleStatus
 from starrp.services.reports import period
+from starrp.services.store_access import scope_to_allowed
 
 ZERO = Decimal("0")
 IN, OUT = FinancialTransaction.Kind.IN, FinancialTransaction.Kind.OUT
@@ -64,7 +65,8 @@ def statement(financial_account, params):
 def _installments(account, store):
     qs = Installment.all_objects.filter(account=account, status__in=OPEN, deleted_at__isnull=True,
                                         title__deleted_at__isnull=True)
-    return qs.filter(title__store=store) if store is not None else qs
+    # Sem filial ativa ("todas"): só as que o usuário acessa (R2-04 vazava devedores da rede inteira).
+    return qs.filter(title__store=store) if store is not None else scope_to_allowed(qs, "title__store")
 
 
 def build(account, store, params):

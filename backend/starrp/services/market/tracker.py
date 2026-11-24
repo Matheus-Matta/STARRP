@@ -258,6 +258,9 @@ def _send(account, variant_ids, user=None):
     ids = [str(pk) for pk in variant_ids]
     task = background.begin(account, BackgroundTask.Kind.PRICE_READ, len(ids), user)
     if settings.PRICE_READ_IN_THREAD:
+        from starrp.core.dry_run import guard
+
+        guard("leitura em segundo plano")  # a thread não herda o ensaio da Cosmos (rodada 1, P-15)
         threading.Thread(target=price_read, args=(str(account.pk), ids, str(task.pk)), daemon=True).start()
         return
     try:
@@ -335,7 +338,10 @@ def run():
     accounts = Account.objects.filter(status=Account.Status.ACTIVE, price_tracking_enabled=True)
     for account in accounts.select_related("subscription__plan"):
         if account.has_module(Module.PRICING):
-            total += batches.start(BackgroundTask.Kind.PRICE_ROUND, account, cap=settings.PRICE_TRACKING_BATCH)["total"]
+            try:
+                total += batches.start(BackgroundTask.Kind.PRICE_ROUND, account, cap=settings.PRICE_TRACKING_BATCH)["total"]
+            except Exception:  # noqa: BLE001 — a rodada de uma conta não derruba a das outras (R2-08)
+                logger.exception("Rodada de preço não iniciada: conta %s", account.pk)
     return total
 
 

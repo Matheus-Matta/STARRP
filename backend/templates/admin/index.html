@@ -1,63 +1,21 @@
-{% extends "admin/base_site.html" %}
-{% load i18n log %}
-
+{% extends 'admin/base_site.html' %}
+{% load i18n static log starrp_admin %}
+{% static 'starrp/admin/starhub/img/icones.svg' as icon_sprite %}
 {% block bodyclass %}{{ block.super }} dashboard{% endblock %}
-{% block nav-breadcrumbs %}<nav class="starrp-breadcrumbs"><strong>Visão geral</strong></nav>{% endblock %}
-{% block content_title %}
-  <div class="starrp-page-heading starrp-dashboard-heading">
-    <p>Starrp Admin</p>
-    <h1>Visão geral</h1>
-    <span>Gerencie os dados e configurações da plataforma.</span>
-  </div>
-{% endblock %}
-
+{% block nav-breadcrumbs %}<nav class="header-trilha" aria-label="Trilha"><div class="breadcrumbs">Painel</div></nav>{% endblock %}
+{% block content_title %}{% include 'components/page_header.html' with titulo='Painel' subtitulo='Resumo e acessos da administração do Starrp' %}{% endblock %}
 {% block content %}
-<div id="content-main" class="starrp-dashboard">
-  <div class="starrp-stat-grid" aria-label="Resumo do admin">
-    <article class="starrp-stat-card"><span class="starrp-stat-card__icon">A</span><div><strong>{{ app_list|length }}</strong><small>Áreas disponíveis</small></div></article>
-    <article class="starrp-stat-card"><span class="starrp-stat-card__icon is-green">✓</span><div><strong>Ativo</strong><small>Ambiente administrativo</small></div></article>
-    <article class="starrp-stat-card"><span class="starrp-stat-card__icon is-violet">{{ user.get_username|first|upper }}</span><div><strong>{{ user.get_username }}</strong><small>Sessão atual</small></div></article>
+<div id="content-main" class="grid">
+  <div class="grid grid-3">
+    <div class="card"><div class="card-body"><div class="stat"><div><div class="stat-label">Áreas disponíveis</div><div class="stat-value">{{ app_list|length }}</div><div class="stat-detail">Módulos administrativos</div></div><span class="stat-icon tone-primary"><svg class="icon icon-lg"><use href="{{ icon_sprite }}#layout-grid"></use></svg></span></div></div></div>
+    <div class="card"><div class="card-body"><div class="stat"><div><div class="stat-label">Ambiente</div><div class="stat-value">Ativo</div><div class="stat-detail">Administração operacional</div></div><span class="stat-icon tone-success"><svg class="icon icon-lg"><use href="{{ icon_sprite }}#circle-check"></use></svg></span></div></div></div>
+    <div class="card"><div class="card-body"><div class="stat"><div><div class="stat-label">Sessão atual</div><div class="stat-value">{{ user.get_username }}</div><div class="stat-detail">Superadministração</div></div><span class="stat-icon tone-info"><svg class="icon icon-lg"><use href="{{ icon_sprite }}#user"></use></svg></span></div></div></div>
   </div>
-
-  <div class="starrp-dashboard-grid">
-    <section class="starrp-panel starrp-models-panel">
-      <header><div><span>Cadastros</span><h2>Áreas administrativas</h2></div><small>Selecione um recurso para gerenciar</small></header>
-      <div class="starrp-model-grid">
-        {% for app in app_list %}
-          {% for model in app.models %}
-            {% if model.admin_url %}
-              <a href="{{ model.admin_url }}" class="starrp-model-card">
-                <span class="starrp-model-card__icon">{{ model.name|first|upper }}</span>
-                <span><strong>{{ model.name }}</strong><small>{{ app.name }}</small></span>
-                <span class="starrp-model-card__arrow" aria-hidden="true">→</span>
-              </a>
-            {% endif %}
-          {% endfor %}
-        {% empty %}
-          <p>Você não tem permissão para visualizar nenhum recurso.</p>
-        {% endfor %}
-      </div>
-    </section>
-
-    <aside class="starrp-panel starrp-recent-panel">
-      <header><div><span>Atividade</span><h2>Ações recentes</h2></div></header>
-      {% get_admin_log 8 as admin_log for_user user %}
-      {% if admin_log %}
-        <ol class="starrp-activity-list">
-          {% for entry in admin_log %}
-            <li>
-              <span class="starrp-activity-dot {% if entry.is_addition %}is-add{% elif entry.is_deletion %}is-delete{% endif %}"></span>
-              <div>
-                {% if entry.is_deletion or not entry.get_admin_url %}<strong>{{ entry.object_repr }}</strong>{% else %}<a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>{% endif %}
-                <small>{% if entry.content_type %}{{ entry.content_type.name|capfirst }}{% else %}Item{% endif %} · {{ entry.action_time|timesince }} atrás</small>
-              </div>
-            </li>
-          {% endfor %}
-        </ol>
-      {% else %}
-        <div class="starrp-empty"><span>✓</span><strong>Tudo tranquilo</strong><p>Nenhuma ação recente registrada.</p></div>
-      {% endif %}
-    </aside>
+  <div class="grid grid-3">
+    <div class="span-2 admin-group-grid">{% admin_menu_groups app_list as admin_groups %}{% for group in admin_groups %}<div class="card"><div class="card-header"><div><div class="card-title"><svg class="icon"><use href="{{ icon_sprite }}#{{ group.icon }}"></use></svg> {{ group.name }}</div><div class="card-subtitle">{{ group.items|length }} recurso{{ group.items|length|pluralize }}</div></div></div><div class="card-body flush"><div class="admin-group-links">{% for model in group.items %}<a href="{{ model.admin_url }}"><span>{{ model.name }}</span><svg class="icon icon-sm"><use href="{{ icon_sprite }}#chevron-right"></use></svg></a>{% endfor %}</div></div></div>{% endfor %}</div>
+    <div class="card"><div class="card-header"><div><div class="card-title"><svg class="icon"><use href="{{ icon_sprite }}#history"></use></svg> Ações recentes</div><div class="card-subtitle">Suas últimas alterações</div></div></div><div class="card-body flush">
+      {% get_admin_log 8 as admin_log for_user user %}{% if admin_log %}<ul class="dashboard-actions">{% for entry in admin_log %}<li><span class="dashboard-action-icon{% if entry.is_deletion %} destructive{% endif %}"><svg class="icon icon-sm"><use href="{{ icon_sprite }}#{% if entry.is_addition %}plus{% elif entry.is_deletion %}trash-2{% else %}pencil{% endif %}"></use></svg></span><div>{% if entry.is_deletion or not entry.get_admin_url %}<strong>{{ entry.object_repr }}</strong>{% else %}<a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>{% endif %}<small>{% if entry.content_type %}{{ entry.content_type.name|capfirst }}{% else %}Registro{% endif %} · {{ entry.action_time|timesince }} atrás</small></div></li>{% endfor %}</ul>{% else %}<div class="empty-state"><svg class="icon"><use href="{{ icon_sprite }}#archive"></use></svg><strong>Nenhuma ação recente</strong><span>As alterações feitas no admin aparecerão aqui.</span></div>{% endif %}
+    </div></div>
   </div>
 </div>
 {% endblock %}

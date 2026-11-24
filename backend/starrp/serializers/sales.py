@@ -5,8 +5,12 @@ A venda NÃO é editada por PATCH genérico: cada mudança é uma ação com reg
 as duas portas abertas, e o PATCH genérico contornava as regras.
 """
 from decimal import Decimal
+
+from drf_spectacular.types import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
+from starrp.core.costs import HideCostFieldsMixin
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer
 from starrp.models import Commission, Customer, Payment, PaymentMethod, ProductVariant, Sale, SaleItem, Terminal
 
@@ -16,7 +20,9 @@ Qty = {"max_digits": 14, "decimal_places": 3}
 ZERO, HUNDRED = Decimal("0"), Decimal("100")
 
 
-class SaleItemSerializer(serializers.ModelSerializer):
+class SaleItemSerializer(HideCostFieldsMixin, serializers.ModelSerializer):
+    cost_fields = ("unit_cost",)
+
     class Meta:
         model = SaleItem
         exclude = ["account", "deleted_at", "created_by", "updated_by"]
@@ -53,6 +59,10 @@ class SaleSerializer(TenantSerializer):
     items = SaleItemSerializer(many=True, read_only=True)
     payments = PaymentSerializer(many=True, read_only=True)
     balance_due = serializers.DecimalField(read_only=True, **Money)
+    customer_credit_balance = serializers.SerializerMethodField(
+        help_text="Saldo atual da carteira do cliente; zero quando a venda não tem cliente.")
+    store_credit_refund_allowed = serializers.SerializerMethodField(
+        help_text="A regra da filial permite devolver itens como crédito na carteira.")
     seller_name = serializers.SerializerMethodField()
     shipping_address_detail = serializers.SerializerMethodField()
     addresses = serializers.SerializerMethodField(help_text="Endereços do pedido: entrega e cobrança (herdados do cliente).")
@@ -65,6 +75,17 @@ class SaleSerializer(TenantSerializer):
 
     def get_seller_name(self, obj):
         return (obj.seller.get_full_name() or obj.seller.username) if obj.seller_id else ""
+
+    @extend_schema_field(OpenApiTypes.DECIMAL)
+    def get_customer_credit_balance(self, obj):
+        if obj.customer_id is None:
+            return "0.00"
+        from starrp.services.checkout import credit_balance
+
+        return str(credit_balance(obj.customer))
+
+    def get_store_credit_refund_allowed(self, obj) -> bool:
+        return bool(obj.store.rule.allow_store_credit_refund)
 
 
     def get_addresses(self, obj) -> dict:
@@ -103,8 +124,10 @@ class SaleListSerializer(TenantSerializer):
         return sum(1 for i in obj.items.all() if i.status == SaleItem.Status.ACTIVE)
 
 
-class SaleItemReportSerializer(TenantSerializer):
+class SaleItemReportSerializer(HideCostFieldsMixin, TenantSerializer):
     """Item vendido com os dados da venda: base de "vendas do produto" e "o que o cliente comprou"."""
+
+    cost_fields = ("unit_cost", "margin")
 
     sale_number = serializers.IntegerField(source="sale.number", read_only=True)
     sale_status = serializers.CharField(source="sale.status", read_only=True)
@@ -152,7 +175,7 @@ class SaleCustomerSerializer(serializers.Serializer):
     customer_document = serializers.CharField(required=False, allow_blank=True)
     customer_name = serializers.CharField(required=False, allow_blank=True)
     seller = serializers.IntegerField(required=False, allow_null=True)
-    freight = serializers.DecimalField(required=False, min_value=ZERO, **Money)
+    # Sem `freight` (M-04): o frete vem da tabela (`/delivery/`); por aqui o vendedor zerava sem autorização.
     notes = serializers.CharField(required=False, allow_blank=True)
 
 
@@ -160,6 +183,12 @@ class AddItemSerializer(serializers.Serializer):
     variant = TenantPrimaryKeyField(ProductVariant, required=False)
     code = serializers.CharField(required=False, help_text="Código de barras, SKU ou etiqueta de balança.")
     quantity = serializers.DecimalField(required=False, min_value=ZERO, **Qty)
+
+    def validate_quantity(self, value):
+        # Zero não vira 1 em silêncio: quem mandou 0 errou (sem o campo, vale 1 ou a quantidade da etiqueta).
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("A quantidade precisa ser maior que zero.")
+        return value
     discount = serializers.DecimalField(required=False, default=0, min_value=ZERO, **Money)
     unit_price = serializers.DecimalField(required=False, min_value=ZERO, **Money)
     seller = serializers.IntegerField(required=False, allow_null=True)
@@ -218,4 +247,5 @@ class CommissionSerializer(TenantSerializer):
     class Meta:
         model = Commission
         fields = "__all__"
-        read_only_fields = [f.name for f in Commission._meta.fields if f.name != "status"]
+        # Nem o status (R2-14): "paga" → "pendente" pagava de novo. Muda só por pagamento, devolução e cancelamento.
+        read_only_fields = [f.name for f in Commission._meta.fields]

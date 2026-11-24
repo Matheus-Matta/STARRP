@@ -1,7 +1,10 @@
 """Configurações da conta numa página só (admin) e modelos de etiqueta pré-prontos."""
 from decimal import Decimal
+from types import SimpleNamespace
 
-from starrp.models import LabelTemplate, StockRule, Store, StoreRule
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+from starrp.models import CosmosUsage, LabelTemplate, StockRule, Store, StoreRule
 from starrp.services.provisioning import create_store
 from starrp.services.system_data import LABEL_TEMPLATES
 
@@ -27,6 +30,70 @@ def test_admin_ve_e_salva_tudo_numa_pagina_e_o_pdv_vale_para_todas_as_lojas(ctx)
     stock = StockRule.all_objects.get(account=ctx.account, is_default=True, deleted_at__isnull=True)
     assert stock.allow_negative_stock and stock.expiry_warning_days == 15
     assert bad.status_code == 400 and forbidden.status_code == 403
+
+
+def test_conversa_por_voz_so_aparece_e_pode_ser_ativada_com_modulo_cosmos(ctx):
+    api = ctx.client()
+    ctx.account.extra_modules = ["cosmos"]
+    ctx.account.save(update_fields=["extra_modules"])
+
+    before = api.get("/api/v1/account/settings/").json()
+    saved = api.patch("/api/v1/account/settings/", {"cosmos": {"cosmos_voice_enabled": True}}, format="json")
+    ctx.account.refresh_from_db()
+
+    assert before["cosmos"]["cosmos_voice_enabled"] is False
+    assert saved.status_code == 200 and saved.json()["cosmos"]["cosmos_voice_enabled"] is True
+    assert ctx.account.cosmos_voice_enabled is True
+    assert api.get("/api/v1/cosmos/status/").json()["voice_enabled"] is True
+
+    ctx.account.extra_modules = []
+    ctx.account.save(update_fields=["extra_modules"])
+    hidden = api.get("/api/v1/account/settings/").json()["cosmos"]
+    api.patch("/api/v1/account/settings/", {"cosmos": {"cosmos_voice_enabled": False}}, format="json")
+    ctx.account.refresh_from_db()
+
+    assert "cosmos_voice_enabled" not in hidden
+    assert ctx.account.cosmos_voice_enabled is True  # campo escondido também não aceita alteração forjada
+    assert api.get("/api/v1/cosmos/status/").json()["voice_enabled"] is False
+
+
+def test_audio_da_voz_e_transcrito_no_backend_com_permissao_e_limite(ctx, settings, monkeypatch):
+    from starrp.services.cosmos import agent, voice
+
+    ctx.account.extra_modules = ["cosmos"]
+    ctx.account.cosmos_voice_enabled = True
+    ctx.account.save(update_fields=["extra_modules", "cosmos_voice_enabled"])
+    settings.OPENAI_API_KEY = "sk-test"
+    settings.OPENAI_TRANSCRIBE_MODEL = "transcribe-test"
+    calls = []
+    result = SimpleNamespace(text="Mostre as vendas de hoje", usage=SimpleNamespace(
+        input_tokens=12, output_tokens=4, total_tokens=16))
+    fake = SimpleNamespace(audio=SimpleNamespace(
+        transcriptions=SimpleNamespace(create=lambda **kwargs: calls.append(kwargs) or result)))
+    monkeypatch.setattr(agent, "_client", lambda: fake)
+    api = ctx.client()
+
+    response = api.post("/api/v1/cosmos/voice/transcribe/", {
+        "audio": SimpleUploadedFile("fala.webm", b"audio-opus", content_type="audio/webm;codecs=opus"),
+    }, format="multipart")
+
+    assert response.status_code == 200 and response.json()["text"] == "Mostre as vendas de hoje"
+    assert calls[0]["model"] == "transcribe-test" and calls[0]["language"] == "pt"
+    spent = CosmosUsage.objects.get(account=ctx.account)
+    assert (spent.prompt_tokens, spent.completion_tokens, spent.total_tokens) == (12, 4, 16)
+
+    monkeypatch.setattr(voice, "MAX_AUDIO_BYTES", 2)
+    too_large = api.post("/api/v1/cosmos/voice/transcribe/", {
+        "audio": SimpleUploadedFile("fala.webm", b"abc", content_type="audio/webm"),
+    }, format="multipart")
+    assert too_large.status_code == 400
+
+    ctx.account.cosmos_voice_enabled = False
+    ctx.account.save(update_fields=["cosmos_voice_enabled"])
+    denied = api.post("/api/v1/cosmos/voice/transcribe/", {
+        "audio": SimpleUploadedFile("fala.webm", b"audio", content_type="audio/webm"),
+    }, format="multipart")
+    assert denied.status_code == 403
 
 
 def test_modelos_de_etiqueta_pre_prontos_nascem_com_a_conta_e_nao_sao_excluidos(ctx):

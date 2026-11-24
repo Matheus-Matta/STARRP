@@ -2,6 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 
+from starrp.core.costs import HideCostFieldsMixin
 from starrp.core.errors import StateConflict
 from starrp.core.serializers import TenantSerializer, tenant_serializer
 from starrp.models import (
@@ -22,7 +23,8 @@ def volumes_of(variant):
             for v in variant.volumes.all() if v.deleted_at is None]
 
 
-class StockLotSerializer(TenantSerializer):
+class StockLotSerializer(HideCostFieldsMixin, TenantSerializer):
+    cost_fields = ("unit_cost",)
     variant_name = serializers.CharField(source="variant.display_name", read_only=True)
     sku = serializers.CharField(source="variant.sku", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
@@ -52,7 +54,8 @@ class StockBalanceSerializer(TenantSerializer):
         fields = ["id", "variant", "variant_name", "sku", "warehouse", "warehouse_name", "quantity", "updated_at"]
 
 
-class StockMovementSerializer(TenantSerializer):
+class StockMovementSerializer(HideCostFieldsMixin, TenantSerializer):
+    cost_fields = ("unit_cost", "total_cost")
     variant_name = serializers.CharField(source="variant.display_name", read_only=True)
     sku = serializers.CharField(source="variant.sku", read_only=True)
     warehouse_name = serializers.CharField(source="warehouse.name", read_only=True)
@@ -64,7 +67,12 @@ class StockMovementSerializer(TenantSerializer):
         fields = "__all__"
 
 
-class StockDocumentItemSerializer(serializers.ModelSerializer):
+class StockDocumentItemSerializer(HideCostFieldsMixin, TenantSerializer):
+    """`TenantSerializer` (R2-03): produto, lote, endereço e item da nota precisam ser da MESMA conta e filial
+    (o `ModelSerializer` puro aceitava o id de outra conta e mexia no custo médio dela), e nada negativo."""
+
+    cost_fields = ("unit_cost",)  # sem `catalog.view_costs` não vê nem grava o custo (M-10)
+
     id = serializers.UUIDField(required=False)
     variant_name = serializers.CharField(source="variant.display_name", read_only=True)
     sku = serializers.CharField(source="variant.sku", read_only=True)
@@ -73,6 +81,13 @@ class StockDocumentItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = StockDocumentItem
         exclude = ["account", "document", "deleted_at", "created_by", "updated_by"]
+        # O vínculo com a nota quem faz é o recebimento (`nfe_receiving`), nunca a tela.
+        read_only_fields = ["nfe_item", "arrived_quantity"]
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields["id"].read_only = False  # a linha se identifica pelo id no documento de NF-e (`_save_nfe_items`)
+        return fields
 
     def get_volumes(self, obj):
         return volumes_of(obj.variant)
@@ -104,7 +119,12 @@ class StockDocumentSerializer(TenantSerializer):
     def get_manual_conference(self, obj):
         from starrp.services import rules
 
-        return rules.of_store("logistics_rule", obj.store_id, obj.account_id).allow_manual_conference
+        # Uma busca da regra por filial na lista inteira (o contexto é o mesmo para todas as linhas).
+        memo = self.context.setdefault("_manual_conference", {}) if isinstance(self.context, dict) else {}
+        key = (obj.store_id, obj.account_id)
+        if key not in memo:
+            memo[key] = rules.of_store("logistics_rule", obj.store_id, obj.account_id).allow_manual_conference
+        return memo[key]
 
     def validate(self, attrs):
         attrs = super().validate(attrs)
@@ -135,10 +155,47 @@ class StockDocumentSerializer(TenantSerializer):
             ]
         return super().to_internal_value(data)
 
+    #: O que a tela ajusta numa linha vinda da NF-e; o esperado e o vínculo com a nota são do recebimento (R2-07).
+    NFE_EDITABLE = ("quantity", "unit_cost", "lot_number", "expires_at", "manufactured_at", "bin", "destination_bin",
+                    "notes", "divergence_reason", "divergence_notes")
+
+    def _save_nfe_items(self, document, items):
+        """Documento de NF-e: PATCH com `quantity` menor e `expected_quantity` vazio entrava com menos mercadoria
+        sem registrar divergência (e a duplicata saía cheia). As linhas são as da nota: não entram, não saem, não
+        trocam de produto, e o esperado fica. Mudou quantidade: a conferência feita antes não vale mais."""
+        current = {item.pk: item for item in document.items.filter(deleted_at__isnull=True)}
+        sent = {row.get("id"): row for row in items}
+        if len(items) != len(current) or set(sent) != set(current) or any(
+                sent[pk].get("variant", item.variant) != item.variant for pk, item in current.items()):
+            raise StateConflict("As linhas vêm da NF-e: não dá para incluir, tirar nem trocar o produto.",
+                                code="nfe_items_locked")
+        recheck = False
+        for pk, item in current.items():
+            row = sent[pk]
+            changed = [f for f in self.NFE_EDITABLE if f in row and getattr(item, f, None) != row[f]]
+            for field in changed:
+                setattr(item, field, row[field])
+            if changed:
+                item.save(update_fields=[*changed, "updated_at"])
+            recheck = recheck or "quantity" in changed
+        if recheck and document.checked_at is not None:
+            document.checked_at, document.checked_by = None, None
+            document.save(update_fields=["checked_at", "checked_by", "updated_at"])
+
     def _save_items(self, document, items):
+        if document.inbound_nfe_id:
+            self._save_nfe_items(document, items)
+            return
+        # Quem não vê custo não o envia: fica o que já estava na linha, senão o custo atual do produto (zerado, a
+        # entrada perderia o custo que outra pessoa lançou).
+        hides = self.fields["items"].child._hides_costs()
+        known = dict(document.items.values_list("variant_id", "unit_cost")) if hides else {}
         document.items.all().delete()
         for row in items:
             row.pop("id", None)
+            if hides:
+                variant = row["variant"]
+                row["unit_cost"] = known.get(variant.pk, variant.average_cost)
             StockDocumentItem.all_objects.create(account_id=document.account_id, document=document, **row)
 
     @transaction.atomic

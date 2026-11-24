@@ -1,7 +1,9 @@
+from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from starrp.core.costs import redact_report, sees_costs
 from starrp.core.errors import StateConflict
 from starrp.core.viewsets import SystemDataViewSet, TenantViewSet
 from starrp.models import (
@@ -26,6 +28,7 @@ class SaleReturnViewSet(_ActionMixin, TenantViewSet):
     serializer_class = s.SaleReturnSerializer
     permission_code = "sales"
     http_method_names = ["get", "post", "head", "options"]
+    select_related = ("sale",)
     prefetch_related = ("items__sale_item",)
     filterset_fields = ["status", "refund_method", "customer", "sale"]
     action_permissions = {"complete": "sales.return", "cancel": "sales.return"}
@@ -48,10 +51,12 @@ class SaleReturnViewSet(_ActionMixin, TenantViewSet):
 
 
 class CustomerCreditViewSet(TenantViewSet):
+    """Extrato imutável: créditos nascem da devolução e débitos do checkout."""
+
     model = CustomerCredit
     serializer_class = s.CustomerCreditSerializer
     permission_code = "partners"
-    http_method_names = ["get", "post", "head", "options"]
+    http_method_names = ["get", "head", "options"]
     filterset_fields = ["customer", "kind"]
 
 
@@ -72,6 +77,11 @@ class CashRegisterViewSet(TenantViewSet):
     filterset_fields = ["is_active", "store"]
     search_fields = ["name", "code"]
 
+    def perform_destroy(self, instance):
+        if CashSession.all_objects.filter(register=instance, closed_at__isnull=True, deleted_at__isnull=True).exists():
+            raise StateConflict("Este caixa tem turno aberto: feche o turno antes de excluir.")  # M-16
+        super().perform_destroy(instance)
+
 
 class CashSessionViewSet(_ActionMixin, TenantViewSet):
     model = CashSession
@@ -83,6 +93,11 @@ class CashSessionViewSet(_ActionMixin, TenantViewSet):
     ordering_map = {"opened_by_name": "opened_by__first_name"}
     # Aprovar abre para quem opera o caixa: sem `cash.approve`, o corpo traz `approval` (gerente ou senha da filial).
     action_permissions = {"approve": "cash.manage", "approve_opening": "cash.manage"}
+
+    def get_queryset(self):
+        # `pending_movements` do serializer na mesma query (antes: uma contagem por turno).
+        return super().get_queryset().annotate(pending_count=Count(
+            "movements", filter=Q(movements__status=CashMovement.Status.PENDING, movements__deleted_at__isnull=True)))
 
     def create(self, request, *args, **kwargs):
         data = self._body(s.OpenSessionSerializer)
@@ -133,14 +148,21 @@ class CashSessionViewSet(_ActionMixin, TenantViewSet):
         """Extrato do turno: resumo + movimentos da gaveta + vendas + itens + ocorrências."""
         from starrp.services.cash_statement import statement
 
-        data = statement(self.get_object())
-        return Response(decimals_as_text(data if cash.sees_drawer(request.user) else cash.blind(data)))
+        return Response(self._visible(request, statement(self.get_object())))
 
     @action(detail=True, methods=["get"])
     def report(self, request, pk=None):
         """Fechamento do turno: vendas, formas de pagamento, gaveta, diferença e margem."""
-        data = cash_report.summary(self.get_object())
-        return Response(decimals_as_text(data if cash.sees_drawer(request.user) else cash.blind(data)))
+        return Response(self._visible(request, cash_report.summary(self.get_object())))
+
+    @staticmethod
+    def _visible(request, data):
+        """Fechamento cego esconde a gaveta; sem `catalog.view_costs`, somem custo e margem das vendas."""
+        if not cash.sees_drawer(request.user):
+            data = cash.blind(data)
+        if not sees_costs(request.user):
+            data = redact_report(data)
+        return decimals_as_text(data)
 
 
 class CashMovementViewSet(_ActionMixin, TenantViewSet):
@@ -173,6 +195,12 @@ class CashDiscrepancyViewSet(TenantViewSet):
     model = CashDiscrepancy
     serializer_class = s.CashDiscrepancySerializer
     permission_code = "cash"
+    # A ocorrência nasce do fechamento e só se RESOLVE: o caixa não cria, edita nem apaga a própria (R2-27).
+    http_method_names = ["get", "post", "head", "options"]
+
+    def create(self, request, *args, **kwargs):
+        raise StateConflict("A ocorrência de caixa nasce do fechamento do turno.")
+
     filterset_fields = ["session", "status"]
     action_permissions = {"resolve": "cash.approve"}
 

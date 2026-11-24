@@ -24,13 +24,13 @@ ACCOUNT_TUNABLE = ("max_discount_percent",)  # o que a conta pode ajustar no car
 
 
 def ensure_system_roles(account):
-    """Cargos fixos da conta, sempre iguais ao catálogo. O desconto máximo e o "ativo" ficam
-    como a conta deixou; nome, nível, área, descrição e permissões vêm do catálogo."""
+    """Cria e atualiza a identidade dos cargos fixos sem apagar a matriz personalizada da conta."""
     roles = {}
     for spec in SYSTEM_ROLES:
         spec = dict(spec)
         codes, code = spec.pop("permissions"), spec.pop("code")
         role = Role.all_objects.filter(account=account, code=code, deleted_at=None).first()
+        created = role is None
         if role is None:
             role = Role.all_objects.create(account=account, code=code, is_system=True, **spec)
         else:
@@ -39,7 +39,10 @@ def ensure_system_roles(account):
                     setattr(role, field, value)
             role.is_system = True
             role.save()
-        role.permissions.set(Permission.objects.filter(code__in=codes))
+        # Depois que a conta personaliza a matriz, sincronizações futuras não podem restaurar o padrão.
+        # Permissões novas para contas existentes entram por migração de dados.
+        if created:
+            role.permissions.set(Permission.objects.filter(code__in=codes))
         roles[role.code] = role
     return roles
 

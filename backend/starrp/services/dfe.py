@@ -15,6 +15,7 @@ O caminho de uma nota que um fornecedor emitiu contra a loja:
 Regras da SEFAZ respeitadas: cStat 137 (nada novo) e 656 (consumo indevido)
 mandam esperar 1 hora antes de perguntar de novo (`next_allowed_at`).
 """
+import defusedxml.ElementTree as safe_xml
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime, timedelta
@@ -165,7 +166,7 @@ def process_pending(config, user=None):
 
 
 def _process(config, doc, user):
-    root = ET.fromstring(doc.xml)
+    root = safe_xml.fromstring(doc.xml)  # XML de fora: sem entidade externa/expansão (defusedxml)
     if doc.doc_type == DFeDocument.DocType.RES_NFE:
         _summary(config, root, doc)
     elif doc.doc_type == DFeDocument.DocType.PROC_NFE:
@@ -302,4 +303,7 @@ def sync_all():
             results[str(config.pk)] = sync(config)
         except (BusinessError, StateConflict) as error:
             results[str(config.pk)] = {"error": str(error)}
+        except Exception:  # noqa: BLE001 — um CNPJ com defeito não para a busca dos outros (R2-08)
+            logger.exception("Busca de NF-e falhou: dados fiscais %s", config.pk)
+            results[str(config.pk)] = {"error": "Falha inesperada na busca."}
     return results

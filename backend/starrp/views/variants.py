@@ -1,7 +1,6 @@
 """Variantes e volumes para LEITURA: busca do PDV, seleção em documentos de
 estoque, NF-e e promoções, etiquetas e conferência. Cadastro e alteração são
 pelo produto (`/catalog/products/`), que grava a lista completa de variantes."""
-from django.db.models import Sum
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -26,7 +25,9 @@ class VariantViewSet(ReadOnlyTenantViewSet):
     def get_queryset(self):
         qs = super().get_queryset().filter(product__deleted_at__isnull=True)
         if self.request.query_params.get("with_stock") in {"1", "true"}:
-            qs = qs.annotate(stock_quantity=Sum("balances__quantity"))
+            from starrp.services.stock import scoped_stock
+
+            qs = qs.annotate(stock_quantity=scoped_stock(self.request))
         return qs.distinct() if self.request.query_params.get("search") else qs
 
     def list(self, request, *args, **kwargs):

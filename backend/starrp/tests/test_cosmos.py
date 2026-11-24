@@ -332,15 +332,18 @@ def test_status_e_alertas_pela_api(ctx):
 
 
 # ── WebSocket ────────────────────────────────────────────────────────────────
+@pytest.mark.django_db(transaction=True)  # o channels 4.3 abre/fecha a conexão do banco no handshake
 @override_settings(CHANNEL_LAYERS={"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}})
 def test_websocket_recusa_quem_nao_esta_logado():
-    async def connect():
-        communicator = WebsocketCommunicator(application, "/api/v1/ws/cosmos/")
+    async def connect(origin):
+        communicator = WebsocketCommunicator(application, "/api/v1/ws/cosmos/", headers=[(b"origin", origin)])
         connected, code = await communicator.connect()
         await communicator.disconnect()
         return connected, code
 
-    assert async_to_sync(connect)() == (False, 4401)
+    assert async_to_sync(connect)(b"http://localhost") == (False, 4401)
+    # Outro site (S-15): nem chega a autenticar.
+    assert async_to_sync(connect)(b"https://evil.example")[0] is False
 
 
 # ── limites por conta (só no admin) ──────────────────────────────────────────
@@ -427,10 +430,8 @@ def test_admin_da_conta_mostra_o_consumo(ctx, client):
 # ── isolamento entre contas e perfil de acesso ───────────────────────────────
 def _with_cosmos(ctx, username, role):
     """Usuário do cargo `role` que também pode usar a Cosmos (permissão extra no perfil)."""
-    from starrp.models import Permission
-
     user = ctx.user(username, role)
-    UserProfile.all_objects.get(user=user).extra_permissions.add(Permission.objects.get(code="cosmos.view"))
+    UserProfile.all_objects.filter(user=user).update(cosmos_enabled=True)
     return user
 
 
@@ -477,8 +478,8 @@ def test_sem_permissao_responde_logo(ctx):
     tool_ctx = _ctx(ctx, seller)
 
     for name, arguments in (
-        ("consultar_dados", {"conjunto": "vendas"}),
-        ("relatorio_pronto", {"relatorio": "vendas"}),
+        ("consultar_dados", {"conjunto": "estoque"}),
+        ("relatorio_pronto", {"relatorio": "dre"}),
         ("consultar_api", {"caminho": "/stock/balances/"}),
         ("propor_alteracao", {"metodo": "POST", "caminho": "/catalog/brands/", "titulo": "x"}),
         ("atividade_da_equipe", {}),
@@ -494,10 +495,8 @@ def test_sem_permissao_responde_logo(ctx):
 
 
 def test_tirar_a_permissao_vale_na_hora(ctx, sent, model):
-    from starrp.models import Permission
-
     user = _with_cosmos(ctx, "ex-cosmos", "seller")
-    UserProfile.all_objects.get(user=user).extra_permissions.remove(Permission.objects.get(code="cosmos.view"))
+    UserProfile.all_objects.filter(user=user).update(cosmos_enabled=False)
     fake = model([_chunk("não deveria")])
     agent.send_message(user.pk, "oi", store_id=str(ctx.store.pk))
     assert fake.requests == [] and not CosmosConversation.all_objects.filter(user=user).exists()

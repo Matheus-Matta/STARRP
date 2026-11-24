@@ -41,7 +41,8 @@ def status_payload(user, account):
     from starrp.services.cosmos import agent, digest, supervision
 
     if not account.cosmos_active:  # sem o módulo: o widget nem aparece, e nada roda em nome dele
-        return {"enabled": False, "model": None, "can_use": False, "can_write": False, "can_supervise": False, "open_alerts": 0, "habits": []}
+        return {"enabled": False, "model": None, "can_use": False, "can_write": False, "can_supervise": False,
+                "voice_enabled": False, "open_alerts": 0, "habits": []}
     supervise = has_permission_code(user, "cosmos.supervise")
     # Sem Celery beat a varredura e o resumo do dia não rodam: quem supervisiona e abre o widget dispara.
     if supervise and cache.add(f"cosmos:sweep:{account.pk}", 1, supervision.SWEEP_SECONDS):
@@ -68,7 +69,8 @@ def status_payload(user, account):
         # O limite de tokens não é mostrado.
         "can_use": has_permission_code(user, "cosmos.view"),
         "can_write": has_permission_code(user, "cosmos.manage"),
-        "can_supervise": supervise, "open_alerts": alerts, "habits": habits,
+        "can_supervise": supervise, "voice_enabled": account.cosmos_voice_enabled,
+        "open_alerts": alerts, "habits": habits,
     }
 
 

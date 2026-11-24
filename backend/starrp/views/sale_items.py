@@ -2,6 +2,7 @@
 from starrp.core.viewsets import ReadOnlyTenantViewSet
 from starrp.models import SaleItem
 from starrp.serializers import sales as s
+from starrp.services.store_access import scope_own_sales
 
 
 class SaleItemViewSet(ReadOnlyTenantViewSet):
@@ -18,3 +19,7 @@ class SaleItemViewSet(ReadOnlyTenantViewSet):
     search_fields = ["description", "sku", "sale__customer_name"]
     ordering_map = {"sale_number": "sale__number", "completed_at": "sale__completed_at",
                     "customer_name": "sale__customer_name", "seller_name": "sale__seller__first_name"}
+
+    def get_queryset(self):
+        # Vendedor (sem `sales.view_all`): só os itens das vendas dele.
+        return scope_own_sales(super().get_queryset(), "sale__")

@@ -326,6 +326,9 @@ def _send(account, product_ids, user=None):
     ids = [str(pk) for pk in product_ids]
     task = background.begin(account, BackgroundTask.Kind.SEO_READ, len(ids), user)
     if settings.PRICE_READ_IN_THREAD:  # sem Redis não há worker: a tela não pode travar
+        from starrp.core.dry_run import guard
+
+        guard("leitura em segundo plano")  # a thread não herda o ensaio da Cosmos (rodada 1, P-15)
         threading.Thread(target=seo_read, args=(str(account.pk), ids, str(task.pk)), daemon=True).start()
         return
     try:

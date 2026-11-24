@@ -105,6 +105,9 @@ ADDRESSES_WORK = [{"label": "Trabalho", "zip_code": "01001000", "street": "Praç
                    "complement": "Sala 4", "district": "Sé", "city": "São Paulo", "state": "SP"}]
 
 
+# Senha dos usuários de demonstração (ana, bruno, carla...): passa na política de senha (validate_password).
+DEMO_PASSWORD = "Starrp-Demo-2026"
+
 class Command(BaseCommand):
     help = "Popula a conta de demonstração com pelo menos 10 registros por cadastro."
 
@@ -195,7 +198,7 @@ class Command(BaseCommand):
                   ("gabi", "Gabriela", "Alves", "financeiro"), ("hugo", "Hugo", "Teixeira", "comprador"),
                   ("iris", "Íris", "Campos", "fiscal"), ("joao", "João", "Pereira", "auditor")]
         for i, (username, first, last, role) in enumerate(people):
-            body = {"username": username, "first_name": first, "last_name": last, "password": "senha123",
+            body = {"username": username, "first_name": first, "last_name": last, "password": DEMO_PASSWORD,
                     "extra_roles": [roles[c] for c in extra.get(username, [])],
                     "email": f"{username}@lojademo.com.br", "role": roles[role], "stores": [str(self.main.pk)],
                     "default_store": str(self.main.pk), "is_seller": role == "seller",

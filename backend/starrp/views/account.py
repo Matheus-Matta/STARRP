@@ -61,6 +61,7 @@ class StockSection(serializers.Serializer):
 
 class CosmosSection(serializers.Serializer):
     cosmos_daily_digest = serializers.BooleanField(required=False)
+    cosmos_voice_enabled = serializers.BooleanField(required=False)
     cosmos_seo_ai = serializers.BooleanField(required=False)
     cosmos_pricing_ai = serializers.BooleanField(required=False)
     cosmos_stock_advice = serializers.BooleanField(required=False)
@@ -92,6 +93,7 @@ class AccountSettingsView(APIView):
         out = {}
         if account.cosmos_active:
             out["cosmos_daily_digest"] = account.cosmos_daily_digest
+            out["cosmos_voice_enabled"] = account.cosmos_voice_enabled
             if account.has_module(Module.SEO):
                 out["cosmos_seo_ai"] = account.cosmos_seo_ai
             if account.has_module(Module.PRICING):

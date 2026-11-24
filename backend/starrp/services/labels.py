@@ -253,7 +253,7 @@ body {{ font-family: Arial, Helvetica, sans-serif; font-size: {template.font_siz
 .wh, .detail {{ font-size: .7em; text-transform: uppercase; letter-spacing: .08em; }}
 .wh {{ padding-bottom: 1mm; margin-bottom: 1.2mm; border-bottom: .2mm solid #000; }}
 .detail {{ margin-top: 1.2mm; }}
-</style></head><body onload="window.print()"><div class="sheet">{body}</div></body></html>"""
+</style></head><body><div class="sheet">{body}</div></body></html>"""
 
 
 def default_template(account_id, subject):

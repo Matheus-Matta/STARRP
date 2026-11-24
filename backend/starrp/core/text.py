@@ -59,3 +59,15 @@ def plain_text(value):
 
     text = nh3.clean((value or "").replace("</p>", " </p>").replace("<br>", " "), tags=set())
     return re.sub(r"\s+", " ", html.unescape(text)).strip()
+
+
+_FORMULA_START = ("=", "+", "-", "@", "\t", "\r")
+_PLAIN_NUMBER = re.compile(r"^[+-]?\d[\d.,]*%?$")
+
+
+def spreadsheet_safe(value):
+    """Texto que o Excel/LibreOffice/Sheets executaria como fórmula (`=HYPERLINK(...)`, `+cmd|...`, `@SUM`) ganha
+    um apóstrofo na frente e vira texto (S-10, docs/SEGURANCA.md). Números ("-12,50") ficam como estão."""
+    if isinstance(value, str) and value.startswith(_FORMULA_START) and not _PLAIN_NUMBER.match(value):
+        return "'" + value
+    return value

@@ -19,14 +19,23 @@ from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 from rest_framework.filters import OrderingFilter
 
-BLOCKED = {"password", "cash_action_password", "secret", "token"}
+from starrp.core.costs import COST_KEY, sees_costs
+from starrp.core.secrets import SECRET_FIELDS
+
+# Ordenar por um campo revela a ORDEM dos valores dele (S-17): segredo nunca ordena.
+BLOCKED = set(SECRET_FIELDS) | {"password", "cash_action_password", "secret", "token", "token_hash"}
+BLOCKED_SUFFIXES = ("_password", "_token", "_secret", "_hash")
+
+
+def _blocked(part):
+    return part in BLOCKED or part.endswith(BLOCKED_SUFFIXES)
 
 
 def resolve_path(model, path):
     """O caminho `a__b__c` existe no model e não passa por relação "para muitos"?"""
     parts = path.split("__")
     for index, part in enumerate(parts):
-        if part in BLOCKED:
+        if _blocked(part):
             return False
         try:
             field = model._meta.get_field(part)
@@ -64,6 +73,9 @@ class ColumnOrderingFilter(OrderingFilter):
             if not term:
                 continue
             desc, name = term.startswith("-"), term.lstrip("-")
+            # Sem `catalog.view_costs`, a ordem do custo/margem também é custo (S-17).
+            if COST_KEY.search(name) and not sees_costs(request.user):
+                raise ValidationError({"ordering": f"Não dá para ordenar por “{name}”."})
             if name in annotations:
                 needed[f"_order_{name}"] = annotations[name]
                 path = f"_order_{name}"
@@ -71,6 +83,8 @@ class ColumnOrderingFilter(OrderingFilter):
                 path = name
             else:
                 path = self._source(view, request, name)
+                if any(COST_KEY.search(part) for part in path.split("__")) and not sees_costs(request.user):
+                    raise ValidationError({"ordering": f"Não dá para ordenar por “{name}”."})
                 if not resolve_path(queryset.model, path):
                     raise ValidationError({"ordering": f"Não dá para ordenar por “{name}”."})
             # Vazio vai para o fim nos dois sentidos (no Postgres o DESC o poria no topo).

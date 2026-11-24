@@ -4,14 +4,26 @@ Novo no Starrp. O desenho mínimo que um varejo precisa:
 - `FinancialTitle` é a conta a pagar OU a receber (um documento);
 - `Installment` são as parcelas dele (crediário 3x = 1 título, 3 parcelas);
 - `FinancialTransaction` é o dinheiro que efetivamente se moveu numa conta
-  (baixa de parcela, taxa da adquirente, transferência entre contas).
+  (baixa de parcela, taxa da adquirente, transferência entre contas);
+- `RecurringTitle` é o modelo de uma conta que se repete (mensalidade, aluguel):
+  gera um título por mês, sozinho (`services.recurring`).
+
+Conta de SÓCIO (`FinancialAccount.Kind.PARTNER`): o "bolso" de quem paga despesa da empresa
+com o próprio dinheiro. A saída sai dela; o saldo negativo é o que a empresa deve a ele, e a
+transferência do banco para ela é o reembolso. `partner_share` é a parte dele no resultado.
+
+Crédito de cliente/fornecedor: um lançamento avulso com `customer`/`supplier` (pagamento extra,
+adiantamento, o que passou do valor na baixa) fica como crédito da parte, e a baixa de uma
+parcela pode usar esse crédito (`Installment.credit_used`) sem mexer em conta nenhuma.
 
 O status do título e da parcela é derivado dos valores pagos, e gravado só
 para filtrar rápido — quem grava é `services.finance`, nunca a view.
 """
 from django.db import models
 
-from starrp.models.base import AutoCodeMixin, MoneyField, StoreModel, TenantModel, alive, code_from, optional_store_fk, user_fk
+from starrp.models.base import (
+    AutoCodeMixin, MoneyField, PercentField, StoreModel, TenantModel, alive, code_from, optional_store_fk, user_fk,
+)
 
 
 class FinancialAccount(TenantModel):
@@ -23,6 +35,7 @@ class FinancialAccount(TenantModel):
         BANK = "bank", "Conta bancária"
         ACQUIRER = "acquirer", "Adquirente de cartão"
         WALLET = "wallet", "Carteira digital"
+        PARTNER = "partner", "Conta de reembolso"
 
     store = optional_store_fk()
     name = models.CharField(max_length=120)
@@ -31,6 +44,7 @@ class FinancialAccount(TenantModel):
     agency = models.CharField(max_length=10, blank=True)
     account_number = models.CharField(max_length=20, blank=True)
     opening_balance = MoneyField()
+    partner_share = PercentField(help_text="Conta de reembolso de sócio: % dele no resultado (divisão do lucro).")
     is_active = models.BooleanField(default=True)
 
     class Meta:
@@ -75,6 +89,39 @@ class FinancialCategory(AutoCodeMixin, TenantModel):
         return code_from(self.name, "categoria")
 
 
+class Frequency(models.TextChoices):
+    """De quanto em quanto vencem as parcelas (e as recorrências)."""
+    MONTHLY = "monthly", "Todo mês"
+    WEEKLY = "weekly", "Toda semana"
+    DAILY = "daily", "Todo dia"
+
+
+class Weekday(models.IntegerChoices):
+    MONDAY = 0, "Segunda"
+    TUESDAY = 1, "Terça"
+    WEDNESDAY = 2, "Quarta"
+    THURSDAY = 3, "Quinta"
+    FRIDAY = 4, "Sexta"
+    SATURDAY = 5, "Sábado"
+    SUNDAY = 6, "Domingo"
+
+
+class ScheduleMixin(models.Model):
+    """Como vencem as parcelas: frequência + dia do mês (mensal) ou da semana (semanal) + horário,
+    e os encargos de atraso (multa uma vez, juros ao mês proporcionais aos dias)."""
+
+    frequency = models.CharField(max_length=8, choices=Frequency.choices, default=Frequency.MONTHLY)
+    due_day = models.PositiveSmallIntegerField(null=True, blank=True, help_text="Mensal: dia do vencimento (31 = último dia).")
+    due_weekday = models.PositiveSmallIntegerField(choices=Weekday.choices, null=True, blank=True,
+                                                   help_text="Semanal: dia da semana do vencimento.")
+    due_time = models.TimeField(null=True, blank=True, help_text="Horário do vencimento (opcional).")
+    fine_percent = PercentField(help_text="Multa por atraso (% sobre a parcela, uma vez).")
+    interest_percent = PercentField(help_text="Juros por atraso (% ao mês, proporcional aos dias).")
+
+    class Meta:
+        abstract = True
+
+
 class TitleStatus(models.TextChoices):
     OPEN = "open", "Em aberto"
     PARTIAL = "partial", "Pago parcialmente"
@@ -82,7 +129,7 @@ class TitleStatus(models.TextChoices):
     CANCELLED = "cancelled", "Cancelado"
 
 
-class FinancialTitle(StoreModel):
+class FinancialTitle(ScheduleMixin, StoreModel):
     class Kind(models.TextChoices):
         RECEIVABLE = "receivable", "A receber"
         PAYABLE = "payable", "A pagar"
@@ -109,6 +156,10 @@ class FinancialTitle(StoreModel):
         "starrp.InboundNFe", null=True, blank=True, related_name="titles", on_delete=models.PROTECT
     )
     notes = models.TextField(blank=True)
+    # Gerado por uma recorrência: o vencimento que ele cobre. Uma recorrência, um título por vencimento.
+    recurring = models.ForeignKey("starrp.RecurringTitle", null=True, blank=True, related_name="titles",
+                                  on_delete=models.SET_NULL)
+    recurring_period = models.DateField(null=True, blank=True)
 
     class Meta:
         ordering = ["-issue_date"]
@@ -117,6 +168,8 @@ class FinancialTitle(StoreModel):
                 condition=~(models.Q(customer__isnull=False) & models.Q(supplier__isnull=False)),
                 name="title_single_counterparty",
             ),
+            models.UniqueConstraint(fields=["recurring", "recurring_period"],
+                                    condition=alive() & models.Q(recurring__isnull=False), name="uniq_title_recurring_period"),
         ]
 
     def __str__(self):
@@ -134,6 +187,8 @@ class Installment(TenantModel):
     fine = MoneyField()
     discount = MoneyField()
     paid_amount = MoneyField()
+    # Parte do pago que veio do crédito do cliente/fornecedor (sem dinheiro novo na conta).
+    credit_used = MoneyField()
     paid_at = models.DateField(null=True, blank=True)
     status = models.CharField(max_length=10, choices=TitleStatus.choices, default=TitleStatus.OPEN, db_index=True)
 
@@ -167,6 +222,11 @@ class FinancialTransaction(TenantModel):
     installment = models.ForeignKey(
         Installment, null=True, blank=True, related_name="transactions", on_delete=models.PROTECT
     )
+    # Avulso com cliente/fornecedor: pagamento extra ou adiantamento — vira crédito da parte.
+    customer = models.ForeignKey("starrp.Customer", null=True, blank=True, related_name="financial_transactions",
+                                 on_delete=models.PROTECT)
+    supplier = models.ForeignKey("starrp.Supplier", null=True, blank=True, related_name="financial_transactions",
+                                 on_delete=models.PROTECT)
     # Transferência entre contas = duas transações com o mesmo par.
     transfer_pair = models.UUIDField(null=True, blank=True, db_index=True)
     # Origem dos lançamentos automáticos (caixa, venda, pagamento).
@@ -188,3 +248,36 @@ class FinancialTransaction(TenantModel):
             models.UniqueConstraint(fields=["account", "source_key"], condition=alive() & ~models.Q(source_key=""),
                                     name="uniq_fin_transaction_source_key"),
         ]
+
+
+class RecurringTitle(ScheduleMixin, StoreModel):
+    """Conta que se repete (mensalidade de cliente, aluguel, assinatura, diária): gera um título por
+    vencimento — todo mês no `due_day`, toda semana no `due_weekday` ou todo dia —, `lead_days` antes."""
+
+    kind = models.CharField(max_length=10, choices=FinancialTitle.Kind.choices, db_index=True)
+    description = models.CharField(max_length=255)
+    customer = models.ForeignKey("starrp.Customer", null=True, blank=True, related_name="recurring_titles",
+                                 on_delete=models.PROTECT)
+    supplier = models.ForeignKey("starrp.Supplier", null=True, blank=True, related_name="recurring_titles",
+                                 on_delete=models.PROTECT)
+    category = models.ForeignKey(FinancialCategory, null=True, blank=True, related_name="recurring_titles",
+                                 on_delete=models.SET_NULL)
+    amount = MoneyField()
+    start_date = models.DateField(help_text="Primeiro mês que gera.")
+    end_date = models.DateField(null=True, blank=True, help_text="Vazio = sem fim.")
+    lead_days = models.PositiveSmallIntegerField(default=10, help_text="Quantos dias antes do vencimento o título nasce.")
+    next_period = models.DateField(null=True, blank=True, help_text="Próximo vencimento a gerar.")
+    is_active = models.BooleanField(default=True)
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["description"]
+        constraints = [
+            models.CheckConstraint(
+                condition=~(models.Q(customer__isnull=False) & models.Q(supplier__isnull=False)),
+                name="recurring_single_counterparty",
+            ),
+        ]
+
+    def __str__(self):
+        return self.description

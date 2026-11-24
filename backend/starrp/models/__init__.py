@@ -9,6 +9,7 @@ from starrp.models.platform import (  # noqa: F401
     Subscription,
     SystemSetting,
     Integration,
+    IntegrationWebhookEvent,
 )
 from starrp.models.company import (  # noqa: F401
     Store,
@@ -147,6 +148,7 @@ from starrp.models.finance import (  # noqa: F401
     FinancialTitle,
     Installment,
     FinancialTransaction,
+    RecurringTitle,
 )
 from starrp.models.devices import (  # noqa: F401
     Printer,

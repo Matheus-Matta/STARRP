@@ -1,8 +1,8 @@
-import os
-
 from celery import Celery
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
+from config.environment import use_settings
+
+use_settings()
 
 app = Celery("starrp")
 app.config_from_object("django.conf:settings", namespace="CELERY")

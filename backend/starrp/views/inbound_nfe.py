@@ -62,6 +62,9 @@ class InboundNFeViewSet(TenantViewSet):
         "ignored": Q(ignored_at__isnull=False),
     }
 
+    def create(self, request, *args, **kwargs):
+        raise BusinessError("A NF-e entra pelo XML ou pela busca na SEFAZ.", code="nfe_import_only")  # M-14
+
     def get_queryset(self):
         queryset = super().get_queryset()
         stage = self.request.query_params.get("stage")

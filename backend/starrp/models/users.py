@@ -22,7 +22,7 @@ class Permission(models.Model):
         ordering = ["module", "sort_order", "name"]
 
     def __str__(self):
-        return self.code
+        return self.name
 
 
 class Role(TenantModel):
@@ -71,6 +71,12 @@ class UserProfile(TenantModel):
         help_text="Loja aberta por padrão quando a requisição não informa X-Store-ID.",
     )
     phone = models.CharField(max_length=32, blank=True)
+    # Senha trocada/redefinida: todo token emitido antes disto deixa de valer na hora (S-12), não só o refresh.
+    sessions_revoked_at = models.DateTimeField(null=True, blank=True, editable=False)
+    cosmos_enabled = models.BooleanField(
+        default=False,
+        help_text="Exibe a assistente Cosmos para este usuário. Administradores da conta sempre têm acesso.",
+    )
     extra_permissions = models.ManyToManyField(Permission, blank=True, related_name="profiles")
     # Vendedor: código digitado no PDV e comissão padrão.
     is_seller = models.BooleanField(default=False)
@@ -90,10 +96,27 @@ class UserProfile(TenantModel):
     def __str__(self):
         return f"{self.user.get_full_name() or self.user.get_username()} ({self.role})"
 
+    # Cargos e permissões calculados ficam no objeto: uma requisição confere permissão várias vezes
+    # (middleware, view, cada linha do serializer) e cada conta custava 3-4 queries. O perfil é
+    # carregado de novo a cada requisição; quem altera cargo/permissão no mesmo objeto chama
+    # `clear_access_cache()` (save() e o sinal de m2m já fazem isso).
+    _ACCESS_CACHE = ("_roles_all_cache", "_permission_codes_cache")
+
+    def clear_access_cache(self):
+        for name in self._ACCESS_CACHE:
+            self.__dict__.pop(name, None)
+
+    def save(self, *args, **kwargs):
+        self.clear_access_cache()
+        super().save(*args, **kwargs)
+
     def roles_all(self):
         """O cargo principal e os somados (só os ativos e não excluídos)."""
-        extra = [r for r in self.extra_roles.all() if r.deleted_at is None and r.is_active]
-        return [self.role, *[r for r in extra if r.pk != self.role_id]]
+        cached = self.__dict__.get("_roles_all_cache")
+        if cached is None:
+            extra = [r for r in self.extra_roles.all() if r.deleted_at is None and r.is_active]
+            cached = self.__dict__["_roles_all_cache"] = [self.role, *[r for r in extra if r.pk != self.role_id]]
+        return list(cached)
 
     @property
     def is_account_admin(self):
@@ -114,9 +137,13 @@ class UserProfile(TenantModel):
         return set(self.stores.filter(deleted_at__isnull=True).values_list("pk", flat=True))
 
     def permission_codes(self):
-        codes = set(Permission.objects.filter(roles__in=[r.pk for r in self.roles_all()]).values_list("code", flat=True))
-        codes.update(self.extra_permissions.values_list("code", flat=True))
-        return codes
+        cached = self.__dict__.get("_permission_codes_cache")
+        if cached is None:
+            role_ids = [r.pk for r in self.roles_all()]
+            codes = set(Permission.objects.filter(roles__in=role_ids).order_by().values_list("code", flat=True))
+            codes.update(self.extra_permissions.order_by().values_list("code", flat=True))
+            cached = self.__dict__["_permission_codes_cache"] = frozenset(codes)
+        return set(cached)
 
 
 class PasswordResetRequest(models.Model):

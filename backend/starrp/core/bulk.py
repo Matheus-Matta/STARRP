@@ -37,14 +37,15 @@ from rest_framework.response import Response
 from starrp.core.audit import record_audit
 from starrp.core.errors import BusinessError
 from starrp.core.permissions import has_permission_code
+from starrp.core.text import spreadsheet_safe
 from starrp.models.system import AuditLog
 
 MAX_ITEMS = 5000
 DECIMAL_TEXT = re.compile(r"^-?\d+\.\d+$")
 
 
-def bulk_action(label, *, icon="pi pi-bolt", danger=False, confirm="", params=None, permission="manage"):
-    """Marca o método da view como ação em massa. `permission`: "manage", "view" ou um código completo."""
+def bulk_action(label, *, icon="pi pi-bolt", danger=False, confirm="", params=None, permission="update"):
+    """Marca a ação em massa; por padrão ela exige permissão de editar."""
     def mark(func):
         func.bulk = {"label": label, "icon": icon, "danger": danger, "confirm": confirm, "params": params or [],
                      "permission": permission}
@@ -77,7 +78,7 @@ class BulkActionsMixin:
     bulk_disabled = ()  # nomes de ações padrão que a view não quer
 
     # ── Ações padrão ─────────────────────────────────────────────────────────
-    @bulk_action("Excluir selecionados", icon="pi pi-trash", danger=True,
+    @bulk_action("Excluir selecionados", icon="pi pi-trash", danger=True, permission="delete",
                  confirm="Excluir os itens selecionados? A ação fica registrada na auditoria.")
     def bulk_delete(self, request, queryset, params):
         done, skipped = 0, []
@@ -132,7 +133,8 @@ class BulkActionsMixin:
         writer = csv.writer(out, delimiter=";")
         writer.writerow([c.get("label") or c["key"] for c in columns])
         for row in rows:
-            writer.writerow([_text((c.get("map") or {}).get(str(row.get(c["key"])), row.get(c["key"]))) for c in columns])
+            writer.writerow([spreadsheet_safe(_text((c.get("map") or {}).get(str(row.get(c["key"])), row.get(c["key"]))))
+                             for c in columns])
         name = f"{getattr(self.model, '__name__', 'dados').lower()}-{timezone.localdate():%Y%m%d}.csv"
         response = HttpResponse(out.getvalue(), content_type="text/csv; charset=utf-8")
         response["Content-Disposition"] = f'attachment; filename="{name}"'
@@ -158,7 +160,7 @@ class BulkActionsMixin:
 
     def _allowed(self, request, meta):
         code = meta["permission"]
-        if code in {"manage", "view"}:
+        if code in {"manage", "view", "create", "update", "delete"}:
             base = getattr(self, "permission_code", None)
             if base is None:
                 return True

@@ -22,6 +22,8 @@ from django.urls import Resolver404, resolve
 from rest_framework.test import force_authenticate
 from simple_history.models import HistoricalRecords
 
+from starrp.core.dry_run import ExternalEffect
+from starrp.core.dry_run import dry_run as ensaio
 from starrp.core.middleware import ALL_STORES, bind_user
 from starrp.core.tenant import set_current_account
 
@@ -71,6 +73,8 @@ class ApiResult:
     status: int
     data: object
     filename: str = ""
+    #: Ensaio parado porque a gravação falaria com o mundo de fora (core/dry_run.py).
+    external: bool = False
 
     @property
     def ok(self):
@@ -130,9 +134,13 @@ def call(actor, method, path, params=None, body=None, dry_run=False):
     HistoricalRecords.context.request = request  # o histórico registra o usuário, não "sistema"
     try:
         if dry_run:
-            with transaction.atomic():
-                result = _dispatch(match, request)
-                transaction.set_rollback(True)
+            try:
+                with ensaio(), transaction.atomic():
+                    result = _dispatch(match, request)
+                    transaction.set_rollback(True)
+            except ExternalEffect as effect:
+                # Falaria com o mundo de fora (SEFAZ, Asaas, tarefa paga): não dá para ensaiar sem fazer.
+                result = ApiResult(0, {"detail": str(effect)}, external=True)
         else:
             result = _dispatch(match, request)
     except Exception as error:  # noqa: BLE001 — a conversa segue; o erro vira resposta

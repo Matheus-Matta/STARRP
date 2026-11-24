@@ -95,6 +95,20 @@ select[multiple] {
   padding: 4px;
 }
 
+/* A seta nativa varia entre navegadores e costuma ficar colada na borda.
+   Uma seta própria garante a mesma área de respiro em todos os selects. */
+select:not([multiple]) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 40px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 13px center;
+  background-size: 15px 15px;
+}
+
+select:not([multiple]):disabled { background-position: right 13px center; }
+
 select[multiple] option:checked {
   background: var(--primary-soft);
   color: var(--primary);
@@ -104,7 +118,7 @@ select[multiple] option:checked {
 input:disabled,
 select:disabled,
 textarea:disabled {
-  background: var(--muted);
+  background-color: var(--muted);
   color: var(--muted-foreground);
   box-shadow: none;
   cursor: not-allowed;
@@ -172,5 +186,5 @@ input[type="radio"] {
 }
 
 .input-icon input {
-  padding-left: 32px;
+  padding-left: 38px;
 }

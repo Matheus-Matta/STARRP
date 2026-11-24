@@ -75,9 +75,25 @@ def _decode(raw):
     return raw.decode("latin-1", errors="replace")
 
 
+MAX_UNZIPPED = 80 * 1024 * 1024
+
+
+def check_zip(raw):
+    """O .xlsx é um zip: o limite de tamanho do envio não vê o conteúdo descompactado (R2-16)."""
+    import zipfile
+
+    try:
+        size = sum(info.file_size for info in zipfile.ZipFile(io.BytesIO(raw)).infolist())
+    except zipfile.BadZipFile as error:
+        raise AttachmentError("Não consegui abrir a planilha. Salve como .xlsx ou .csv e mande de novo.") from error
+    if size > MAX_UNZIPPED:
+        raise AttachmentError("Planilha grande demais depois de descompactada: divida em partes.")
+
+
 def _sheet(raw):
     from openpyxl import load_workbook
 
+    check_zip(raw)
     try:
         book = load_workbook(io.BytesIO(raw), read_only=True, data_only=True)
     except Exception as error:  # noqa: BLE001 — arquivo corrompido ou não é xlsx de verdade

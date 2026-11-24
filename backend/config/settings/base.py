@@ -2,6 +2,7 @@
 DEBUG: no StarChef `DJANGO_ENV` e `DJANGO_DEBUG` divergiam e quebravam o login."""
 from datetime import timedelta
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from celery.schedules import crontab
 from corsheaders.defaults import default_headers
@@ -57,7 +58,14 @@ ASGI_APPLICATION = "config.asgi.application"
 WSGI_APPLICATION = "config.wsgi.application"
 LOGIN_URL = "/admin/login/"
 FRONTEND_URL = config("FRONTEND_URL", default="http://localhost:5173").rstrip("/")
-API_URL = config("API_URL", default="")
+# Origem pública que provedores externos usam para chamar a API. O deploy serve
+# frontend e /api na mesma origem; uma origem separada pode ser informada em API_URL.
+API_URL = (config("API_URL", default="") or FRONTEND_URL).rstrip("/")
+_api_url = urlsplit(API_URL)
+if _api_url.scheme not in {"http", "https"} or not _api_url.netloc or _api_url.path not in {"", "/"}:
+    raise RuntimeError("API_URL deve ser uma origem absoluta, sem caminho (ex.: https://app.exemplo.com).")
+if not DEBUG and _api_url.scheme != "https":
+    raise RuntimeError("API_URL deve usar HTTPS em produção para receber webhooks.")
 
 TEMPLATES = [
     {
@@ -125,15 +133,29 @@ CELERY_BEAT_SCHEDULE = {
     "cosmos-daily-digest": {"task": "starrp.cosmos_daily_digest", "schedule": crontab(hour=7, minute=0)},
     # Precificação: de hora em hora lê a próxima leva de cada conta (a frequência por produto é da conta).
     "price-tracking": {"task": "starrp.price_tracking", "schedule": crontab(minute=20)},
+    # Financeiro: contas recorrentes geram o título do mês (lead_days antes do vencimento).
+    "recurring-titles": {"task": "starrp.recurring_titles", "schedule": crontab(hour=6, minute=10)},
+    # Limpeza: idempotência antiga, tokens JWT vencidos e pedidos de senha vencidos (services/housekeeping.py).
+    "housekeeping": {"task": "starrp.housekeeping", "schedule": crontab(hour=3, minute=40)},
 }
+# Dias que a resposta de uma escrita com Idempotency-Key fica guardada (a fila offline do PDV reenvia dentro disso).
+IDEMPOTENCY_KEEP_DAYS = config("IDEMPOTENCY_KEEP_DAYS", default=30, cast=int)
 
 REST_FRAMEWORK = {
+    # IP do cliente = REMOTE_ADDR (S-20). Atrás do nginx, o uvicorn já troca pelo X-Forwarded-For SÓ quando a
+    # conexão vem do nginx (FORWARDED_ALLOW_IPS): um container qualquer forjando o cabeçalho não muda o IP.
+    "NUM_PROXIES": 0,
     "DEFAULT_AUTHENTICATION_CLASSES": ("starrp.core.authentication.CookieJWTAuthentication",),
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
         "starrp.core.permissions.HasAccount",
         "starrp.core.permissions.HasModule",
         "starrp.core.permissions.HasViewPermission",
+    ),
+    "DEFAULT_PARSER_CLASSES": (
+        "starrp.core.parsers.ObjectJSONParser",
+        "rest_framework.parsers.FormParser",
+        "rest_framework.parsers.MultiPartParser",
     ),
     "DEFAULT_PAGINATION_CLASS": "starrp.core.pagination.StandardPagination",
     "DEFAULT_FILTER_BACKENDS": (
@@ -143,17 +165,19 @@ REST_FRAMEWORK = {
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "starrp.core.exceptions.api_exception_handler",
+    # Limite só para anônimos: usuário logado não tem limite. Login e redefinição de senha usam
+    # starrp.core.throttling.AnonScopedRateThrottle (que também libera quem está logado).
     "DEFAULT_THROTTLE_CLASSES": ("rest_framework.throttling.AnonRateThrottle",),
     "DEFAULT_THROTTLE_RATES": {
         "anon": config("THROTTLE_RATE_ANON", default="60/min"),
         "login": config("THROTTLE_RATE_LOGIN", default="10/min"),
         "password_reset": config("THROTTLE_RATE_PASSWORD_RESET", default="5/min"),
-        "approval": config("THROTTLE_RATE_APPROVAL", default="10/min"),
     },
 }
 
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=config("JWT_ACCESS_HOURS", default=12, cast=int)),
+    # Curto (S-12): token roubado vale pouco. Web, desktop e app renovam sozinhos pelo refresh (7 dias, girado).
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=config("JWT_ACCESS_MINUTES", default=30, cast=int)),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
@@ -173,8 +197,17 @@ SPECTACULAR_SETTINGS = {
 
 CORS_ALLOWED_ORIGINS = config("DJANGO_CORS_ALLOWED_ORIGINS", default="http://localhost:5173", cast=Csv())
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_HEADERS = (*default_headers, "idempotency-key", "x-terminal-id", "x-store-id", "x-account-id")
-CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+CORS_ALLOW_HEADERS = (*default_headers, "idempotency-key", "x-terminal-id", "x-store-id", "x-account-id",
+                      "x-auth-transport")
+# O Admin pode ser aberto por uma origem diferente da SPA (por exemplo, a
+# porta 8000 em um Dev Tunnel). Não acople as origens confiáveis do CSRF às
+# origens de CORS: CORS protege a API no navegador, enquanto CSRF também
+# valida formulários HTML do Django Admin.
+CSRF_TRUSTED_ORIGINS = config(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    default=",".join(CORS_ALLOWED_ORIGINS),
+    cast=Csv(),
+)
 SESSION_COOKIE_SECURE = CSRF_COOKIE_SECURE = not DEBUG
 SESSION_COOKIE_PATH = "/admin/"
 
@@ -191,16 +224,28 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 # Reutiliza a identidade oficial do frontend no admin (logos e favicons),
 # evitando manter duas cópias da marca em lugares diferentes.
-STATICFILES_DIRS = [BASE_DIR.parent / "frontend" / "public"]
+# No Docker o Dockerfile copia frontend/public para /frontend/public (= BASE_DIR.parent no container).
+_FRONTEND_PUBLIC = BASE_DIR.parent / "frontend" / "public"
+STATICFILES_DIRS = [_FRONTEND_PUBLIC] if _FRONTEND_PUBLIC.is_dir() else []
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+# Arquivos que NUNCA são servidos por URL (certificado A1, cifrado): fora do MEDIA_ROOT (core/secrets.py).
+PRIVATE_MEDIA_ROOT = Path(config("PRIVATE_MEDIA_ROOT", default=str(BASE_DIR / "private")))
+# Chave dos segredos cifrados no banco (CSC, senha do A1, tokens de integração). Gere com
+#   python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# Várias separadas por vírgula = rotação (a 1ª cifra, todas decifram). Sem ela (só desenvolvimento): deriva do
+# SECRET_KEY. Perdeu a chave = perdeu os segredos: guarde junto do backup do banco.
+FIELD_ENCRYPTION_KEY = config("FIELD_ENCRYPTION_KEY", default="")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 IMAGE_UPLOAD_MAX_BYTES = config("IMAGE_UPLOAD_MAX_BYTES", default=8 * 1024 * 1024, cast=int)
 
-# Fiscal: emissor ACBrLib da própria instalação (loja ou nuvem).
+# Fiscal: Comunicador Fiscal ACBr em NUVEM (Docker, ACBR_MODO=nuvem — app-fiscal-acbr), que só o
+# backend chama (PDV web e cancelamentos). O PDV desktop usa o Comunicador Fiscal desktop do caixa.
 ACBRLIB_URL = config("ACBRLIB_URL", default="").rstrip("/")
 ACBRLIB_TOKEN = config("ACBRLIB_TOKEN", default="")
-ACBRLIB_TIMEOUT = config("ACBRLIB_TIMEOUT", default=40, cast=int)
+ACBR_E2E_KEY = config("ACBR_E2E_KEY", default="")
+# A API pede 60 s ou mais: menos que isso, desistimos de uma nota que ainda pode sair.
+ACBRLIB_TIMEOUT = config("ACBRLIB_TIMEOUT", default=60, cast=int)
 
 # Sincronização: papel desta instalação (vazio = desligada).
 SYNC_NODE_TYPE = config("SYNC_NODE_TYPE", default="")  # "LOCAL" | "CLOUD"
@@ -209,7 +254,8 @@ SYNC_ENVIRONMENT = config("SYNC_ENVIRONMENT", default="development")
 # Cosmos (assistente de IA): OpenAI pela API. Sem a chave, o widget avisa que está desligada.
 OPENAI_API_KEY = config("OPENAI_API_KEY", default="")
 OPENAI_BASE_URL = config("OPENAI_BASE_URL", default="") or None
-OPENAI_MODEL = config("OPENAI_MODEL", default="gpt-5-mini")
+OPENAI_MODEL = config("OPENAI_MODEL", default="") or "gpt-5-mini"  # vazio no .env também vale o padrão
+OPENAI_TRANSCRIBE_MODEL = config("OPENAI_TRANSCRIBE_MODEL", default="gpt-4o-mini-transcribe")
 OPENAI_TIMEOUT = config("OPENAI_TIMEOUT", default=90, cast=int)
 # Roteamento por custo (services/cosmos/router.py): turno simples (saudação, comentar o resultado de uma
 # confirmação, resumir o histórico) vai ao modelo leve; planilha/lote vai ao forte (vazio = OPENAI_MODEL).
@@ -219,8 +265,8 @@ OPENAI_MODEL_HEAVY = config("OPENAI_MODEL_HEAVY", default="")
 OPENAI_REASONING_EFFORT = config("OPENAI_REASONING_EFFORT", default="low")
 # Voltas modelo ⇄ ferramentas por mensagem (cada consulta à API é uma volta).
 COSMOS_MAX_STEPS = config("COSMOS_MAX_STEPS", default=12, cast=int)
-# Mensagens por minuto de um mesmo usuário (segura clique repetido e uso abusivo).
-COSMOS_MESSAGES_PER_MINUTE = config("COSMOS_MESSAGES_PER_MINUTE", default=20, cast=int)
+# Mensagens por minuto de um mesmo usuário. 0 = sem limite (padrão: usuário logado não tem limite).
+COSMOS_MESSAGES_PER_MINUTE = config("COSMOS_MESSAGES_PER_MINUTE", default=0, cast=int)
 # Teto de saída por chamada (inclui o raciocínio). O modelo leve usa um terço.
 COSMOS_MAX_OUTPUT_TOKENS = config("COSMOS_MAX_OUTPUT_TOKENS", default=4000, cast=int)
 # Janela do histórico: as últimas N falas do usuário vão inteiras; o que é mais antigo vira um resumo curto.
@@ -251,7 +297,16 @@ GOOGLE_ADS_LOGIN_CUSTOMER_ID = config("GOOGLE_ADS_LOGIN_CUSTOMER_ID", default=""
 GOOGLE_ADS_DEVELOPER_TOKEN = config("GOOGLE_ADS_DEVELOPER_TOKEN", default="")  # só projeto antigo: descontinuado em 09/2026
 PRICE_TRACKING_BATCH = config("PRICE_TRACKING_BATCH", default=200, cast=int)
 
-EMAIL_BACKEND = config("DJANGO_EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+# E-mail (redefinição de senha): com EMAIL_HOST envia por SMTP; sem ele, em desenvolvimento, sai no terminal.
+EMAIL_HOST = config("EMAIL_HOST", default="")
+EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="")
+EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD", default="")
+EMAIL_USE_SSL = config("EMAIL_USE_SSL", default=EMAIL_PORT == 465, cast=bool)
+EMAIL_USE_TLS = config("EMAIL_USE_TLS", default=not EMAIL_USE_SSL, cast=bool)
+EMAIL_TIMEOUT = config("EMAIL_TIMEOUT", default=20, cast=int)
+EMAIL_BACKEND = config("DJANGO_EMAIL_BACKEND", default=(
+    f"django.core.mail.backends.{'smtp' if EMAIL_HOST else 'console'}.EmailBackend"))
 DEFAULT_FROM_EMAIL = config("DJANGO_DEFAULT_FROM_EMAIL", default="Starrp <no-reply@localhost>")
 PASSWORD_RESET_TIMEOUT_MINUTES = 30
 

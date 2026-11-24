@@ -253,7 +253,7 @@ def test_aplicar_nao_gasta_token_e_mantem_as_outras_sugestoes(on, model):
     model.answer = GOOD
     check = analyzer.read_product(_product(on))
     after = analyzer.apply(check, on.admin, ["name"])
-    assert len(model.calls) == 1 and after.suggested_seo_title == GOOD["seo_title"] and not after.suggested_name == GOOD["name"]
+    assert len(model.calls) == 1 and after.suggested_seo_title == GOOD["seo_title"] and after.suggested_name != GOOD["name"]
 
 
 def test_instrucao_escondida_no_produto_vai_como_dado(on, model):

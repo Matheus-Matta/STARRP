@@ -7,11 +7,12 @@ from rest_framework import serializers
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, tenant_serializer
 from starrp.core.text import only_digits
 from starrp.models import (
-    Asset, AssetDisposal, AssetMovement, AuditLog, Brand, Category, Coupon, DiscountTable, FiscalConfig, FiscalProfile, FiscalSeries,
-    ImportJob, InboundNFe, InboundNFeItem, Integration, Invoice, InvoiceItem, NFeEvent, NFeIssue, Notification,
-    Plan, Printer, PrintJob, Product, Promotion, PromotionProduct, Scale, ScaleReading, Subscription, SyncConflict,
-    Store, SyncEvent, SyncNode, SyncRun,
+    Asset, AssetDisposal, AssetMovement, AuditLog, Brand, Category, Coupon, DiscountTable, FiscalConfig, FiscalProfile,
+    FiscalSeries, ImportJob, InboundNFe, InboundNFeItem, Integration, Invoice, InvoiceItem, NFeEvent, NFeIssue,
+    Notification, Plan, Printer, PrintJob, Product, Promotion, PromotionProduct, Scale, ScaleReading, Store,
+    Subscription, SyncConflict, SyncEvent, SyncNode, SyncRun,
 )
+from starrp.services import integrations
 
 # Promoções
 PromotionSerializer = tenant_serializer(Promotion, exclude=["products"])
@@ -306,18 +307,89 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         exclude = ["account"]
 
 
-class IntegrationSerializer(serializers.ModelSerializer):
-    """`credentials` entra; na saída só aparece quais chaves estão preenchidas."""
+class IntegrationSerializer(TenantSerializer):
+    """Integração da conta. `fields` entra com os valores das configurações do tipo (nomes fixos, ver
+    `services/integrations`); na saída os segredos viram máscara. `purposes` = o que ela faz."""
 
-    credentials = serializers.DictField(write_only=True, required=False)
-    configured_keys = serializers.SerializerMethodField()
+    fields = serializers.DictField(required=False)
+    purposes = serializers.ListField(child=serializers.CharField(), required=False)
+    kind_label = serializers.SerializerMethodField()
+    purpose_labels = serializers.SerializerMethodField()
+    webhook_url = serializers.SerializerMethodField()
+    webhook_ready = serializers.SerializerMethodField()
 
     class Meta:
         model = Integration
-        exclude = ["account"]
+        exclude = ["account", "deleted_at"]
+        read_only_fields = ["last_check_at", "last_check_ok", "last_check_message"]
 
-    def get_configured_keys(self, obj):
-        return sorted(k for k, v in (obj.credentials or {}).items() if v)
+    def _type(self, kind):
+        return integrations.get_type(kind)
+
+    def get_kind_label(self, obj):
+        cls = integrations.REGISTRY.get(obj.kind)
+        return cls.label if cls else obj.kind
+
+    def get_purpose_labels(self, obj):
+        cls = integrations.REGISTRY.get(obj.kind)
+        names = {p.key: p.label for p in cls.purposes} if cls else {}
+        return [names.get(p, p) for p in obj.purposes or []]
+
+    def get_webhook_url(self, obj):
+        return integrations.webhook_url(obj)
+
+    def get_webhook_ready(self, obj):
+        cls = integrations.REGISTRY.get(obj.kind)
+        return bool(cls and integrations.handler(obj).webhook_ready)
+
+    def validate_kind(self, value):
+        if self.instance and value != self.instance.kind:
+            raise serializers.ValidationError("O tipo não muda depois de criada: crie outra integração.")
+        cls = self._type(value)
+        if not self.instance and not cls.multiple:
+            account = self.context["request"].account
+            if Integration.objects.filter(account=account, kind=value).exists():
+                raise serializers.ValidationError(f"A conta já tem uma integração {cls.label}.")
+        return value
+
+    def validate(self, attrs):
+        kind = attrs.get("kind") or (self.instance.kind if self.instance else None)
+        if not kind:
+            raise serializers.ValidationError({"kind": "Escolha o tipo."})
+        cls = self._type(kind)
+        current = self.instance.fields if self.instance else {}
+        if "fields" in attrs or not self.instance:
+            attrs["fields"] = cls.clean(attrs.get("fields") or {}, current)
+        if "purposes" in attrs:
+            attrs["purposes"] = cls.clean_purposes(attrs["purposes"])
+        elif not self.instance:
+            attrs["purposes"] = [p.key for p in cls.purposes if p.default]
+        return attrs
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        cls = integrations.REGISTRY.get(instance.kind)
+        data["fields"] = cls.public(instance.fields) if cls else {}
+        return data
+
+    def _single_default(self, integration):
+        """Uma padrão por tipo: a primeira do tipo já nasce padrão; marcar uma desmarca as outras."""
+        siblings = Integration.objects.filter(account=integration.account, kind=integration.kind).exclude(pk=integration.pk)
+        if integration.is_default:
+            siblings.filter(is_default=True).update(is_default=False)
+        elif not siblings.filter(is_default=True).exists():
+            Integration.objects.filter(pk=integration.pk).update(is_default=True)
+            integration.is_default = True
+
+    def create(self, validated_data):
+        integration = super().create(validated_data)
+        self._single_default(integration)
+        return integration
+
+    def update(self, instance, validated_data):
+        integration = super().update(instance, validated_data)
+        self._single_default(integration)
+        return integration
 
 
 def _readonly(model_cls):

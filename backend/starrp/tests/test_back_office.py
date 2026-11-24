@@ -4,7 +4,9 @@ from decimal import Decimal
 
 from django.utils import timezone
 
-from starrp.models import CashSession, Customer, FinancialAccount, StockDocument, StockMovement, TitleStatus
+from starrp.models import (
+    CashSession, Customer, CustomerCredit, FinancialAccount, Permission, StockDocument, StockMovement, TitleStatus,
+)
 from starrp.services import cash, stock, stock_documents
 
 
@@ -35,6 +37,113 @@ def test_devolucao_gera_vale_troca_que_paga_outra_venda(ctx):
     assert api.get(f"/api/v1/customers/{customer.pk}/").json()["credit_balance"] == "0.00"
     assert reuse.status_code == 200, reuse.json()
     assert stock.available(product) == Decimal("1")
+
+
+def test_filial_pode_bloquear_reembolso_na_carteira(ctx):
+    customer = Customer.all_objects.create(account=ctx.account, name="Ana")
+    product = ctx.product(price="40.00", track_stock=False)
+    api = ctx.client()
+    sale = _sell(ctx, api, product, ctx.methods["pix"], customer=str(customer.pk)).json()
+    ctx.store.rule.allow_store_credit_refund = False
+    ctx.store.rule.save(update_fields=["allow_store_credit_refund", "updated_at"])
+    assert api.get(f"/api/v1/sales/{sale['id']}/").json()["store_credit_refund_allowed"] is False
+
+    response = api.post(f"/api/v1/sales/{sale['id']}/returns/", {
+        "items": [{"sale_item": sale["items"][0]["id"], "quantity": "1"}],
+        "refund_method": "store_credit", "reason": "Tamanho errado",
+    }, format="json")
+
+    assert response.status_code == 422
+    assert response.json()["error"]["code"] == "store_credit_refund_disabled"
+    assert not CustomerCredit.all_objects.filter(customer=customer).exists()
+
+    ctx.store.rule.allow_store_credit_refund = True
+    ctx.store.rule.save(update_fields=["allow_store_credit_refund", "updated_at"])
+    created = api.post(f"/api/v1/sales/{sale['id']}/returns/", {
+        "items": [{"sale_item": sale["items"][0]["id"], "quantity": "1"}],
+        "refund_method": "store_credit", "reason": "Tamanho errado",
+    }, format="json").json()
+    ctx.store.rule.allow_store_credit_refund = False
+    ctx.store.rule.save(update_fields=["allow_store_credit_refund", "updated_at"])
+    complete = api.post(f"/api/v1/returns/{created['id']}/complete/", {}, format="json")
+
+    assert complete.status_code == 422
+    assert complete.json()["error"]["code"] == "store_credit_refund_disabled"
+    assert not CustomerCredit.all_objects.filter(customer=customer).exists()
+
+
+def test_checkout_expõe_saldo_e_aceita_carteira_complementada_por_pix(ctx):
+    customer = Customer.all_objects.create(account=ctx.account, name="Bia")
+    CustomerCredit.all_objects.create(
+        account=ctx.account, customer=customer, kind=CustomerCredit.Kind.ADJUSTMENT, amount=Decimal("25.00"),
+    )
+    product = ctx.product(price="40.00", track_stock=False)
+    api = ctx.client()
+    sale = api.post("/api/v1/sales/", {"customer": str(customer.pk)}, format="json").json()
+    sale = api.post(f"/api/v1/sales/{sale['id']}/items/", {"variant": str(product.pk)}, format="json").json()
+
+    assert sale["customer_credit_balance"] == "25.00"
+    done = api.post(f"/api/v1/sales/{sale['id']}/checkout/", {"payments": [
+        {"method": str(ctx.methods["store_credit"].pk), "amount": "25.00"},
+        {"method": str(ctx.methods["pix"].pk), "amount": "15.00", "nsu": "123"},
+    ]}, format="json")
+
+    assert done.status_code == 200, done.json()
+    assert done.json()["customer_credit_balance"] == "0.00"
+
+
+def test_extrato_da_carteira_não_aceita_lançamento_direto(ctx):
+    customer = Customer.all_objects.create(account=ctx.account, name="Cris")
+
+    response = ctx.client().post("/api/v1/customer-credits/", {
+        "customer": str(customer.pk), "kind": "adjustment", "amount": "500.00",
+    }, format="json")
+
+    assert response.status_code == 405
+    assert not CustomerCredit.all_objects.filter(customer=customer).exists()
+
+
+def test_diretor_concede_crédito_avulso_com_motivo_e_gerente_não(ctx):
+    customer = Customer.all_objects.create(account=ctx.account, name="Clara")
+    director = ctx.user("diretor-credito", "director")
+    manager = ctx.user("gerente-credito", "manager")
+
+    granted = ctx.client(director).post(f"/api/v1/customers/{customer.pk}/grant-credit/", {
+        "amount": "75.00", "reason": "Bonificação de fidelidade",
+    }, format="json")
+    denied = ctx.client(manager).post(f"/api/v1/customers/{customer.pk}/grant-credit/", {
+        "amount": "500.00", "reason": "Sem autorização",
+    }, format="json")
+    manager.profile.extra_permissions.add(Permission.objects.get(code="partners.credit"))
+    denied_even_with_permission = ctx.client(manager).post(f"/api/v1/customers/{customer.pk}/grant-credit/", {
+        "amount": "500.00", "reason": "Permissão avulsa não basta",
+    }, format="json")
+
+    assert granted.status_code == 201, granted.json()
+    assert denied.status_code == 403
+    assert denied_even_with_permission.status_code == 403
+    credit = CustomerCredit.all_objects.get(customer=customer)
+    assert credit.kind == CustomerCredit.Kind.ADJUSTMENT
+    assert credit.amount == Decimal("75.00")
+    assert credit.notes == "Bonificação de fidelidade"
+    assert credit.created_by == director
+
+
+def test_devolução_em_rascunho_não_gera_crédito_após_cancelar_venda(ctx):
+    customer = Customer.all_objects.create(account=ctx.account, name="Dani")
+    product = ctx.product(price="40.00", track_stock=False)
+    api = ctx.client()
+    sale = _sell(ctx, api, product, ctx.methods["pix"], customer=str(customer.pk)).json()
+    created = api.post(f"/api/v1/sales/{sale['id']}/returns/", {
+        "items": [{"sale_item": sale["items"][0]["id"], "quantity": "1"}], "reason": "Tamanho errado",
+    }, format="json").json()
+
+    cancelled = api.post(f"/api/v1/sales/{sale['id']}/cancel/", {"reason": "Venda cancelada"}, format="json")
+    complete = api.post(f"/api/v1/returns/{created['id']}/complete/", {}, format="json")
+
+    assert cancelled.status_code == 200, cancelled.json()
+    assert complete.status_code == 409
+    assert not CustomerCredit.all_objects.filter(customer=customer).exists()
 
 
 def test_crediario_respeita_limite_e_gera_parcelas(ctx):

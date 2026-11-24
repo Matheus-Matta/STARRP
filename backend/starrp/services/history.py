@@ -17,6 +17,8 @@ Ex.: GET /stock/documents/{id}/history/?page=1&page_size=10
 from django.contrib.auth import get_user_model
 from django.db import models
 
+from starrp.core.costs import COST_KEY, sees_costs
+from starrp.core.secrets import SECRET_FIELDS, fingerprint, is_secret_field
 from starrp.models import AuditLog
 
 # Campo de data/hora do registro → (rótulo, tom, ícone). O autor vem do `<prefixo>_by` se houver.
@@ -65,7 +67,10 @@ def diff(before, instance):
     [{"key": "price", "field": "Price", "from": "50.00", "to": "55.00"}] (a tela troca pelo rótulo do formulário). Só campos simples e FKs (pelo id)."""
     after = snapshot(instance)
     labels = {f.attname: str(f.verbose_name).capitalize() for f in instance._meta.concrete_fields}
-    return [{"key": name, "field": labels.get(name, name), "from": _show(before.get(name)), "to": _show(value)}
+    secret = {f.attname for f in instance._meta.concrete_fields if is_secret_field(f)}
+    return [{"key": name, "field": labels.get(name, name),
+             **({"from": "—", "to": SECRET_CHANGED} if name in secret
+                else {"from": _show(before.get(name)), "to": _show(value)})}
             for name, value in after.items() if before.get(name) != value]
 
 
@@ -73,13 +78,22 @@ def snapshot(instance):
     """Valores atuais dos campos simples (texto, número, data, FK pelo id)."""
     data = {}
     for field in instance._meta.concrete_fields:
-        if field.name in IGNORED or isinstance(field, (models.JSONField, models.FileField)):
+        if field.name in IGNORED or isinstance(field, models.FileField):
             continue
         value = getattr(instance, field.attname)
+        if is_secret_field(field):  # cifrado ou nome de segredo: só a marca, nunca o valor (S-02/S-11)
+            data[field.attname] = fingerprint(value if not isinstance(value, (dict, list)) else str(value))
+            continue
+        if isinstance(field, models.JSONField):
+            continue
+        if field.attname in SECRET_FIELDS:
+            data[field.attname] = fingerprint(value)  # percebe a troca sem guardar o segredo
+            continue
         data[field.attname] = value if isinstance(value, (bool, int, type(None))) else str(value)
     return data
 
 
+SECRET_CHANGED = "(alterado)"
 SAME_EDIT_SECONDS = 5  # auditoria e histórico da mesma gravação nascem juntos
 HISTORY_LIMIT = 300
 
@@ -94,6 +108,8 @@ def _history_rows(instance, logs):
             if f.name in IGNORED or isinstance(f, (models.JSONField, models.FileField))}
     skip |= {f"{prefix}_{end}" for prefix in MOMENTS for end in ("at", "by")}  # já viram "Confirmado", "Cancelado"...
     skip |= set(getattr(instance, "history_hidden", ()))  # o que a conta não deve ver
+    skip |= SECRET_FIELDS  # segredos nunca aparecem (nem ficam no histórico: excluded_fields)
+    skip |= {f.name for f in instance._meta.concrete_fields if is_secret_field(f)}
     labels = {f.name: str(f.verbose_name).capitalize() for f in instance._meta.concrete_fields}
     # A mesma gravação feita pela API tem auditoria E histórico: é a mesma se nasceu junto,
     # pelo mesmo usuário, levando os MESMOS campos aos MESMOS valores (só o tempo esconderia
@@ -133,8 +149,17 @@ def _attname(instance, name):
         return name
 
 
-def events(instance):
-    """Todos os acontecimentos do registro, do mais novo para o mais antigo."""
+def events(instance, user=None):
+    """Todos os acontecimentos do registro, do mais novo para o mais antigo. Com `user`, o custo só aparece para
+    quem tem `catalog.view_costs` (M-10)."""
+    rows = _events(instance)
+    if user is not None and not sees_costs(user):
+        for row in rows:
+            row["changes"] = [c for c in row["changes"] if not (isinstance(c, dict) and COST_KEY.search(str(c.get("key"))))]
+    return rows
+
+
+def _events(instance):
     logs = list(AuditLog.all_objects.filter(entity=instance._meta.model_name, object_id=str(instance.pk),
                                             account_id=instance.account_id).order_by("-created_at"))
     moments = []

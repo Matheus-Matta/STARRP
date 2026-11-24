@@ -17,8 +17,10 @@ def group(user_id):
 
 
 def send(user_id, event):
+    from starrp.core.dry_run import active
+
     layer = get_channel_layer()
-    if layer is None:
+    if layer is None or active():  # no ensaio da Cosmos: avisaria a tela de algo que vai ser desfeito
         return
     try:
         async_to_sync(layer.group_send)(group(user_id), {"type": "cosmos.event", "event": event})

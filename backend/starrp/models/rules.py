@@ -114,6 +114,10 @@ class StoreRule(SharedRule):
     # Cartão/PIX: o campo do NSU/autorização aparece sempre; obrigatório só com isto ligado.
     require_payment_reference = models.BooleanField(
         default=False, help_text="Só lança cartão/PIX com o NSU/autorização do comprovante.")
+    allow_store_credit_refund = models.BooleanField(
+        default=True,
+        help_text="Permite transformar devolução em crédito na carteira do cliente.",
+    )
     print_cancellation_receipt = models.BooleanField(default=False)
     # Etiqueta de balança (EAN-13 iniciado em 2): PLU + preço ou peso.
     scale_barcode_mode = models.CharField(max_length=10, choices=ScaleBarcode.choices, blank=True)

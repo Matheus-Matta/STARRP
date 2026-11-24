@@ -105,7 +105,11 @@ def test_nota_do_pedido_para_imprimir(ctx):
 
     got = api.get(f"/api/v1/sales/{sale['id']}/invoices/{invoice.pk}/danfe/")
     wrong = api.get(f"/api/v1/sales/{other['id']}/invoices/{invoice.pk}/danfe/")
-    seller = ctx.client(ctx.user("vend", "seller", is_seller=True)).get(
+    # Quem vê o pedido imprime a nota dele: o vendedor da venda, sim; outro vendedor (só vê as próprias), não.
+    vend = ctx.user("vend", "seller", is_seller=True)
+    Sale.all_objects.filter(pk=sale["id"]).update(seller=vend)
+    seller = ctx.client(vend).get(f"/api/v1/sales/{sale['id']}/invoices/{invoice.pk}/danfe/")
+    stranger = ctx.client(ctx.user("outro", "seller", is_seller=True)).get(
         f"/api/v1/sales/{sale['id']}/invoices/{invoice.pk}/danfe/")
 
     assert got.status_code == 200, got.json()
@@ -113,6 +117,7 @@ def test_nota_do_pedido_para_imprimir(ctx):
     assert body["number"] == 42 and body["barcode_svg"].startswith("<svg") and "<svg" in body["qr_svg"]
     assert body["payments"][0]["amount"] == "100.00"
     assert wrong.status_code == 404
-    assert seller.status_code == 200  # quem vê o pedido imprime a nota dele
+    assert seller.status_code == 200
+    assert stranger.status_code == 404
     assert Sale.all_objects.get(pk=sale["id"]).invoices.count() == 1
     assert PaymentMethod.all_objects.filter(account=ctx.account).exists()

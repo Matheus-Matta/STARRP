@@ -11,6 +11,7 @@ Mesma ideia da precificação: nada muda no cadastro sem alguém aprovar, sugest
 """
 from django.db import models
 
+from starrp.core.secrets import EncryptedTextField
 from starrp.models.base import TenantModel, TimeStampedModel, alive, user_fk
 from starrp.models.market import READ_TIMEOUT
 
@@ -18,12 +19,12 @@ from starrp.models.market import READ_TIMEOUT
 class SeoCredential(TimeStampedModel):
     account = models.OneToOneField("starrp.Account", related_name="seo_credential", on_delete=models.CASCADE)
     client_id = models.CharField("OAuth client ID", max_length=255)
-    client_secret = models.CharField("OAuth client secret", max_length=255)
-    refresh_token = models.CharField("Refresh token", max_length=512)
+    client_secret = EncryptedTextField("OAuth client secret")  # cifrados no banco
+    refresh_token = EncryptedTextField("Refresh token")
     customer_id = models.CharField("Conta do Google Ads (customer ID)", max_length=12, help_text="Só os dígitos.")
     login_customer_id = models.CharField("Conta administradora (login-customer-id)", max_length=12, blank=True,
                                          help_text="Só se o acesso for por uma conta administradora.")
-    developer_token = models.CharField("Developer token", max_length=255, blank=True,
+    developer_token = EncryptedTextField("Developer token", blank=True,
                                        help_text="Só para projeto antigo: o Google descontinuou em setembro de 2026.")
 
     class Meta:

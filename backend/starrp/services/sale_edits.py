@@ -17,7 +17,7 @@ from starrp.core.permissions import has_permission_code
 from starrp.models import CashMovement, CustomerCredit, FinancialTitle, Payment, PaymentMethod, Sale
 from starrp.models.sales import FulfillmentStatus
 from starrp.services import cash, finance, ledger, sales
-from starrp.services.checkout import _check_method
+from starrp.services.checkout import _check_method, check_method_store
 
 Kind = PaymentMethod.Kind
 LOCKED_FULFILLMENT = (FulfillmentStatus.DELIVERED, FulfillmentStatus.RETURNED, FulfillmentStatus.CANCELLED)
@@ -82,6 +82,7 @@ def change_payment(payment, user, method, *, reason, installments=1, nsu="", aut
         raise StateConflict("Só se troca a forma de um pagamento aprovado.", code="payment_not_approved")
     if method.account_id != sale.account_id or not method.is_active:
         raise BusinessError("Forma de pagamento inválida.")
+    check_method_store(method, sale)
     installments = max(int(installments or 1), 1)
     _check_method(sale, method, payment.amount, installments)
     session = payment.cash_session

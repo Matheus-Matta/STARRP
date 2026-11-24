@@ -74,6 +74,8 @@ class CashSession(StoreModel):
     approved_at = models.DateTimeField(null=True, blank=True)
     approval_reason = models.TextField(blank=True)
     notes = models.TextField(blank=True)
+    # Turno aberto no PDV desktop SEM o servidor: o id que o terminal deu (a fila reenvia sem duplicar).
+    offline_id = models.CharField(max_length=64, blank=True, db_index=True)
 
     class Meta:
         ordering = ["-opened_at"]
@@ -127,6 +129,8 @@ class CashMovement(StoreModel):
     approval_reason = models.TextField(blank=True, help_text="Justificativa de quem aprovou ou recusou.")
     reason = models.TextField(blank=True)
     destination = models.CharField(max_length=255, blank=True, help_text="Para onde foi a sangria.")
+    offline_id = models.CharField(max_length=64, blank=True, db_index=True,
+                                  help_text="Lançado no PDV desktop sem o servidor (id do terminal).")
 
     class Meta:
         ordering = ["created_at"]

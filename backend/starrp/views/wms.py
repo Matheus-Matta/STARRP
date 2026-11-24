@@ -112,6 +112,7 @@ class LabelPrintView(APIView):
 
     O tipo de item (produto, lote ou endereço) vem do `subject` do modelo de etiqueta.
     """
+    open_to_account = True  # confere por dentro (core/permissions.HasViewPermission)
 
     def post(self, request):
         body = s.LabelPrintSerializer(data=request.data, context={"request": request})

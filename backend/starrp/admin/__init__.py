@@ -11,20 +11,35 @@ from datetime import timedelta
 from django import forms
 from django.apps import apps
 from django.contrib import admin
+from django.db import models
 from django.utils import timezone
 from simple_history.admin import SimpleHistoryAdmin
 
-from starrp.models import Account, CosmosUsage, Module, PriceSourceToken, PriceUsage, SeoCredential, SeoUsage
+from starrp.admin.form_layout import semantic_fieldsets
+from starrp.admin.labels import apply_admin_labels
+from starrp.models import (
+    Account, CosmosUsage, Module, Permission, PriceSourceToken, PriceUsage, Role, SeoCredential, SeoUsage,
+)
+from starrp.services.access_catalog import AREAS, permission_rows
 from starrp.services.cosmos import usage
 from starrp.services.market import sources as price_sources
 from starrp.services.seo import keywords as seo_keywords
 
-READ_ONLY = {"stockmovement", "syncevent", "auditlog", "idempotencyrecord", "commission", "cosmosusage"}
+READ_ONLY = {
+    "stockmovement", "syncevent", "auditlog", "idempotencyrecord", "commission", "cosmosusage",
+    "integrationwebhookevent",
+}
 SEARCHABLE = ("name", "code", "sku", "number", "document", "description", "key", "access_key")
+
+apply_admin_labels()
 
 
 class StarrpAdmin(admin.ModelAdmin):
     list_per_page = 50
+    save_on_top = False
+    # Evita a transição depreciada do Django 5 e já normaliza URLs sem esquema
+    # como HTTPS nos formulários administrativos.
+    formfield_overrides = {models.URLField: {"assume_scheme": "https"}}
 
     def __init__(self, model, admin_site):
         names = [f.name for f in model._meta.fields]
@@ -32,12 +47,28 @@ class StarrpAdmin(admin.ModelAdmin):
                              n == "__str__" or n in names]
         self.search_fields = [n for n in SEARCHABLE if n in names]
         self.list_filter = [n for n in ("status", "is_active", "kind") if n in names]
-        self.raw_id_fields = [f.name for f in model._meta.fields if f.is_relation and f.many_to_one]
         super().__init__(model, admin_site)
 
     def get_queryset(self, request):
         manager = getattr(self.model, "all_objects", self.model._default_manager)
         return manager.all()
+
+    def get_fieldsets(self, request, obj=None):
+        """Seções úteis também para as models registradas genericamente."""
+        if self.fieldsets:
+            return super().get_fieldsets(request, obj)
+        return semantic_fieldsets(self.model, self.get_fields(request, obj))
+
+    def get_autocomplete_fields(self, request):
+        """Relações mostram o nome e pesquisam por texto; o UUID fica interno."""
+        fields = []
+        for field in self.model._meta.fields:
+            if not field.many_to_one or field.remote_field.parent_link:
+                continue
+            related_admin = self.admin_site._registry.get(field.remote_field.model)
+            if related_admin and related_admin.get_search_fields(request):
+                fields.append(field.name)
+        return tuple(fields)
 
     def has_change_permission(self, request, obj=None):
         return self.model._meta.model_name not in READ_ONLY and super().has_change_permission(request, obj)
@@ -48,6 +79,50 @@ class StarrpAdmin(admin.ModelAdmin):
 
 class StarrpHistoryAdmin(SimpleHistoryAdmin, StarrpAdmin):
     """O admin genérico + o botão "Histórico" (quem mudou o quê, com a versão de cada vez)."""
+
+
+class PermissionCheckboxWidget(forms.CheckboxSelectMultiple):
+    pass
+
+
+class RoleAdminForm(forms.ModelForm):
+    """Permissões sempre visíveis, agrupadas e traduzidas; sem seletor múltiplo oculto."""
+
+    class Meta:
+        model = Role
+        fields = "__all__"
+        widgets = {"permissions": PermissionCheckboxWidget}
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        field = self.fields["permissions"]
+        area_labels = {code: label for code, label, _module in AREAS}
+        permission_labels = {code: label for code, label, _area, _module, _order in permission_rows()}
+        permissions = list(Permission.objects.order_by("sort_order", "name"))
+        grouped = []
+        for area, _label, _module in AREAS:
+            choices = [
+                (permission.pk, permission_labels.get(permission.code, permission.name))
+                for permission in permissions if permission.group == area
+            ]
+            if choices:
+                grouped.append((area_labels[area], choices))
+        remaining = [
+            (permission.pk, permission_labels.get(permission.code, permission.name))
+            for permission in permissions if permission.group not in area_labels
+        ]
+        if remaining:
+            grouped.append(("Outras permissões", remaining))
+        field.label = "O que este perfil pode fazer"
+        field.help_text = ("Marque as ações liberadas. “Ver” permite consultar; “criar”, “editar” e “excluir” valem "
+                           "para o cadastro; “executar ações” libera as ações da tela.")
+        getattr(field.widget, "widget", field.widget).attrs["class"] = "permission-checklist"  # o de dentro do "+"
+        field.widget.choices = grouped
+
+
+@admin.register(Role)
+class RoleAdmin(StarrpHistoryAdmin):
+    form = RoleAdminForm
 
 
 class CosmosUsageInline(admin.TabularInline):
@@ -245,6 +320,13 @@ for model in apps.get_app_config("starrp").get_models():
     if not admin.site.is_registered(model):
         admin.site.register(model, StarrpHistoryAdmin if hasattr(model, "history") else StarrpAdmin)
 
+def _superuser_only(request):
+    """O admin é do SUPORTE (superusuário): ele mostra segredos (CSC, senha do A1, tokens) para poder corrigi-los.
+    Staff comum não entra (rodada 1, P-13) — a conta administra tudo pela própria tela do Starrp."""
+    return bool(request.user.is_active and request.user.is_superuser)
+
+
+admin.site.has_permission = _superuser_only
 admin.site.site_header = "Starrp — Administração"
 admin.site.site_title = "Starrp Admin"
 admin.site.index_title = "Visão geral"

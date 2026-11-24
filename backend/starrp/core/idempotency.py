@@ -25,10 +25,14 @@ class IdempotencyMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        key = (request.headers.get(HEADER) or "").strip()[:200]
+        raw = (request.headers.get(HEADER) or "").strip()[:180]
         account = getattr(request, "account", None)
-        if not key or account is None or request.method not in GUARDED_METHODS:
+        if not raw or account is None or request.method not in GUARDED_METHODS:
             return self.get_response(request)
+        # Por USUÁRIO (S-21): a mesma chave enviada por outro login da conta nunca recebe a resposta guardada
+        # de quem fez a operação (que podia ter mais permissão).
+        user = getattr(request, "user", None)
+        key = f"u{getattr(user, 'pk', None) or 0}:{raw}"
 
         from starrp.models import IdempotencyRecord
 

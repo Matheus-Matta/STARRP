@@ -32,6 +32,11 @@ class WarehouseViewSet(StockView, TenantViewSet):
     # O PDV precisa ler o depósito padrão mesmo sem o módulo de estoque.
     required_module = Module.BASE
 
+    def perform_destroy(self, instance):
+        if instance.is_default or instance.balances.exclude(quantity=0).exists():  # M-16
+            raise StateConflict("Este depósito é o padrão ou ainda tem saldo: transfira o estoque antes de excluir.")
+        super().perform_destroy(instance)
+
 
 # Colunas que vêm de propriedade (nome com a variação) ordenam pelo nome do produto.
 VARIANT_ORDERING = {"variant_name": "variant__product__name", "sku": "variant__sku"}
@@ -81,6 +86,7 @@ class StockLotViewSet(StockView, TenantViewSet):
 class StockDocumentViewSet(StockView, TenantViewSet):
     model = StockDocument
     serializer_class = s.StockDocumentSerializer
+    select_related = ("warehouse", "destination", "supplier", "checked_by", "inbound_nfe")
     prefetch_related = ("items__variant__product", "items__variant__volumes")
     filterset_fields = {"kind": ["exact"], "status": ["exact"], "warehouse": ["exact"], "supplier": ["exact"],
                         "inbound_nfe": ["exact"], "effective_date": ["gte", "lte"]}
@@ -202,7 +208,7 @@ class ReceivingDivergenceViewSet(StockView, ReadOnlyTenantViewSet):
 
     model = ReceivingDivergence
     serializer_class = s.ReceivingDivergenceSerializer
-    select_related = ("variant", "supplier", "document", "inbound_nfe", "checked_by")
+    select_related = ("variant__product", "supplier", "document", "inbound_nfe", "checked_by")
     filterset_fields = {"supplier": ["exact"], "reason": ["exact"], "document": ["exact"],
                         "inbound_nfe": ["exact"], "variant": ["exact"], "created_at": ["gte", "lte"]}
     search_fields = ["variant__sku", "variant__product__name", "supplier__name", "notes"]
@@ -214,7 +220,7 @@ class StockMovementViewSet(StockView, ReadOnlyTenantViewSet):
     model = StockMovement
     serializer_class = s.StockMovementSerializer
     ordering_map = {**VARIANT_ORDERING, "operator_name": "operator__first_name"}
-    select_related = ("variant__product", "warehouse", "lot")
+    select_related = ("variant__product", "warehouse", "lot", "operator")
     filterset_fields = {"variant": ["exact"], "variant__product": ["exact"], "warehouse": ["exact"], "kind": ["exact"],
                         "created_at": ["gte", "lte"], "document_item__document": ["exact"]}
 

@@ -103,6 +103,10 @@ class Notification(TenantModel):
         help_text="Vazio = todos os administradores da conta.",
     )
     category = models.CharField(max_length=10, choices=Category.choices, default=Category.SYSTEM, db_index=True)
+    permission = models.CharField(
+        max_length=120, blank=True, db_index=True,
+        help_text="Permissão necessária para receber a notificação. Vazio usa a categoria.",
+    )
     level = models.CharField(max_length=8, choices=Level.choices, default=Level.INFO)
     title = models.CharField(max_length=200)
     body = models.TextField(blank=True)
@@ -113,6 +117,7 @@ class Notification(TenantModel):
 
     class Meta:
         ordering = ["-created_at"]
+        indexes = [models.Index(fields=["recipient", "read_at", "created_at"], name="notif_rec_read_created_idx")]
 
     @property
     def is_read(self):

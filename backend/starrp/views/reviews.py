@@ -15,17 +15,19 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from starrp.core.errors import BusinessError
+from starrp.core.parsers import ObjectJSONParser
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer
 from starrp.core.text import decimals_as_text
 from starrp.core.viewsets import TenantViewSet
 from starrp.models import Customer, Product, Review, ReviewLink, Sale
 from starrp.services import reviews
+from starrp.services.store_access import scope_own_sales
 
 
 class ReviewSerializer(TenantSerializer):
@@ -60,7 +62,8 @@ class ReviewViewSet(TenantViewSet):
                         "customer": ["exact"], "sale": ["exact"], "verified_purchase": ["exact"],
                         "created_at": ["gte", "lte"]}
     search_fields = ["public_name", "comment", "product__name", "customer__name"]
-    action_permissions = {"links": "sales.view"}
+    # Moderar é de quem vê as vendas da equipe (M-18): o vendedor aprovava a própria avaliação.
+    action_permissions = {"links": "sales.view", "approve": "sales.view_all", "reject": "sales.view_all"}
 
     def create(self, request, *args, **kwargs):
         body = self.get_serializer(data=request.data)
@@ -88,7 +91,8 @@ class ReviewViewSet(TenantViewSet):
         """GET: um item por tipo que a venda pode avaliar, com o link atual (se houver).
         POST {sale, kind, days}: gera o link do tipo (ou devolve o que ainda vale)."""
         source = request.data if request.method == "POST" else request.query_params
-        sale = Sale.objects.filter(pk=source.get("sale")).select_related("store", "customer").first()
+        # M-18: o link traz telefone e token — vendedor só vê o das próprias vendas.
+        sale = scope_own_sales(Sale.objects.filter(pk=source.get("sale"))).select_related("store", "customer").first()
         if sale is None:
             raise BusinessError("Venda não encontrada.", code="not_found")
         if request.method == "POST":
@@ -121,7 +125,7 @@ class PublicReviewView(APIView):
 
     permission_classes = [AllowAny]
     authentication_classes = []
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    parser_classes = [MultiPartParser, FormParser, ObjectJSONParser]
 
     def get(self, request, token):
         return Response(decimals_as_text(reviews.public_view(reviews.link_from_token(token))))
@@ -132,5 +136,9 @@ class PublicReviewView(APIView):
             payload = json.loads(raw) if isinstance(raw, str) else (raw or request.data)
         except ValueError:
             raise BusinessError("Dados da avaliação inválidos.") from None
+        products = payload.get("products") if hasattr(payload, "get") else None
+        if not isinstance(payload, dict) or not isinstance(payload.get("delivery") or {}, dict) or not (
+                isinstance(products or [], list) and all(isinstance(row, dict) for row in products or [])):
+            raise BusinessError("Dados da avaliação inválidos.")
         link, created = reviews.submit(token, payload, request.FILES)
         return Response({"created": len(created), "kind": link.kind}, status=201)

@@ -9,9 +9,11 @@ from datetime import timezone as dt_timezone
 
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization.pkcs12 import load_key_and_certificates
+from django.core.files.base import ContentFile
 from django.db import transaction
 
 from starrp.core.errors import BusinessError
+from starrp.core.secrets import encrypt_bytes
 from starrp.core.text import only_digits
 from starrp.models import FiscalConfig, FiscalSeries, Store
 from starrp.models.fiscal import DocumentModel
@@ -83,8 +85,11 @@ def save_certificate(config, upload, password):
     info = certificate_info(cert)
     if info["cnpj"] and info["cnpj"][:8] != only_digits(config.cnpj)[:8]:
         raise BusinessError(f"O certificado é do CNPJ {info['cnpj']}, de outra empresa.", code="certificate_other_cnpj")
-    upload.seek(0)
-    config.certificate_file.save(f"{only_digits(config.cnpj)}.pfx", upload, save=False)
+    # Pasta privada, nome aleatório (models/fiscal.certificate_path) e conteúdo cifrado. O anterior sai.
+    old = config.certificate_file.name if config.certificate_file else ""
+    config.certificate_file.save("certificado.pfx", ContentFile(encrypt_bytes(content)), save=False)
+    if old and old != config.certificate_file.name:
+        transaction.on_commit(lambda: config.certificate_file.storage.delete(old))
     config.certificate_password = password
     config.certificate_name, config.certificate_cnpj = info["name"], info["cnpj"]
     config.certificate_valid_until = info["valid_until"]
@@ -97,7 +102,5 @@ def load_certificate(config):
     if not config.certificate_file:
         raise BusinessError(f"Envie o certificado digital A1 nos dados fiscais de {config.name}.",
                             code="certificate_missing")
-    with config.certificate_file.open("rb") as handle:
-        content = handle.read()
-    key, cert, _ = read_certificate(content, config.certificate_password)
+    key, cert, _ = read_certificate(config.certificate_bytes(), config.certificate_password)
     return key, cert

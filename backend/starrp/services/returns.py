@@ -15,13 +15,14 @@ from django.utils import timezone
 
 from starrp.core.errors import BusinessError, StateConflict
 from starrp.models import (
-    CashMovement, Commission, CustomerCredit, Sale, SaleItem, SaleReturn, SaleReturnItem, StockMovement,
+    CashMovement, CashSession, Commission, CustomerCredit, Sale, SaleItem, SaleReturn, SaleReturnItem, StockMovement,
 )
 from starrp.services import cash, ledger, numbering, stock
 from starrp.services.approvals import authorize
-from starrp.services.sales import cents, net_unit_price
+from starrp.services.sales import cents, net_total, net_unit_price
 
 Refund = SaleReturn.Refund
+WALLET = (Refund.STORE_CREDIT, Refund.EXCHANGE)  # os dois viram crédito na carteira do cliente
 
 
 def returned_quantity(sale_item, exclude_return=None):
@@ -39,23 +40,29 @@ def create(sale, user, items, *, refund_method=Refund.STORE_CREDIT, reason, appr
     if sale.status != Sale.Status.COMPLETED:
         raise StateConflict("Só venda concluída aceita devolução.")
     authorize(user, sale.account, sale.store, "sales.return", approval)
-    if refund_method == Refund.STORE_CREDIT and sale.customer_id is None:
+    _check_store_credit_refund(sale.store, refund_method)
+    # Troca também vira crédito na carteira (`_refund`): as mesmas exigências do vale (R2-13).
+    if refund_method in WALLET and sale.customer_id is None:
         raise BusinessError("Vale-troca exige cliente identificado na venda.", code="customer_required")
     sale_return = SaleReturn.all_objects.create(
         account_id=sale.account_id, store_id=sale.store_id, number=numbering.next_number(sale.store, "return"),
         sale=sale, customer=sale.customer, refund_method=refund_method, reason=reason, processed_by=user,
         created_by=user,
     )
-    total = Decimal("0")
+    total, asked = Decimal("0"), {}
     for data in items:
         item = data["sale_item"]
         quantity = Decimal(data["quantity"])
         if item.sale_id != sale.pk or item.status != SaleItem.Status.ACTIVE:
             raise BusinessError("Item não pertence a esta venda.")
-        if quantity <= 0 or quantity > item.quantity - returned_quantity(item):
+        # O MESMO item em duas linhas soma (R2-02): cada linha sozinha passava e reembolsava em dobro.
+        asked[item.pk] = asked.get(item.pk, Decimal("0")) + max(quantity, Decimal("0"))
+        if quantity <= 0 or asked[item.pk] > item.quantity - returned_quantity(item):
             raise BusinessError(f"Quantidade inválida para {item.description}.")
         unit = net_unit_price(item)
-        line = cents(unit * quantity)
+        # O que foi pago até aqui menos o que já voltou: a última devolução leva o centavo que sobrar.
+        already = returned_quantity(item) + asked[item.pk] - quantity
+        line = net_total(item, already + quantity) - net_total(item, already)
         SaleReturnItem.all_objects.create(
             account_id=sale.account_id, sale_return=sale_return, sale_item=item, quantity=quantity,
             unit_price=unit, total=line, restock=data.get("restock", True),
@@ -70,12 +77,27 @@ def create(sale, user, items, *, refund_method=Refund.STORE_CREDIT, reason, appr
 
 @transaction.atomic
 def complete(sale_return, user):
+    from starrp.models import Sale
+
+    # A VENDA primeiro (mesma ordem do cancelamento): duas devoluções da mesma venda concluídas ao mesmo
+    # tempo travavam só a própria devolução e as duas passavam na conferência do "já devolvido".
+    sale = Sale.all_objects.select_for_update().get(pk=sale_return.sale_id)
     sale_return = SaleReturn.all_objects.select_for_update().get(pk=sale_return.pk)
     if sale_return.status != SaleReturn.Status.DRAFT:
         raise StateConflict("Devolução já processada.")
+    if sale.status != Sale.Status.COMPLETED:
+        raise StateConflict("A venda não está mais concluída; cancele esta devolução em rascunho.")
+    # A regra pode ter sido desligada depois da criação do rascunho. Revalida ao efetivar,
+    # que é o momento em que a carteira do cliente realmente recebe o valor.
+    _check_store_credit_refund(sale_return.store, sale_return.refund_method)
     warehouse = stock.default_warehouse(sale_return.store)
-    for row in sale_return.items.select_related("sale_item__variant__product"):
-        if row.quantity > row.sale_item.quantity - returned_quantity(row.sale_item, exclude_return=sale_return):
+    rows = list(sale_return.items.select_related("sale_item__variant__product"))
+    totals = {}
+    for row in rows:  # a soma da devolução inteira por item (rascunho antigo pode ter linha repetida, R2-02)
+        totals[row.sale_item_id] = totals.get(row.sale_item_id, Decimal("0")) + row.quantity
+    for row in rows:
+        if totals[row.sale_item_id] > row.sale_item.quantity - returned_quantity(row.sale_item,
+                                                                                exclude_return=sale_return):
             raise StateConflict(f"{row.sale_item.description} já foi devolvido em outra operação.")
         if row.restock and warehouse is not None:
             stock.move_with_components(row.sale_item.variant, warehouse, row.quantity, StockMovement.Kind.SALE_RETURN,
@@ -86,6 +108,14 @@ def complete(sale_return, user):
     sale_return.save(update_fields=["status", "completed_at", "cash_session", "updated_at"])
     _mark_sale(sale_return.sale, sale_return, user)
     return sale_return
+
+
+def _check_store_credit_refund(store, refund_method):
+    if refund_method in WALLET and not store.rule.allow_store_credit_refund:
+        raise BusinessError(
+            "Esta filial não permite reembolso em crédito na carteira do cliente.",
+            code="store_credit_refund_disabled",
+        )
 
 
 def _mark_sale(sale, sale_return, user):
@@ -115,6 +145,26 @@ def _reverse_commission(row, sale_return):
     )
 
 
+def cash_refundable(sale, exclude=None):
+    """Quanto desta venda pode voltar em dinheiro (A-08): o que entrou de dinheiro de verdade (tudo menos vale-troca
+    e crediário, mais as parcelas de crediário já recebidas), menos o que já voltou fora da carteira."""
+    from django.db.models import Sum
+
+    from starrp.models import Installment, Payment, PaymentMethod
+
+    kinds = PaymentMethod.Kind
+    approved = sale.payments.filter(status=Payment.Status.APPROVED)
+    received = approved.exclude(method__kind__in=(kinds.STORE_CREDIT, kinds.INSTALLMENT_PLAN)).aggregate(
+        t=Sum("amount"))["t"] or Decimal("0")
+    received += Installment.all_objects.filter(
+        title__payment__in=approved.filter(method__kind=kinds.INSTALLMENT_PLAN), deleted_at__isnull=True,
+        title__deleted_at__isnull=True).aggregate(t=Sum("paid_amount"))["t"] or Decimal("0")
+    given = SaleReturn.all_objects.filter(sale=sale, status=SaleReturn.Status.COMPLETED, deleted_at__isnull=True)
+    if exclude is not None:
+        given = given.exclude(pk=exclude.pk)
+    return received - (given.exclude(refund_method__in=WALLET).aggregate(t=Sum("total"))["t"] or Decimal("0"))
+
+
 def _refund(sale_return, user):
     if sale_return.refund_method in (Refund.STORE_CREDIT, Refund.EXCHANGE):
         CustomerCredit.all_objects.create(
@@ -122,9 +172,17 @@ def _refund(sale_return, user):
             amount=sale_return.total, sale_return=sale_return, notes=f"Devolução {sale_return.number}",
         )
     elif sale_return.refund_method == Refund.CASH:
+        if sale_return.total > cash_refundable(sale_return.sale, exclude=sale_return):
+            raise BusinessError("A devolução em dinheiro passa do que o cliente pagou em dinheiro/cartão/PIX nesta "
+                                "venda: o que foi pago com vale volta em vale, e o crediário se abate nas parcelas.",
+                                code="cash_refund_limit")
         session = cash.session_for_user(sale_return.store, user)
         if session is None:
             raise StateConflict("Abra o caixa para devolver em dinheiro.", code="cash_session_required")
+        # Trava o turno: duas devoluções ao mesmo tempo liam a mesma gaveta, e o turno podia fechar no meio.
+        session = CashSession.all_objects.select_for_update().get(pk=session.pk)
+        if session.status != CashSession.Status.OPEN:
+            raise StateConflict("O turno fechou. Abra o caixa para devolver em dinheiro.", code="cash_session_required")
         if cash.expected_cash(session) < sale_return.total:
             raise BusinessError("Dinheiro em gaveta insuficiente para a devolução.")
         CashMovement.all_objects.create(

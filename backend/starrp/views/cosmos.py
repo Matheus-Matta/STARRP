@@ -24,11 +24,12 @@ from starrp.core.permissions import has_permission_code
 from starrp.core.viewsets import TenantViewSet
 from starrp.models import CosmosConversation, CosmosFinding, CosmosReport, Module
 from starrp.serializers.cosmos import CosmosConversationSerializer, CosmosFindingSerializer
-from starrp.services.cosmos import agent, attachments, rpc
+from starrp.services.cosmos import agent, attachments, rpc, voice
 from starrp.services.cosmos import report as cosmos_report
 
 
 class CosmosStatusView(APIView):
+    open_to_account = True  # confere por dentro (core/permissions.HasViewPermission)
     def get(self, request):
         return Response(rpc.status_payload(request.user, request.account))
 
@@ -56,6 +57,7 @@ class CosmosConversationViewSet(TenantViewSet):
 
 
 class CosmosAttachmentView(APIView):
+    open_to_account = True  # confere por dentro (core/permissions.HasViewPermission)
     parser_classes = [MultiPartParser]
 
     def post(self, request):
@@ -71,7 +73,27 @@ class CosmosAttachmentView(APIView):
         return Response(attachments.payload(attachment), status=201)
 
 
+class CosmosVoiceTranscriptionView(APIView):
+    """Recebe uma fala curta, transcreve e descarta o áudio; nunca cria mensagem por conta própria."""
+
+    open_to_account = True
+    parser_classes = [MultiPartParser]
+
+    def post(self, request):
+        allowed = (request.account.cosmos_active and request.account.cosmos_voice_enabled
+                   and has_permission_code(request.user, "cosmos.view"))
+        if not allowed:
+            raise PermissionDenied("A conversa por voz não está disponível para esta conta.")
+        if not agent.enabled():
+            raise voice.VoiceUnavailable("A Cosmos ainda não foi ligada neste servidor.")
+        upload = request.FILES.get("audio")
+        if upload is None:
+            raise ValidationError({"audio": "Envie a gravação no campo `audio`."})
+        return Response({"text": voice.transcribe(upload, request.account)})
+
+
 class CosmosReportExportView(APIView):
+    open_to_account = True  # confere por dentro (core/permissions.HasViewPermission)
     def get(self, request, pk):
         if not request.account.cosmos_active:
             raise PermissionDenied("Você não tem permissão para usar a Cosmos.")

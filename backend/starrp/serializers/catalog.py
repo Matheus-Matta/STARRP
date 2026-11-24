@@ -6,16 +6,16 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied
 
+from starrp.core.costs import HideCostFieldsMixin
 from starrp.core.permissions import has_permission_code
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, tenant_serializer
+from starrp.core.text import clean_html
 from starrp.models import (
     Attribute, AttributeValue, Brand, Category, Image, KitComponent, Module, Product, ProductBarcode, ProductImage,
     ProductVariant, ProductVolume, ServiceRule, SupplierProduct, Tag, Warehouse,
 )
 from starrp.serializers.tags import TaggedSerializerMixin
-from starrp.core.text import clean_html
 from starrp.services import catalog, media, stock, variant_grid
-
 
 
 class RichSeoMixin:
@@ -52,7 +52,10 @@ class BrandSerializer(TenantSerializer):
 AttributeValueSerializer = tenant_serializer(AttributeValue, read_only=("normalized",))
 KitComponentSerializer = tenant_serializer(KitComponent)
 ProductImageSerializer = tenant_serializer(ProductImage)
-SupplierProductSerializer = tenant_serializer(SupplierProduct)
+
+
+class SupplierProductSerializer(HideCostFieldsMixin, tenant_serializer(SupplierProduct)):
+    cost_fields = ("last_cost",)
 
 
 class AttributeSerializer(TenantSerializer):
@@ -130,8 +133,10 @@ class VolumeSerializer(serializers.ModelSerializer):
         read_only_fields = ["number"]
 
 
-class VariantSerializer(TenantSerializer):
+class VariantSerializer(HideCostFieldsMixin, TenantSerializer):
     """Variante aninhada no produto. `values` = ids dos valores da grade (Cor: Azul...)."""
+
+    cost_fields = ("average_cost", "last_cost")
 
     id = serializers.UUIDField(required=False)
     sku = serializers.CharField(max_length=60, required=False, allow_blank=True)

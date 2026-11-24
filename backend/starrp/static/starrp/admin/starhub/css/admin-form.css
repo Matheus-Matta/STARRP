@@ -98,7 +98,16 @@ fieldset.module .description {
 
 /* Bloco de inline empilhado (cada variante): o fieldset nao tem titulo proprio,
    entao a 1a linha colava na barra "Variante: ...". Mesmo respiro das secoes. */
-.inline-related > fieldset.module {
-  padding-top: 16px;
-  padding-bottom: 8px;
-}
+
+/* Perfil de acesso: permissões visíveis e marcáveis, sem o select múltiplo. */
+.field-permissions .flex-container { display: block; }
+.permission-checklist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; width: 100%; }
+.permission-checklist > div { min-width: 0; overflow: hidden; padding-bottom: 5px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--background); }
+.permission-checklist > div > label:first-child { display: block; padding: 10px 12px; border-bottom: 1px solid var(--border); background: var(--muted); color: var(--mono); font-size: .75rem; font-weight: 650; }
+.permission-checklist > div > div { padding: 0 5px; }
+.permission-checklist > div > div:first-of-type { padding-top: 5px; }
+.permission-checklist > div > div > label { display: grid; grid-template-columns: 18px minmax(0, 1fr); align-items: start; gap: 8px; min-height: 34px; box-sizing: border-box; padding: 8px; border-radius: 6px; color: var(--foreground); font-size: .75rem; line-height: 1.35; cursor: pointer; }
+.permission-checklist > div > div > label:hover { background: var(--muted); }
+.permission-checklist > div > div > label:has(input:checked) { background: color-mix(in srgb, var(--primary) 10%, var(--background)); color: var(--primary); font-weight: 550; }
+.permission-checklist input { margin: 0; }
+@media (max-width: 840px) { .permission-checklist { grid-template-columns: 1fr; } }

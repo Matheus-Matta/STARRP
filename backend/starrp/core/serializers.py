@@ -103,6 +103,17 @@ def related_scope_error(obj, account):
     """
     if not hasattr(obj, "_meta"):
         return None
+    from django.contrib.auth import get_user_model
+
+    if isinstance(obj, get_user_model()):
+        # Usuário não tem `account_id`: vale quem tem perfil NESTA conta (S-18). Sem isso, um id sequencial
+        # revelaria o nome de usuários de outras contas (e do suporte) ao gravar operador/vendedor.
+        from starrp.models import UserProfile
+
+        if obj.is_superuser or not UserProfile.all_objects.filter(user=obj, account=account,
+                                                                  deleted_at__isnull=True).exists():
+            return "Usuário não pertence a esta conta."
+        return None
     obj_account = getattr(obj, "account_id", None)
     if obj_account is not None and obj_account != account.id:
         return "Registro relacionado pertence a outra conta."

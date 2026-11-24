@@ -7,13 +7,13 @@
     GET  /fiscal/invoices/                          notas emitidas (NFC-e / NF-e)
 """
 from rest_framework.decorators import action
-from rest_framework.exceptions import MethodNotAllowed
+from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
 
 from starrp.core.errors import BusinessError
 from starrp.core.viewsets import ReadOnlyTenantViewSet, TenantViewSet
-from starrp.models import FiscalConfig, Invoice
+from starrp.models import FiscalConfig, FiscalSeries, Invoice, Store
 from starrp.models.platform import Module
 from starrp.serializers import misc as s
 from starrp.services import danfe, dfe, fiscal_data, invoice_cancel
@@ -21,15 +21,49 @@ from starrp.services import danfe, dfe, fiscal_data, invoice_cancel
 MAX_PFX_BYTES = 64 * 1024
 
 
+def check_fiscal_config(request, config):
+    """Dados fiscais servem a várias filiais (A-10): quem é de algumas só altera os usados SÓ por elas (ou os que
+    criou e ainda não têm filial)."""
+    allowed = getattr(request, "allowed_store_ids", None)
+    if allowed is None:
+        return
+    stores = set(Store.all_objects.filter(fiscal_config=config, deleted_at__isnull=True).values_list("pk", flat=True))
+    if stores - set(allowed) or (not stores and config.created_by_id != request.user.pk):
+        raise PermissionDenied("Estes dados fiscais são de outra filial; só quem acessa a filial pode alterá-los.")
+
+
+class FiscalSeriesViewSet(TenantViewSet):
+    model = FiscalSeries
+    serializer_class = s.FiscalSeriesSerializer
+    permission_code = "fiscal"
+    required_module = Module.BASE
+    select_related = ("config",)
+    filterset_fields = ["config", "document_model"]
+
+    def check_writable(self, instance):
+        super().check_writable(instance)
+        check_fiscal_config(self.request, instance.config)
+
+    def save_kwargs(self, serializer, creating):
+        config = serializer.validated_data.get("config")
+        if config is not None:
+            check_fiscal_config(self.request, config)
+        return super().save_kwargs(serializer, creating)
+
+
 class FiscalConfigViewSet(TenantViewSet):
     model = FiscalConfig
     serializer_class = s.FiscalConfigSerializer
     permission_code = "fiscal"
-    required_module = Module.FISCAL
+    required_module = Module.BASE
     parser_classes = [JSONParser, MultiPartParser, FormParser]
     prefetch_related = ("stores", "dfe_states")
     filterset_fields = ["is_active", "environment", "dfe_enabled"]
     search_fields = ["name", "legal_name", "trade_name", "cnpj"]
+
+    def check_writable(self, instance):
+        super().check_writable(instance)
+        check_fiscal_config(self.request, instance)
 
     def initial(self, request, *args, **kwargs):
         # O certificado chega em multipart: a base exige corpo JSON-objeto.
@@ -41,6 +75,8 @@ class FiscalConfigViewSet(TenantViewSet):
 
     @action(detail=False, methods=["post"], url_path="from-stores")
     def from_stores(self, request):
+        if self._restricted():
+            raise PermissionDenied("Só quem acessa todas as filiais cria os dados fiscais de todas.")
         created, skipped = fiscal_data.from_all_stores(request.account.pk, request.user)
         return Response({"linked": len(created), "skipped": skipped}, status=201 if created else 200)
 
@@ -51,7 +87,9 @@ class FiscalConfigViewSet(TenantViewSet):
             raise BusinessError("Envie o arquivo do certificado (.pfx).")
         if upload.size > MAX_PFX_BYTES:
             raise BusinessError("Arquivo grande demais para um certificado A1.")
-        return self._respond(fiscal_data.save_certificate(self.get_object(), upload, password))
+        config = self.get_object()
+        self.check_writable(config)
+        return self._respond(fiscal_data.save_certificate(config, upload, password))
 
     @action(detail=True, methods=["post"], url_path="sync-dfe")
     def sync_dfe(self, request, pk=None):
@@ -63,7 +101,7 @@ class InvoiceViewSet(ReadOnlyTenantViewSet):
     model = Invoice
     serializer_class = s.InvoiceSerializer
     permission_code = "fiscal"
-    required_module = Module.FISCAL
+    required_module = Module.BASE
     select_related = ("store", "fiscal_config", "sale")
     prefetch_related = ("items",)
     filterset_fields = {"status": ["exact"], "document_model": ["exact"], "sale": ["exact"],

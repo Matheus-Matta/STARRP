@@ -9,7 +9,7 @@ POST /api/v1/seo-checks/<id>/refresh/    analisa de novo
 POST /api/v1/seo-checks/<id>/apply/      {"fields": ["name", "seo_title", "seo_description", "slug"]} grava as aprovadas
 POST /api/v1/seo-checks/<id>/reject/     recusa as sugestões
 
-Pede o módulo `seo`, liberado pela plataforma. Ver pede `catalog.view`; o resto, `catalog.manage`.
+Pede o módulo `seo`, liberado pela plataforma. Ver pede `seo.access`; o resto, `seo.full`.
 """
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -24,13 +24,13 @@ from starrp.services import batches
 from starrp.services.market import scope
 from starrp.services.seo import analyzer
 
-MANAGE = "catalog.manage"
+MANAGE = "seo.full"
 
 
 class SeoCheckViewSet(TenantViewSet):
     model = SeoCheck
     serializer_class = SeoCheckSerializer
-    permission_code = "catalog"
+    permission_code = "seo"
     required_module = Module.SEO
     action_permissions = {"product": MANAGE, "run": MANAGE, "rules": MANAGE, "refresh": MANAGE, "apply": MANAGE, "reject": MANAGE}
     http_method_names = ["get", "post", "head", "options"]

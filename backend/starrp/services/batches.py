@@ -57,6 +57,9 @@ def _dispatch(task):
     from starrp.tasks.batches import batch_step
 
     if settings.PRICE_READ_IN_THREAD:
+        from starrp.core.dry_run import guard
+
+        guard("leitura em segundo plano")  # a thread não herda o ensaio da Cosmos (rodada 1, P-15)
         threading.Thread(target=_loop, args=(str(task.pk),), daemon=True).start()
     else:
         batch_step.delay(str(task.pk))

@@ -58,8 +58,15 @@ def from_book(actor, slug, params, conversation=None):
     handler, permission, module = report_book.BOOK[slug]
     if not has_permission_code(actor.user, permission) or (module != "base" and not actor.account.has_module(module)):
         raise datasets.Denied("Você não tem permissão para ver este relatório.")
-    data = decimals_as_text(handler(actor.account, actor.store, params))
-    return _save(actor, data, conversation, slug=slug)
+    from starrp.core.costs import cost_measure_requested, redact_report, sees_costs
+
+    if sees_costs(actor.user):
+        data = handler(actor.account, actor.store, params)
+    elif cost_measure_requested(params or {}):
+        raise datasets.Denied("Classificar por margem exige a permissão de ver custo e margem.")
+    else:
+        data = redact_report(handler(actor.account, actor.store, params))
+    return _save(actor, decimals_as_text(data), conversation, slug=slug)
 
 
 def _kpi(actor, spec, date_from, date_to):

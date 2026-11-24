@@ -13,8 +13,11 @@ Mudanças em relação ao StarChef:
   reemitida, o que o OneToOne antigo impedia.
 """
 from django.core.exceptions import ValidationError
+import uuid
+
 from django.db import models
 
+from starrp.core.secrets import EncryptedTextField, decrypt_bytes, private_storage
 from starrp.models.base import PercentField, TenantModel, alive
 from starrp.models.company import AddressFields
 
@@ -61,6 +64,11 @@ class FiscalProfile(TenantModel):
         return self.name
 
 
+def certificate_path(_instance, _filename):
+    """Nome aleatório: nada de CNPJ no caminho (o CNPJ é público e o arquivo não pode ser adivinhado)."""
+    return f"certificates/{uuid.uuid4().hex}.pfx.enc"
+
+
 class FiscalConfig(AddressFields, TenantModel):
     """Dados fiscais de um emitente (um CNPJ). As lojas se vinculam a ele."""
 
@@ -98,25 +106,28 @@ class FiscalConfig(AddressFields, TenantModel):
     strict_fiscal_profile = models.BooleanField(default=False, help_text="Recusa item com perfil incompleto.")
     # Contingência offline da NFC-e (tpEmis=9). Documento emitido não se apaga.
     offline_contingency = models.BooleanField(default=False)
-    # Emissão no próprio terminal: exige `Account.local_fiscal_allowed`.
+    # Emissão no próprio terminal (PDV desktop/web pelo Comunicador Fiscal): faz parte do Base.
     local_fiscal_enabled = models.BooleanField(default=False)
     local_fiscal_contingency = models.BooleanField(default=False)
     local_fiscal_url = models.CharField(max_length=255, blank=True)
 
     csc_id = models.CharField(max_length=6, blank=True)
-    csc_token = models.CharField(max_length=64, blank=True)
+    # Segredos cifrados no banco (core/secrets.py) e fora do histórico.
+    csc_token = EncryptedTextField(blank=True)
     qr_base_url = models.URLField(blank=True)
     portal_url = models.URLField(blank=True)
-    certificate_file = models.FileField(upload_to="certificates/", null=True, blank=True)
-    certificate_password = models.CharField(max_length=255, blank=True)
+    # Certificado A1: pasta PRIVADA (nunca servida por /media), nome aleatório e conteúdo cifrado.
+    # Ler sempre por `certificate_bytes()`.
+    certificate_file = models.FileField(upload_to=certificate_path, storage=private_storage, null=True, blank=True)
+    certificate_password = EncryptedTextField(blank=True)
     certificate_valid_until = models.DateTimeField(null=True, blank=True)
     certificate_cnpj = models.CharField(max_length=18, blank=True)
     certificate_name = models.CharField(max_length=255, blank=True)
 
     # Provedor externo (Focus NFe): cadastro da empresa lá e seus tokens.
     provider_company_id = models.CharField(max_length=80, blank=True)
-    provider_token_production = models.CharField(max_length=255, blank=True)
-    provider_token_homologation = models.CharField(max_length=255, blank=True)
+    provider_token_production = EncryptedTextField(blank=True)
+    provider_token_homologation = EncryptedTextField(blank=True)
     provider_sync_status = models.CharField(
         max_length=20, choices=ProviderSync.choices, default=ProviderSync.NOT_CONFIGURED
     )
@@ -145,8 +156,6 @@ class FiscalConfig(AddressFields, TenantModel):
         errors = {}
         if self.local_fiscal_contingency and not self.local_fiscal_enabled:
             errors["local_fiscal_contingency"] = "Contingência local exige a emissão local ligada."
-        if self.local_fiscal_enabled and not getattr(self.account, "local_fiscal_allowed", False):
-            errors["local_fiscal_enabled"] = "A conta não está autorizada a emitir no terminal."
         if self.local_fiscal_enabled and self.provider == self.Provider.MANUAL:
             errors["local_fiscal_enabled"] = "O provedor Manual não transmite nada."
         if errors:
@@ -163,6 +172,11 @@ class FiscalConfig(AddressFields, TenantModel):
             return bool(self.cnpj and self.state and token)
         return bool(self.cnpj and self.state and self.csc_token and self.certificate_file)
 
+    def certificate_bytes(self) -> bytes:
+        """O .pfx em claro (o arquivo fica cifrado na pasta privada)."""
+        with self.certificate_file.open("rb") as handle:
+            return decrypt_bytes(handle.read())
+
 
 class FiscalSeries(TenantModel):
     """Um contador de numeração. Loja e nuvem nunca dividem série: offline,
@@ -176,6 +190,10 @@ class FiscalSeries(TenantModel):
     document_model = models.CharField(max_length=2, choices=DocumentModel.choices, default=DocumentModel.NFCE)
     series = models.PositiveIntegerField(default=1)
     origin = models.CharField(max_length=5, choices=Origin.choices, default=Origin.STORE)
+    # Série própria do PDV desktop que emite pelo comunicador local: offline, cada caixa numera
+    # a sua e dois caixas nunca repetem número (`services/fiscal_emission.py`).
+    terminal = models.ForeignKey("starrp.Terminal", null=True, blank=True, related_name="fiscal_series",
+                                 on_delete=models.SET_NULL)
     next_number = models.PositiveIntegerField(default=1)
     is_active = models.BooleanField(default=True)
 

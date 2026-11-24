@@ -13,8 +13,8 @@ from django.db import transaction
 from django.db.models import Q, Sum
 from django.utils import timezone
 
-from starrp.core.errors import InsufficientStock
-from starrp.models import StockBalance, StockLot, StockMovement, StockRule, Warehouse
+from starrp.core.errors import BusinessError, InsufficientStock
+from starrp.models import ProductVariant, StockBalance, StockLot, StockMovement, StockRule, Warehouse
 from starrp.services import wms
 
 ENTRY_KINDS_WITH_COST = {StockMovement.Kind.PURCHASE, StockMovement.Kind.INITIAL}
@@ -41,9 +41,22 @@ def _locked_balance(variant, warehouse):
     return balance
 
 
+def _lock_costs(variant):
+    """Trava a variante e relê os custos: o objeto do chamador pode estar velho (o mesmo produto em duas linhas
+    do documento, ou duas entradas ao mesmo tempo em depósitos diferentes)."""
+    fresh = ProductVariant.all_objects.select_for_update(of=("self",)).only("average_cost", "last_cost").get(
+        pk=variant.pk)
+    variant.average_cost, variant.last_cost = fresh.average_cost, fresh.last_cost
+
+
+def _total_quantity(variant):
+    total = StockBalance.all_objects.filter(variant=variant).aggregate(total=Sum("quantity"))["total"]
+    return Decimal(total or 0)
+
+
 def _update_average_cost(variant, quantity, cost):
-    current = StockBalance.all_objects.filter(variant=variant).aggregate(total=Sum("quantity"))["total"] or 0
-    previous_qty = max(Decimal(current), Decimal(0))
+    _lock_costs(variant)
+    previous_qty = max(_total_quantity(variant), Decimal(0))
     total_qty = previous_qty + quantity
     if total_qty > 0:
         variant.average_cost = (previous_qty * variant.average_cost + quantity * cost) / total_qty
@@ -51,8 +64,34 @@ def _update_average_cost(variant, quantity, cost):
     variant.save(update_fields=["average_cost", "last_cost", "updated_at"])
 
 
-def _record(variant, warehouse, quantity, kind, *, lot, unit_cost, source_key, allow_negative, bin=None, **links):
-    if source_key:
+def _restore_average_cost(movement):
+    """Estorno: a quantidade sai (entrada cancelada) ou volta (venda cancelada) pelo custo com que se moveu.
+
+    Antes de gravar o estorno. Sem base para a conta (custo zero, saldo que zera ou resultado negativo), o custo
+    médio fica como está."""
+    entry = movement.kind in ENTRY_KINDS_WITH_COST
+    if movement.unit_cost <= 0 or not (entry or movement.kind == StockMovement.Kind.SALE):
+        return
+    variant = movement.variant
+    _lock_costs(variant)
+    previous_qty = max(_total_quantity(variant), Decimal(0))
+    total_qty = previous_qty - movement.quantity
+    value = previous_qty * variant.average_cost - movement.quantity * movement.unit_cost
+    if total_qty > 0 and value > 0:
+        variant.average_cost = value / total_qty
+    if entry and variant.last_cost == movement.unit_cost:
+        previous = StockMovement.all_objects.filter(
+            variant=variant, kind__in=ENTRY_KINDS_WITH_COST, unit_cost__gt=0, reversals__isnull=True,
+        ).exclude(pk=movement.pk).order_by("-created_at").values_list("unit_cost", flat=True).first()
+        if previous is not None:
+            variant.last_cost = previous
+    variant.save(update_fields=["average_cost", "last_cost", "updated_at"])
+
+
+def _record(variant, warehouse, quantity, kind, *, lot, unit_cost, source_key, allow_negative, bin=None,
+            checked=False, **links):
+    # `checked`: quem chama (`move`) já conferiu esta chave e as derivadas dela numa consulta só.
+    if source_key and not checked:
         existing = StockMovement.all_objects.filter(account_id=variant.account_id, source_key=source_key).first()
         if existing is not None:
             return existing
@@ -152,12 +191,24 @@ def _move_binned(variant, warehouse, quantity, kind, settings, *, bin, lot, sour
 
 @transaction.atomic
 def move(variant, warehouse, quantity, kind, *, lot=None, bin=None, unit_cost=None, source_key="",
-         allow_negative=None, **links):
+         allow_negative=None, rule=None, **links):
     """Movimenta `quantity` (com sinal). Devolve a lista de movimentos gerados.
+
+    `rule`: a regra de estoque da filial do depósito, quando o chamador já tem (venda/documento com
+    vários itens buscam uma vez em vez de uma por item).
 
     Depósito com WMS (`uses_bins`): `bin` escolhe o endereço; sem ele, a entrada
     vai para a doca de recebimento e a saída segue o plano de separação.
     """
+    # Última barreira do isolamento (R2-03): produto, depósito, lote e endereço da mesma conta/depósito.
+    if variant.account_id != warehouse.account_id:
+        raise BusinessError("Produto e depósito são de contas diferentes.", code="stock_scope")
+    if lot is not None and (lot.variant_id != variant.pk or lot.warehouse_id != warehouse.pk):
+        raise BusinessError("O lote não é deste produto neste depósito.", code="stock_lot_mismatch")
+    if bin is not None and bin.warehouse_id != warehouse.pk:
+        raise BusinessError("O endereço não é deste depósito.", code="stock_bin_mismatch")
+    if unit_cost is not None and Decimal(unit_cost) < 0:
+        raise BusinessError("Custo não pode ser negativo.", code="stock_negative_cost")
     if not variant.track_stock:  # serviço, kit e "não controla estoque"
         return []
     quantity = Decimal(quantity)
@@ -168,10 +219,10 @@ def move(variant, warehouse, quantity, kind, *, lot=None, bin=None, unit_cost=No
             account_id=variant.account_id, variant=variant, warehouse=warehouse).order_by("created_at"))
         if done:
             return done
-    settings = settings_for(variant.account_id, warehouse.store_id)
+    settings = rule or settings_for(variant.account_id, warehouse.store_id)
     if allow_negative is None:
         allow_negative = settings.allow_negative_stock
-    common = {"unit_cost": unit_cost, "allow_negative": allow_negative, **links}
+    common = {"unit_cost": unit_cost, "allow_negative": allow_negative, "checked": True, **links}
     if warehouse.uses_bins:
         return _move_binned(variant, warehouse, quantity, kind, settings, bin=bin, lot=lot, source_key=source_key,
                             common=common)
@@ -207,7 +258,7 @@ def seed(variants, *, warehouse, quantity, unit_cost, operator):
 
 @transaction.atomic
 def move_with_components(variant, warehouse, quantity, kind, *, source_key, **links):
-    """Kit movimenta as variantes que o compõem; o resto movimenta a si mesmo."""
+    """Kit movimenta as variantes que o compõem; o resto movimenta a si mesmo. Aceita `rule` (ver `move`)."""
     if not variant.is_kit:
         return move(variant, warehouse, quantity, kind, source_key=source_key, **links)
     movements = []
@@ -219,7 +270,13 @@ def move_with_components(variant, warehouse, quantity, kind, *, source_key, **li
 
 @transaction.atomic
 def reverse(movement, *, operator=None, reason=""):
-    """Estorno: movimento inverso, ligado ao original. Nunca apaga o razão."""
+    """Estorno: movimento inverso, ligado ao original. Nunca apaga o razão. Repetido, devolve o já feito."""
+    key = f"reversal:{movement.pk}"
+    existing = StockMovement.all_objects.filter(account_id=movement.account_id, source_key=key).first()
+    if existing is not None:
+        return existing
+    _locked_balance(movement.variant, movement.warehouse)  # mesma ordem de trava da entrada: saldo, depois custo
+    _restore_average_cost(movement)
     return _record(
         movement.variant,
         movement.warehouse,
@@ -228,7 +285,8 @@ def reverse(movement, *, operator=None, reason=""):
         lot=movement.lot,
         bin=movement.bin,
         unit_cost=movement.unit_cost,
-        source_key=f"reversal:{movement.pk}",
+        source_key=key,
+        checked=True,
         allow_negative=True,
         reversal_of=movement,
         operator=operator,
@@ -241,3 +299,32 @@ def available(variant, warehouse=None):
     if warehouse is not None:
         qs = qs.filter(warehouse=warehouse)
     return qs.aggregate(total=Sum("quantity"))["total"] or Decimal("0")
+
+
+def scoped_stock(request=None, store_ids=None, of="variant"):
+    """Subquery do saldo somado da variante (`of="variant"`) ou do produto (`of="product"`, todas as
+    variantes vivas dele) da linha de fora, só nos
+    depósitos que a tela pode ver: a filial ATIVA; sem ela, as filiais permitidas do usuário.
+
+    Subquery (e não `Sum("balances__quantity")` no queryset): o Sum por join somava os depósitos de
+    TODAS as filiais (o PDV de uma loja mostrava o estoque da rede inteira, e quem é restrito a uma
+    filial via o total das outras) e ainda se mistura com os joins de busca/filtro."""
+    from django.db.models import OuterRef, Subquery
+
+    if of == "product":
+        qs = StockBalance.all_objects.filter(variant__product_id=OuterRef("pk"), variant__deleted_at__isnull=True)
+        group = "variant__product_id"
+    else:
+        qs = StockBalance.all_objects.filter(variant_id=OuterRef("pk"))
+        group = "variant_id"
+    qs = qs.filter(deleted_at__isnull=True)
+    if store_ids is None and request is not None:
+        store = getattr(request, "store", None)
+        if store is not None:
+            store_ids = [store.pk]
+        else:
+            store_ids = getattr(request, "allowed_store_ids", None)
+    if store_ids is not None:
+        qs = qs.filter(warehouse__store_id__in=list(store_ids))
+    total = qs.order_by().values(group).annotate(t=Sum("quantity")).values("t")
+    return Subquery(total, output_field=StockBalance._meta.get_field("quantity"))

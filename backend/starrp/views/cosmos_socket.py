@@ -17,6 +17,7 @@ A resposta do modelo roda numa thread à parte (`thread_sensitive=False`): uma c
 não segura as dos outros usuários nem as próximas mensagens deste.
 """
 import asyncio
+import time
 
 from asgiref.sync import sync_to_async
 from channels.db import database_sync_to_async
@@ -28,6 +29,19 @@ from starrp.services.cosmos import agent, events, rpc
 
 CLOSE_UNAUTHENTICATED = 4401
 CLOSE_FORBIDDEN = 4403
+
+
+@database_sync_to_async
+def _revoked(user_id, issued):
+    """Senha trocada/redefinida depois que o token saiu (`UserProfile.sessions_revoked_at`, S-12)."""
+    from starrp.models import UserProfile
+
+    revoked = (UserProfile.all_objects.filter(user_id=user_id).exclude(sessions_revoked_at=None)
+               .values_list("sessions_revoked_at", flat=True).first())
+    return revoked is not None and (issued is None or int(issued) < int(revoked.timestamp()))
+
+
+SESSION_RECHECK = 30  # segundos entre uma conferência da sessão no banco e outra
 
 
 @database_sync_to_async
@@ -61,10 +75,14 @@ class CosmosConsumer(AsyncJsonWebsocketConsumer):
         if user is None or not user.is_authenticated:
             await self.close(code=CLOSE_UNAUTHENTICATED)
             return
+        if await _revoked(user.pk, self.scope.get("token_iat")):
+            await self.close(code=CLOSE_UNAUTHENTICATED)
+            return
         if not await _can_use(user):
             await self.close(code=CLOSE_FORBIDDEN)
             return
         self.user_id = user.pk
+        self.checked_at = time.monotonic()
         params = dict(part.split("=", 1) for part in self.scope.get("query_string", b"").decode().split("&") if "=" in part)
         self.store_id = params.get("store") or None
         self.group = events.group(user.pk)
@@ -76,8 +94,26 @@ class CosmosConsumer(AsyncJsonWebsocketConsumer):
         if getattr(self, "group", None):
             await self.channel_layer.group_discard(self.group, self.channel_name)
 
+    async def _session_ended(self):
+        """Token vencido ou senha trocada: fecha (o widget renova pelo cookie e reconecta)."""
+        expires = self.scope.get("token_exp")
+        if expires is not None and time.time() >= int(expires):
+            return True
+        if time.monotonic() - getattr(self, "checked_at", 0) < SESSION_RECHECK:
+            return False
+        self.checked_at = time.monotonic()
+        return await _revoked(self.user_id, self.scope.get("token_iat"))
+
+    async def session_revoked(self, message):
+        """`sessions.revoke_all`: fecha na hora as abas abertas do usuário."""
+        await self.close(code=CLOSE_UNAUTHENTICATED)
+
     async def receive_json(self, content, **kwargs):
         kind = content.get("type") if isinstance(content, dict) else None
+        if kind != "ping" and await self._session_ended():
+            await self.send_json({"type": "error", "code": "session_expired", "message": "Sessão encerrada."})
+            await self.close(code=CLOSE_UNAUTHENTICATED)
+            return
         if kind == "ping":
             await self.send_json({"type": "pong"})
         elif kind == "store":

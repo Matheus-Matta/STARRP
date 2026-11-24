@@ -13,6 +13,7 @@ from django.utils import timezone
 from starrp.core.errors import BusinessError
 from starrp.models import Commission
 from starrp.services import ledger
+from starrp.services.store_access import scope_to_allowed
 
 
 @transaction.atomic
@@ -21,8 +22,8 @@ def pay(account, seller, financial_account, user, *, until=None, store=None):
     pending = Commission.all_objects.select_for_update().filter(
         account=account, seller=seller, status=Commission.Status.PENDING, created_at__date__lte=until
     )
-    if store is not None:
-        pending = pending.filter(store=store)
+    # Sem filial ativa: só as filiais de quem paga (R2-04: o gerente de uma pagava as de todas).
+    pending = pending.filter(store=store) if store is not None else scope_to_allowed(pending)
     total = pending.aggregate(t=Sum("amount"))["t"] or Decimal("0")
     if total <= 0:
         raise BusinessError("Não há comissão a pagar para este vendedor no período.")

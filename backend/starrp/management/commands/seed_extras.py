@@ -8,7 +8,8 @@ Cada parte só cria se aquele cadastro ainda estiver vazio na conta, então roda
 não duplica. Cobre: regras extras entre filiais, tags, fotos, volumes, produto do
 fornecedor, preço "de/por", devoluções e vale-troca, diferença de caixa, DF-e, eventos e
 pendências de NF-e, divergência de recebimento, estoque endereçado com lotes, patrimônio,
-impressoras, balanças, fila de impressão, notificações, links de avaliação e plano.
+impressoras, balanças, fila de impressão, notificações, links de avaliação, plano e o financeiro
+de serviços (contas de sócio, recorrências mensal/semanal/diária, multa e juros, crédito, reembolso).
 
 Fica de fora o que é só técnico (sincronização, idempotência, recuperação de senha).
 """
@@ -28,10 +29,10 @@ from starrp.models import (
     DiscountTable, InboundNFe, LogisticsRule, NFeEvent, NFeIssue, Notification, Printer, PrintJob, Product,
     ProductImage, ProductVariant, ProductVolume, Promotion, PromotionProduct, ReceivingDivergence, ReviewLink, Sale,
     SaleReturn, Scale, ScaleReading, StockDocument, StockRule, Store, StoreRule, Supplier, SupplierProduct, Tag,
-    Terminal, UserProfile, Warehouse,
+    Terminal, UserProfile, Warehouse, FinancialAccount, FinancialCategory, FinancialTransaction, RecurringTitle,
 )
 from starrp.models.platform import Module, Plan, Subscription
-from starrp.services import cash, media, returns, reviews, tags
+from starrp.services import cash, finance, ledger, media, recurring, returns, reviews, tags
 
 TODAY = timezone.localdate()
 COLORS = ["#2563eb", "#16a34a", "#dc2626", "#9333ea", "#ea580c", "#0891b2", "#ca8a04", "#db2777", "#4f46e5", "#64748b"]
@@ -59,7 +60,7 @@ class Command(BaseCommand):
         for step in (self.plans, self.rules, self.tags, self.images, self.volumes, self.supplier_products,
                      self.promotion_products, self.sale_returns, self.cash_discrepancies, self.fiscal_events,
                      self.divergences, self.addressed_stock, self.assets, self.devices, self.notifications,
-                     self.review_links):
+                     self.review_links, self.services_finance):
             with transaction.atomic():
                 done = step()
             self.stdout.write(f"  · {done}")
@@ -86,7 +87,7 @@ class Command(BaseCommand):
         optional = [m.value for m in Module if m != Module.BASE]
         for code, name, price, stores, users, terminals, modules in [
             ("basico", "Básico", "149.90", 1, 5, 2, []),
-            ("profissional", "Profissional", "349.90", 3, 15, 6, ["stock", "finance", "fiscal"]),
+            ("profissional", "Profissional", "349.90", 3, 15, 6, ["stock", "finance"]),
             ("completo", "Completo", "799.90", 0, 0, 0, optional),
         ]:
             Plan.objects.get_or_create(code=code, defaults={
@@ -509,3 +510,85 @@ class Command(BaseCommand):
                     ReviewLink.all_objects.filter(pk=link.pk).update(expires_at=self.now - timedelta(days=1))
                 made += 1
         return f"{made} links de avaliação (alguns vencidos)"
+
+    # ── Financeiro de serviços: sócios, recorrências, encargos, crédito e reembolso ──
+    def services_finance(self):
+        if self.has(RecurringTitle):
+            return "financeiro de serviços: já existe"
+        acc = self.account
+        bank = FinancialAccount.all_objects.filter(account=acc, kind="bank", deleted_at__isnull=True).order_by("created_at").first()
+        partners = []
+        for name in ("Sócio Matheus", "Sócio João"):
+            partners.append(FinancialAccount.all_objects.get_or_create(
+                account=acc, name=name, deleted_at__isnull=True,
+                defaults={"kind": "partner", "partner_share": Decimal("50"), "created_by": self.admin})[0])
+        me, partner = partners
+
+        def category(name, kind):
+            return FinancialCategory.all_objects.get_or_create(account=acc, name=name, kind=kind, deleted_at__isnull=True,
+                                                               defaults={"created_by": self.admin})[0]
+        services = category("Serviços prestados", "income")
+        daily = category("Diárias de terceiros", "expense")
+        ads = category("Divulgação", "expense")
+        parking = category("Estacionamento", "expense")
+
+        clients = []
+        for i, name in enumerate(("Clínica Bem Estar", "Academia Forma Livre", "Restaurante Sabor da Casa")):
+            clients.append(Customer.all_objects.get_or_create(
+                account=acc, name=name, deleted_at__isnull=True, defaults={"created_by": self.admin, "email": f"financeiro{i}@exemplo.com"})[0])
+        helper = Supplier.all_objects.get_or_create(account=acc, name="Carlos — diarista", deleted_at__isnull=True,
+                                                    defaults={"created_by": self.admin})[0]
+        agency = Supplier.all_objects.get_or_create(account=acc, name="Agência Pulso Digital", deleted_at__isnull=True,
+                                                    defaults={"created_by": self.admin})[0]
+        start = (TODAY.replace(day=1) - timedelta(days=75)).replace(day=1)  # três meses atrás
+        base = {"account": acc, "store": self.main, "created_by": self.admin, "fine_percent": Decimal("2"),
+                "interest_percent": Decimal("1")}
+        recs = [
+            # os 3 boletos de R$ 1.500, todo dia 10
+            *(RecurringTitle.all_objects.create(**base, kind="receivable", description=f"Mensalidade {c.name}", customer=c,
+                                                 category=services, amount=Decimal("1500"), frequency="monthly", due_day=10,
+                                                 start_date=start, lead_days=10) for c in clients),
+            # diarista toda segunda às 8h
+            RecurringTitle.all_objects.create(**{**base, "fine_percent": 0, "interest_percent": 0}, kind="payable",
+                                              description="Diária do Carlos", supplier=helper, category=daily,
+                                              amount=Decimal("180"), frequency="weekly", due_weekday=0,
+                                              due_time="08:00", start_date=TODAY - timedelta(days=35), lead_days=3),
+            # estacionamento todo dia, só até o fim do mês que vem
+            RecurringTitle.all_objects.create(**{**base, "fine_percent": 0, "interest_percent": 0}, kind="payable",
+                                              description="Estacionamento", category=parking, amount=Decimal("25"),
+                                              frequency="daily", start_date=TODAY - timedelta(days=6),
+                                              end_date=finance.add_months(TODAY.replace(day=1), 2) - timedelta(days=1),
+                                              lead_days=0),
+        ]
+        created = sum(len(recurring.generate_one(r, today=TODAY, user=self.admin)) for r in recs)
+
+        # Baixas do passado: clientes pagam no banco (um paga a mais), diárias pagas pelos sócios
+        for title in recs[0].titles.order_by("recurring_period"):
+            part = title.installments.get()
+            if part.due_date < TODAY - timedelta(days=20):
+                finance.settle(part, bank, part.balance, self.admin, date=part.due_date)
+        first_b = recs[1].titles.order_by("recurring_period").first()
+        if first_b:  # pagou R$ 1.700: R$ 200 viram crédito
+            part = first_b.installments.get()
+            finance.settle(part, bank, part.balance + Decimal("200"), self.admin, date=part.due_date, allow_excess=True)
+        for i, title in enumerate(recs[3].titles.order_by("recurring_period")):
+            part = title.installments.get()
+            if part.due_date < TODAY:
+                finance.settle(part, partner if i % 2 else me, part.balance, self.admin, date=part.due_date)
+        for title in recs[4].titles.filter(recurring_period__lt=TODAY):
+            part = title.installments.get()
+            finance.settle(part, me, part.balance, self.admin, date=part.due_date)
+
+        # Divulgação parcelada em 3x, todo dia 5, com multa e juros (a 1ª já venceu e está em aberto)
+        finance.create_title(store=self.main, kind="payable", description="Campanha de divulgação", total=Decimal("2400"),
+                             installments=3, first_due=finance.add_months(TODAY, -1).replace(day=5), frequency="monthly",
+                             due_day=5, supplier=agency, category=ads, user=self.admin, fine_percent=Decimal("2"),
+                             interest_percent=Decimal("1"), issue_date=finance.add_months(TODAY, -1).replace(day=1))
+        # Anúncio pago do bolso do João e reembolso parcial
+        FinancialTransaction.all_objects.create(account=acc, financial_account=partner, kind="out", amount=Decimal("350"),
+                                                description="Impulsionamento no Instagram", date=TODAY - timedelta(days=12),
+                                                category=ads, operator=self.admin, created_by=self.admin)
+        ledger.transfer(bank, partner, Decimal("200"), description="reembolso ao João", user=self.admin,
+                        date=TODAY - timedelta(days=3))
+        return (f"financeiro de serviços: 2 contas de sócio, {len(recs)} recorrências (mensal, semanal, diária), "
+                f"{created} títulos gerados, crédito de cliente e reembolso")

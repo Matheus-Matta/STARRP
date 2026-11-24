@@ -3,28 +3,44 @@
 O PDV usa o token no header (`Authorization: Bearer`); a retaguarda web usa
 os cookies httpOnly que o login também grava.
 """
-import hashlib
-import secrets
-from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.core.mail import send_mail
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
+from django.db import transaction
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.serializers import TokenRefreshSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from starrp.core.envelope import envelope
+from starrp.core.throttling import AnonScopedRateThrottle
 from starrp.models import PasswordResetRequest
 from starrp.serializers.users import MeSerializer
+from starrp.services import password_reset, sessions
+from starrp.tasks.accounts import send_password_reset
 
 User = get_user_model()
+
+
+# O app web avisa que trabalha SÓ com cookie: aí os tokens não vão no corpo da resposta (um script
+# injetado na página não teria o que ler). PDV desktop e app móvel não mandam e seguem recebendo.
+COOKIE_ONLY_HEADER = "HTTP_X_AUTH_TRANSPORT"
+
+
+def _cookie_only(request, token_from_cookie=False):
+    return token_from_cookie or request.META.get(COOKIE_ONLY_HEADER, "").lower() == "cookie"
+
+
+def _without_tokens(response):
+    response.data = {key: value for key, value in response.data.items() if key not in ("access", "refresh")}
+    return response
 
 
 def _set_cookies(response, access, refresh=None):
@@ -36,13 +52,15 @@ def _set_cookies(response, access, refresh=None):
 
 
 class LoginView(TokenObtainPairView):
-    throttle_classes = [ScopedRateThrottle]
+    throttle_classes = [AnonScopedRateThrottle]
     throttle_scope = "login"
 
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         if response.status_code == 200:
             _set_cookies(response, response.data["access"], response.data["refresh"])
+            if _cookie_only(request):
+                _without_tokens(response)
         return response
 
 
@@ -51,11 +69,22 @@ class RefreshView(APIView):
     authentication_classes = []
 
     def post(self, request):
-        refresh = request.data.get("refresh") or request.COOKIES.get(settings.JWT_AUTH_REFRESH_COOKIE)
+        from_body = request.data.get("refresh")
+        refresh = from_body or request.COOKIES.get(settings.JWT_AUTH_REFRESH_COOKIE)
         serializer = TokenRefreshSerializer(data={"refresh": refresh})
-        serializer.is_valid(raise_exception=True)
+        # Refresh vencido, já girado ou revogado no logout: 401 (como nas views do simplejwt), não 500.
+        # (`get_authenticate_header` abaixo impede o DRF de rebaixar o 401 para 403.)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as error:
+            raise InvalidToken(error.args[0]) from error
         response = Response(serializer.validated_data)
-        return _set_cookies(response, serializer.validated_data["access"], serializer.validated_data.get("refresh"))
+        _set_cookies(response, serializer.validated_data["access"], serializer.validated_data.get("refresh"))
+        # Renovado pelo cookie = navegador: o token novo fica só no cookie.
+        return _without_tokens(response) if _cookie_only(request, token_from_cookie=not from_body) else response
+
+    def get_authenticate_header(self, request):
+        return 'Bearer realm="api"'
 
 
 class LogoutView(APIView):
@@ -70,8 +99,8 @@ class LogoutView(APIView):
             except Exception:  # noqa: BLE001 — token já inválido: logout continua
                 pass
         response = Response({"detail": "Sessão encerrada."})
-        response.delete_cookie(settings.JWT_AUTH_COOKIE)
-        response.delete_cookie(settings.JWT_AUTH_REFRESH_COOKIE, path="/api/v1/auth/")
+        response.delete_cookie(settings.JWT_AUTH_COOKIE, samesite=settings.AUTH_COOKIE_SAMESITE)
+        response.delete_cookie(settings.JWT_AUTH_REFRESH_COOKIE, path="/api/v1/auth/", samesite=settings.AUTH_COOKIE_SAMESITE)
         return response
 
 
@@ -84,46 +113,40 @@ class MeView(APIView):
         return Response(MeSerializer().to_representation(request))
 
 
-def _token_hash(token):
-    return hashlib.sha256(token.encode()).hexdigest()
-
-
 class PasswordResetRequestView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
-    throttle_classes = [ScopedRateThrottle]
+    throttle_classes = [AnonScopedRateThrottle]
     throttle_scope = "password_reset"
 
     def post(self, request):
         email = serializers.EmailField().run_validation(request.data.get("email"))
-        user = User.objects.filter(email__iexact=email, is_active=True).first()
-        if user is not None:
-            token = secrets.token_urlsafe(32)
-            PasswordResetRequest.objects.create(
-                user=user, token_hash=_token_hash(token),
-                expires_at=timezone.now() + timedelta(minutes=settings.PASSWORD_RESET_TIMEOUT_MINUTES),
-            )
-            link = f"{settings.FRONTEND_URL}/redefinir-senha?token={token}"
-            send_mail("Redefinição de senha", f"Para criar uma nova senha acesse: {link}", None, [user.email])
-        # Mesma resposta exista ou não o e-mail: não revela quem tem conta.
+        # Procurar, criar o link e enviar ficam na fila: a resposta é a mesma, e no mesmo tempo, exista ou não o
+        # e-mail (não revela quem tem conta). O link nasce no worker: não passa pelo Redis.
+        send_password_reset.delay(email)
         return Response({"detail": "Se o e-mail existir, enviaremos as instruções."})
 
 
 class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
     authentication_classes = []
-    throttle_classes = [ScopedRateThrottle]
+    throttle_classes = [AnonScopedRateThrottle]
     throttle_scope = "password_reset"
 
+    @transaction.atomic
     def post(self, request):
-        token, password = request.data.get("token", ""), request.data.get("password", "")
-        reset = PasswordResetRequest.objects.filter(token_hash=_token_hash(token)).select_related("user").first()
+        token, password = str(request.data.get("token") or ""), str(request.data.get("password") or "")
+        reset = (PasswordResetRequest.objects.select_for_update(of=("self",)).filter(token_hash=password_reset.token_hash(token))
+                 .select_related("user").first())
         if reset is None or not reset.is_usable:
             return Response(envelope(400, "Link inválido ou expirado.", "reset_invalid"), status=400)
-        if len(password) < 6:
-            return Response(envelope(400, "A senha precisa ter ao menos 6 caracteres."), status=400)
+        try:
+            validate_password(password, user=reset.user)  # S-12: mesma política da tela de usuários
+        except DjangoValidationError as error:
+            return Response(envelope(400, " ".join(error.messages), "password_weak"), status=400)
         reset.user.set_password(password)
         reset.user.save(update_fields=["password"])
-        reset.used_at = timezone.now()
-        reset.save(update_fields=["used_at"])
+        # Este link e os outros ainda abertos deste usuário deixam de valer (R2-28).
+        PasswordResetRequest.objects.filter(user=reset.user, used_at__isnull=True).update(used_at=timezone.now())
+        sessions.revoke_all(reset.user)  # quem estava logado com a senha antiga sai
         return Response({"detail": "Senha alterada."})

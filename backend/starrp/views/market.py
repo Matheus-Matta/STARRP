@@ -14,7 +14,7 @@ POST /api/v1/competitor-prices/import/       planilha (`file`): produto, concorr
 
 A leitura roda no worker: a resposta volta na hora, com `reading` verdadeiro, e a tela relê até terminar.
 Tudo pede o módulo `pricing`, liberado pela plataforma (plano ou admin do Django).
-Ver pede `catalog.view`; decidir e reler pedem `catalog.manage` (é o preço do cadastro).
+Ver pede `pricing.access`; decidir, cadastrar concorrente e reler pedem `pricing.full`.
 """
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -31,7 +31,7 @@ from starrp.serializers.market import (
 from starrp.services import batches
 from starrp.services.market import competitors, scope, tracker
 
-MANAGE = "catalog.manage"
+MANAGE = "pricing.full"
 
 
 def _ready(account):
@@ -42,7 +42,7 @@ def _ready(account):
 class PriceCheckViewSet(TenantViewSet):
     model = PriceCheck
     serializer_class = PriceCheckSerializer
-    permission_code = "catalog"
+    permission_code = "pricing"
     required_module = Module.PRICING
     action_permissions = {"approve": MANAGE, "reject": MANAGE, "refresh": MANAGE, "run": MANAGE, "product": MANAGE,
                           "rules": MANAGE}
@@ -108,7 +108,7 @@ class PriceCheckViewSet(TenantViewSet):
 class MarketOfferViewSet(TenantViewSet):
     model = MarketOffer
     serializer_class = MarketOfferSerializer
-    permission_code = "catalog"
+    permission_code = "pricing"
     required_module = Module.PRICING
     http_method_names = ["get", "head", "options"]
     filterset_fields = ("price_check", "used")
@@ -120,7 +120,7 @@ class CompetitorPriceViewSet(TenantViewSet):
 
     model = CompetitorPrice
     serializer_class = CompetitorPriceSerializer
-    permission_code = "catalog"
+    permission_code = "pricing"
     required_module = Module.PRICING
     action_permissions = {"import_sheet": MANAGE}
     parser_classes = [JSONParser, FormParser, MultiPartParser]
@@ -146,4 +146,6 @@ class CompetitorPriceViewSet(TenantViewSet):
         upload = request.FILES.get("file")
         if upload is None:
             raise BusinessError("Envie a planilha no campo `file`.", code="file_required")
+        if upload.size > 8 * 1024 * 1024:
+            raise BusinessError("Planilha grande demais: o limite é 8 MB.", code="file_too_large")
         return Response(competitors.import_sheet(request.account, request.user, upload.name, upload.read()))

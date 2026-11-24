@@ -15,6 +15,7 @@
     POST /sales/{id}/edit-delivery/      corrige a entrega da venda concluída (sales.edit_delivery)
     POST /sales/{id}/payments/{pay}/change/  troca a forma do pagamento da venda concluída (sales.edit_payment)
     GET  /sales/{id}/invoices/{nota}/danfe/  nota do pedido para imprimir (DANFE): dados + código de barras + QR
+    POST /sales/{id}/invoices/register/      nota emitida pelo PDV desktop (comunicador ACBrLib local)
 """
 from decimal import Decimal
 
@@ -24,15 +25,15 @@ from django.shortcuts import get_object_or_404
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from starrp.core.errors import BusinessError
+from starrp.core.errors import BusinessError, StateConflict
 from starrp.core.viewsets import TenantViewSet
 from starrp.models import CustomerAddress, FreightTable, Invoice, Payment, PaymentMethod, Sale, SaleItem
 from starrp.serializers import operations as ops
 from starrp.serializers import sales as s
-from starrp.services import checkout, danfe, invoice_cancel, returns, sale_addresses, sale_edits, sales
+from starrp.services import checkout, danfe, fiscal_emission, invoice_cancel, returns, sale_addresses, sale_edits, sales
 from starrp.services.barcodes import resolve_code
 from starrp.services.cash import session_for_user
-from starrp.services.store_access import sellers_of
+from starrp.services.store_access import scope_own_sales, sellers_of
 
 User = get_user_model()
 
@@ -51,7 +52,7 @@ class SaleViewSet(TenantViewSet):
     model = Sale
     permission_code = "sales"
     http_method_names = ["get", "post", "patch", "delete", "head", "options"]
-    select_related = ("seller", "customer")
+    select_related = ("seller", "customer", "store__rule")
     prefetch_related = ("items", "payments__method", "invoices")
     filterset_fields = {"status": ["exact", "in"], "overall_status": ["exact", "in"], "payment_status": ["exact", "in"],
                         "fulfillment_status": ["exact", "in"], "channel": ["exact"], "seller": ["exact"], "customer": ["exact"],
@@ -64,13 +65,24 @@ class SaleViewSet(TenantViewSet):
     action_permissions = {"cancel": "sales.view", "returns": "sales.view", "payments": "cash.manage",
                           "payment_detail": "cash.manage", "checkout_action": "cash.manage", "complete": "cash.manage",
                           "fulfillment": "logistics.manage", "edit_delivery": "sales.edit_delivery",
-                          "change_payment": "sales.edit_payment", "danfe": "sales.view"}
+                          "change_payment": "sales.edit_payment", "danfe": "sales.view",
+                          "register_invoice": "cash.manage"}
+
+    def get_queryset(self):
+        # Vendedor (sem `sales.view_all`) vê e mexe só nas vendas dele.
+        qs = scope_own_sales(super().get_queryset())
+        if getattr(self, "detail", False) and self.action not in ("retrieve", None):
+            # Ação na venda (item, pagamento, checkout...): o serviço trava e relê a venda e a resposta
+            # sai de `_respond`, que recarrega tudo. Pré-carregar itens/pagamentos/notas aqui era perdido.
+            qs = qs.prefetch_related(None)
+        return qs
 
     def get_serializer_class(self):
         return s.SaleListSerializer if self.action == "list" else s.SaleSerializer
 
     def _respond(self, sale, status=200):
-        sale = Sale.all_objects.prefetch_related("items", "payments__method", "invoices").get(pk=sale.pk)
+        sale = (Sale.all_objects.select_related("store__rule", "seller", "customer")
+                .prefetch_related("items", "payments__method", "invoices").get(pk=sale.pk))
         return Response(s.SaleSerializer(sale, context=self.get_serializer_context()).data, status=status)
 
     def _body(self, serializer_class):
@@ -93,7 +105,12 @@ class SaleViewSet(TenantViewSet):
     def partial_update(self, request, *args, **kwargs):
         raise BusinessError("Use as ações da venda (itens, desconto, cupom, pagamento).", code="use_actions")
 
+    bulk_disabled = ("delete",)
+
     def destroy(self, request, *args, **kwargs):
+        raise BusinessError("Venda não é excluída: use /cancel/.", code="use_cancel")
+
+    def perform_destroy(self, instance):  # vale também para a exclusão em massa (A-03)
         raise BusinessError("Venda não é excluída: use /cancel/.", code="use_cancel")
 
     @action(detail=True, methods=["post"])
@@ -171,6 +188,12 @@ class SaleViewSet(TenantViewSet):
                                     .prefetch_related("items"), pk=invoice_id, sale=sale, deleted_at__isnull=True)
         return Response(danfe.build(invoice, self.get_serializer_context()))
 
+    @action(detail=True, methods=["post"], url_path="invoices/register")
+    def register_invoice(self, request, pk=None):
+        """A nota que o PDV desktop emitiu pelo comunicador ACBrLib local (`services/fiscal_emission.py`)."""
+        fiscal_emission.register(self.get_object(), request.user, request.data)
+        return self._respond(self.get_object())
+
     @action(detail=True, methods=["post"])
     def fulfillment(self, request, pk=None):
         """POST {"status": "ready"|"shipped"|"delivered", "note"}: anda (ou volta, com motivo) a entrega."""
@@ -185,7 +208,9 @@ class SaleViewSet(TenantViewSet):
 
     @items.mapping.get
     def list_items(self, request, pk=None):
-        return Response(s.SaleItemSerializer(self.get_object().items.all(), many=True).data)
+        # Com o contexto: sem ele o custo aparecia para quem não tem `catalog.view_costs` (M-10).
+        return Response(s.SaleItemSerializer(self.get_object().items.all(), many=True,
+                                             context=self.get_serializer_context()).data)
 
     @action(detail=True, methods=["patch", "delete"], url_path=r"items/(?P<item_id>[^/.]+)")
     def item_detail(self, request, pk=None, item_id=None):
@@ -206,7 +231,11 @@ class SaleViewSet(TenantViewSet):
         sale = sales.lock_open(self.get_object())
         data = self._body(s.SaleCustomerSerializer)
         changed = "customer" in data and (data["customer"].pk if data["customer"] else None) != sale.customer_id
-        for field in ("customer", "customer_document", "customer_name", "freight", "notes"):
+        # O limite (crediário) e o saldo (vale) foram conferidos no cliente de antes (R2-06).
+        if changed and sale.payments.filter(status="approved", method__kind__in=("installment_plan", "store_credit")).exists():
+            raise StateConflict("Tire o crediário/vale-troca já lançado antes de trocar o cliente.",
+                                code="customer_has_payment")
+        for field in ("customer", "customer_document", "customer_name", "notes"):
             if field in data:
                 setattr(sale, field, data[field])
         if data.get("customer") and not data.get("customer_document"):

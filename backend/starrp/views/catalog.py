@@ -1,5 +1,5 @@
 
-from django.db.models import Count, Max, Min, Q, Sum
+from django.db.models import Count, Max, Min, Q
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
@@ -17,6 +17,7 @@ from starrp.serializers import catalog as s
 from starrp.services import media, variant_grid
 
 VARIANT_PREFETCH = ("variants__barcodes", "variants__volumes", "variants__variant_values__value__attribute",
+                    "variants__values",
                     "images__image", "variants__images__image")
 ALIVE_VARIANT = Q(variants__deleted_at__isnull=True)
 
@@ -101,7 +102,9 @@ class ProductViewSet(TenantViewSet):
                 ids |= level
             qs = qs.filter(category__in=ids)
         if self.request.query_params.get("with_stock") in {"1", "true"}:
-            qs = qs.annotate(stock_quantity=Sum("variants__balances__quantity"))
+            from starrp.services.stock import scoped_stock
+
+            qs = qs.annotate(stock_quantity=scoped_stock(self.request, of="product"))
         qs = filter_by_tag(qs, self.request)
         # A busca por SKU/código passa pelas variantes: sem distinct, o produto se repetiria.
         return qs.distinct() if self.request.query_params.get("search") else qs
@@ -146,6 +149,7 @@ def filter_by_tag(qs, request):
 
 class TagViewSet(ReadOnlyTenantViewSet):
     """Sugestões para o campo de tags: `?scope=product&search=ver`. Grava-se pelo registro."""
+    open_to_account = True  # confere por dentro (core/permissions.HasViewPermission)
 
     model = Tag
     serializer_class = tag_serializers.TagSerializer

@@ -49,6 +49,10 @@ class Metric:
     label: str
     expr: object
     format: str = "money"
+    permission: str | None = None  # além da do conjunto (custo/margem: `catalog.view_costs`)
+
+
+COSTS = "catalog.view_costs"
 
 
 @dataclass
@@ -107,7 +111,8 @@ DATASETS = {
          "marca": Dim("Marca", "variant__product__brand__name"), "vendedor": Dim("Vendedor", _person("sale__seller")),
          "filial": Dim("Filial", "sale__store__name")},
         {"quantidade": Metric("Quantidade", Sum("quantity"), "quantity"), "faturamento": Metric("Faturamento", Sum("total")),
-         "custo": Metric("Custo", Sum(ITEM_COST)), "margem": Metric("Margem", Sum(F("total") - ITEM_COST, output_field=MONEY)),
+         "custo": Metric("Custo", Sum(ITEM_COST), permission=COSTS),
+         "margem": Metric("Margem", Sum(F("total") - ITEM_COST, output_field=MONEY), permission=COSTS),
          "descontos": Metric("Descontos", Sum("discount")),
          "vendas": Metric("Vendas", Count("sale", distinct=True), "number")},
         {"filial": "sale__store", "vendedor": "sale__seller", "produto": "variant__product",
@@ -150,7 +155,7 @@ DATASETS = {
          "ativo": Dim("Ativo", "is_active", {True: "Sim", False: "Não"}),
          "cadastrado_por": Dim("Cadastrado por", _person("product__created_by"))},
         {"quantidade": Metric("Variantes", Count("id"), "number"), "preco_medio": Metric("Preço médio", Avg("price")),
-         "custo_medio": Metric("Custo médio", Avg("average_cost"))},
+         "custo_medio": Metric("Custo médio", Avg("average_cost"), permission=COSTS)},
         {"categoria": "product__category", "marca": "product__brand", "ativo": "is_active"},
     ),
     "estoque": Dataset(
@@ -161,7 +166,7 @@ DATASETS = {
          "marca": Dim("Marca", "variant__product__brand__name"), "deposito": Dim("Depósito", "warehouse__name"),
          "filial": Dim("Filial", "warehouse__store__name")},
         {"quantidade": Metric("Quantidade", Sum("quantity"), "quantity"),
-         "valor_custo": Metric("Valor a custo", Sum(BALANCE_COST)),
+         "valor_custo": Metric("Valor a custo", Sum(BALANCE_COST), permission=COSTS),
          "valor_venda": Metric("Valor a preço de venda", Sum(BALANCE_PRICE)),
          "itens": Metric("Itens", Count("id"), "number")},
         {"filial": "warehouse__store", "deposito": "warehouse", "categoria": "variant__product__category",
@@ -224,10 +229,14 @@ def available(actor):
         if not _can(actor, ds):
             continue
         out[key] = {"descricao": f"{ds.label}: {ds.description}",
-                    "medidas": {k: m.label for k, m in ds.metrics.items()},
+                    "medidas": {k: m.label for k, m in ds.metrics.items() if _can_metric(actor, m)},
                     "agrupamentos": {k: d.label for k, d in ds.dims.items()},
                     "filtros": sorted(ds.filters), "tem_periodo": ds.date_field is not None}
     return out
+
+
+def _can_metric(actor, metric):
+    return metric.permission is None or has_permission_code(actor.user, metric.permission)
 
 
 def _can(actor, ds):
@@ -275,6 +284,8 @@ def query(actor, dataset, metrics=None, group_by=None, filters=None, date_from=N
     for name in metrics:
         if name not in ds.metrics:
             raise DatasetError(f"Medida '{name}' não existe em {dataset}. Opções: {', '.join(ds.metrics)}.")
+        if not _can_metric(actor, ds.metrics[name]):
+            raise Denied(f"Você não tem permissão para ver {ds.metrics[name].label.lower()} (custo e margem).")
     for name in group_by:
         if name not in ds.dims:
             raise DatasetError(f"Agrupamento '{name}' não existe em {dataset}. Opções: {', '.join(ds.dims)}.")

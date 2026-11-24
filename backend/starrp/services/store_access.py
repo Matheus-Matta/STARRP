@@ -5,7 +5,7 @@ dada uma loja, quais perfis a enxergam.
 """
 from django.db.models import Q
 
-from starrp.core.tenant import get_allowed_store_ids
+from starrp.core.tenant import get_allowed_store_ids, get_own_sales_user
 
 
 def profiles_reaching(store_ids):
@@ -50,3 +50,29 @@ def scope_to_allowed(qs, field="store"):
     """Para consultas de serviço feitas com `all_objects` (relatórios)."""
     allowed = get_allowed_store_ids()
     return qs if allowed is None else qs.filter(**{f"{field}__in": allowed})
+
+
+def own_sales_q(prefix=""):
+    """Vendas de quem só vê as PRÓPRIAS (sem `sales.view_all`): vendeu, registrou, operou ou guardou.
+    `prefix` para chegar na venda a partir de outro modelo (ex.: "sale__" nos itens). Vazio = sem restrição."""
+    uid = get_own_sales_user()
+    if uid is None:
+        return Q()
+    return (Q(**{f"{prefix}seller_id": uid}) | Q(**{f"{prefix}created_by_id": uid})
+            | Q(**{f"{prefix}operator_id": uid}) | Q(**{f"{prefix}parked_by_id": uid}))
+
+
+def scope_own_sales(qs, prefix=None):
+    """Aplica `own_sales_q` (consultas de serviço e relatórios). Sem `prefix`, descobre pelo modelo:
+    venda direto; item, devolução e pagamento pela venda. Outros modelos passam como estão."""
+    if get_own_sales_user() is None:
+        return qs
+    if prefix is None:
+        name = qs.model.__name__
+        prefix = "" if name == "Sale" else "sale__" if name in SALE_CHILDREN else None
+        if prefix is None:
+            return qs
+    return qs.filter(own_sales_q(prefix))
+
+
+SALE_CHILDREN = {"SaleItem", "SaleReturn", "Payment", "Commission"}

@@ -14,9 +14,13 @@ class SharedRuleSerializer(TenantSerializer):
         fields = "__all__"
 
     def get_store_names(self, obj):
+        if hasattr(obj, "stores_alive"):  # pré-carregado pela SharedRuleViewSet
+            return [store.name for store in obj.stores_alive]
         return list(obj.stores_using().order_by("name").values_list("name", flat=True))
 
     def get_store_count(self, obj):
+        if hasattr(obj, "stores_alive"):
+            return len(obj.stores_alive)
         return obj.stores_using().count()
 
     def validate_is_default(self, value):

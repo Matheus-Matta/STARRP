@@ -58,9 +58,17 @@ def validate_lot_dates(item, today=None):
         raise BusinessError(f"{name}: a fabricação é depois da validade. Confira as datas.", code="lot_dates_inverted")
 
 
+def _rule(doc, warehouse):
+    """Regra de estoque da filial do depósito, buscada UMA vez por documento (não por item)."""
+    cache = doc.__dict__.setdefault("_stock_rules", {})
+    if warehouse.store_id not in cache:
+        cache[warehouse.store_id] = stock.settings_for(doc.account_id, warehouse.store_id)
+    return cache[warehouse.store_id]
+
+
 def _entry(item, doc, kind, user):
     lot = None
-    settings = stock.settings_for(doc.account_id, doc.warehouse.store_id)
+    settings = _rule(doc, doc.warehouse)
     if item.variant.track_lots and not item.expires_at and not item.lot_number:
         raise BusinessError(f"{item.variant.display_name} exige lote ou validade na entrada.", code="lot_required")
     validate_lot_dates(item)
@@ -68,12 +76,13 @@ def _entry(item, doc, kind, user):
     if item.variant.track_stock and stock.uses_lots(item.variant, settings) and item.quantity > 0:
         lot = _new_lot(item, doc.warehouse, item.quantity, received_at=doc.effective_date)
     stock.move(item.variant, doc.warehouse, item.quantity, kind, lot=lot, bin=item.bin, unit_cost=item.unit_cost,
-               source_key=f"doc:{item.pk}", document_item=item, operator=user)
+               source_key=f"doc:{item.pk}", document_item=item, operator=user, rule=settings)
 
 
 def _exit(item, doc, kind, user, warehouse=None):
-    return stock.move(item.variant, warehouse or doc.warehouse, -item.quantity, kind, lot=item.lot, bin=item.bin,
-                      source_key=f"doc:{item.pk}", document_item=item, operator=user)
+    warehouse = warehouse or doc.warehouse
+    return stock.move(item.variant, warehouse, -item.quantity, kind, lot=item.lot, bin=item.bin,
+                      source_key=f"doc:{item.pk}", document_item=item, operator=user, rule=_rule(doc, warehouse))
 
 
 def _transfer(item, doc, user):
@@ -89,7 +98,7 @@ def _transfer(item, doc, user):
             lot.save(update_fields=["lot_number", "expires_at", "manufactured_at"])
         stock.move(item.variant, doc.destination, -out.quantity, StockMovement.Kind.TRANSFER_IN, lot=lot,
                    bin=item.destination_bin, unit_cost=out.unit_cost, source_key=f"doc:{item.pk}:in{index}",
-                   document_item=item, operator=user)
+                   document_item=item, operator=user, rule=_rule(doc, doc.destination))
 
 
 def _relocation(item, doc, user):
@@ -99,12 +108,13 @@ def _relocation(item, doc, user):
         raise BusinessError("Movimentação entre endereços exige depósito com WMS.")
     if not item.bin or not item.destination_bin or item.bin_id == item.destination_bin_id:
         raise BusinessError(f"{item.variant.display_name}: informe endereço de origem e de destino diferentes.")
+    rule = _rule(doc, doc.warehouse)
     outs = stock.move(item.variant, doc.warehouse, -item.quantity, StockMovement.Kind.RELOCATION, lot=item.lot,
-                      bin=item.bin, source_key=f"doc:{item.pk}", document_item=item, operator=user)
+                      bin=item.bin, source_key=f"doc:{item.pk}", document_item=item, operator=user, rule=rule)
     for index, out in enumerate(outs):
         stock.move(item.variant, doc.warehouse, -out.quantity, StockMovement.Kind.RELOCATION, lot=out.lot,
                    bin=item.destination_bin, unit_cost=out.unit_cost, source_key=f"doc:{item.pk}:in{index}",
-                   document_item=item, operator=user)
+                   document_item=item, operator=user, rule=rule)
 
 
 def _check_bins(item, doc):
@@ -132,7 +142,8 @@ def _inventory(item, doc, user):
     delta = item.quantity - current
     if delta:
         stock.move(item.variant, doc.warehouse, delta, StockMovement.Kind.ADJUSTMENT, allow_negative=True,
-                   lot=item.lot, bin=item.bin, source_key=f"doc:{item.pk}", document_item=item, operator=user)
+                   lot=item.lot, bin=item.bin, source_key=f"doc:{item.pk}", document_item=item, operator=user,
+                   rule=_rule(doc, doc.warehouse))
 
 
 def _spread(lines, counted):
@@ -281,7 +292,8 @@ def post(document, user):
             _transfer(item, doc, user)
         elif doc.kind == Kind.ADJUSTMENT:
             stock.move(item.variant, doc.warehouse, item.quantity, StockMovement.Kind.ADJUSTMENT,
-                       allow_negative=True, source_key=f"doc:{item.pk}", document_item=item, operator=user)
+                       allow_negative=True, source_key=f"doc:{item.pk}", document_item=item, operator=user,
+                       rule=_rule(doc, doc.warehouse))
         elif doc.kind == Kind.INVENTORY:
             _inventory(item, doc, user)
     _register_divergences(doc, items, user)

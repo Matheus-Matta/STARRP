@@ -124,7 +124,7 @@ def test_gerente_de_filial_nao_escala_acesso(ctx, branches):
     store_a, store_b = branches
     manager = ctx.user("gerente_a3", "manager")
     api = ctx.client(manager)
-    base = {"username": "novo", "password": "senha123", "role": str(ctx.user_role("cashier").pk)}
+    base = {"username": "novo", "password": "S3nha-Forte-2026", "role": str(ctx.user_role("cashier").pk)}
 
     all_stores = api.post("/api/v1/users/", {**base, "all_stores": True}, format="json")
     other = api.post("/api/v1/users/", {**base, "stores": [str(store_b.pk)]}, format="json")

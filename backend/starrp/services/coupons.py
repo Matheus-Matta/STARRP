@@ -3,10 +3,27 @@
 Cupom restrito a cliente/grupo exige documento por consequência: sem ele não
 existe a quem comparar. O mínimo é sobre produtos, sem frete.
 """
+import re
+
 from django.db.models import Q
 
 from starrp.core.errors import CouponRejected
 from starrp.models import Coupon, CouponRedemption, Customer, Sale
+
+
+def _document(value):
+    return re.sub(r"[^0-9A-Za-z]", "", value or "").upper()
+
+
+def _same_document(value):
+    """As grafias do mesmo CPF/CNPJ (M-13): com e sem máscara contavam como clientes diferentes."""
+    d = _document(value)
+    forms = {value or "", d}
+    if len(d) == 11:
+        forms.add(f"{d[:3]}.{d[3:6]}.{d[6:9]}-{d[9:]}")
+    elif len(d) == 14:
+        forms.add(f"{d[:2]}.{d[2:5]}.{d[5:8]}/{d[8:12]}-{d[12:]}")
+    return forms - {""}
 
 
 def find(account_id, code):
@@ -23,7 +40,7 @@ def _customer_for(sale):
         return sale.customer
     if sale.customer_document:
         return Customer.all_objects.filter(
-            account_id=sale.account_id, document=sale.customer_document, deleted_at__isnull=True
+            account_id=sale.account_id, document__in=_same_document(sale.customer_document), deleted_at__isnull=True
         ).first()
     return None
 
@@ -45,14 +62,13 @@ def _check_identity(coupon, sale, customer):
         if not allowed:
             raise CouponRejected("Cupom exclusivo para clientes selecionados.")
     if coupon.usage_limit_per_customer:
-        used = _redemptions(coupon, sale).filter(document=sale.customer_document).count()
+        used = _redemptions(coupon, sale).filter(document__in=_same_document(sale.customer_document)).count()
         if used >= coupon.usage_limit_per_customer:
             raise CouponRejected("Este CPF/CNPJ já usou o cupom o máximo de vezes.")
     if coupon.first_purchase_only:
+        same = Q(customer_document__in=_same_document(sale.customer_document))
         previous = Sale.all_objects.filter(account_id=sale.account_id, status=Sale.Status.COMPLETED).filter(
-            Q(customer_document=sale.customer_document) | Q(customer=customer) if customer else
-            Q(customer_document=sale.customer_document)
-        ).exclude(pk=sale.pk)
+            same | Q(customer=customer) if customer else same).exclude(pk=sale.pk)
         if previous.exists():
             raise CouponRejected("Cupom válido só na primeira compra.")
 
@@ -76,9 +92,20 @@ def evaluate(coupon, sale, subtotal):
 
 
 def redeem(sale):
+    """Grava o uso na conclusão da venda. Os limites são conferidos DE NOVO aqui, com o cupom travado:
+    a checagem ao aplicar não basta (dois caixas com o último uso ao mesmo tempo, ou venda guardada
+    que volta depois que o cupom esgotou, passavam do limite)."""
     if not sale.coupon_id:
         return None
+    coupon = Coupon.all_objects.select_for_update().get(pk=sale.coupon_id)
+    if coupon.usage_limit and _redemptions(coupon, sale).count() >= coupon.usage_limit:
+        raise CouponRejected("Cupom esgotado: tire o cupom da venda para concluir.", code="coupon_exhausted")
+    if coupon.usage_limit_per_customer and sale.customer_document:
+        used = _redemptions(coupon, sale).filter(document__in=_same_document(sale.customer_document)).count()
+        if used >= coupon.usage_limit_per_customer:
+            raise CouponRejected("Este CPF/CNPJ já usou o cupom o máximo de vezes: tire o cupom da venda para concluir.",
+                                 code="coupon_exhausted")
     return CouponRedemption.all_objects.create(
         account_id=sale.account_id, coupon_id=sale.coupon_id, sale=sale, customer=_customer_for(sale),
-        document=sale.customer_document, amount=sale.coupon_discount,
+        document=_document(sale.customer_document), amount=sale.coupon_discount,
     )

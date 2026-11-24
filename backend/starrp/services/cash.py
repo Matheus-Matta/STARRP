@@ -10,7 +10,7 @@ from collections import defaultdict
 from decimal import Decimal
 
 from django.db import IntegrityError, transaction
-from django.db.models import Sum
+from django.db.models import Q, Sum
 from django.utils import timezone
 
 from rest_framework.exceptions import PermissionDenied
@@ -66,6 +66,11 @@ def blind(data):
         data["by_payment_method"] = [r for r in data["by_payment_method"] if r.get("method__kind") != "cash"]
     if isinstance(data.get("occurrences"), list):
         data["occurrences"] = [o for o in data["occurrences"] if o.get("kind") != "Diferença de caixa"]
+    # O total vendido menos as formas que não são dinheiro daria o esperado na gaveta: some também.
+    if isinstance(data.get("sales"), dict):
+        data["sales"] = {k: v for k, v in data["sales"].items() if k not in ("total", "average_ticket")}
+    if isinstance(data.get("sales_list"), list):
+        data["sales_list"] = [{k: v for k, v in row.items() if k not in ("payments",)} for row in data["sales_list"]]
     data["blind"] = True
     return data
 
@@ -92,8 +97,10 @@ def open_session(register, user, opening_amount=Decimal("0"), terminal=None, not
     a abertura espera o gerente aprovar (`approve_opening`) e o caixa não vende até lá.
     1ª abertura do caixa: o valor contado vira o saldo inicial."""
     if not register.is_active:
-        raise BusinessError("Caixa inativo.")
+        raise BusinessError("Caixa inativo.", code="register_inactive")
     _require_operator(register, user)
+    if Decimal(opening_amount) < 0:
+        raise BusinessError("Informe o troco contado (zero ou mais).", code="amount_invalid")
     mine = active_session_for_user(register.store, user)
     if mine is not None:
         raise StateConflict(f"Você já está com o turno do {mine.register.name} em andamento: feche-o antes de abrir outro.",
@@ -154,7 +161,7 @@ def approve_opening(session, user, reason="", approval=None):
 def _locked(session):
     session = CashSession.all_objects.select_for_update().get(pk=session.pk)
     if session.status != CashSession.Status.OPEN:
-        raise StateConflict("O turno de caixa não está aberto.")
+        raise StateConflict("O turno de caixa não está aberto.", code="session_not_open")
     return session
 
 
@@ -177,14 +184,15 @@ def add_movement(session, user, kind, amount, reason="", destination="", approva
     from starrp.services.approvals import authorize
 
     if kind not in (CashMovement.Kind.WITHDRAWAL, CashMovement.Kind.SUPPLY, CashMovement.Kind.ADJUSTMENT):
-        raise BusinessError("Tipo de movimento manual inválido.")
+        raise BusinessError("Tipo de movimento manual inválido.", code="movement_kind_invalid")
     amount = Decimal(amount)
     if amount <= 0:
-        raise BusinessError("Informe um valor maior que zero.")
+        raise BusinessError("Informe um valor maior que zero.", code="amount_invalid")
     session = _locked(session)
     _require_operator(session.register, user, session)
     if kind == CashMovement.Kind.WITHDRAWAL and amount > available_for_withdrawal(session):
-        raise BusinessError("Sangria maior que o dinheiro em gaveta (contando as sangrias que aguardam aprovação).")
+        raise BusinessError("Sangria maior que o dinheiro em gaveta (contando as sangrias que aguardam aprovação).",
+                            code="withdrawal_exceeds_drawer")
     movement = CashMovement(account_id=session.account_id, store_id=session.store_id, session=session, kind=kind,
                             amount=amount, operator=user, reason=reason, destination=destination,
                             status=CashMovement.Status.PENDING)
@@ -206,7 +214,15 @@ def available_for_withdrawal(session):
 
 
 def record_cash_payment(session, payment, user):
-    """Entrada de dinheiro da venda na gaveta (líquido de troco)."""
+    """Entrada de dinheiro da venda na gaveta (líquido de troco). Trava o turno: um fechamento ao mesmo
+    tempo calculava o esperado sem este dinheiro e o pagamento caía num turno já fechado.
+
+    Venda do PDV offline é FATO (o dinheiro já entrou na gaveta daquele turno): uma reenviada depois
+    que o fechamento do turno chegou continua entrando nele, como antes."""
+    session = CashSession.all_objects.select_for_update().get(pk=session.pk)
+    offline = bool((payment.sale.metafields or {}).get("_offline_id"))
+    if session.status != CashSession.Status.OPEN and not offline:
+        raise StateConflict("O turno de caixa foi fechado: abra o caixa de novo para receber.", code="session_not_open")
     return CashMovement.all_objects.create(
         account_id=session.account_id, store_id=session.store_id, session=session, kind=CashMovement.Kind.SALE,
         amount=payment.amount, payment=payment, operator=user, approved_by=user, approved_at=timezone.now(),
@@ -215,10 +231,12 @@ def record_cash_payment(session, payment, user):
 
 def expected_cash(session):
     total = Decimal(session.opening_amount)
-    movements = session.movements.filter(status=CashMovement.Status.APPROVED)
-    for kind, sign in CashMovement.SIGN.items():
-        value = movements.filter(kind=kind).aggregate(total=Sum("amount"))["total"] or 0
-        total += sign * Decimal(value)
+    # Uma agregação só, com um SUM por tipo (antes: uma query por tipo de movimento).
+    sums = session.movements.filter(status=CashMovement.Status.APPROVED).aggregate(**{
+        f"k_{i}": Sum("amount", filter=Q(kind=kind)) for i, kind in enumerate(CashMovement.SIGN)
+    })
+    for i, sign in enumerate(CashMovement.SIGN.values()):
+        total += sign * Decimal(sums[f"k_{i}"] or 0)
     # Soma de agregados no SQLite volta com casas sobrando: arredonda onde nasce.
     return total.quantize(Decimal("0.01"))
 
@@ -236,10 +254,14 @@ def totals_by_method(session):
 
 
 @transaction.atomic
-def close_session(session, user, counted_amount, notes=""):
+def close_session(session, user, counted_amount, notes="", allow_pending=False):
+    """`allow_pending`: fechamento feito no PDV sem servidor (já aconteceu): as pendentes
+    continuam fora da gaveta, esperando o gerente."""
     session = _locked(session)
     _require_operator(session.register, user, session)
-    if session.movements.filter(status=CashMovement.Status.PENDING).exists():
+    if Decimal(counted_amount) < 0:
+        raise BusinessError("Informe o valor contado na gaveta (zero ou mais).", code="amount_invalid")
+    if not allow_pending and session.movements.filter(status=CashMovement.Status.PENDING).exists():
         raise StateConflict("Há sangria ou suprimento aguardando aprovação neste turno: aprove ou recuse antes de fechar.",
                             code="movements_pending")
     expected = expected_cash(session)

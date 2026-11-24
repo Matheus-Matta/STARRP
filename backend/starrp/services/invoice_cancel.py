@@ -7,8 +7,9 @@ Regras da SEFAZ que valem aqui:
   é a devolução (troca/devolução do pedido), que emite a nota de entrada.
 
 O evento na SEFAZ é a ÚLTIMA coisa da transação: se ele falhar, nada muda no banco (nem a venda
-nem a nota). A emissão ainda não está integrada: em homologação o protocolo é gerado aqui; em
-produção, sem integração, recusa — melhor não cancelar do que dizer que cancelou.
+nem a nota). Nota ACBrLib (PDV desktop ou web) cancela pelo Comunicador Fiscal em nuvem
+(`acbr_cloud.cancel`), com o certificado dos dados fiscais. Sem ele configurado: em homologação o
+protocolo é gerado aqui; em produção recusa — melhor não cancelar do que dizer que cancelou.
 """
 from datetime import timedelta
 
@@ -16,8 +17,9 @@ from django.db import transaction
 from django.utils import timezone
 
 from starrp.core.errors import BusinessError, StateConflict
-from starrp.models import Invoice
+from starrp.models import FiscalConfig, Invoice
 from starrp.models.fiscal import DocumentModel, Environment
+from starrp.services import acbr_cloud
 
 REASON_MIN, REASON_MAX = 15, 255
 DEADLINES = {DocumentModel.NFE: timedelta(hours=24), DocumentModel.NFCE: timedelta(minutes=30)}
@@ -44,6 +46,8 @@ def check(invoice, reason):
 
 def _send_event(invoice, reason):
     """Evento de cancelamento na SEFAZ; devolve o protocolo."""
+    if invoice.provider == FiscalConfig.Provider.ACBRLIB and acbr_cloud.configured():
+        return acbr_cloud.cancel(invoice, reason)
     if invoice.environment == Environment.PRODUCTION:
         raise StateConflict("O envio do cancelamento à SEFAZ em produção ainda não está integrado. Cancele no "
                             "emissor/portal e depois registre aqui.", code="fiscal_provider_missing")

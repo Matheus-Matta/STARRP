@@ -14,6 +14,8 @@ Não passa pelo histórico: `QuerySet.update()` e `bulk_create` (não chamam `sa
 """
 from simple_history import register
 
+from starrp.core.secrets import is_secret_field
+
 SKIP = {
     # Já são registro de acontecimento (imutáveis).
     "AuditLog", "StockMovement", "ScaleReading", "Notification", "PrintJob", "ImportJob",
@@ -26,6 +28,8 @@ SKIP = {
     "MarketOffer",
     # Contador de consultas; e a chave própria da conta, que não deve ficar copiada.
     "PriceUsage", "PriceSourceToken",
+    # Integrações: os valores incluem chaves de API e tokens.
+    "Integration", "IntegrationWebhookEvent",
     # O mesmo no SEO; e o volume de busca, que é dado público trocado todo mês.
     "SeoUsage", "SeoCredential", "KeywordMetric",
     # A própria tarefa já é o registro: muda a cada lote.
@@ -61,6 +65,8 @@ def track_history(base):
     for model in dict.fromkeys(_concrete(base)):
         if model.__name__ in SKIP or model.__name__.startswith("Historical") or hasattr(model, "history"):
             continue
-        register(model, app="starrp", get_user=history_user, cascade_delete_history=False)
+        # Segredo (CSC, senha do certificado, tokens, hash de senha) não vira coluna no histórico.
+        secrets = [f.name for f in model._meta.concrete_fields if is_secret_field(f)]
+        register(model, app="starrp", get_user=history_user, cascade_delete_history=False, excluded_fields=secrets)
         tracked.append(model.__name__)
     return tracked

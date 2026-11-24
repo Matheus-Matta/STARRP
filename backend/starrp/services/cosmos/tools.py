@@ -30,6 +30,11 @@ from starrp.services.cosmos import attachments, bridge, catalog, datasets, repor
 # Toda proposta é ensaiada antes do cartão (transação desfeita): o usuário só vê o que vai passar.
 # Exceção: o que fala com a SEFAZ — desfazer o banco não desfaz o que foi enviado para fora.
 NO_TRIAL = re.compile(r"^(fiscal/|inbound-nfe/(sync/|[^/]+/(manifest|download|science|sync)/))")
+# A Cosmos LÊ estes cadastros mas nunca propõe gravar neles (S-08): acesso (usuários, cargos, permissões),
+# segredos (integrações, dados fiscais com CSC/certificado, filial com a senha do caixa). Um texto injetado num
+# nome de cliente não pode virar "PATCH users/<id> extra_permissions" confirmado num cartão de aparência inocente.
+WRITE_BLOCKED = re.compile(r"^(users|roles|permissions|integrations|fiscal/configs|stores)/(?!rules/)")
+MAX_FIELDS = 40  # proposta maior que isso é recusada (não truncada: o usuário veria só parte)
 HIDDEN_KEYS = {"account", "created_by", "updated_by", "deleted_at", "history", "metafields_meta"}
 BUDGET = 14000
 
@@ -352,6 +357,15 @@ def _label(key, labels):
     return labels.get(key) or LABELS.get(key) or key.replace("_", " ").capitalize()
 
 
+def _leaves(value):
+    """Quantos valores finais há no corpo (o limite conta o aninhado, não só o primeiro nível)."""
+    if isinstance(value, dict):
+        return sum(_leaves(v) for v in value.values())
+    if isinstance(value, list):
+        return sum(_leaves(v) for v in value) or 1
+    return 1
+
+
 def _show(value):
     """Valor no formato brasileiro: 49,90 · 1.234 · 02/11/2026 · Sim/Não."""
     if isinstance(value, bool):
@@ -386,7 +400,9 @@ def _preview(ctx, method, path, body, campos):
     body = body if isinstance(body, dict) else {}
     given = [c for c in (campos or []) if c.get("rotulo")]
     labels = {c["chave"]: str(c["rotulo"])[:80] for c in given if c.get("chave")}
-    values = {c["chave"]: str(c.get("valor", ""))[:300] for c in given if c.get("chave")}
+    # O VALOR de cada campo do corpo é sempre o real (o que será gravado). O do modelo só serve de legenda
+    # quando diz outra coisa (ex.: o nome da categoria no lugar do id) — nunca substitui o valor (S-08).
+    notes = {c["chave"]: str(c.get("valor", ""))[:300] for c in given if c.get("chave")}
     current = {}
     if method in {"PATCH", "PUT"}:
         result = bridge.call(ctx.actor, "GET", path)
@@ -395,7 +411,12 @@ def _preview(ctx, method, path, body, campos):
     for key, value in body.items():
         if current and key in current and _show(current[key]) == _show(value):
             continue  # não muda: não polui o cartão
-        row = {"label": _label(key, labels), "value": values.get(key) or _show(value)}
+        row = {"label": _label(key, labels), "value": _show(value)}
+        if isinstance(value, (list, dict)) and value:
+            # Aninhado (itens, endereços): o resumo ("3 itens") não basta — o detalhe vai inteiro (rodada 1, P-18).
+            row["detail"] = json.dumps(value, ensure_ascii=False, default=str)[:4000]
+        if notes.get(key) and notes[key] != row["value"]:
+            row["note"] = notes[key]
         if current and key in current:
             row["from"] = _show(current[key])
         rows.append(row)
@@ -403,7 +424,7 @@ def _preview(ctx, method, path, body, campos):
     shown = {row["label"].lower() for row in rows}
     rows += [{"label": str(c["rotulo"])[:80], "value": str(c.get("valor", ""))[:300]}
              for c in given if (not c.get("chave") or c["chave"] not in body) and str(c["rotulo"]).lower() not in shown]
-    return rows[:40]
+    return rows
 
 
 def _api_message(data):
@@ -428,8 +449,18 @@ def _propor(ctx, metodo, caminho, titulo, corpo=None, resumo="", campos=None):
                       "relatorio_livre (o Excel sai no botão do próprio relatório).")
     if bridge.blocked(path) or not catalog.allowed(ctx.actor, method, path):
         return _denied(f"O usuário não tem permissão para {method} /{path}.")
+    if WRITE_BLOCKED.match(path):
+        return _denied(f"A Cosmos não altera /{path}: acesso, permissões e dados sensíveis só pela tela de cadastro. "
+                       "Explique ao usuário onde fazer.")
     body = corpo if isinstance(corpo, dict) else {}
+    if _leaves(body) > MAX_FIELDS * 3 or len(json.dumps(body, default=str)) > 4000 * 2:
+        return _error("Proposta grande demais para o usuário conferir: divida em partes menores.")
+    if len(body) > MAX_FIELDS:
+        return _error(f"Proposta com {len(body)} campos: divida em partes de até {MAX_FIELDS} (o usuário precisa "
+                      "ver tudo o que será gravado).")
     trial = None if NO_TRIAL.match(path) else bridge.call(ctx.actor, method, path, body=body, dry_run=True)
+    if trial is not None and trial.external:
+        trial = None  # falaria com SEFAZ/Asaas/tarefa paga: vai ao usuário sem ensaio (S-05), nada saiu
     if trial is not None and trial.status == 403:
         return _denied(_api_message(trial.data) or "O usuário não tem permissão para esta gravação.")
     if trial is not None and not trial.ok:

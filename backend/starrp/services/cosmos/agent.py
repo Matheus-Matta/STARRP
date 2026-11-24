@@ -54,9 +54,9 @@ def _client():
 
     global _CLIENT, _CLIENT_CONFIG
     config = (settings.OPENAI_API_KEY, settings.OPENAI_BASE_URL, settings.OPENAI_TIMEOUT)
-    if _CLIENT is None or _CLIENT_CONFIG != config:
+    if _CLIENT is None or config != _CLIENT_CONFIG:
         with _CLIENT_LOCK:
-            if _CLIENT is None or _CLIENT_CONFIG != config:
+            if _CLIENT is None or config != _CLIENT_CONFIG:
                 _CLIENT = OpenAI(api_key=settings.OPENAI_API_KEY, base_url=settings.OPENAI_BASE_URL,
                                  timeout=settings.OPENAI_TIMEOUT, max_retries=2)
                 _CLIENT_CONFIG = config
@@ -300,9 +300,12 @@ def stop(user_id, conversation_id):
 
 
 def _throttled(user_id):
-    """Mais de N mensagens por minuto do mesmo usuário: segura (clique repetido, uso abusivo)."""
-    key = f"cosmos:rate:{user_id}:{timezone.now():%Y%m%d%H%M}"
-    cache.add(key, 0, 90)
+    """Mais de N mensagens por minuto do mesmo usuário: segura. 0 (padrão) = sem limite para usuário logado."""
+    if settings.COSMOS_MESSAGES_PER_MINUTE <= 0:
+        return False
+    # Janela de 60 s a partir da 1ª mensagem (não o minuto do relógio: na virada ele daria o dobro).
+    key = f"cosmos:rate:{user_id}"
+    cache.add(key, 0, 60)
     try:
         return cache.incr(key) > settings.COSMOS_MESSAGES_PER_MINUTE
     except ValueError:
