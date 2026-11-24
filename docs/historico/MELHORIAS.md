@@ -68,8 +68,9 @@ inconsistência está em [ANALISE_STARCHEF.md](ANALISE_STARCHEF.md).
   não dá acesso a loja que não tem e não cria administrador.
 - **Campo de FK resolvido na hora da validação** (`TenantPrimaryKeyField`).
   Isso evita um queryset vazio "congelado" no momento da importação do módulo.
-- **Permissões num esquema único:** `área.view` / `área.manage` mais códigos para
-  ações sensíveis. Antes havia uma classe de permissão por caso.
+- **Permissões num esquema único:** `área.view/create/update/delete`, com `manage`
+  representando criar + editar + excluir nas ações de domínio, mais códigos para ações sensíveis. Antes havia uma
+  classe de permissão por caso.
 - **Autorização de gerente no próprio PDV:** usuário e senha do superior, ou a
   senha de caixa da loja.
 - **Limite de desconto por cargo:** o que passar do limite pede autorização.
@@ -229,5 +230,5 @@ podia ser vendido) e guardava a grade em JSON. Agora segue o StarHub:
 - **60 testes no backend e 16 no frontend** cobrindo os fluxos de dinheiro, acesso e isolamento entre contas.
 - **Lint (ruff)** sem nenhum aviso.
 - **Schema OpenAPI/Swagger** gerado de todas as rotas.
-- **Documentação:** [ARQUITETURA.md](ARQUITETURA.md) e
+- **Documentação:** [ARQUITETURA.md](../ARQUITETURA.md) e
   [ANALISE_STARCHEF.md](ANALISE_STARCHEF.md).

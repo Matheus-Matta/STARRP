@@ -106,18 +106,23 @@ Três managers, cada um com um papel:
 
 ## Permissões
 
-Cada view declara `permission_code`; leitura exige `<código>.view`, escrita
-`<código>.manage`. Ações sensíveis têm código próprio (`sales.cancel`,
+Cada view declara `permission_code`; o CRUD exige, separadamente,
+`<código>.view/create/update/delete`. Ações de domínio usam o código interno
+`<código>.manage`, que representa **Criar + Editar + Excluir**, ou uma permissão sensível própria (`sales.cancel`,
 `sales.discount`, `cash.approve`, `logistics.manage` para andar a entrega…). O catálogo está em
 `services/access_catalog.py`.
+
+Na matriz dos cargos, Conversa com IA, Precificação e Análise SEO ficam em **Ações especiais**, cada uma com
+`acesso normal` (consultar e acompanhar) e `acesso total` (executar, decidir e alterar). O nível total sempre
+inclui o normal; os códigos são `cosmos.access/full`, `pricing.access/full` e `seo.access/full`.
 
 **Cargos são fixos do sistema** (19, por área e nível): Direção (Administrador, Diretor, Gerente
 de loja, Supervisor), Vendas (Líder de vendas, Operador de caixa, Vendedor), Estoque e compras
 (Coordenador de estoque, Comprador, Estoquista), Logística (Coordenador, Auxiliar), Financeiro
 (Coordenador, Assistente), Fiscal, Marketing, Patrimônio, Suporte de TI e Auditor. Nascem com a
-conta e são sincronizados por `ensure_system_data` (o deploy roda): nome, nível e permissões
-vêm do catálogo; a conta só ajusta o desconto máximo e o "ativo". Criar/excluir cargo e mudar
-permissão é do suporte (admin do Django).
+conta e são sincronizados por `ensure_system_data` (o deploy roda): nome e nível vêm do
+catálogo; o administrador da conta ajusta desconto, ativo e a matriz de permissões. A
+sincronização não sobrescreve a matriz personalizada.
 
 **Um usuário soma cargos**: `UserProfile.role` (principal) + `extra_roles`. As permissões se
 somam; vale o maior nível (`rank`, quem aprova quem) e o maior desconto; é admin se algum
@@ -515,7 +520,7 @@ npm run lint                  # ruff + eslint + tipos
 npm run manage -- shell       # qualquer comando do manage.py
 ```
 
-Swagger: `http://localhost:8000/api/schema/swagger-ui/`
+Swagger: `http://localhost:8001/api/schema/swagger-ui/`
 
 
 ## Filiais (Store) e hierarquia
@@ -694,12 +699,12 @@ acabou, sem chamar a OpenAI. Conta desligada → o widget nem aparece. Nada diss
 
 | Permissão | O que libera |
 | --- | --- |
-| `cosmos.view` | conversar, consultar dados, gerar relatórios |
-| `cosmos.manage` | a Cosmos PROPOR gravações (ainda pedem confirmação e a permissão da área) |
+| `cosmos.access` | conversar, consultar dados, gerar relatórios |
+| `cosmos.full` | a Cosmos PROPOR gravações (ainda pedem confirmação e a permissão da área) |
 | `cosmos.supervise` | alertas da equipe e "quem fez o quê" |
 
-Diretor, gerente e administrador têm tudo; supervisor tem `view` + `supervise`; os coordenadores
-(vendas, estoque, logística, financeiro) têm `view` + `manage`; auditor tem `view`.
+Diretor, gerente e administrador têm tudo; supervisor tem `access` + `supervise`; os coordenadores
+(vendas, estoque, logística, financeiro) têm `access` + `full`; auditor tem `access`.
 
 **A Cosmos nunca grava direto no banco.** Ela chama a API do Starrp como o próprio usuário
 (`services/cosmos/bridge.py`): mesmas permissões, recorte por filial, validação, auditoria e
@@ -733,7 +738,7 @@ a Cosmos levantou nas ferramentas (o servidor confere o formato).
 
 Custo e proteção: resultados de ferramenta de rodadas anteriores vão resumidos ao modelo
 (`OLD_TOOL_CHARS`); `OPENAI_REASONING_EFFORT` (padrão `low`) para os modelos de raciocínio;
-`COSMOS_MESSAGES_PER_MINUTE` (padrão 20) por usuário; o mapa da API do prompt fica 5 min no cache.
+`COSMOS_MESSAGES_PER_MINUTE` por usuário (padrão 0 = sem limite); o mapa da API do prompt fica 5 min no cache.
 Sem Celery beat, quem supervisiona e abre o widget dispara a varredura da conta (no máximo a cada 30 min).
 
 Pelo socket também vão os pedidos do widget (`services/cosmos/rpc.py`): lista de conversas, falas,
@@ -819,7 +824,7 @@ Passou de um limite ou a fonte caiu → a leitura usa as ofertas guardadas dela 
   worker precisa estar no ar em produção. Sem Redis, a leitura pedida pela tela roda numa thread (`PRICE_READ_IN_THREAD`). O clique
   cria o processo com os dados mínimos e `reading_since`; a tela relê a cada 3 s. Passou de 10 min, a tela avisa que não terminou.
 - **Precificar** (botão na página do produto): lê todas as variações, fora das regras e sem pedir o rastreamento
-  automático ligado. Só precisa do módulo, de `catalog.manage` e de uma fonte com chave.
+  automático ligado. Só precisa do módulo, de `pricing.full` e de uma fonte com chave.
 - **Achados** (seção do processo, com "O que foi pesquisado" acima): cada oferta da última leitura com valor, vendedor,
   a busca que a trouxe, nota do pareamento, se foi usada e o link. Na SerpApi o link abre a oferta na página do Google, não a da loja.
 - **Pareamento** (`matching.py`): GTIN igual = mesmo produto. Busca por título: o título vira partes (cada palavra, pedaços a
@@ -837,7 +842,7 @@ Passou de um limite ou a fonte caiu → a leitura usa as ofertas guardadas dela 
 - **Processo** (`PriceCheck`, um por variante): o novo preço fica esperando **Aprovar** (aplica no cadastro, com
   histórico e o preço anterior), **Outro preço** ou **Recusar** (não volta a pedir na semana se o mercado não
   mexer). `MarketOffer` guarda as ofertas da última leitura com a nota e o motivo do pareamento.
-- Ver pede `catalog.view`; decidir e reler pedem `catalog.manage`. A Cosmos consulta pelo conjunto
+- Ver pede `pricing.access`; decidir, cadastrar concorrente e reler pedem `pricing.full`. A Cosmos consulta pelo conjunto
   `precificacao` e o resumo diário avisa as sugestões esperando aprovação.
 
 ### Cosmos em segundo plano
@@ -857,6 +862,7 @@ modelo mais barato (`OPENAI_MODEL_LIGHT`), contando no limite de tokens da conta
 
 Em Vendas, abaixo da Precificação (`Module.SEO`; `services/seo/`, `models/seo.py`). Mesmo jeito: `SeoCheck` por produto, análise no worker
 (`starrp.seo_read` e as rodadas), regras próprias (`Account.seo_scope`), e nada muda no cadastro sem aprovação, sugestão por sugestão (`POST /seo-checks/<id>/apply/`).
+Consultar e acompanhar pede `seo.access`; analisar, configurar regras, recusar ou aplicar sugestões pede `seo.full`.
 
 - **Nota** (`analyzer.py`): nome 25, procura no Google 25, título 15, resumo 15, slug 10, marca/categoria/tags 10. Sem dados de busca, a procura
   sai e a nota é proporcional ao resto. Mede o preenchimento: não promete posição.
