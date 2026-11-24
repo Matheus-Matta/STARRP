@@ -1,0 +1,43 @@
+{
+  "_doc": "Contrato de regras do PDV: os MESMOS casos rodam no backend (starrp/tests/test_pdv_rules_parity.py, contra os services de verdade) e no desktop (npm --prefix desktop run test:rules, contra pdv/rules.ts). Mudou uma regra? Mude aqui e nos dois lados — senão um dos testes quebra. expect = 'ok' ou o código de erro.",
+  "open": [
+    { "name": "abre normal", "given": { "register": "linked", "amount": "50.00" }, "expect": "ok" },
+    { "name": "abre com zero", "given": { "register": "linked", "amount": "0" }, "expect": "ok" },
+    { "name": "troco negativo", "given": { "register": "linked", "amount": "-1.00" }, "expect": "amount_invalid" },
+    { "name": "caixa inativo", "given": { "register": "inactive", "amount": "10.00" }, "expect": "register_inactive" },
+    { "name": "caixa de outro operador", "given": { "register": "not_linked", "amount": "10.00" }, "expect": "permission_denied" },
+    { "name": "já tem turno", "given": { "register": "linked", "amount": "10.00", "has_session": true }, "expect": "operator_busy" },
+    { "name": "caixa ocupado por outro", "given": { "register": "busy", "amount": "10.00" }, "expect": "register_busy" }
+  ],
+  "movement": [
+    { "name": "sangria dentro da gaveta", "given": { "kind": "withdrawal", "amount": "30.00", "drawer": "50.00" }, "expect": "ok" },
+    { "name": "sangria = gaveta", "given": { "kind": "withdrawal", "amount": "50.00", "drawer": "50.00" }, "expect": "ok" },
+    { "name": "sangria maior que a gaveta", "given": { "kind": "withdrawal", "amount": "50.01", "drawer": "50.00" }, "expect": "withdrawal_exceeds_drawer" },
+    { "name": "suprimento", "given": { "kind": "supply", "amount": "20.00", "drawer": "0" }, "expect": "ok" },
+    { "name": "valor zero", "given": { "kind": "supply", "amount": "0", "drawer": "50.00" }, "expect": "amount_invalid" },
+    { "name": "tipo inválido", "given": { "kind": "sale", "amount": "5.00", "drawer": "50.00" }, "expect": "movement_kind_invalid" },
+    { "name": "turno fechado", "given": { "kind": "supply", "amount": "5.00", "drawer": "50.00", "closed": true }, "expect": "session_not_open" }
+  ],
+  "close": [
+    { "name": "fecha normal", "given": { "counted": "50.00" }, "expect": "ok" },
+    { "name": "contado negativo", "given": { "counted": "-1.00" }, "expect": "amount_invalid" },
+    { "name": "sangria pendente", "given": { "counted": "50.00", "pending": 1 }, "expect": "movements_pending" },
+    { "name": "turno já fechado", "given": { "counted": "50.00", "closed": true }, "expect": "session_not_open" }
+  ],
+  "sale": [
+    { "name": "dinheiro com troco", "given": { "items": ["1"], "price": "10.00", "payments": [{ "kind": "cash", "amount": "10.00", "tendered": "20.00" }] }, "expect": "ok" },
+    { "name": "cartão exato em 3x", "given": { "items": ["2"], "price": "10.00", "payments": [{ "kind": "credit_card", "amount": "20.00", "installments": 3, "max_installments": 3 }] }, "expect": "ok" },
+    { "name": "dividido dinheiro + pix", "given": { "items": ["1"], "price": "10.00", "payments": [{ "kind": "cash", "amount": "4.00" }, { "kind": "pix", "amount": "6.00" }] }, "expect": "ok" },
+    { "name": "quantidade zero", "given": { "items": ["0"], "price": "10.00", "payments": [{ "kind": "cash", "amount": "10.00" }] }, "expect": "quantity_invalid" },
+    { "name": "pagamento zero", "given": { "items": ["1"], "price": "10.00", "payments": [{ "kind": "pix", "amount": "0" }] }, "expect": "amount_invalid" },
+    { "name": "cartão acima do saldo", "given": { "items": ["1"], "price": "10.00", "payments": [{ "kind": "pix", "amount": "10.50" }] }, "expect": "payment_exceeds_balance" },
+    { "name": "parcelas demais", "given": { "items": ["1"], "price": "10.00", "payments": [{ "kind": "credit_card", "amount": "10.00", "installments": 4, "max_installments": 3 }] }, "expect": "installments_exceeded" },
+    { "name": "crediário sem cliente", "given": { "items": ["1"], "price": "10.00", "payments": [{ "kind": "installment_plan", "amount": "10.00" }] }, "expect": "customer_required" },
+    { "name": "NSU exigido", "given": { "items": ["1"], "price": "10.00", "require_reference": true, "payments": [{ "kind": "credit_card", "amount": "10.00", "requires_reference": true }] }, "expect": "reference_required" },
+    { "name": "NSU informado", "given": { "items": ["1"], "price": "10.00", "require_reference": true, "payments": [{ "kind": "credit_card", "amount": "10.00", "requires_reference": true, "nsu": "123456" }] }, "expect": "ok" },
+    { "name": "exige caixa aberto", "given": { "items": ["1"], "price": "10.00", "require_cash": true, "no_session": true, "payments": [{ "kind": "pix", "amount": "10.00" }] }, "expect": "cash_session_required" },
+    { "name": "falta receber", "given": { "items": ["1"], "price": "10.00", "payments": [{ "kind": "pix", "amount": "6.00" }] }, "expect": "payment_pending" },
+    { "name": "exige vendedor", "given": { "items": ["1"], "price": "10.00", "require_seller": true, "payments": [{ "kind": "pix", "amount": "10.00" }] }, "expect": "seller_required" },
+    { "name": "com vendedor", "given": { "items": ["1"], "price": "10.00", "require_seller": true, "seller": true, "payments": [{ "kind": "pix", "amount": "10.00" }] }, "expect": "ok" }
+  ]
+}
