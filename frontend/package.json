@@ -13,7 +13,7 @@
     "api:types": "openapi-typescript ../backend/schema.yml -o src/api/schema.d.ts"
   },
   "dependencies": {
-    "@primeuix/themes": "^1.2.5",
+    "@primeuix/themes": "^3.1.1",
     "@tanstack/vue-query": "^5.104.5",
     "@zxing/browser": "^0.1.5",
     "@zxing/library": "^0.21.3",
