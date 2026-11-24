@@ -1,0 +1,138 @@
+# Release do APP MÓVEL: só a tag mobile-v<versão> dispara (ex.: mobile-v1.0.1).
+# A versão da tag vira a versão do app (app.json → "version"); o número do build (versionCode/buildNumber) o EAS
+# sobe sozinho. Builds na nuvem do EAS, em paralelo:
+#   - Starrp-<versão>.apk  (perfil preview: instala direto nos aparelhos da loja)
+#   - Starrp-<versão>.aab  (perfil production: Google Play)
+#   - Starrp-<versão>.ipa  (perfil production: App Store, assinado pelo EAS)
+# Anexados à Release do GitHub com os commits de mobile/ (e frontend/src, que o app reaproveita).
+#
+# Uma vez só, antes da primeira tag (ver mobile/README.md, "Publicar pelo GitHub"):
+#   - segredo EXPO_TOKEN (expo.dev → Access tokens);
+#   - `npx eas-cli@latest init` no mobile/ (grava o projectId no app.json) e `eas credentials` para o iOS;
+#   - variável API_URL=https://... nos ambientes preview/production do EAS;
+#   - opcional: variável do repositório MOBILE_AUTO_SUBMIT=true envia o .aab e o .ipa às lojas (eas submit).
+name: Release mobile
+
+on:
+  push:
+    tags: ["mobile-v*"]
+
+concurrency:
+  group: release-mobile-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  info:
+    name: Versão e checagens
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.info.outputs.version }}
+      prerelease: ${{ steps.info.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          fetch-depth: 0
+      - id: info
+        run: bash .github/scripts/release-info.sh mobile mobile/ frontend/src/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: release-notes
+          path: release-notes.md
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Tipos e lint
+        working-directory: mobile
+        run: |
+          npm ci --no-audit --no-fund
+          npm run typecheck
+          npm run lint
+
+  build:
+    name: ${{ matrix.name }}
+    needs: info
+    strategy:
+      fail-fast: false   # o APK sai mesmo se a App Store falhar (credencial da Apple, por exemplo)
+      matrix:
+        include:
+          - name: Android APK
+            platform: android
+            profile: preview
+            file: apk
+          - name: Android AAB (Play Store)
+            platform: android
+            profile: production
+            file: aab
+          - name: iOS (App Store)
+            platform: ios
+            profile: production
+            file: ipa
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      # Repositório inteiro: o app usa ../frontend/src (cadastros, relatórios) e o EAS envia a raiz do git.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: expo/expo-github-action@c7b66a9c327a43a8fa7c0158e7f30d6040d2481e  # v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+      - run: npm ci --no-audit --no-fund
+      - name: Versão da tag no app
+        env:
+          VERSION: ${{ needs.info.outputs.version }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const app = JSON.parse(fs.readFileSync("app.json", "utf8"));
+            app.expo.version = process.env.VERSION.replace(/-.*/, "");  // lojas aceitam só 1.2.3
+            fs.writeFileSync("app.json", JSON.stringify(app, null, 2) + "\n");
+          '
+          # O EAS envia o que está no git: commit local (não sobe para o GitHub).
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git diff --quiet || git commit -am "ci: mobile ${VERSION}" --no-verify
+      - name: Build no EAS
+        env:
+          SUBMIT: ${{ matrix.profile == 'production' && vars.MOBILE_AUTO_SUBMIT == 'true' && '--auto-submit' || '' }}
+        run: |
+          eas build --platform ${{ matrix.platform }} --profile ${{ matrix.profile }} \
+            --non-interactive --wait --json $SUBMIT > build.json
+          url="$(node -p 'JSON.parse(require("fs").readFileSync("build.json","utf8"))[0].artifacts.buildUrl')"
+          curl -fsSL -o "Starrp-${{ needs.info.outputs.version }}.${{ matrix.file }}" "$url"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: mobile-${{ matrix.file }}
+          if-no-files-found: error
+          path: mobile/Starrp-*.${{ matrix.file }}
+
+  release:
+    name: Release
+    needs: [info, build]
+    # Publica o que saiu, mesmo que um dos builds tenha falhado (o resumo do job mostra qual).
+    if: ${{ !cancelled() && needs.info.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          path: artifacts
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
+        with:
+          name: App móvel ${{ needs.info.outputs.version }}
+          body_path: artifacts/release-notes/release-notes.md
+          prerelease: ${{ needs.info.outputs.prerelease == 'true' }}
+          files: |
+            artifacts/mobile-*/*.apk
+            artifacts/mobile-*/*.aab
+            artifacts/mobile-*/*.ipa

@@ -1,0 +1,166 @@
+# Starrp: HTTPS só (certificado de origem da Cloudflare), backend dividido entre blue e green, app (frontend)
+# e fotos enviadas. Na Cloudflare: SSL/TLS "Full (strict)" e o registro DNS com proxy (nuvem laranja).
+#
+# TEMPLATE: o nginx oficial troca ${NGINX_...} pelo valor do .env ao subir (só variáveis NGINX_*, ver
+# NGINX_ENVSUBST_FILTER no compose) e grava em /etc/nginx/starrp/. Variáveis do nginx ($host...) ficam como estão.
+# Dentro do container ele ouve SEMPRE 80 e 443; a porta do servidor muda no compose (NGINX_HTTP_PORT/NGINX_HTTPS_PORT).
+
+# Docker DNS: o nome do container volta a ser resolvido quando ele é recriado (deploy blue/green troca o IP).
+resolver 127.0.0.11 valid=10s ipv6=off;
+
+upstream starrp_backend {
+    zone starrp_backend 64k;
+    least_conn;
+    # Caiu um (deploy, travou): 3 falhas em 10 s e ele sai da roda até voltar.
+    server backend-blue:8000 resolve max_fails=3 fail_timeout=10s;
+    server backend-green:8000 resolve max_fails=3 fail_timeout=10s;
+    keepalive 32;
+}
+
+upstream starrp_frontend {
+    zone starrp_frontend 64k;
+    server frontend:80 resolve;
+    keepalive 16;
+}
+
+# WebSocket da Cosmos (/api/v1/ws/): mantém o "Upgrade" e fecha a conexão comum normalmente.
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    ''      '';
+}
+
+# IP real do visitante: atrás da Cloudflare, o $remote_addr seria o IP dela (o limite de tentativas de login
+# do backend conta por IP).
+include /etc/nginx/snippets/cloudflare-real-ip.conf;
+
+server_tokens off;
+
+# Força bruta em login (S-13): por IP real (já resolvido da Cloudflare). O backend ainda limita por usuário/alvo.
+limit_req_zone $binary_remote_addr zone=starrp_login:10m rate=10r/m;
+limit_req_status 429;
+
+# Porta do redirecionamento: a que o NAVEGADOR usa para HTTPS. Atrás da Cloudflare é sempre 443 (mesmo que o
+# servidor publique outra porta); sem Cloudflare, a mesma de NGINX_HTTPS_PORT. 443 não aparece no endereço.
+map "${NGINX_PUBLIC_HTTPS_PORT}" $starrp_https_port {
+    "443"   "";
+    default ":${NGINX_PUBLIC_HTTPS_PORT}";
+}
+
+# HTTP: só redireciona para HTTPS (nada é servido em http).
+server {
+    listen 80 default_server;
+    server_name _;
+    return 301 https://$host$starrp_https_port$request_uri;
+}
+
+server {
+    listen 443 ssl default_server;
+    http2 on;
+    server_name _;
+
+    # Certificado de ORIGEM da Cloudflare (SSL/TLS → Origin Server → Create certificate), em docker/certs/.
+    ssl_certificate     /etc/nginx/certs/origin.pem;
+    ssl_certificate_key /etc/nginx/certs/origin.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers off;
+    ssl_session_cache shared:starrp_tls:10m;
+    ssl_session_timeout 1d;
+    ssl_session_tickets off;
+
+    # "Authenticated Origin Pulls" (S-22): só a Cloudflare fala com este servidor — quem descobrir o IP e vier
+    # direto (contornando a Cloudflare e o WAF dela) é recusado no TLS. Ligue também na Cloudflare:
+    # SSL/TLS → Origin Server → Authenticated Origin Pulls. NGINX_CF_ORIGIN_PULL=off desliga (sem Cloudflare).
+    ssl_client_certificate /etc/nginx/cloudflare/origin-pull-ca.pem;
+    ssl_verify_client ${NGINX_CF_ORIGIN_PULL};
+
+    # Envio de arquivos (fotos, XML de NF-e, planilhas) até 10 MB.
+    client_max_body_size 10m;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options nosniff always;
+
+    gzip on;
+    gzip_comp_level 5;
+    gzip_min_length 1024;
+    gzip_proxied any;
+    gzip_types text/plain text/css application/json application/javascript text/javascript image/svg+xml;
+
+    # Só login e redefinição de senha: refresh/logout ficam fora (numa loja atrás de um IP só, as abas e PDVs
+    # renovando a sessão bateriam no limite).
+    # ANTES da regex da API: no nginx vale a PRIMEIRA regex que casa (depois dela, este limite nunca valeria).
+    location ~ ^/api/v1/auth/(login|password-reset)/ {
+        limit_req zone=starrp_login burst=10 nodelay;
+        include /etc/nginx/snippets/proxy-backend.conf;
+        proxy_pass http://starrp_backend;
+    }
+
+    # API, WebSocket, admin, estáticos do admin (WhiteNoise) e healthcheck → backends.
+    location ~ ^/(api|static)/ {
+        include /etc/nginx/snippets/proxy-backend.conf;
+        proxy_pass http://starrp_backend;
+    }
+    location = /admin {
+        return 301 /admin/;
+    }
+    # Admin do Django: limite no login e acesso restrito (edite snippets/admin-access.conf com os IPs da equipe).
+    location ^~ /admin/ {
+        include /etc/nginx/snippets/admin-access.conf;
+        location = /admin/login/ {
+            include /etc/nginx/snippets/admin-access.conf;
+            limit_req zone=starrp_login burst=5 nodelay;
+            include /etc/nginx/snippets/proxy-backend.conf;
+            proxy_pass http://starrp_backend;
+        }
+        include /etc/nginx/snippets/proxy-backend.conf;
+        proxy_pass http://starrp_backend;
+    }
+    location = /health/ {
+        include /etc/nginx/snippets/proxy-backend.conf;
+        proxy_pass http://starrp_backend;
+    }
+    # `^~`: o prefixo vence a regex acima (senão o WebSocket cairia nela, sem o Upgrade).
+    # Cabeçalhos próprios (não o snippet): o WebSocket precisa de outro "Connection" e de timeout longo.
+    location ^~ /api/v1/ws/ {
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $connection_upgrade;
+        proxy_read_timeout 1h;
+        proxy_send_timeout 1h;
+        proxy_pass http://starrp_backend;
+    }
+
+    # Fotos enviadas (MEDIA_ROOT do backend, volume `media`): direto do disco, sem passar pelo Django.
+    # Arquivo de usuário nunca roda script, mesmo que alguém suba um HTML/SVG.
+    # Certificado A1 e qualquer segredo antigo: nunca por URL (S-01). Hoje ficam fora do /media (pasta privada);
+    # isto barra cópias antigas que tenham ficado aqui.
+    location ^~ /media/certificates/ {
+        return 404;
+    }
+    location ~* ^/media/.*\.(pfx|p12|pem|key|enc)$ {
+        return 404;
+    }
+
+    location /media/ {
+        alias /srv/media/;
+        expires 1d;
+        add_header X-Content-Type-Options nosniff always;
+        add_header Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox" always;
+        add_header Strict-Transport-Security "max-age=31536000" always;
+    }
+
+    # O app (Vue): o container do frontend já manda o cache certo (assets 1 ano, index.html sem cache).
+    location / {
+        proxy_http_version 1.1;
+        proxy_set_header Connection "";
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto https;
+        proxy_set_header X-Forwarded-For $remote_addr;
+        # O HSTS sai daqui (o do Caddy duplicaria o cabeçalho).
+        proxy_hide_header Strict-Transport-Security;
+        proxy_pass http://starrp_frontend;
+    }
+}

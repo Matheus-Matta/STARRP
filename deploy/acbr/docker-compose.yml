@@ -1,0 +1,26 @@
+# Comunicador Fiscal ACBr em NUVEM para o backend do Starrp (PDV web e cancelamentos).
+# Projeto: https://github.com/Matheus-Matta/app-fiscal-acbr (a ACBrLib já vem dentro da imagem).
+#
+#   cp .env.example .env      # gere o token e a chave (comandos no arquivo)
+#   docker compose up -d
+#   curl http://127.0.0.1:8030/health   → {"ok": true, "modo": "nuvem", "motor": "acbrlib", "lib": true, ...}
+#
+# No .env do BACKEND: ACBRLIB_URL, ACBRLIB_TOKEN e ACBR_E2E_KEY com os MESMOS valores daqui.
+# O PDV desktop não usa este container: ele fala com o Comunicador Fiscal desktop do caixa.
+services:
+  acbr:
+    # Imagem publicada pelo GitHub Actions do comunicador (tag vX.Y.Z → latest).
+    # Sem a imagem publicada: troque por `build: <clone de app-fiscal-acbr>/server`.
+    image: ghcr.io/matheus-matta/comunicador-fiscal:${ACBR_VERSAO:-latest}
+    env_file: .env
+    environment:
+      ACBR_MODO: nuvem
+      # Seguro só porque a 8030 fica presa ao 127.0.0.1 (ou à rede do Docker): só o backend/proxy chega.
+      FORWARDED_ALLOW_IPS: "*"
+    ports:
+      # Backend no mesmo host: só 127.0.0.1. Backend em outro servidor: ponha um proxy HTTPS na
+      # frente (Caddy/nginx) e NÃO publique a 8030 para a internet.
+      - "127.0.0.1:${ACBR_PORTA:-8030}:8030"
+    volumes:
+      - ./data:/app/data   # na nuvem só o log: nenhum certificado nem XML fica gravado
+    restart: unless-stopped

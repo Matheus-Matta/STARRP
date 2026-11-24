@@ -1,7 +1,8 @@
 /**
  * Tarefas do dia a dia, todas pelo venv/npm da raiz:
  *
- *   npm run test                 backend (pytest) + frontend (vitest)
+ *   npm run test                 backend (pytest, em paralelo) + frontend (vitest)
+ *   npm run test:migrations      aplica TODAS as migrations num banco limpo (os testes pulam as migrations)
  *   npm run lint                 ruff + eslint + checagem de tipos
  *   npm run build                build de produção do frontend
  *   npm run api:types            schema OpenAPI do backend → tipos TS do frontend
@@ -18,7 +19,9 @@ const [task, ...rest] = process.argv.slice(2);
 const tasks = {
   test() {
     step("Testes do backend");
-    run(venvPython, ["-m", "pytest", ...rest], { cwd: BACKEND });
+    // Em paralelo (pytest-xdist): um processo por núcleo. `-n 0` nos argumentos roda em série.
+    const parallel = rest.some((arg) => arg === "-n" || arg.startsWith("-n")) ? [] : ["-n", "auto"];
+    run(venvPython, ["-m", "pytest", ...parallel, ...rest], { cwd: BACKEND });
     step("Testes do frontend");
     run(...npm(["test"]), { cwd: FRONTEND });
   },
@@ -38,6 +41,12 @@ const tasks = {
     manage(["spectacular", "--file", "schema.yml"]);
     step("Gerando os tipos TypeScript do frontend");
     run(...npm(["run", "api:types"]), { cwd: FRONTEND });
+  },
+  "test:migrations"() {
+    // Os testes criam as tabelas direto dos models (--nomigrations, minutos mais rápido). Isto garante
+    // que as migrations aplicam do zero (banco em memória das settings de teste, descartado no fim).
+    step("Aplicando todas as migrations num banco limpo");
+    manage(["migrate", "--noinput", "--settings=config.settings.test"]);
   },
   migrate: () => manage(["migrate", ...rest]),
   makemigrations: () => manage(["makemigrations", "starrp", ...rest]),

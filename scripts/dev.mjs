@@ -1,9 +1,9 @@
 /**
- * `npm run dev` — sobe backend (:8000) e frontend (:5173) juntos, com a saída
+ * `npm run dev` — sobe backend (:8001) e frontend (:5173) juntos, com a saída
  * de cada um prefixada. Ctrl+C derruba os dois; se um cair, o outro também cai
  * (meio ambiente de dev rodando engana mais do que ajuda).
  *
- * `npm run dev:backend` / `npm run dev:frontend` sobem só um deles.
+ * `npm run backend` / `npm run frontend` sobem só um deles.
  */
 import { spawnSync } from "node:child_process";
 
@@ -14,7 +14,7 @@ const only = process.argv[2]; // "backend" | "frontend" | undefined
 
 const children = [];
 if (only !== "frontend") {
-  children.push(start("backend", "33", venvPython, ["manage.py", "runserver", "8001"], { cwd: BACKEND }));
+  children.push(start("backend", "33", venvPython, ["manage.py", "runserver", "0.0.0.0:8001"], { cwd: BACKEND }));
 }
 if (only !== "backend") {
   children.push(start("frontend", "36", ...npm(["run", "dev"]), { cwd: FRONTEND }));

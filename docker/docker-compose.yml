@@ -1,0 +1,193 @@
+# Starrp em produção: nginx (HTTPS com o certificado de origem da Cloudflare) na frente de DOIS backends
+# (blue e green, carga dividida entre eles), o frontend, Postgres, Redis, Celery e o Comunicador Fiscal ACBr.
+#
+#   cd docker
+#   cp .env.example .env          # preencha (um .env só para todos os containers)
+#   # certs/origin.pem e certs/origin.key: certificado de origem da Cloudflare (ver certs/README.md)
+#   docker compose up -d
+#
+# Só o nginx publica portas (80 → redireciona, 443). Backend, frontend, Postgres, Redis e ACBr ficam só nas
+# redes internas; o ACBr numa rede própria que só o backend e o worker enxergam.
+# Atualizar o backend sem tirar do ar: bash deploy-backend.sh 1.0.2 (troca o green, depois o blue).
+name: starrp
+
+x-backend: &backend
+  image: ${BACKEND_IMAGE:-ghcr.io/matheus-matta/starrp-backend}:${BACKEND_VERSION:?defina BACKEND_VERSION (ex. 1.0.0) no .env}
+  restart: unless-stopped
+  env_file: .env
+  environment:
+    DJANGO_ENV: production
+    # As versões do .env não entram no container: se entrassem, mudar uma (até a do frontend) faria o próximo
+    # `docker compose up -d` recriar blue e green JUNTOS, tirando a API do ar.
+    BACKEND_VERSION: ""
+    BACKEND_GREEN_VERSION: ""
+    FRONTEND_VERSION: ""
+    ACBR_VERSAO: ""
+    POSTGRES_HOST: postgres
+    POSTGRES_PORT: "5432"
+    REDIS_URL: redis://redis:6379/0
+    # Comunicador fiscal pela rede interna (nunca exposto). Token e chave vêm do mesmo .env.
+    ACBRLIB_URL: http://acbr:8030
+    # O uvicorn só aceita o X-Forwarded-For (IP real, já resolvido da Cloudflare) vindo do nginx (S-20): o ACBr e
+    # os outros containers alcançam o backend pela rede, mas não conseguem forjar o IP do cliente.
+    FORWARDED_ALLOW_IPS: ${NGINX_IP:-172.30.10.10}
+  volumes:
+    - media:/app/media
+    # Certificado A1 cifrado (PRIVATE_MEDIA_ROOT): só o backend monta; nginx/Caddy nunca.
+    - private:/app/private
+  networks: [web, data, fiscal]
+  depends_on:
+    postgres: { condition: service_healthy }
+    redis: { condition: service_healthy }
+    migrate: { condition: service_completed_successfully }
+
+# Servidor da API: uvicorn assíncrono (backend/start-web.sh na imagem), sem gunicorn.
+x-uvicorn: &uvicorn sh ./start-web.sh
+
+x-healthcheck: &healthcheck
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=4)"]
+  interval: 15s
+  timeout: 5s
+  retries: 3
+  start_period: 40s
+
+services:
+  nginx:
+    image: nginx:1.28-alpine
+    restart: unless-stopped
+    # Dentro do container: sempre 80 e 443. No servidor: as portas do .env (padrão 80 e 443).
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    environment:
+      # Porta HTTPS que o NAVEGADOR usa (redirecionamento http → https). Atrás da Cloudflare: 443.
+      NGINX_PUBLIC_HTTPS_PORT: ${NGINX_PUBLIC_HTTPS_PORT:-443}
+      # on = só a Cloudflare conecta (S-22, Authenticated Origin Pulls); off = sem Cloudflare na frente.
+      NGINX_CF_ORIGIN_PULL: ${NGINX_CF_ORIGIN_PULL:-on}
+      # O template (nginx/templates) só troca variáveis NGINX_*; o resultado vai para /etc/nginx/starrp.
+      NGINX_ENVSUBST_FILTER: "^NGINX_"
+      NGINX_ENVSUBST_OUTPUT_DIR: /etc/nginx/starrp
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/templates:/etc/nginx/templates:ro
+      - ./nginx/snippets:/etc/nginx/snippets:ro
+      - ./nginx/cloudflare:/etc/nginx/cloudflare:ro   # CA público da Cloudflare (origin pull)
+      - ./certs:/etc/nginx/certs:ro
+      - media:/srv/media:ro          # fotos enviadas: o nginx serve direto
+    # Onde o template vira a config ao subir (a pasta precisa existir e aceitar escrita, senão o nginx
+    # oficial pula o template sem erro).
+    tmpfs:
+      - /etc/nginx/starrp
+    networks:
+      edge: {}
+      web: { ipv4_address: "${NGINX_IP:-172.30.10.10}" }  # IP fixo: o único em que o backend confia (S-20)
+    depends_on:
+      backend-blue: { condition: service_started }
+      backend-green: { condition: service_started }
+      frontend: { condition: service_started }
+    healthcheck:
+      test: ["CMD", "nginx", "-t", "-q"]
+      interval: 60s
+      timeout: 5s
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/matheus-matta/starrp-web}:${FRONTEND_VERSION:?defina FRONTEND_VERSION (ex. 1.0.0) no .env}
+    restart: unless-stopped
+    environment:
+      # Atrás do nginx: o Caddy da imagem só serve os arquivos do app em http na rede interna (o HTTPS é do nginx).
+      SITE_ADDRESS: ":80"
+    networks: [web]
+
+  # Migrations e permissões: UMA vez antes dos backends (os dois rodando migrate juntos se atropelariam).
+  migrate:
+    <<: *backend
+    restart: "no"
+    command: sh -c "python manage.py migrate --noinput && python manage.py sync_permissions"
+    networks: [data]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+
+  backend-blue:
+    <<: *backend
+    command: *uvicorn
+    healthcheck: *healthcheck
+
+  backend-green:
+    <<: *backend
+    # Pode rodar outra versão durante a troca (deploy-backend.sh): BACKEND_GREEN_VERSION.
+    image: ${BACKEND_IMAGE:-ghcr.io/matheus-matta/starrp-backend}:${BACKEND_GREEN_VERSION:-${BACKEND_VERSION:?defina BACKEND_VERSION (ex. 1.0.0) no .env}}
+    command: *uvicorn
+    healthcheck: *healthcheck
+
+  # Fila do Celery (precificação, SEO, relatórios pesados, limpeza) e o agendador. Sem eles as tarefas
+  # entram na fila e nunca rodam.
+  worker:
+    <<: *backend
+    command: celery -A config worker -l info --concurrency ${CELERY_CONCURRENCY:-2}
+    networks: [data, fiscal]
+
+  beat:
+    <<: *backend
+    command: celery -A config beat -l info --schedule /tmp/celerybeat-schedule
+    networks: [data]
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+    volumes: [postgres:/var/lib/postgresql/data]
+    networks: [data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    volumes: [redis:/data]
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      retries: 10
+
+  # Comunicador Fiscal ACBr em nuvem (PDV web e cancelamentos). Sem porta publicada: só a rede `fiscal`.
+  acbr:
+    image: ghcr.io/matheus-matta/comunicador-fiscal:${ACBR_VERSAO:?defina ACBR_VERSAO (versão publicada do comunicador) no .env}
+    restart: unless-stopped
+    # Só o que o comunicador precisa (S-11): ele é imagem de terceiro e não recebe o .env inteiro
+    # (DJANGO_SECRET_KEY, banco, chave da OpenAI...). Token e chave: os MESMOS que o backend usa.
+    environment:
+      ACBRLIB_TOKEN: ${ACBRLIB_TOKEN:?defina ACBRLIB_TOKEN no .env}
+      ACBR_E2E_KEY: ${ACBR_E2E_KEY:?defina ACBR_E2E_KEY no .env}
+      ACBR_SIMULADOR: ${ACBR_SIMULADOR:-0}
+      ACBR_ALLOWED_ORIGINS: ${ACBR_ALLOWED_ORIGINS:-}
+      ACBR_MODO: nuvem
+      # Seguro: só o backend e o worker chegam aqui (rede interna `fiscal`).
+      FORWARDED_ALLOW_IPS: "*"
+    volumes:
+      - acbr:/app/data               # só o log: nenhum certificado nem XML fica gravado
+    networks: [fiscal]
+
+networks:
+  edge: {}                           # internet ↔ nginx
+  web:                               # nginx ↔ backends e frontend (sem saída para a internet)
+    internal: true
+    ipam:
+      config: [{ subnet: "${WEB_SUBNET:-172.30.10.0/24}" }]
+  data: { internal: true }           # backends/worker ↔ Postgres e Redis (banco sem saída para a internet)
+  # backends/worker ↔ ACBr. Não é interna: o ACBr fala com a SEFAZ e os backends com OpenAI, busca de
+  # preços etc. por ela. Mesmo assim nada aqui tem porta publicada: de fora, só o nginx.
+  fiscal: {}
+
+volumes:
+  media:
+  private:
+  postgres:
+  redis:
+  acbr:

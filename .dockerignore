@@ -1,0 +1,31 @@
+# Contexto do build do backend (docker build -f backend/Dockerfile .): só backend/ e frontend/public entram.
+# O do frontend está em frontend/Dockerfile.dockerignore.
+*
+!backend
+!frontend
+frontend/*
+!frontend/public
+
+# Segredos e dados locais
+**/.env
+**/.env.*
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.pem
+backend/media
+backend/private
+backend/staticfiles
+**/*.sqlite3*
+**/*.log
+
+# Só de desenvolvimento
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+**/.ruff_cache
+**/.coverage
+**/htmlcov
+backend/starrp/tests
+backend/pytest.ini
+backend/Dockerfile

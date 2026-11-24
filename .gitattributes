@@ -1,0 +1,12 @@
+# LF em todo lugar (o servidor, os runners e o Docker são Linux). Só script do Windows usa CRLF.
+*             text=auto eol=lf
+*.bat         text eol=crlf
+*.cmd         text eol=crlf
+*.ps1         text eol=crlf
+*.pem         -text
+*.key         -text
+
+# Gerados: recolhidos no diff do GitHub e fora das estatísticas de linguagem.
+backend/schema.yml           linguist-generated
+frontend/src/api/schema.d.ts linguist-generated
+**/package-lock.json         linguist-generated

@@ -1,0 +1,4 @@
+# Nada daqui vai para o git (chave privada!), só este aviso.
+*
+!.gitignore
+!README.md

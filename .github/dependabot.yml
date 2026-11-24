@@ -1,0 +1,28 @@
+# Atualizações automáticas (S-16, docs/SEGURANCA.md): actions (pinadas por SHA), dependências e imagens base.
+# O Dependabot abre PR com a versão nova; o CI testa só a parte que mudou.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }
+  - package-ecosystem: pip
+    directory: /backend/requirements
+    schedule: { interval: weekly }
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule: { interval: weekly }
+  - package-ecosystem: npm
+    directory: /desktop
+    schedule: { interval: weekly }
+  - package-ecosystem: npm
+    directory: /mobile
+    schedule: { interval: weekly }
+  - package-ecosystem: docker-compose
+    directory: /docker
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /backend
+    schedule: { interval: weekly }
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule: { interval: weekly }

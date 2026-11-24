@@ -1,11 +1,103 @@
-*.pyc
+# Vale para o repositório todo. O que é só de uma parte fica no .gitignore da pasta dela.
+# Conferir o que está sendo ignorado e por quê: git check-ignore -v <arquivo>
+
+# ── Segredos: nunca no git ──────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.p8
+*.key
+*.pem
+*.crt
+*.cer
+*.jks
+*.keystore
+*.mobileprovision
+google-services.json
+GoogleService-Info.plist
+credentials.json
+*service-account*.json
+# Exceção: CA pública da Cloudflare, usada pelo nginx (não é chave).
+!docker/nginx/cloudflare/origin-pull-ca.pem
+
+# ── Perfis de navegador (cookies, senhas salvas) e testes de ataque ─────────
+browser-profile*/
+chrome-profile*/
+edge-profile*/
+/mobile/assets-icons-profile/
+/backend/starrp/tests/redteam_tmp/
+
+# ── Dados locais: banco, uploads, privados, cópias ──────────────────────────
 *.sqlite3
 *.sqlite3-*
-.env
+*.db
+*.dump
+*.sql.gz
+/backend/media/
+/backend/private/
+/backend/staticfiles/
+/backups/
+*.bak
+*.backup
+*.orig
+*.rej
+
+# ── Python ──────────────────────────────────────────────────────────────────
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
 .pytest_cache/
 .ruff_cache/
-.venv/
-__pycache__/
-backend/media/
-backend/staticfiles/
+.mypy_cache/
+.coverage
+.coverage.*
+htmlcov/
+celerybeat-schedule*
+
+# ── Node, builds e caches ───────────────────────────────────────────────────
 node_modules/
+dist/
+coverage/
+.vite/
+.eslintcache
+*.tsbuildinfo
+/frontend/stats.html
+/desktop/out/
+
+# ── Pacotes gerados (vão para a Release, não para o git) ────────────────────
+*.apk
+*.aab
+*.ipa
+*.exe
+*.msi
+*.AppImage
+*.zip
+*.7z
+*.rar
+
+# ── Logs e temporários ──────────────────────────────────────────────────────
+*.log
+/logs/
+/backend/logs/
+/tmp/
+/backend/tmp/
+*.tmp
+*.swp
+*~
+
+# ── Editor, sistema e preferências pessoais ─────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/launch.json
+*.code-workspace
+.DS_Store
+Thumbs.db
+desktop.ini
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md

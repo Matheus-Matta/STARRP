@@ -1,0 +1,97 @@
+# Release do PDV DESKTOP: só a tag desktop-v<versão> dispara (ex.: desktop-v1.0.1).
+# A versão da tag vira a versão do app (package.json). Gera, em paralelo:
+#   - Windows: Starrp-PDV-<versão>-win-x64.zip (portátil) e Starrp-PDV-Setup-<versão>.exe (instalador);
+#   - Linux:   Starrp-PDV-<versão>-linux-x64.zip.
+# Tudo anexado à Release do GitHub, com os commits de desktop/ e shared/ desde a tag anterior.
+# Assinatura do Windows (opcional): segredos WIN_CSC_LINK (.pfx em base64) e WIN_CSC_KEY_PASSWORD.
+name: Release desktop
+
+on:
+  push:
+    tags: ["desktop-v*"]
+
+concurrency:
+  group: release-desktop-${{ github.ref_name }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  info:
+    name: Versão
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.info.outputs.version }}
+      prerelease: ${{ steps.info.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          fetch-depth: 0
+      - id: info
+        run: bash .github/scripts/release-info.sh desktop desktop/ shared/
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: release-notes
+          path: release-notes.md
+
+  build:
+    name: Build ${{ matrix.name }}
+    needs: info
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - name: Windows
+            os: windows-latest
+            target: --win
+          - name: Linux
+            os: ubuntu-latest
+            target: --linux
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: desktop
+        shell: bash
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: desktop/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Versão da tag no app
+        run: npm version "${{ needs.info.outputs.version }}" --no-git-tag-version --allow-same-version
+      # typecheck + regras iguais ao backend + segurança + electron-vite build
+      - run: npm run build
+      - name: Empacotar
+        env:
+          CSC_LINK: ${{ matrix.os == 'windows-latest' && secrets.WIN_CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ matrix.os == 'windows-latest' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
+        run: npx electron-builder ${{ matrix.target }} --publish never
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        with:
+          name: desktop-${{ matrix.os }}
+          if-no-files-found: error
+          path: |
+            desktop/dist/*.zip
+            desktop/dist/*Setup*.exe
+
+  release:
+    name: Release
+    needs: [info, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
+        with:
+          path: artifacts
+      - uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
+        with:
+          name: PDV desktop ${{ needs.info.outputs.version }}
+          body_path: artifacts/release-notes/release-notes.md
+          prerelease: ${{ needs.info.outputs.prerelease == 'true' }}
+          fail_on_unmatched_files: true
+          files: |
+            artifacts/desktop-*/*.zip
+            artifacts/desktop-*/*.exe
