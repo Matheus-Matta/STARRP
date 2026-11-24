@@ -21,7 +21,7 @@ python-json-logger>=2.0,<3.0
 Pillow>=13.0,<14.0
 requests>=2.31,<3.0
 # XML de fora (NF-e de fornecedor, respostas da SEFAZ) sem entidade externa nem expansão gigante.
-defusedxml>=0.7,<0.8
+defusedxml>=0.7.1,<0.8
 django-storages>=1.14,<2.0
 boto3>=1.34,<2.0
 # Sincronização loja⇄nuvem: AES-256-GCM do payload e cliente WSS do nó local.
