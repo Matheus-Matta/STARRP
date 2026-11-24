@@ -14,7 +14,7 @@ ARG APP_VERSION=dev
 RUN npm run build && echo "${APP_VERSION}" > dist/version.txt
 
 # 2) Só o Caddy e os arquivos prontos (sem Node na imagem final).
-FROM caddy:2.10-alpine
+FROM caddy:2.11-alpine
 COPY frontend/Caddyfile /etc/caddy/Caddyfile
 COPY --from=build /repo/frontend/dist /srv/app
 # Fotos enviadas: monte aqui o mesmo volume do MEDIA_ROOT do backend (/app/media).
