@@ -38,6 +38,7 @@
     "start": "expo start",
     "tunnel": "expo start --tunnel ngrok",
     "check:build": "node scripts/check-build.mjs",
+    "build:apk": "node scripts/build-apk.mjs",
     "android": "expo start --android",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",

@@ -107,11 +107,23 @@ npx tsc --noEmit && npx expo lint && npx expo-doctor
 
 O contrato com a API está em `backend/starrp/tests/test_mobile_app.py`.
 
-## Produção (lojas de apps)
+## Produção (APK)
 
-Build na nuvem pelo EAS (`eas.json`): `npx eas-cli@latest build --profile production --platform android`
-(ou `ios`). Antes, defina no EAS a variável `API_URL=https://app.suaempresa.com.br`: vira o servidor já
-preenchido no login. `--profile preview` gera um APK para instalar direto nos aparelhos da loja.
+A tag `mobile-vX.Y.Z` gera o `Starrp-X.Y.Z.apk` no GitHub Actions e o anexa à Release
+(`.github/workflows/release-mobile.yml`). Não usa o EAS nem conta Expo: é `npm run build:apk` (`expo prebuild` +
+Gradle), que também roda num PC com Java 17 e SDK do Android (no Windows, só com o repositório num caminho
+curto, por causa do limite de 260 caracteres do C++ do React Native). O APK instala direto nos aparelhos da
+loja ("instalar apps desconhecidos"); não vai para a Play Store.
+
+- **Servidor padrão**: variável do repositório `MOBILE_API_URL=https://app.suaempresa.com.br` (sem ela, o
+  endereço é digitado na ⚙ do login).
+- **Assinatura**: sem segredos, o APK sai com a chave de debug do React Native (pública; serve para começar).
+  Para a chave da empresa: `keytool -genkeypair -v -keystore starrp.jks -alias starrp -keyalg RSA -keysize 4096
+  -validity 10000`, e os segredos `ANDROID_KEYSTORE_BASE64` (o .jks em base64), `ANDROID_KEYSTORE_PASSWORD`,
+  `ANDROID_KEY_ALIAS` e `ANDROID_KEY_PASSWORD`. Trocar de chave obriga a desinstalar o app antigo; guarde o .jks
+  fora do repositório (perdeu = não atualiza mais o app instalado).
+
+Para as lojas (Play Store/App Store) há o `eas.json`: `npx eas-cli@latest build --profile production`.
 
 - **HTTPS sempre** no app de produção: endereço sem protocolo vira `https://`, `http://` é recusado (no
   login, no "Testar conexão" e em toda chamada). O build de produção com `API_URL` em http nem termina.
