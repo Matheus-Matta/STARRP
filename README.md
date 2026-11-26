@@ -97,3 +97,8 @@ Configuração única no GitHub (Settings → Secrets and variables → Actions)
   assinam o executável do Windows.
 - **imagens**: nada a configurar (usa o `GITHUB_TOKEN`). No servidor, `docker login ghcr.io` se o pacote
   for privado; a versão usada é a do `docker/.env` (ver [docker/README.md](docker/README.md)).
+
+## Licença
+
+Copyright (c) 2026 Matheus Matta. **Todos os direitos reservados.** O código está público para leitura e
+avaliação profissional; uso, cópia, modificação e distribuição dependem de autorização escrita ([LICENSE](LICENSE)).

@@ -2,6 +2,7 @@
   "name": "starrp",
   "version": "0.1.0",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE",
   "description": "Starrp ERP — comandos do monorepo (backend Django + frontend Vue + desktop + app móvel).",
   "type": "module",
   "engines": {

@@ -383,19 +383,12 @@ O `.env` é o da raiz: o Vite lê dele `VITE_API_TARGET` (destino do proxy `/api
 
 ## Produção
 
-A produção atual é o compose de [docker/](../docker/README.md) (nginx + Cloudflare). Abaixo, a imagem do
-frontend e a opção antiga em que o próprio Caddy recebe a internet (`deploy/production`).
+A produção é o compose de [docker/](../docker/README.md): o nginx recebe a internet (HTTPS com o certificado de
+origem da Cloudflare) e repassa `/api`, `/admin`, `/static` e `/health/` ao backend e o resto ao frontend. O app
+vira arquivos estáticos (`npm run build` → `frontend/dist`) servidos pelo **Caddy** da imagem
+(`frontend/Dockerfile` + `frontend/Caddyfile`), em http na rede interna. Tudo numa origem só:
 
-O app vira arquivos estáticos (`npm run build` → `frontend/dist`) servidos pelo **Caddy**
-(`frontend/Dockerfile` + `frontend/Caddyfile`), que também repassa `/api`, `/admin`, `/static` e
-`/health/` ao backend. Tudo numa origem só, em HTTPS:
-
-```
-docker compose -f deploy/production/docker-compose.yml --env-file .env up -d --build
-```
-
-- **HTTPS sempre**: o Caddy emite o certificado (Let's Encrypt) para `SITE_ADDRESS` e redireciona
-  http → https; HSTS de 1 ano. O backend recusa subir com `FRONTEND_URL`/CORS/CSRF em `http://`.
+- **HTTPS sempre**: o nginx redireciona http → https; HSTS de 1 ano. O backend recusa subir com `FRONTEND_URL`/CORS/CSRF em `http://`.
 - **Login só por cookie**: httpOnly + Secure + SameSite=Strict. O app manda `X-Auth-Transport: cookie`
   e o backend não põe o token no corpo do login nem do refresh (o JS da página nunca vê o token).
   PDV desktop e app móvel continuam com o token no corpo (Bearer).
@@ -406,7 +399,7 @@ docker compose -f deploy/production/docker-compose.yml --env-file .env up -d --b
 - **Cabeçalhos**: nosniff, Referrer-Policy, X-Frame-Options SAMEORIGIN, câmera só do próprio app.
   O CSP não restringe scripts: a impressão de etiquetas roda o HTML do backend num iframe/aba (herda
   a política) com script inline.
-- **Fotos enviadas** (`/media`): o Caddy serve direto do volume do backend, com `sandbox` (arquivo de
+- **Fotos enviadas** (`/media`): o nginx serve direto do volume do backend, com `sandbox` (arquivo de
   usuário nunca roda script).
 - **Custo e margem**: sem `catalog.view_costs` o backend nem manda; `utils/costs.ts` tira dos cadastros
   as colunas e itens que ficariam vazios (mesmas regras de `backend/starrp/core/costs.py`).
