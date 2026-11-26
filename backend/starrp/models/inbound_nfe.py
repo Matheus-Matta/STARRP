@@ -54,6 +54,8 @@ class DFeDocument(TenantModel):
         ERROR = "error", "Erro"
         SKIPPED = "skipped", "Ignorado"
 
+    # Cada ambiente da SEFAZ tem a SUA sequência de NSU.
+    environment = models.CharField(max_length=1, default="1")
     nsu = models.CharField(max_length=15)
     schema = models.CharField(max_length=60, blank=True)
     access_key = models.CharField(max_length=44, blank=True, db_index=True)
@@ -65,7 +67,7 @@ class DFeDocument(TenantModel):
 
     class Meta:
         ordering = ["-nsu"]
-        constraints = [models.UniqueConstraint(fields=["config", "nsu"], name="uniq_dfe_document_nsu")]
+        constraints = [models.UniqueConstraint(fields=["config", "environment", "nsu"], name="uniq_dfe_document_nsu")]
 
 
 class InboundNFe(StoreModel):

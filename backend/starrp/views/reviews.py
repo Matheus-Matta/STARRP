@@ -15,6 +15,7 @@ from django.conf import settings
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -22,6 +23,7 @@ from rest_framework.views import APIView
 
 from starrp.core.errors import BusinessError
 from starrp.core.parsers import ObjectJSONParser
+from starrp.core.permissions import has_permission_code
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer
 from starrp.core.text import decimals_as_text
 from starrp.core.viewsets import TenantViewSet
@@ -65,6 +67,17 @@ class ReviewViewSet(TenantViewSet):
     # Moderar é de quem vê as vendas da equipe (M-18): o vendedor aprovava a própria avaliação.
     action_permissions = {"links": "sales.view", "approve": "sales.view_all", "reject": "sales.view_all"}
 
+    def _check_moderator(self):
+        """Vê as vendas da equipe E altera vendas ou promoções: o auditor, que só consulta, aprovava avaliação (R8-02)."""
+        user = self.request.user
+        if not (has_permission_code(user, "sales.view_all")
+                and (has_permission_code(user, "sales.manage") or has_permission_code(user, "promotions.manage"))):
+            raise PermissionDenied("Você não modera as avaliações.")
+
+    def perform_destroy(self, instance):
+        self._check_moderator()  # vale também para a exclusão em massa
+        super().perform_destroy(instance)
+
     def create(self, request, *args, **kwargs):
         body = self.get_serializer(data=request.data)
         body.is_valid(raise_exception=True)
@@ -79,10 +92,12 @@ class ReviewViewSet(TenantViewSet):
 
     @action(detail=True, methods=["post"])
     def approve(self, request, pk=None):
+        self._check_moderator()
         return Response(self.get_serializer(reviews.moderate(self.get_object(), Review.Status.APPROVED, request.user)).data)
 
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
+        self._check_moderator()
         review = reviews.moderate(self.get_object(), Review.Status.REJECTED, request.user, str(request.data.get("reason", "")))
         return Response(self.get_serializer(review).data)
 
@@ -134,7 +149,7 @@ class PublicReviewView(APIView):
         raw = request.data.get("data")
         try:
             payload = json.loads(raw) if isinstance(raw, str) else (raw or request.data)
-        except ValueError:
+        except (ValueError, RecursionError):
             raise BusinessError("Dados da avaliação inválidos.") from None
         products = payload.get("products") if hasattr(payload, "get") else None
         if not isinstance(payload, dict) or not isinstance(payload.get("delivery") or {}, dict) or not (

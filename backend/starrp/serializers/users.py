@@ -134,7 +134,7 @@ class UserProfileSerializer(TenantSerializer):
 
     #: O que define o ACESSO do usuário: ninguém mexe nisso no próprio perfil (S-03).
     ACCESS_FIELDS = ("role", "extra_roles", "extra_permissions", "stores", "all_stores", "default_store",
-                     "is_active", "cosmos_enabled")
+                     "is_active", "cosmos_enabled", "is_seller", "commission_percent")
 
     def validate_password(self, value):
         user = self.instance.user if self.instance is not None else None
@@ -251,11 +251,18 @@ class UserProfileSerializer(TenantSerializer):
     def update(self, instance, validated_data):
         user_data = validated_data.pop("user", {})
         password = validated_data.pop("password", None)
+        # R4-18: o link enviado ao e-mail antigo (ou antes da senha nova, ou de quem foi desligado) morre aqui.
+        email = user_data.get("email", instance.user.email)
+        stale_links = bool(password) or email != instance.user.email or validated_data.get("is_active") is False
         for field, value in user_data.items():
             setattr(instance.user, field, value)
         if password:
             instance.user.set_password(password)
         instance.user.save()
+        if stale_links:
+            from starrp.services import password_reset
+
+            password_reset.invalidate(instance.user)
         updated = super().update(instance, validated_data)
         if password:  # S-12: senha nova derruba as sessões abertas com a antiga (depois do save do perfil)
             from starrp.services import sessions

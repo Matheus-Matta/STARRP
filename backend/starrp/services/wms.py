@@ -11,7 +11,7 @@ from django.db.models import F, Sum
 from django.utils import timezone
 
 from starrp.core.errors import BusinessError, InsufficientStock
-from starrp.models import BinBalance, StockRule, StorageBin
+from starrp.models import BinBalance, StockBalance, StockLot, StockRule, StorageBin
 
 FAR_FUTURE = timezone.datetime(9999, 12, 31).date()
 FAR_PAST = timezone.datetime(1900, 1, 1).date()
@@ -33,6 +33,27 @@ def default_bin(warehouse):
         raise BusinessError(f"O depósito {warehouse} controla endereços mas não tem nenhum cadastrado.",
                             code="bin_required")
     return found
+
+
+def has_balance(bin):
+    return BinBalance.all_objects.filter(bin=bin, deleted_at__isnull=True).exclude(quantity=0).exists()
+
+
+def start_bins(warehouse):
+    """Ligou os endereços num depósito com saldo: o saldo começa na doca (por lote). Sem isto a soma dos endereços
+    começava em zero e nada se vendia."""
+    target = None
+    BinBalance.all_objects.filter(bin__warehouse=warehouse).exclude(quantity=0).update(quantity=0)
+    for balance in StockBalance.all_objects.select_for_update().filter(
+            warehouse=warehouse, deleted_at__isnull=True).exclude(quantity=0).select_related("variant"):
+        target = target or default_bin(warehouse)
+        left = balance.quantity
+        for lot in StockLot.all_objects.filter(variant=balance.variant, warehouse=warehouse, deleted_at__isnull=True,
+                                               quantity__gt=0):
+            adjust(target, balance.variant, lot, lot.quantity, allow_negative=True)
+            left -= lot.quantity
+        if left:
+            adjust(target, balance.variant, None, left, allow_negative=True)
 
 
 def adjust(bin, variant, lot, quantity, *, allow_negative=False):

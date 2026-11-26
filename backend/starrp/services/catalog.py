@@ -140,7 +140,7 @@ def save_variants(product, rows, user):
     if product.type != Product.Type.VARIABLE and len(rows) > 1:
         raise BusinessError(f"Produto do tipo {product.get_type_display()} tem uma variante só. "
                             "Para várias, mude o tipo para Com variação.", code="single_variant_type")
-    existing = {str(v.pk): v for v in product.variants.filter(deleted_at__isnull=True)}
+    existing = {str(v.pk): v for v in product.variants.select_for_update(of=("self",)).filter(deleted_at__isnull=True)}
     sent = {str(row["id"]) for row in rows if row.get("id")}
     for pk, variant in existing.items():
         if pk not in sent:
@@ -161,7 +161,10 @@ def save_variants(product, rows, user):
         if not (variant.sku or "").strip():
             # SKU digitado que repete continua dando erro (é engano); o gerado nunca repete.
             variant.sku = free_sku(product.account_id, f"{_base_sku(product)}-{position + 1}", variant.pk)
-        variant.save()
+        # A que já existe grava só o que a tela edita: o custo médio é do estoque (R4-08).
+        fields = None if variant._state.adding else [
+            *VARIANT_FIELDS, "sku", "position", "is_default", "updated_by", "updated_at"]
+        variant.save(update_fields=list(dict.fromkeys(fields)) if fields else None)
         if "values" in row:
             values = _set_values(variant, row["values"])
             key = frozenset(v.pk for v in values)

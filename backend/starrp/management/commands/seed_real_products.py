@@ -10,9 +10,10 @@ trocado não é mais encontrado. Vendas e notas antigas continuam com o nome que
 """
 from decimal import Decimal
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.db import transaction
 
+from starrp.management.demo import DemoCommand
 from starrp.management.commands.seed_demo import ean13
 from starrp.models import Account, Brand, Module, Product, ProductBarcode
 from starrp.models.platform import default_price_sources
@@ -39,7 +40,7 @@ REAL_PRODUCTS = [
 ]
 
 
-class Command(BaseCommand):
+class Command(DemoCommand):
     help = "Troca os produtos da demo por produtos reais (uns com EAN, outros só pelo título)."
 
     def add_arguments(self, parser):

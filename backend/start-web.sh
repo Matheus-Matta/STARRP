@@ -20,6 +20,7 @@ limit="${UVICORN_LIMIT:-0}"
 extra=""
 [ "$limit" -gt 0 ] && extra="--limit-concurrency ${limit}"
 
+# --no-access-log: a URL tem busca com CPF/nome (S-15); o acesso já fica no nginx, sem a query.
 # --lifespan off: o Django não usa o protocolo lifespan (sem isso o uvicorn só avisa no log).
 # shellcheck disable=SC2086
 exec uvicorn config.asgi:application \
@@ -29,6 +30,7 @@ exec uvicorn config.asgi:application \
   --lifespan off \
   --proxy-headers --forwarded-allow-ips "${FORWARDED_ALLOW_IPS:-127.0.0.1}" \
   --timeout-keep-alive "${UVICORN_KEEPALIVE:-75}" \
-  --timeout-graceful-shutdown 30 \
+  --timeout-graceful-shutdown 75 \
   --no-server-header \
+  --no-access-log \
   $extra

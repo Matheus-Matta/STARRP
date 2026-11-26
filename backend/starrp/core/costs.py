@@ -17,9 +17,9 @@ PERMISSION = "catalog.view_costs"
 
 # Chave de dado de custo/margem/lucro (nomes em inglês, separados por "_"): "cost", "unit_cost",
 # "margin_pct", "n_profit_day", "gross_margin"... e NÃO "customer", "customers".
-COST_KEY = re.compile(r"(^|_)(cost|costs|margin|profit|markup|cmv)(_|$)")
+COST_KEY = re.compile(r"(^|_)(cost|costs|margin|profit|markup|cmv|loss|losses|result)(_|$)")
 # Texto visível (rótulo de KPI, coluna, série, opção, título de bloco).
-COST_LABEL = re.compile(r"\b(custos?|margem|margens|lucros?|cmv|markup)\b", re.IGNORECASE)
+COST_LABEL = re.compile(r"\b(custos?|margem|margens|lucros?|cmv|markup|prejuízos?|resultado|perda de)\b", re.IGNORECASE)
 
 
 def sees_costs(user):
@@ -66,6 +66,8 @@ def _is_cost_entry(entry):
     """Coluna/métrica/série/KPI/opção de custo: pela chave ou pelo rótulo."""
     if not isinstance(entry, dict):
         return False
+    if entry.get("cost") is True:  # o próprio relatório diz: "Valor em estoque" é custo, sem a palavra no rótulo
+        return True
     for field in ("key", "value_key"):
         value = entry.get(field)
         if isinstance(value, str) and COST_KEY.search(value):
@@ -77,15 +79,35 @@ def _is_cost_entry(entry):
     return False
 
 
-def _clean_row(row):
-    return {k: v for k, v in row.items() if not COST_KEY.search(str(k))} if isinstance(row, dict) else row
+#: Textos livres do relatório (o número do custo/margem aparecia neles, R5-06).
+TEXT_KEYS = ("hint", "sub", "description", "subtitle", "text", "note", "empty")
+
+
+def _clean_row(row, hidden=()):
+    if not isinstance(row, dict):
+        return row
+    out = {k: v for k, v in row.items() if not COST_KEY.search(str(k)) and k not in hidden}
+    for key in TEXT_KEYS:
+        if isinstance(out.get(key), str) and COST_LABEL.search(out[key]):
+            out[key] = ""
+    return out
+
+
+def _clean_rows(rows, hidden=()):
+    """Linhas sem as que SÃO de custo (na DRE o custo é uma linha: "CMV", "Lucro bruto", "Resultado")."""
+    return [_clean_row(row, hidden) for row in rows if not _is_cost_entry(row)
+            and not (isinstance(row, dict) and COST_LABEL.search(str(row.get("text") or "")))]
 
 
 def _redact_block(block):
     """Bloco de relatório sem as partes de custo; `None` quando ele era SÓ sobre custo/margem."""
     if not isinstance(block, dict):
         return block
+    if block.get("cost") is True:
+        return None
     block = dict(block)
+    hidden = {entry.get("key") for name in ("columns", "metrics") for entry in block.get(name) or []
+              if _is_cost_entry(entry)}
     title_is_cost = isinstance(block.get("title"), str) and COST_LABEL.search(block["title"])
     for list_key in ("columns", "metrics", "series"):
         if isinstance(block.get(list_key), list):
@@ -95,8 +117,19 @@ def _redact_block(block):
             block[list_key] = kept
     if title_is_cost and not any(block.get(k) for k in ("columns", "metrics")):
         return None  # gráfico de margem (ex.: "Margem bruta por categoria")
-    if isinstance(block.get("rows"), list):
-        block["rows"] = [_clean_row(row) for row in block["rows"]]
+    if title_is_cost:
+        return None
+    for list_key in ("rows", "steps", "items", "facts", "insights"):
+        if isinstance(block.get(list_key), list):
+            block[list_key] = _clean_rows(block[list_key], hidden)
+    # Só o que a tela mostra: chave extra na linha (a parte do lucro de cada sócio) não viaja escondida.
+    shown = [e for name in ("columns", "metrics") for e in block.get(name) or [] if isinstance(e, dict)]
+    if shown and isinstance(block.get("rows"), list):
+        tab = (block.get("tabs") or {}).get("key") if isinstance(block.get("tabs"), dict) else None
+        keep = {e.get("key") for e in shown} | {"label", "group", "strong", "link", "id", tab}
+        block["rows"] = [{k: v for k, v in row.items() if k in keep} if isinstance(row, dict) else row
+                         for row in block["rows"]]
+    block = _clean_row(block)
     if isinstance(block.get("value_key"), str) and COST_KEY.search(block["value_key"]):
         return None
     return block
@@ -113,15 +146,18 @@ def redact_report(data):
         if COST_KEY.search(str(key)):
             continue
         if key == "kpis" and isinstance(value, list):
-            out[key] = [kpi for kpi in value if not _is_cost_entry(kpi)]
+            out[key] = _clean_rows(value)
         elif key == "blocks" and isinstance(value, list):
             out[key] = [block for block in map(_redact_block, value) if block is not None]
         elif key == "filters" and isinstance(value, list):
             out[key] = [_redact_filter(f) for f in value]
         elif isinstance(value, list):
-            out[key] = [redact_report(row) if isinstance(row, dict) else row for row in value]
+            out[key] = [redact_report(row) if isinstance(row, dict) else row for row in value
+                        if not (isinstance(row, dict) and COST_LABEL.search(str(row.get("text") or "")))]
         elif isinstance(value, dict):
             out[key] = redact_report(value)
+        elif key in TEXT_KEYS and isinstance(value, str) and COST_LABEL.search(value):
+            out[key] = ""
         else:
             out[key] = value
     return out

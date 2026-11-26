@@ -26,7 +26,8 @@ from django.utils import timezone
 
 from starrp.core.errors import BusinessError, StateConflict
 from starrp.core.text import only_digits
-from starrp.models import DFeDocument, DFeSyncState, FiscalConfig, InboundNFe, NFeEvent, NFeIssue, StockDocument
+from starrp.models import Account, DFeDocument, DFeSyncState, FiscalConfig, InboundNFe, NFeEvent, NFeIssue, StockDocument
+from starrp.models.platform import Module
 from starrp.services import inbound_nfe, sefaz
 
 logger = logging.getLogger(__name__)
@@ -98,11 +99,13 @@ def sync(config, user=None):
         for _ in range(MAX_PAGES):
             page = sefaz.distribution(config, last_nsu=state.last_nsu)
             state.last_cstat, state.last_reason = page.cstat, page.reason
+            # Documentos e cursor juntos: falhou ao gravar, o cursor NÃO anda (o lote vem de novo).
+            with transaction.atomic():
+                received += _save(config, page.documents)
             if page.last_nsu:
                 state.last_nsu = page.last_nsu
             if page.max_nsu:
                 state.max_nsu = page.max_nsu
-            received += _save(config, page.documents)
             if page.cstat in ("137", "656"):
                 state.next_allowed_at = timezone.now() + WAIT
                 break
@@ -124,7 +127,7 @@ def _save(config, documents):
     saved = 0
     for raw in documents:
         _, created = DFeDocument.all_objects.get_or_create(
-            config=config, nsu=raw.nsu,
+            config=config, environment=config.environment, nsu=raw.nsu,
             defaults={"account_id": config.account_id, "schema": raw.schema, "xml": raw.xml,
                       "doc_type": _doc_type(raw.schema)},
         )
@@ -148,7 +151,9 @@ def process_pending(config, user=None):
             with transaction.atomic():
                 doc.processing = _process(config, doc, user)
             doc.processing_error = ""
-        except (BusinessError, StateConflict, ET.ParseError) as error:
+        except Exception as error:  # noqa: BLE001 — um documento estragado não pode parar os seguintes
+            if not isinstance(error, (BusinessError, StateConflict, ET.ParseError)):
+                logger.exception("Documento da SEFAZ NSU %s não processado", doc.nsu)
             doc.processing, doc.processing_error = DFeDocument.Processing.ERROR, str(error)[:2000]
         doc.processed_at = timezone.now()
         doc.save(update_fields=["processing", "processing_error", "processed_at", "updated_at"])
@@ -162,6 +167,8 @@ def process_pending(config, user=None):
                 science(nfe, user)
             except (BusinessError, StateConflict) as error:
                 logger.info("Ciência automática da NF-e %s falhou: %s", nfe.access_key, error)
+                if error.get_codes() == "dfe_wait":
+                    break  # consumo indevido (656): insistir bloquearia o CNPJ
     return InboundNFe.all_objects.filter(fiscal_config=config).count() - before
 
 
@@ -284,6 +291,9 @@ def download(nfe, user=None):
         return nfe
     config = _config(nfe)
     page = sefaz.distribution(config, access_key=nfe.access_key)
+    if page.cstat == "656":
+        DFeSyncState.all_objects.filter(pk=_state(config).pk).update(next_allowed_at=timezone.now() + WAIT)
+        raise StateConflict("A SEFAZ pede um intervalo de 1 hora entre as consultas.", code="dfe_wait")
     full = next((d for d in page.documents if d.schema.startswith("procNFe")), None)
     if full is None:
         nfe.xml_status = InboundNFe.XmlStatus.PENDING
@@ -296,9 +306,11 @@ def download(nfe, user=None):
 def sync_all():
     """Tarefa periódica: todos os CNPJs com a busca ligada e certificado enviado."""
     results = {}
-    for config in FiscalConfig.all_objects.filter(dfe_enabled=True, is_active=True, deleted_at__isnull=True).exclude(
-        certificate_file=""
-    ):
+    for config in FiscalConfig.all_objects.filter(
+            dfe_enabled=True, is_active=True, deleted_at__isnull=True, account__status=Account.Status.ACTIVE).exclude(
+            certificate_file="").select_related("account"):
+        if not config.account.has_module(Module.INBOUND_NFE):
+            continue
         try:
             results[str(config.pk)] = sync(config)
         except (BusinessError, StateConflict) as error:

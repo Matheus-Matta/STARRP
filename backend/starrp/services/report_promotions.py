@@ -23,6 +23,7 @@ from django.utils import timezone
 from starrp.models import Sale, SaleItem
 from starrp.services import report_book as rb
 from starrp.services import report_cross as rx
+from starrp.services import reports
 
 ZERO = Decimal("0")
 
@@ -31,7 +32,8 @@ def _sale_rows(sales):
     """Uma linha por venda: total, custo, os três descontos e o cliente."""
     rows = {s["pk"]: {**s, "cost": ZERO, "promo": ZERO, "line_discount": ZERO}
             for s in sales.values("pk", "number", "customer_id", "customer_name", "seller__first_name", "completed_at",
-                                  "total", "freight", "subtotal", "discount", "coupon_discount", "coupon_code")}
+                                  "total", "freight", "subtotal", "discount", "coupon_discount", "coupon_code",
+                                  "coupon__kind")}
     for sale_id, qty, list_price, unit_price, discount, cost, promo in SaleItem.all_objects.filter(
             sale_id__in=rows.keys(), status=SaleItem.Status.ACTIVE).values_list(
             "sale_id", "quantity", "list_price", "unit_price", "discount", "unit_cost", "promotion_id"):
@@ -43,7 +45,10 @@ def _sale_rows(sales):
     for r in rows.values():
         r["manual"] = (r["discount"] or ZERO) + r["line_discount"]
         r["coupon"] = r["coupon_discount"] or ZERO
-        r["profit"] = (r["total"] or ZERO) - (r["freight"] or ZERO) - r["cost"]
+        # A receita dos itens (a mesma da margem): o cupom de frete grátis abate o frete, não a mercadoria.
+        coupon = ZERO if r["coupon__kind"] == "free_shipping" else r["coupon"]
+        r["net"] = max((r["subtotal"] or ZERO) - (r["discount"] or ZERO) - coupon, ZERO)
+        r["profit"] = r["net"] - r["cost"]
         r["source"] = ("cupom" if r["coupon"] else "manual" if r["manual"] else "promo" if r["promo"] else "none")
     return list(rows.values())
 
@@ -75,7 +80,7 @@ def _loss_rows(sales):
     """Vendas em que o que entrou (sem frete) não pagou o custo: a lista "deram prejuízo"."""
     out = [{"number": s["number"], "date": timezone.localtime(s["completed_at"]).date(),
             "customer": s["customer_name"] or "—", "seller": s["seller__first_name"] or "—", "kind": SOURCES[s["source"]],
-            "given": s["promo"] + s["coupon"] + s["manual"], "revenue": s["total"] - (s["freight"] or ZERO),
+            "given": s["promo"] + s["coupon"] + s["manual"], "revenue": s["net"],
             "cost": s["cost"], "loss": -s["profit"]} for s in sales if s["profit"] < 0]
     return sorted(out, key=lambda r: -r["loss"])
 
@@ -94,7 +99,7 @@ def overview(account, store, params):
         group = [s for s in sales if s["source"] == key]
         if not group:
             continue
-        revenue = sum((s["total"] - (s["freight"] or ZERO) for s in group), ZERO)
+        revenue = sum((s["net"] for s in group), ZERO)
         rows.append({"label": label, "sales": len(group), "ticket": rb._ticket(revenue, len(group)),
                      "given": sum((s["promo"] + s["coupon"] + s["manual"] for s in group), ZERO),
                      "margin_pct": rb._pct(sum((s["profit"] for s in group), ZERO), revenue),
@@ -185,9 +190,9 @@ def products(account, store, params):
     def agg(qs):
         out = defaultdict(lambda: {"units": ZERO, "revenue": ZERO, "cost": ZERO, "given": ZERO})
         for product, units, revenue, cost, given in qs.values_list("variant__product_id").annotate(
-                u=Sum("quantity"), r=Sum("total"), c=Sum(rb.COST),
+                u=Sum("quantity"), r=reports.NET, c=Sum(rb.COST),
                 g=Sum((F("list_price") - F("unit_price")) * F("quantity"))):
-            out[product] = {"units": units or ZERO, "revenue": revenue or ZERO, "cost": cost or ZERO, "given": max(given or ZERO, ZERO)}
+            out[product] = {"units": units or ZERO, "revenue": reports.money(revenue), "cost": cost or ZERO, "given": max(given or ZERO, ZERO)}
         return out
 
     normal = agg(items.filter(promotion__isnull=True, variant__product_id__in=product_ids))
@@ -353,7 +358,7 @@ def coupons(account, store, params):
                      "uses": len(group), "customers": len({s["customer_id"] for s in group if s["customer_id"]}),
                      "new": sum(1 for s in group if s["customer_id"] and firsts.get(s["customer_id"]) == s["completed_at"]),
                      "given": given, "ticket": rb._ticket(sum((s["total"] for s in group), ZERO), len(group)),
-                     "margin_pct": rb._pct(profit, sum((s["total"] - (s["freight"] or ZERO) for s in group), ZERO)),
+                     "margin_pct": rb._pct(profit, sum((s["net"] for s in group), ZERO)),
                      "came_back": back, "after": after, "return": ret, "verdict": COUPON_VERDICTS[verdict]})
     rows.sort(key=lambda r: -r["uses"])
     baseline = {"label": "Sem cupom", "uses": len(without), "customers": len({s["customer_id"] for s in without if s["customer_id"]}),

@@ -15,12 +15,13 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.core.management import call_command
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.db import transaction
 from django.utils import timezone
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from starrp.management.demo import DemoCommand
 from starrp.models import (
     Account, Brand, CashRegister, CashSession, Invoice, InvoiceItem, PaymentMethod, Sale, Store, UserProfile,
 )
@@ -108,7 +109,7 @@ ADDRESSES_WORK = [{"label": "Trabalho", "zip_code": "01001000", "street": "Praç
 # Senha dos usuários de demonstração (ana, bruno, carla...): passa na política de senha (validate_password).
 DEMO_PASSWORD = "Starrp-Demo-2026"
 
-class Command(BaseCommand):
+class Command(DemoCommand):
     help = "Popula a conta de demonstração com pelo menos 10 registros por cadastro."
 
     def add_arguments(self, parser):

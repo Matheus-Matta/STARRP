@@ -3,6 +3,7 @@
 `checkout` faz tudo numa transação só (pagamentos + conclusão): é o que o PDV
 chama com `Idempotency-Key`, e um reenvio nunca cobra nem baixa duas vezes.
 """
+from datetime import timedelta
 from decimal import Decimal
 
 from django.db import transaction
@@ -21,10 +22,19 @@ from starrp.services.sales import cents, check_discounts, lock_open, net_total
 Kind = PaymentMethod.Kind
 
 
-def _session_for(sale, user, method):
+def _session_for(sale, user, method, imported=False):
     """Turno que recebe o pagamento. Com "exige caixa aberto", venda do PDV só é cobrada num
     turno ABERTO do operador (qualquer forma); fora do PDV, só o dinheiro exige o turno."""
-    session = sale.cash_session or cash.session_for_user(sale.store, user)
+    session = sale.cash_session
+    if not imported and (session is None or session.status != session.Status.OPEN or session.opened_by_id != user.pk):
+        # O dinheiro entra na gaveta de QUEM RECEBE (R4-03): o caixa B cobrava a venda do A na gaveta do A. O
+        # gerente sem turno próprio ajuda no caixa aberto da venda.
+        mine = cash.session_for_user(sale.store, user)
+        helping = session is not None and session.status == session.Status.OPEN and cash.sees_drawer(user)
+        if mine is None and session is not None and session.status != session.Status.OPEN and method.kind == Kind.CASH:
+            raise StateConflict("O turno de caixa foi fechado: abra o caixa de novo para receber.",
+                                code="session_not_open")
+        session = mine or (session if helping else None)
     at_counter = sale.channel in (SaleChannel.POS, SaleChannel.MOBILE)
     if session is None and sale.store.rule.require_open_cash_session and (at_counter or method.kind == Kind.CASH):
         raise StateConflict("Abra o caixa antes de receber (o turno também pode estar esperando o gerente conferir "
@@ -67,32 +77,35 @@ def _lock_customer(sale):
     return Customer.all_objects.select_for_update().get(pk=sale.customer_id)
 
 
-def _check_method(sale, method, amount, installments):
-    if installments > method.max_installments:
+def _check_method(sale, method, amount, installments, fact=False):
+    """`fact`: venda já cobrada no PDV (a regra pode ter mudado depois)."""
+    if installments > method.max_installments and not fact:
         raise BusinessError(f"{method.name} aceita no máximo {method.max_installments} parcelas.",
                             code="installments_exceeded")
     if method.kind == Kind.STORE_CREDIT:
         if sale.customer_id is None:
             raise BusinessError("Vale-troca exige o cliente na venda.", code="customer_required")
         _lock_customer(sale)
-        if credit_balance(sale.customer) < amount:
+        if credit_balance(sale.customer) < amount and not fact:
             raise BusinessError("Saldo de vale-troca insuficiente.", code="insufficient_credit")
     if method.kind == Kind.INSTALLMENT_PLAN:
         if sale.customer_id is None:
             raise BusinessError("Crediário exige o cliente na venda.", code="customer_required")
         customer = _lock_customer(sale)
-        if finance.open_receivables(customer) + amount > customer.credit_limit:
+        if finance.open_receivables(customer) + amount > customer.credit_limit and not fact:
             raise BusinessError("Limite de crediário do cliente excedido.", code="credit_limit_exceeded")
 
 
 @transaction.atomic
-def add_payment(sale, method, amount, user, *, tendered=None, installments=1, idempotency_key=None, **details):
+def add_payment(sale, method, amount, user, *, tendered=None, installments=1, idempotency_key=None, imported=False,
+                **details):
+    """`imported`: venda já concluída no PDV (fato): vale a forma desativada e o turno em que ela aconteceu."""
     sale = lock_open(sale)
     amount = cents(amount)
     if amount <= 0:
         raise BusinessError("Valor do pagamento precisa ser maior que zero.", code="amount_invalid")
     check_method_store(method, sale)
-    if not method.is_active and not (sale.metafields or {}).get("_offline_id"):
+    if not method.is_active and not imported:
         raise BusinessError(f"{method.name} está desativada.", code="payment_method_inactive")
     change = Decimal("0")
     if method.allows_change:
@@ -104,11 +117,12 @@ def add_payment(sale, method, amount, user, *, tendered=None, installments=1, id
             raise BusinessError("A venda já está paga.", code="payment_exceeds_balance")
     elif amount > sale.balance_due:
         raise BusinessError("Pagamento maior que o saldo da venda (troco só em dinheiro).", code="payment_exceeds_balance")
-    _check_method(sale, method, amount, installments)
-    if (method.requires_reference and sale.store.rule.require_payment_reference
+    fact = imported is True  # "dry" = prévia do PDV: confere tudo, como se fosse agora
+    _check_method(sale, method, amount, installments, fact)
+    if (not fact and method.requires_reference and sale.store.rule.require_payment_reference
             and not (details.get("nsu") or details.get("authorization_code"))):
         raise BusinessError(f"{method.name}: informe o NSU/autorização do comprovante.", code="reference_required")
-    session = _session_for(sale, user, method)
+    session = _session_for(sale, user, method, imported)
     payment = Payment.all_objects.create(
         account_id=sale.account_id, store_id=sale.store_id, sale=sale, method=method, cash_session=session,
         amount=amount, tendered_amount=tendered or amount, change_amount=change, installments=installments,
@@ -118,10 +132,11 @@ def add_payment(sale, method, amount, user, *, tendered=None, installments=1, id
         CustomerCredit.all_objects.create(account_id=sale.account_id, customer=sale.customer,
                                           kind=CustomerCredit.Kind.USAGE, amount=-amount, payment=payment)
     if method.kind == Kind.CASH and session is not None:
-        cash.record_cash_payment(session, payment, user)
+        cash.record_cash_payment(session, payment, user, imported=imported)
     sale.paid_amount += amount
     sale.change_amount += change
-    sale.cash_session = sale.cash_session or session
+    if sale.cash_session_id is None or (session is not None and sale.paid_amount == amount):
+        sale.cash_session = session or sale.cash_session  # 1º pagamento: a venda é do turno que a recebeu
     sale.save(update_fields=["paid_amount", "change_amount", "cash_session", "updated_at"])
     return payment
 
@@ -132,7 +147,7 @@ def remove_payment(payment, user):
     payment = Payment.all_objects.select_for_update().get(pk=payment.pk)
     if payment.status != Payment.Status.APPROVED:
         raise StateConflict("Pagamento já cancelado.")
-    _undo_payment(payment, Payment.Status.CANCELLED)
+    _undo_payment(payment, Payment.Status.CANCELLED, user)
     sale.paid_amount -= payment.amount
     sale.change_amount -= payment.change_amount
     sale.save(update_fields=["paid_amount", "change_amount", "updated_at"])
@@ -148,12 +163,19 @@ def _undo_payment(payment, status, user=None):
     payment.status = status
     payment.save(update_fields=["status", "updated_at"])
     payment.credits.update(deleted_at=timezone.now())
-    if status == Payment.Status.CANCELLED:
+    drawer = payment.cash_session and cash.lock_session(payment.cash_session)
+    # Turno já conferido não se reescreve (R4-14): o dinheiro sai da gaveta atual, como na venda concluída.
+    closed = payment.method.kind == Kind.CASH and drawer is not None and drawer.status != drawer.Status.OPEN
+    if status == Payment.Status.CANCELLED and not closed:
         CashMovement.all_objects.filter(payment=payment).update(status=CashMovement.Status.CANCELLED)
     elif payment.method.kind == Kind.CASH:
         session = cash.session_for_user(payment.sale.store, user)
         if session is None:
             raise StateConflict("Abra o caixa para devolver o dinheiro.", code="cash_session_required")
+        session = cash.lock_session(session)
+        if cash.expected_cash(session) < payment.amount:
+            raise BusinessError("Dinheiro em gaveta insuficiente para devolver: faça um suprimento antes.",
+                                code="drawer_insufficient")
         CashMovement.all_objects.create(
             account_id=payment.account_id, store_id=payment.store_id, session=session,
             kind=CashMovement.Kind.REFUND, amount=payment.amount, payment=payment, operator=user,
@@ -191,7 +213,7 @@ def _check_credit_limit(sale):
 
 
 @transaction.atomic
-def complete(sale, user):
+def complete(sale, user, imported=False):
     sale = lock_open(sale)
     items = list(sale.items.filter(status=SaleItem.Status.ACTIVE).select_related("variant__product"))
     if not items:
@@ -202,22 +224,26 @@ def complete(sale, user):
         # Pagou e depois tirou item/ganhou cupom: concluir sumiria com a diferença (nem troco, nem crédito).
         raise StateConflict(f"O recebido (R$ {sale.paid_amount}) passou do total (R$ {sale.total}): refaça o "
                             "pagamento.", code="payment_exceeds_total")
-    check_discounts(sale, user, items)
-    _check_credit_limit(sale)
+    if not imported:  # venda já feita no PDV é fato, com a própria conferência (`offline_sales._Checks`)
+        check_discounts(sale, user, items)
+    if imported is not True:  # já cobrada: entra e a gerência é avisada
+        _check_credit_limit(sale)
     # Sem vendedor: com a regra da filial "exige vendedor" ligada, não conclui; com ela desligada
     # (vendedor opcional), a venda fica com quem concluiu — o caixa — e toda venda tem um responsável.
     if sale.seller_id is None:
-        if sale.store.rule.require_seller:
+        if sale.store.rule.require_seller and not imported:
             raise BusinessError("Informe o vendedor da venda.", code="seller_required")
         sale.seller = user
     warehouse = stock.default_warehouse(sale.store)
     rule = stock.settings_for(sale.account_id, warehouse.store_id) if warehouse is not None else None
-    for item in items:
+    # Sempre na mesma ordem de produto (R4-25): duas vendas com os itens invertidos se travariam no banco.
+    for item in sorted(items, key=lambda i: str(i.variant_id)):
         if warehouse is not None:
             stock.move_with_components(item.variant, warehouse, -item.quantity, StockMovement.Kind.SALE,
-                                       source_key=f"sale_item:{item.pk}", sale_item=item, operator=user, rule=rule)
+                                       source_key=f"sale_item:{item.pk}", sale_item=item, operator=user, rule=rule,
+                                       allow_negative=True if imported else None)
     _commissions(sale)
-    coupons.redeem(sale)
+    coupons.redeem(sale, imported)
     for payment in sale.payments.filter(status=Payment.Status.APPROVED).select_related("method"):
         if payment.method.generates_receivable:
             finance.receivable_from_payment(payment, user)
@@ -228,12 +254,12 @@ def complete(sale, user):
 
 
 @transaction.atomic
-def checkout(sale, user, payments):
+def checkout(sale, user, payments, imported=False):
     """`payments`: lista de dicts com method, amount e os campos opcionais."""
     for data in payments:
         data = dict(data)
-        add_payment(sale, data.pop("method"), data.pop("amount"), user, **data)
-    return complete(sale, user)
+        add_payment(sale, data.pop("method"), data.pop("amount"), user, imported=imported, **data)
+    return complete(sale, user, imported=imported)
 
 
 def _cancel_commissions(sale):
@@ -257,6 +283,11 @@ def cancel(sale, user, reason, approval=None):
         raise StateConflict("Venda com devolução não pode ser cancelada.")
     if sale.invoices.filter(status="authorized").exists():
         raise StateConflict("Cancele a nota fiscal autorizada antes de cancelar a venda.", code="invoice_authorized")
+    waiting = sale.invoices.filter(status="processing", deleted_at__isnull=True,
+                                   created_at__gte=timezone.now() - timedelta(hours=24))
+    if waiting.exists():  # contingência ainda pode ser transmitida e autorizada: a nota valeria com a venda desfeita
+        raise StateConflict("A nota desta venda está em contingência ou a conferir: transmita e cancele a nota antes de "
+                            "cancelar a venda.", code="invoice_processing")
     approver = authorize(user, sale.account, sale.store, "sales.cancel", approval)
     completed = sale.status == Sale.Status.COMPLETED
     if completed:

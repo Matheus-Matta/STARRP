@@ -135,7 +135,7 @@ class CashSessionSerializer(TenantSerializer):
         request = self.context.get("request")
         if request is None or not sees_drawer(request.user):
             data.update(expected_now=None, expected_amount=None, difference=None, closing_report=None,
-                        opening_expected=None, opening_difference=None, blind=True)
+                        opening_expected=None, opening_difference=None, approval_reason="", blind=True)
         return data
 
 

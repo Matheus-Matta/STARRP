@@ -18,7 +18,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 from django.db import transaction
 from PIL import Image as Pillow
-from PIL import UnidentifiedImageError
+from PIL import ImageOps, UnidentifiedImageError
 
 from starrp.core.errors import BusinessError
 from starrp.models import Image, ProductImage
@@ -44,7 +44,16 @@ def _open(data, message):
 
 
 def _shrink(data, picture):
-    """Reduz o lado maior para MAX_SIDE mantendo o formato (GIF animado fica como veio)."""
+    """Reduz o lado maior para MAX_SIDE mantendo o formato (GIF animado fica como veio). A foto do celular sai em pé e
+    sem os dados da câmera (posição GPS)."""
+    kind = picture.format
+    if kind in {"JPEG", "WEBP", "PNG"} and picture.getexif():
+        picture = ImageOps.exif_transpose(picture)
+        picture.format = kind
+        picture.thumbnail((MAX_SIDE, MAX_SIDE))
+        out = BytesIO()
+        picture.save(out, format=kind, quality=90, optimize=True, exif=b"")
+        return out.getvalue(), picture.size
     if max(picture.size) <= MAX_SIDE or picture.format == "GIF":
         return data, picture.size
     picture.thumbnail((MAX_SIDE, MAX_SIDE))

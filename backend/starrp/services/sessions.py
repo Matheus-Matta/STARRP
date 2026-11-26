@@ -3,6 +3,8 @@
 - refresh tokens: todos para a blacklist (não renovam mais);
 - access tokens já emitidos: o middleware recusa os anteriores a `UserProfile.sessions_revoked_at`.
 """
+from django.conf import settings
+from django.core.cache import cache
 from django.utils import timezone
 from rest_framework_simplejwt.token_blacklist.models import BlacklistedToken, OutstandingToken
 
@@ -12,9 +14,24 @@ from starrp.models import UserProfile
 def revoke_all(user):
     now = timezone.now()
     UserProfile.all_objects.filter(user=user).update(sessions_revoked_at=now)
+    if user.is_superuser:  # entra em qualquer conta sem perfil (X-Account-ID): o corte fica no cache (R4-22)
+        lifetime = settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"]
+        cache.set(_cache_key(user), int(now.timestamp()), int(lifetime.total_seconds()) + 60)
     outstanding = OutstandingToken.objects.filter(user=user, expires_at__gt=now).exclude(blacklistedtoken__isnull=False)
     BlacklistedToken.objects.bulk_create([BlacklistedToken(token=t) for t in outstanding], ignore_conflicts=True)
     _close_sockets(user)
+
+
+def _cache_key(user):
+    return f"starrp:sessions-revoked:{user.pk}"
+
+
+def revoked_at(user, profile):
+    """Segundo (epoch) a partir do qual o access token vale, ou `None`."""
+    moment = getattr(profile, "sessions_revoked_at", None)
+    if moment is not None:
+        return int(moment.timestamp())
+    return cache.get(_cache_key(user)) if user.is_superuser else None
 
 
 def _close_sockets(user):

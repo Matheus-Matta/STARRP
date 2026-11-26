@@ -18,6 +18,7 @@ from django.db.models import F, Q, Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
+from starrp.core.tenant import tenant_context
 from starrp.models import (
     FinancialAccount, FinancialTitle, FinancialTransaction, Installment, RecurringTitle, TitleStatus,
 )
@@ -34,7 +35,8 @@ def ensure_recurring(account):
     """Sem o Celery rodando (desenvolvimento, servidor pequeno), as recorrências geram aqui, 1x por dia."""
     key = f"recurring-generated:{account.pk}:{timezone.localdate()}"
     if cache.add(key, True, 60 * 60 * 24):
-        recurring.generate_all(account)
+        with tenant_context(account):  # a conta inteira: a marca do dia é da conta, não das filiais de quem abriu a tela
+            recurring.generate_all(account)
 
 
 def _net(qs):
@@ -95,7 +97,7 @@ def _reimbursements(accounts, txs, start, end, result):
                           "amount": tx.amount, "reimbursed": covered, "pending": missing,
                           "status": "Reembolsado" if missing == 0 else "Parcial" if covered > 0 else "Pendente"})
         back_period = txs.filter(financial_account=acc, kind=IN, transfer_pair__isnull=False,
-                                 date__range=(start, end)).aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
+                                 reversal_of__isnull=True, reversals__isnull=True, date__range=(start, end)).aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
         # Divisão do LUCRO: mês com prejuízo não gera parte a receber (o prejuízo fica na empresa).
         share = (max(result, ZERO) * acc.partner_share / 100).quantize(CENTS) if acc.partner_share else ZERO
         summary.append({"name": acc.name, "paid_period": paid_period, "paid": sum((t.amount for t in spent), ZERO),
@@ -143,7 +145,7 @@ def _parties(account, store, titles, txs, start, end):
                                     supplier_ids=[pk for kind, pk in data if kind == "s"])
     for key, row in data.items():
         credit = max(credits.get(key, ZERO), ZERO)
-        rows.append({"name": names.get(key) or "—", "type": "Cliente" if kind == "c" else "Fornecedor",
+        rows.append({"name": names.get(key) or "—", "type": "Cliente" if key[0] == "c" else "Fornecedor",
                      "billed": row["billed"], "paid": row["paid"], "open": row["open"], "credit": credit,
                      "balance": row["open"] - credit})
     return sorted(rows, key=lambda r: (r["type"], -r["balance"]))

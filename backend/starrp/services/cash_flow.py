@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from starrp.core.tenant import get_allowed_store_ids
 from starrp.models import FinancialAccount, FinancialTitle, FinancialTransaction, Installment, TitleStatus
+from starrp.services.finance import OPEN_BALANCE
 from starrp.services.reports import period
 from starrp.services.store_access import scope_to_allowed
 
@@ -81,7 +82,7 @@ def build(account, store, params):
     by_category = (in_period.values("kind", "category__name").annotate(total=Sum("amount")).order_by("kind",
                                                                                                    "-total"))
     forecast = (_installments(account, store).filter(due_date__range=(start.date(), end.date()))
-                .values("title__kind").annotate(total=Sum("amount"), paid=Sum("paid_amount")))
+                .values("title__kind").annotate(total=Sum(OPEN_BALANCE)))
     return {
         "period": {"from": start.date(), "to": end.date()},
         "opening_balance": opening,
@@ -90,7 +91,7 @@ def build(account, store, params):
         "closing_balance": opening + _net(in_period),
         "by_day": list(days),
         "by_category": [{**row, "category__name": row["category__name"] or "Sem categoria"} for row in by_category],
-        "forecast": {row["title__kind"]: row["total"] - row["paid"] for row in forecast},
+        "forecast": {row["title__kind"]: row["total"] for row in forecast},
     }
 
 
@@ -103,7 +104,5 @@ def aging(account, store, params=None):
     result = {}
     for kind in (FinancialTitle.Kind.RECEIVABLE, FinancialTitle.Kind.PAYABLE):
         qs = _installments(account, store).filter(title__kind=kind)
-        result[kind] = {name: (qs.filter(q).aggregate(t=Coalesce(Sum("amount"), ZERO), p=Coalesce(
-            Sum("paid_amount"), ZERO)) or {}) for name, q in buckets.items()}
-        result[kind] = {name: v["t"] - v["p"] for name, v in result[kind].items()}
+        result[kind] = {name: qs.filter(q).aggregate(t=Coalesce(Sum(OPEN_BALANCE), ZERO))["t"] for name, q in buckets.items()}
     return result

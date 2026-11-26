@@ -11,6 +11,7 @@ from django.db.models.functions import Coalesce
 
 from starrp.models import CashMovement, CashSession, Payment, Sale, SaleItem
 from starrp.services.cash import expected_cash
+from starrp.services.reports import margin_of
 
 ZERO = Decimal("0")
 
@@ -26,8 +27,8 @@ def summary(session):
     payments = Payment.all_objects.filter(cash_session=session, status=Payment.Status.APPROVED)
     movements = session.movements.filter(status=CashMovement.Status.APPROVED)
     cost = ExpressionWrapper(F("unit_cost") * F("quantity"), output_field=DecimalField(max_digits=18, decimal_places=4))
-    items = SaleItem.all_objects.filter(sale__in=completed, status=SaleItem.Status.ACTIVE).aggregate(
-        revenue=Coalesce(Sum("total"), ZERO), cost=Coalesce(Sum(cost), ZERO))
+    sold = SaleItem.all_objects.filter(sale__in=completed, status=SaleItem.Status.ACTIVE)
+    items = sold.aggregate(cost=Coalesce(Sum(cost), ZERO))
     totals = completed.aggregate(count=Count("id"), total=Coalesce(Sum("total"), ZERO),
                                  discounts=Coalesce(Sum("discount"), ZERO), coupons=Coalesce(Sum("coupon_discount"), ZERO))
     open_now = session.status == CashSession.Status.OPEN
@@ -45,7 +46,7 @@ def summary(session):
             "discounts": totals["discounts"] + totals["coupons"],
             "cancelled_count": cancelled.count(), "cancelled_total": cancelled.aggregate(
                 t=Coalesce(Sum("total"), ZERO))["t"],
-            "cost": items["cost"], "gross_margin": items["revenue"] - items["cost"],
+            "cost": items["cost"], "gross_margin": margin_of(sold),
         },
         "by_payment_method": list(payments.values("method__name", "method__kind").annotate(
             count=Count("id"), total=Sum("amount"), change=Sum("change_amount")).order_by("-total")),

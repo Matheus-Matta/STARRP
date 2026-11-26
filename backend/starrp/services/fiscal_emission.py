@@ -123,7 +123,10 @@ def kit(store, terminal):
     series = {}
     for model in DocumentModel.values:
         row = terminal_series(config, terminal, model)
-        series[model] = {"series": row.series, "next_number": row.next_number}
+        last = Invoice.all_objects.filter(store=store, document_model=model, series=row.series, deleted_at__isnull=True,
+                                          number__lt=row.next_number + MAX_NUMBER_JUMP).aggregate(m=Max("number"))["m"] or 0
+        # Terminal que perdeu a numeração (reinstalado) nunca recebe um número já gravado em outra venda.
+        series[model] = {"series": row.series, "next_number": max(row.next_number, last + 1)}
     return {
         "config_id": str(config.pk), "environment": config.environment, "issuer": issuer,
         "simple": config.crt in {FiscalConfig.Crt.SIMPLES, FiscalConfig.Crt.SIMPLES_EXCESS},
@@ -235,13 +238,18 @@ def register(sale, user, data):
         series, number = int(data["series"]), int(data["number"])
     except (KeyError, TypeError, ValueError):
         raise BusinessError("Informe a série e o número da nota.", code="invoice_number") from None
+    if not 0 <= series <= 999 or not 1 <= number <= 999_999_999:
+        raise BusinessError("Série ou número da nota fora do intervalo.", code="invoice_number")
     config = sale.store.fiscal_config
     if config is None:
         raise BusinessError("A filial não tem dados fiscais.", code="fiscal_config_missing")
     result = data.get("result") if isinstance(data.get("result"), dict) else {}
+    totals = {k: _number(v) for k, v in data["totals"].items()} if isinstance(data.get("totals"), dict) else {}
+    recipient = data.get("recipient") if isinstance(data.get("recipient"), dict) else {}
+    rows = [row for row in data.get("items") or [] if isinstance(row, dict)] if isinstance(data.get("items"), list) else []
     status, message = _status(result)
     if status == Invoice.Status.AUTHORIZED:
-        problem = _proof_problem(sale, config, model, series, number, data.get("totals") or {}, result)
+        problem = _proof_problem(sale, config, model, series, number, totals, result)
         if problem:  # S-07: não vira AUTORIZADA só porque o PDV disse — fica para conferir
             status, message = Invoice.Status.PROCESSING, f"Autorização a conferir: {problem}."
 
@@ -250,8 +258,10 @@ def register(sale, user, data):
                .first())
     if invoice is not None and invoice.sale_id != sale.pk:
         raise StateConflict(f"A nota {number} série {series} já pertence a outro pedido.", code="invoice_number_used")
-    if invoice is not None and invoice.status == Invoice.Status.AUTHORIZED and status != Invoice.Status.AUTHORIZED:
-        return invoice  # resposta atrasada não desfaz a autorização
+    if invoice is not None and invoice.status in (Invoice.Status.AUTHORIZED, Invoice.Status.CANCELLED):
+        # Final (R7-N1/N5): resposta atrasada não desfaz a autorização, o reenvio não reescreve emitente, destinatário
+        # nem itens, e a nota cancelada não volta a valer.
+        return invoice
     others = Invoice.all_objects.select_for_update().filter(sale=sale, document_model=model, deleted_at__isnull=True)
     if invoice is not None:
         others = others.exclude(pk=invoice.pk)
@@ -259,16 +269,15 @@ def register(sale, user, data):
             status=Invoice.Status.AUTHORIZED).exists():
         raise StateConflict("Este pedido já tem nota autorizada deste modelo.", code="invoice_already_authorized")
     # A tentativa anterior com outro número deixa de "valer" (a constraint aceita uma nota viva por venda).
-    others.filter(status__in=[Invoice.Status.DRAFT, Invoice.Status.PROCESSING]).update(
-        status=Invoice.Status.ERROR, error_message="Substituída por outra tentativa do terminal.")
+    if status in (Invoice.Status.AUTHORIZED, Invoice.Status.PROCESSING):  # rejeitada não derruba a contingência
+        others.filter(status__in=[Invoice.Status.DRAFT, Invoice.Status.PROCESSING]).update(
+            status=Invoice.Status.ERROR, error_message="Substituída por outra tentativa do terminal.")
 
     if invoice is None:
         invoice = Invoice(account_id=sale.account_id, store=sale.store, sale=sale, fiscal_config=config,
                           document_model=model, series=series, number=number, created_by=user)
         invoice.series_ref = FiscalSeries.all_objects.filter(config=config, document_model=model, series=series,
                                                              deleted_at__isnull=True).first()
-    totals = data.get("totals") or {}
-    recipient = data.get("recipient") or {}
     invoice.environment = str(data.get("environment") or config.environment)
     if invoice.environment not in Environment.values:
         invoice.environment = config.environment
@@ -276,7 +285,7 @@ def register(sale, user, data):
     invoice.status, invoice.error_message = status, message
     invoice.provider = FiscalConfig.Provider.ACBRLIB
     invoice.provider_reference = str(data.get("reference") or "")[:120]
-    invoice.recipient_document = only_digits(recipient.get("document", ""))[:18]
+    invoice.recipient_document = only_digits(str(recipient.get("document") or ""))[:18]
     invoice.recipient_name = str(recipient.get("name", ""))[:180]
     invoice.products_total = totals.get("products") or 0
     invoice.discount_total = totals.get("discount") or 0
@@ -299,23 +308,61 @@ def register(sale, user, data):
     invoice.updated_by = user
     invoice.save()
 
-    items = data.get("items")
-    if isinstance(items, list) and items:
+    if rows:
         InvoiceItem.all_objects.filter(invoice=invoice).delete()
-        InvoiceItem.all_objects.bulk_create([_item(invoice, sale, row) for row in items])
+        mine = {str(pk): variant for pk, variant in sale.items.values_list("pk", "variant_id")}
+        InvoiceItem.all_objects.bulk_create([_item(invoice, sale, row, mine) for row in rows])
+    if status == Invoice.Status.AUTHORIZED and sale.status == sale.Status.CANCELLED:
+        _late_authorization(invoice)
 
     # O servidor acompanha o maior número que o terminal já usou nesta série.
-    FiscalSeries.all_objects.filter(config=config, document_model=model, series=series,
-                                    next_number__lte=number).update(next_number=number + 1)
+    # Só a série de um terminal desta filial e sem salto absurdo (R4-09: um número 999999999 inventado acabava com
+    # a série). Rejeitada também conta: o número já é desta venda (R5-04).
+    FiscalSeries.all_objects.filter(
+        config=config, document_model=model, series=series, terminal__store=sale.store,
+        next_number__lte=number, next_number__gte=number - MAX_NUMBER_JUMP).update(next_number=number + 1)
     return invoice
 
 
-def _item(invoice, sale, row):
-    sale_item = row.get("sale_item")
+def _number(value):
+    try:
+        number = Decimal(str(value or 0))
+    except ArithmeticError:
+        number = Decimal("NaN")
+    if not number.is_finite() or abs(number) >= Decimal("1e11"):
+        raise BusinessError("Valor inválido na nota.", code="invoice_invalid")
+    return number
+
+
+def _late_authorization(invoice):
+    """A SEFAZ autorizou uma nota de venda já cancelada: ela vale lá e o prazo para cancelar é curto."""
+    from starrp.models import Notification
+    from starrp.services import notifications
+
+    notifications.send(
+        account=invoice.account, store=invoice.store, category=Notification.Category.FISCAL,
+        level=Notification.Level.WARNING, permission="fiscal.manage",
+        title=f"Nota {invoice.number} autorizada numa venda cancelada",
+        body=f"A nota {invoice.number} série {invoice.series} foi autorizada depois do cancelamento da venda "
+             f"{invoice.sale.number}: cancele a nota agora (NFC-e: 30 minutos).",
+        url=f"/cadastros/vendas/{invoice.sale_id}", entity="sale", object_id=invoice.sale_id)
+
+
+NUMERIC = ("quantity", "unit_price", "discount", "total", "icms_base", "icms_rate", "icms_value", "pis_rate", "pis_value",
+           "cofins_rate", "cofins_value", "approx")
+
+
+def _item(invoice, sale, row, mine):
+    """`mine`: {item da venda: variante}. Item e produto são os DESTA venda, nunca um id qualquer."""
+    row = {**row, **{k: _number(row.get(k)) for k in NUMERIC}}
+    sale_item = str(row.get("sale_item") or "")
+    variant = str(row.get("variant") or "")
+    variants = {str(v): v for v in mine.values()}
+    line = str(row.get("n") or 1)
     return InvoiceItem(
-        account_id=sale.account_id, invoice=invoice, line_number=int(row.get("n") or 1),
-        sale_item_id=sale_item if sale.items.filter(pk=sale_item).exists() else None,
-        variant_id=row.get("variant") or None, code=str(row.get("code", ""))[:60],
+        account_id=sale.account_id, invoice=invoice, line_number=int(line) if line.isascii() and line.isdigit() and len(line) < 5 else 1,
+        sale_item_id=sale_item if sale_item in mine else None,
+        variant_id=mine.get(sale_item) or variants.get(variant), code=str(row.get("code", ""))[:60],
         barcode=str(row.get("barcode", ""))[:32], description=str(row.get("description", ""))[:180],
         ncm=str(row.get("ncm", ""))[:8], cest=str(row.get("cest") or "")[:7], cfop=str(row.get("cfop", ""))[:4],
         csosn=str(row.get("csosn") or "")[:3], cst_icms=str(row.get("cst_icms") or "")[:2],
@@ -330,6 +377,9 @@ def _item(invoice, sale, row):
 
 
 # --- Cadastro da filial: o que a emissão precisa e onde cada coisa vai ---------------------------------
+
+#: Notas que um terminal pode ter emitido sem o servidor saber (dias offline) antes de o salto ser suspeito.
+MAX_NUMBER_JUMP = 5000
 
 #: O que a filial ajusta na aba "Nota fiscal" (vai para os dados fiscais vinculados a ela).
 STORE_SETTINGS = ("environment", "crt", "local_fiscal_enabled", "local_fiscal_contingency", "csc_id", "csc_token",

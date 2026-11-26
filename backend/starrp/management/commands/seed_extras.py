@@ -19,10 +19,11 @@ from decimal import Decimal
 from io import BytesIO
 
 from django.core.files.base import ContentFile
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.db import transaction
 from django.utils import timezone
 
+from starrp.management.demo import DemoCommand
 from starrp.management.commands.seed_demo import Api, ean13
 from starrp.models import (
     Account, Asset, AssetDisposal, AssetMovement, CashDiscrepancy, CashSession, Customer, CustomerCredit, DFeDocument,
@@ -38,7 +39,7 @@ TODAY = timezone.localdate()
 COLORS = ["#2563eb", "#16a34a", "#dc2626", "#9333ea", "#ea580c", "#0891b2", "#ca8a04", "#db2777", "#4f46e5", "#64748b"]
 
 
-class Command(BaseCommand):
+class Command(DemoCommand):
     help = "Completa a demo com os cadastros que ainda estão vazios (só cria o que falta)."
 
     def add_arguments(self, parser):

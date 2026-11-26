@@ -23,6 +23,7 @@ import tempfile
 import xml.etree.ElementTree as ET
 from contextlib import contextmanager
 from dataclasses import dataclass, field
+from xml.sax.saxutils import escape
 
 import requests
 from cryptography.hazmat.primitives import hashes, serialization
@@ -207,7 +208,7 @@ def event_xml(config, access_key, code, reason="", sequence=1):
         raise BusinessError("Explique em pelo menos 15 caracteres por que a operação não foi realizada.")
     reference = f"ID{code}{access_key}{sequence:02d}"
     moment = timezone.localtime().isoformat(timespec="seconds")
-    justification = f"<xJust>{reason.strip()[:255]}</xJust>" if code == "210240" else ""
+    justification = f"<xJust>{escape(reason.strip()[:255])}</xJust>" if code == "210240" else ""
     xml_text = (
         f'<envEvento xmlns="{NFE_NS}" versao="1.00"><idLote>{timezone.now().strftime("%y%m%d%H%M%S")}</idLote>'
         f'<evento versao="1.00"><infEvento Id="{reference}"><cOrgao>91</cOrgao><tpAmb>{config.environment}</tpAmb>'

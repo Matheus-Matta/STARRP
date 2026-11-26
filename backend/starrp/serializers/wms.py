@@ -2,10 +2,25 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
-from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, tenant_serializer
+from starrp.core.errors import StateConflict
+from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer
 from starrp.models import BinBalance, InboundNFeItem, LabelTemplate, ProductVariant, StockAdvice, StorageBin, Warehouse
+from starrp.services.wms import has_balance
 
-StorageBinSerializer = tenant_serializer(StorageBin)
+
+class StorageBinSerializer(TenantSerializer):
+    class Meta:
+        model = StorageBin
+        fields = "__all__"
+
+    def check_locked(self, instance, validated_data):
+        """Endereço com saldo não troca de depósito nem é desativado (R5-19): a soma dos endereços deixaria de ser o
+        saldo do depósito e a venda parava."""
+        moves = validated_data.get("warehouse", instance.warehouse) != instance.warehouse
+        turns_off = instance.is_active and validated_data.get("is_active") is False
+        if (moves or turns_off) and has_balance(instance):
+            raise StateConflict("Este endereço tem saldo: movimente os produtos antes.", code="bin_has_balance")
+
 
 
 class BinBalanceSerializer(TenantSerializer):
@@ -29,10 +44,15 @@ class GenerateBinsSerializer(serializers.Serializer):
     """
 
     warehouse = TenantPrimaryKeyField(Warehouse)
-    aisles = serializers.ListField(child=serializers.CharField(max_length=10), min_length=1)
+    aisles = serializers.ListField(child=serializers.CharField(max_length=10), min_length=1, max_length=100)
     racks = serializers.IntegerField(min_value=1, max_value=200)
     levels = serializers.IntegerField(min_value=1, max_value=20)
     kind = serializers.ChoiceField(choices=StorageBin.Kind.choices, default=StorageBin.Kind.STORAGE)
+
+    def validate(self, attrs):
+        if len(attrs["aisles"]) * attrs["racks"] * attrs["levels"] > 20_000:
+            raise serializers.ValidationError("No máximo 20.000 endereços por vez.")
+        return attrs
 
 
 class LabelItemSerializer(serializers.Serializer):
@@ -49,6 +69,8 @@ class LabelPrintSerializer(serializers.Serializer):
     def validate(self, attrs):
         if not attrs.get("template") and not attrs.get("subject"):
             raise serializers.ValidationError("Escolha o modelo de etiqueta (ou o tipo, para usar o padrão).")
+        if sum(row["copies"] for row in attrs["items"]) > 5_000:
+            raise serializers.ValidationError("No máximo 5.000 etiquetas por impressão.")
         return attrs
 
 

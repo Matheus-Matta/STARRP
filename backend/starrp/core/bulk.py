@@ -26,6 +26,7 @@ import io
 import re
 from decimal import Decimal
 
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import ProtectedError
 from django.http import HttpResponse
@@ -93,9 +94,16 @@ class BulkActionsMixin:
         return {"affected": done, "skipped": skipped}
 
     def _set_flag(self, request, queryset, field, value):
-        done = 0
+        done, skipped = 0, []
         for obj in queryset.exclude(**{field: value}):
             self.check_writable(obj)
+            check = getattr(self.get_serializer(), "check_locked", None)
+            if check is not None:  # a mesma trava da edição (endereço com saldo não desativa)
+                try:
+                    check(obj, {field: value})
+                except APIException as error:
+                    skipped.append({"id": str(obj.pk), "label": str(obj), "reason": str(error.detail)})
+                    continue
             setattr(obj, field, value)
             fields = [field, "updated_at"] + (["updated_by"] if _has_field(type(obj), "updated_by") else [])
             if "updated_by" in fields:
@@ -105,7 +113,7 @@ class BulkActionsMixin:
                 record_audit(action=AuditLog.Action.UPDATED, instance=obj, actor=request.user, request=request,
                              changes={field: value}, reason="ação em massa")
             done += 1
-        return {"affected": done}
+        return {"affected": done, "skipped": skipped}
 
     @bulk_action("Ativar", icon="pi pi-check-circle")
     def bulk_activate(self, request, queryset, params):
@@ -127,6 +135,9 @@ class BulkActionsMixin:
     def bulk_export(self, request, queryset, params):
         """CSV com as colunas da tela (`params.columns`: [{key, label}]), separado por ";" para o Excel BR."""
         columns = params.get("columns") or [{"key": "id", "label": "id"}]
+        if not isinstance(columns, list) or not all(isinstance(c, dict) and isinstance(c.get("key"), str) and isinstance(
+                c.get("map") or {}, dict) for c in columns):
+            raise ValidationError({"columns": "Colunas inválidas."})
         rows = self.get_serializer(queryset, many=True).data
         out = io.StringIO()
         out.write("﻿")  # BOM: o Excel abre os acentos certos
@@ -185,12 +196,18 @@ class BulkActionsMixin:
             ids = request.data.get("ids")
             if not isinstance(ids, list) or not ids:
                 raise ValidationError({"ids": "Selecione ao menos um item."})
-            queryset = queryset.filter(pk__in=ids)
+            try:
+                queryset = queryset.filter(pk__in=ids)
+                queryset.exists()
+            except (ValueError, TypeError, DjangoValidationError):
+                raise ValidationError({"ids": "Itens inválidos."}) from None
         total = queryset.count()
         if total > MAX_ITEMS:
             raise BusinessError(f"São {total} itens: o limite por vez é {MAX_ITEMS}. Filtre a lista antes.",
                                 code="bulk_too_many")
         params = request.data.get("params") or {}
+        if not isinstance(params, dict):
+            raise ValidationError({"params": "Parâmetros inválidos."})
         result = getattr(self, f"bulk_{name}")(request, queryset, params)
         if isinstance(result, HttpResponse):
             return result

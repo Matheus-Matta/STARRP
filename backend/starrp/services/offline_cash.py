@@ -16,15 +16,14 @@ todas as vendas já gravadas e o esperado em gaveta é calculado como sempre.
 - O turno do terminal é chamado de "off:<id>" nas vendas e nos eventos seguintes.
 """
 from datetime import timedelta
-from decimal import Decimal
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
 
 from starrp.core.errors import BusinessError, StateConflict
 from starrp.core.permissions import has_permission_code
+from starrp.core.values import moment, money, user_pk
 from starrp.models import CashMovement, CashRegister, CashSession, Terminal, UserProfile
 from starrp.services import cash, ledger
 
@@ -36,7 +35,7 @@ def actor_for(account, sender, operator_id):
     """Quem fez a operação no terminal (a fila pode ser enviada depois, por outro login)."""
     if not operator_id or str(operator_id) == str(sender.pk):
         return sender
-    user = User.objects.filter(pk=operator_id, is_active=True, is_superuser=False).first()
+    user = User.objects.filter(pk=user_pk(operator_id), is_active=True, is_superuser=False).first()
     # Só quem é DESTA conta e está ativo (S-06): nada de atribuir a operação a outra conta ou ao suporte.
     if user is None or not UserProfile.all_objects.filter(user=user, account=account, is_active=True,
                                                            deleted_at__isnull=True).exists():
@@ -63,7 +62,7 @@ def _check_owner(session, sender):
 
 
 def _when(value):
-    return parse_datetime(str(value or "")) or timezone.now()
+    return moment(value) or timezone.now()
 
 
 def _approver(store, actor, data):
@@ -76,7 +75,7 @@ def _approver(store, actor, data):
 
     approver, target = None, None
     if data.get("approved_by"):
-        approver = User.objects.filter(pk=data["approved_by"], is_active=True, is_superuser=False).first()
+        approver = User.objects.filter(pk=user_pk(data["approved_by"]), is_active=True, is_superuser=False).first()
         if approver is None or not UserProfile.all_objects.filter(user=approver, account=store.account,
                                                                  deleted_at__isnull=True).exists():
             raise BusinessError("Quem aprovou a operação offline não pertence a esta conta.", code="offline_user_unknown")
@@ -87,7 +86,7 @@ def _approver(store, actor, data):
         return False, None
     proofs = approval_proof.decode(data.get("approval_proofs"))
     proof = approval_proof.find(proofs, account=store.account, store=store, operator=actor, approver_id=target,
-                                codes={"cash.approve"})
+                                codes={"cash.approve"}, what=approval_proof.scope_of("cash.approve", data))
     if proof is None or not approval_proof.spend(proof):
         _alert(store, actor, data)
         return False, approver
@@ -100,7 +99,7 @@ def _alert(store, actor, data):
 
     what = {"open": "abertura", "movement": "sangria/suprimento", "close": "fechamento"}.get(str(data.get("event")), "operação")
     notifications.send(
-        account=store.account, category=Notification.Category.CASH, level=Notification.Level.WARNING,
+        account=store.account, store=store, category=Notification.Category.CASH, level=Notification.Level.WARNING,
         permission="cash.approve", title=f"Caixa offline: {what} com autorização a conferir",
         body=f"{actor.get_full_name() or actor.username} informou uma autorização feita sem o servidor em "
              f"{store.name}: confira.", entity="cashsession", object_id=str(data.get("session") or ""))
@@ -135,7 +134,10 @@ def open_session(store, actor, data, offline_id, sender=None):
     if register is None:
         raise BusinessError("Caixa da abertura offline não existe nesta filial.", code="offline_register_missing")
     terminal = Terminal.all_objects.filter(account=store.account, installation_id=data.get("installation_id")).first()
-    session = cash.open_session(register, actor, Decimal(str(data.get("opening_amount") or 0)), terminal,
+    if sender is not None and sender.pk != actor.pk and not has_permission_code(sender, "cash.approve"):
+        # R4-03: o caixa A abria turno em nome do B. A fila de outro operador vai com o login dele (ou do gerente).
+        raise BusinessError("Este turno de caixa é de outro operador.", code="offline_session_other")
+    session = cash.open_session(register, actor, money(data.get("opening_amount")), terminal,
                                 str(data.get("notes") or ""))
     session.offline_id = offline_id
     session.save(update_fields=["offline_id"])
@@ -171,7 +173,7 @@ def movement(store, actor, data, offline_id, sender=None):
     kind = data.get("kind")
     if kind not in (CashMovement.Kind.WITHDRAWAL, CashMovement.Kind.SUPPLY):
         raise BusinessError("Movimento offline inválido.", code="offline_movement_kind")
-    amount = Decimal(str(data.get("amount") or 0))
+    amount = money(data.get("amount"))
     if amount <= 0:
         raise BusinessError("Movimento offline sem valor.")
     session = CashSession.all_objects.select_for_update().get(pk=_session_or_fail(store, data.get("session")).pk)
@@ -180,7 +182,7 @@ def movement(store, actor, data, offline_id, sender=None):
     _check_owner(session, sender or actor)
     row = CashMovement(account_id=session.account_id, store_id=session.store_id, session=session, kind=kind,
                        amount=amount, operator=actor, reason=str(data.get("reason") or ""),
-                       destination=str(data.get("destination") or ""), status=CashMovement.Status.PENDING,
+                       destination=str(data.get("destination") or "")[:255], status=CashMovement.Status.PENDING,
                        offline_id=offline_id)
     if _auto_approves(actor, sender or actor):
         cash._decide(row, actor, "")
@@ -200,7 +202,7 @@ def close(store, actor, data, offline_id, sender=None):
     if session.closed_at is not None:
         return session, False  # já fechado (reenvio)
     _check_owner(session, sender or actor)
-    session = cash.close_session(session, actor, Decimal(str(data.get("counted_amount") or 0)), str(data.get("notes") or ""),
+    session = cash.close_session(session, actor, money(data.get("counted_amount")), str(data.get("notes") or ""),
                                  allow_pending=True)
     CashSession.all_objects.filter(pk=session.pk).update(closed_at=_in_session(data.get("closed_at"), session))
     approved, approver = _approver(store, actor, data)
@@ -209,7 +211,7 @@ def close(store, actor, data, offline_id, sender=None):
         # um turno "aguardando" seguraria o caixa). A diferença fica registrada para o gerente.
         session.status = CashSession.Status.CLOSED
         if approved and str(data.get("reason") or "").strip():
-            session.approved_by, session.approved_at = approver or actor, _when(data.get("closed_at"))
+            session.approved_by, session.approved_at = approver or actor, _in_session(data.get("closed_at"), session)
             session.approval_reason = str(data["reason"])
         else:
             session.approval_reason = (f"Fechado no PDV sem servidor com diferença de R$ {session.difference}: "
@@ -219,6 +221,23 @@ def close(store, actor, data, offline_id, sender=None):
         ledger.session_closed(session)
     session.refresh_from_db()
     return session, True
+
+
+@transaction.atomic
+def late_sale(session):
+    """Venda que chegou depois do turno fechado (R4-02): é fato e entra nele, mas a conferência já feita não pode
+    continuar dizendo que bateu. O esperado e a diferença são refeitos; quem conferiu e o contado não mudam."""
+    session = CashSession.all_objects.select_for_update().get(pk=session.pk)
+    if session.status == CashSession.Status.OPEN or session.counted_amount is None:
+        return session
+    session.expected_amount = cash.expected_cash(session)
+    session.difference = session.counted_amount - session.expected_amount
+    session.closing_report = {**(session.closing_report or {}), "by_method": cash.totals_by_method(session),
+                              "cash_expected": str(session.expected_amount)}
+    note = f"Venda recebida depois do fechamento: diferença agora R$ {session.difference}, confira."
+    session.approval_reason = f"{session.approval_reason} {note}".strip()
+    session.save(update_fields=["expected_amount", "difference", "closing_report", "approval_reason", "updated_at"])
+    return session
 
 
 HANDLERS = {"open": open_session, "movement": movement, "close": close}

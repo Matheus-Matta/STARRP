@@ -6,13 +6,13 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from starrp.core.errors import BusinessError
+from starrp.core.errors import BusinessError, StateConflict
 from starrp.core.permissions import has_permission_code
 from starrp.core.viewsets import ReadOnlyTenantViewSet, TenantViewSet
 from starrp.models import BinBalance, StockAdvice, StorageBin
 from starrp.models.platform import Module
 from starrp.serializers import wms as s
-from starrp.services import labels
+from starrp.services import labels, wms
 from starrp.services.cosmos import slotting
 
 
@@ -24,6 +24,11 @@ class StorageBinViewSet(TenantViewSet):
     select_related = ("warehouse",)
     filterset_fields = ["warehouse", "kind", "aisle", "is_active"]
     search_fields = ["code"]
+
+    def perform_destroy(self, instance):
+        if wms.has_balance(instance):
+            raise StateConflict("Este endereço tem saldo: movimente os produtos antes.", code="bin_has_balance")
+        super().perform_destroy(instance)
 
     @action(detail=False, methods=["post"])
     @transaction.atomic

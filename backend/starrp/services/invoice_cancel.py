@@ -60,10 +60,26 @@ def _mark(invoice, user, reason):
     invoice.save(update_fields=["status", "cancelled_at", "cancel_reason", "updated_by", "updated_at"])
 
 
-def _finish(invoices, reason):
+def _finish(invoices, reason, confirmed=None):
     for invoice in invoices:
         invoice.cancel_protocol = _send_event(invoice, reason)
+        if confirmed is not None:
+            confirmed.append((invoice.pk, invoice.cancel_protocol))
         invoice.save(update_fields=["cancel_protocol", "updated_at"])
+
+
+def _keep_confirmed(confirmed, user, reason):
+    """O que a SEFAZ já cancelou não se desfaz: fica registrado mesmo com o resto da operação desfeito, e a nova
+    tentativa segue só com a nota que faltou."""
+    numbers = []
+    with transaction.atomic():
+        for pk, protocol in confirmed:
+            invoice = Invoice.all_objects.select_for_update().get(pk=pk)
+            _mark(invoice, user, reason)
+            invoice.cancel_protocol = protocol
+            invoice.save(update_fields=["cancel_protocol", "updated_at"])
+            numbers.append(str(invoice.number))
+    return ", ".join(numbers)
 
 
 @transaction.atomic
@@ -76,20 +92,32 @@ def cancel_invoice(invoice, user, reason):
     return invoice
 
 
-@transaction.atomic
 def cancel_sale_and_invoices(sale, user, reason, approval=None):
     """Pedido inteiro: cancela a(s) nota(s) autorizada(s), a venda (estoque volta, comissão e cupom
     saem, títulos cancelados) e reembolsa os pagamentos (dinheiro sai do turno aberto de quem cancela;
     cartão/PIX ficam estornados para devolver na maquininha/banco)."""
+    confirmed, reason = [], (reason or "").strip()
+    try:
+        return _cancel_sale(sale, user, reason, approval, confirmed)
+    except Exception as error:
+        if not confirmed:
+            raise
+        numbers = _keep_confirmed(confirmed, user, reason)
+        raise StateConflict(f"A nota {numbers} foi cancelada na SEFAZ e está registrada, mas outra nota do pedido não: "
+                            f"{error} O pedido continua valendo; tente cancelar de novo.",
+                            code="invoice_cancel_partial") from error
+
+
+@transaction.atomic
+def _cancel_sale(sale, user, reason, approval, confirmed):
     from starrp.services import checkout
 
     invoices = list(Invoice.all_objects.select_for_update().filter(sale=sale, status=Invoice.Status.AUTHORIZED,
                                                                    deleted_at__isnull=True))
-    reason = (reason or "").strip()
     for invoice in invoices:
         check(invoice, reason)
     for invoice in invoices:
         _mark(invoice, user, reason)
     sale = checkout.cancel(sale, user, reason, approval)
-    _finish(invoices, reason)
+    _finish(invoices, reason, confirmed)
     return sale

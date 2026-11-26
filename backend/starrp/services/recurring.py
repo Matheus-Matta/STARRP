@@ -12,7 +12,7 @@ from itertools import islice
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
-from starrp.models import FinancialTitle, RecurringTitle
+from starrp.models import Account, FinancialTitle, RecurringTitle
 from starrp.services import finance
 from starrp.services.store_access import scope_to_allowed
 
@@ -70,7 +70,8 @@ def generate_one(rec, today=None, user=None):
 
 def generate_all(account=None, today=None):
     """Todas as recorrências ativas (da conta, ou de todas): o que a tarefa diária chama."""
-    qs = RecurringTitle.all_objects.filter(is_active=True, deleted_at__isnull=True)
+    qs = RecurringTitle.all_objects.filter(is_active=True, deleted_at__isnull=True,
+                                                  account__status=Account.Status.ACTIVE)
     if account is not None:
         qs = scope_to_allowed(qs.filter(account=account))  # pela tela: só as filiais de quem pediu (M-12)
     total = 0

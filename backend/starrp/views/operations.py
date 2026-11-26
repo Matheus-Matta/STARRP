@@ -1,10 +1,14 @@
+from datetime import timedelta
+
 from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from starrp.core.costs import redact_report, sees_costs
 from starrp.core.errors import StateConflict
+from starrp.core.permissions import has_permission_code
 from starrp.core.viewsets import SystemDataViewSet, TenantViewSet
 from starrp.models import (
     CashDiscrepancy, CashMovement, CashRegister, CashSession, CustomerCredit, PaymentMethod, SaleReturn,
@@ -12,6 +16,7 @@ from starrp.models import (
 from starrp.serializers import operations as s
 from starrp.core.text import decimals_as_text
 from starrp.services import cash, cash_report, returns
+from starrp.services.store_access import scope_own_sales
 
 
 class _ActionMixin:
@@ -31,23 +36,30 @@ class SaleReturnViewSet(_ActionMixin, TenantViewSet):
     select_related = ("sale",)
     prefetch_related = ("items__sale_item",)
     filterset_fields = ["status", "refund_method", "customer", "sale"]
-    action_permissions = {"complete": "sales.return", "cancel": "sales.return"}
+    action_permissions = {"complete": "sales.view", "cancel": "sales.view"}  # confere em `_mine`
+
+    def _mine(self):
+        """Quem tem a permissão, ou quem abriu a devolução (a senha do gerente já foi conferida ao abrir)."""
+        sale_return = self.get_object()
+        recent = timezone.now() - sale_return.created_at < timedelta(hours=24)  # a autorização não vale para sempre
+        mine = sale_return.processed_by_id == self.request.user.pk and recent
+        if not mine and not has_permission_code(self.request.user, "sales.return"):
+            raise PermissionDenied("Só quem abriu a devolução, ou quem pode devolver, conclui ou cancela.")
+        return sale_return
+
+    def get_queryset(self):
+        return scope_own_sales(super().get_queryset())  # vendedor: só as devoluções das vendas dele
 
     def create(self, request, *args, **kwargs):
         raise StateConflict("Abra a devolução a partir da venda: POST /sales/{id}/returns/.")
 
     @action(detail=True, methods=["post"])
     def complete(self, request, pk=None):
-        return Response(s.SaleReturnSerializer(returns.complete(self.get_object(), request.user)).data)
+        return Response(s.SaleReturnSerializer(returns.complete(self._mine(), request.user)).data)
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
-        sale_return = self.get_object()
-        if sale_return.status != SaleReturn.Status.DRAFT:
-            raise StateConflict("Só devolução em rascunho pode ser cancelada.")
-        sale_return.status = SaleReturn.Status.CANCELLED
-        sale_return.save(update_fields=["status", "updated_at"])
-        return Response(s.SaleReturnSerializer(sale_return).data)
+        return Response(s.SaleReturnSerializer(returns.cancel(self._mine(), request.user)).data)
 
 
 class CustomerCreditViewSet(TenantViewSet):
@@ -141,7 +153,10 @@ class CashSessionViewSet(_ActionMixin, TenantViewSet):
             movement = cash.add_movement(session, request.user, data["kind"], data["amount"], data["reason"],
                                          data["destination"], data.get("approval"))
             return Response(s.CashMovementSerializer(movement).data, status=201)
-        return Response(s.CashMovementSerializer(session.movements.all(), many=True).data)
+        rows = session.movements.all()
+        if not cash.sees_drawer(request.user):
+            rows = rows.exclude(kind__in=cash.BLIND_KINDS)
+        return Response(s.CashMovementSerializer(rows, many=True).data)
 
     @action(detail=True, methods=["get"])
     def statement(self, request, pk=None):
@@ -173,6 +188,10 @@ class CashMovementViewSet(_ActionMixin, TenantViewSet):
     filterset_fields = ["session", "kind", "status"]
     select_related = ("operator", "approved_by")
     action_permissions = {"approve": "cash.manage", "reject": "cash.manage"}
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        return qs if cash.sees_drawer(self.request.user) else qs.exclude(kind__in=cash.BLIND_KINDS)
 
     def create(self, request, *args, **kwargs):
         raise StateConflict("Lance sangria/suprimento em /cash-sessions/{id}/movements/.")
@@ -207,11 +226,11 @@ class CashDiscrepancyViewSet(TenantViewSet):
     @action(detail=True, methods=["post"])
     def resolve(self, request, pk=None):
         item = self.get_object()
-        status = request.data.get("status")
+        status = str(request.data.get("status") or "")
         if status not in {CashDiscrepancy.Status.REVIEWED, CashDiscrepancy.Status.REGULARIZED,
                           CashDiscrepancy.Status.CANCELLED}:
             raise StateConflict("Status de resolução inválido.")
         item.status, item.resolved_by, item.resolved_at = status, request.user, timezone.now()
-        item.resolution_note = request.data.get("note", "")
+        item.resolution_note = str(request.data.get("note") or "")
         item.save()
         return Response(self.get_serializer(item).data)

@@ -5,7 +5,8 @@ recusá-los por falta de autorização. Mas também não pode aceitar o "aprovad
 
 1. `/pdv/authorize/` (servidor no ar) devolve, junto com quem autorizou, um COMPROVANTE assinado pelo servidor:
    conta, filial, operador que pediu, autorizador (vazio = senha de ações do caixa), ação, o percentual
-   autorizado (desconto) e um id único. Vale 3 dias e UMA vez.
+   autorizado (desconto), O QUE foi autorizado (R4-04: sangria de R$ 90, preço daquela variante) e um id único.
+   Vale 3 dias e UMA vez.
 2. O PDV guarda os comprovantes e manda com a venda/evento de caixa (`approval_proofs`).
 3. Cada "aprovado por" precisa de um comprovante que bata (mesmo autorizador, conta, filial e operador, ação
    certa, desconto dentro do autorizado) e que ainda não tenha sido usado. Bateu: vale, e o comprovante é gasto.
@@ -13,7 +14,7 @@ recusá-los por falta de autorização. Mas também não pode aceitar o "aprovad
    a gerência conferir (venda `_approval_unverified`, sangria pendente, turno com motivo "confira").
 """
 import secrets
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.core import signing
 from django.core.cache import cache
@@ -23,18 +24,42 @@ MAX_AGE = 3 * 24 * 3600
 CASH_PASSWORD = "cash_password"  # autorizador = a senha de ações do caixa da loja
 
 
-def issue(*, account, store, operator, approver, code, max_percent):
+def scope_of(code, data):
+    """O que a autorização cobre, do corpo de `/pdv/authorize/` (`what`) ou do evento que a usa. "" = nada."""
+    data = data if isinstance(data, dict) else {}
+    if code == "cash.approve":
+        event = str(data.get("event") or "")
+        if event == "movement":
+            return f"movement:{data.get('kind') or ''}:{_money(data.get('amount'))}"
+        if event == "open":
+            return f"open:{data.get('register') or ''}:{_money(data.get('opening_amount'))}"
+        if event == "close":
+            return f"close:{data.get('session') or ''}:{_money(data.get('counted_amount'))}"
+        return ""
+    if code == "sales.price_override":
+        return f"variant:{data['variant']}" if data.get("variant") else ""
+    return ""
+
+
+def _money(value):
+    try:
+        return f"{Decimal(str(value or 0)):.2f}"
+    except (InvalidOperation, ValueError):
+        return "?"
+
+
+def issue(*, account, store, operator, approver, code, max_percent, what=""):
     return signing.dumps({
         "a": str(account.pk), "s": str(getattr(store, "pk", "") or ""), "o": getattr(operator, "pk", None),
         "p": getattr(approver, "pk", None) if approver is not None else CASH_PASSWORD, "c": code,
-        "m": str(max_percent), "j": secrets.token_urlsafe(12),
+        "m": str(max_percent), "w": what, "j": secrets.token_urlsafe(12),
     }, salt=SALT, compress=True)
 
 
 def decode(proofs):
     """Comprovantes válidos (assinatura certa e dentro do prazo); os outros são ignorados."""
     out = []
-    for raw in proofs or []:
+    for raw in proofs if isinstance(proofs, list) else []:
         try:
             out.append(signing.loads(str(raw), salt=SALT, max_age=MAX_AGE))
         except signing.BadSignature:
@@ -51,7 +76,7 @@ def spend(proof):
     return bool(cache.add(f"starrp:proof:{proof.get('j')}", 1, MAX_AGE))
 
 
-def find(proofs, *, account, store, operator, approver_id, codes, percent=None):
+def find(proofs, *, account, store, operator, approver_id, codes, percent=None, what=None):
     """O comprovante (ainda não usado) que prova que `approver_id` autorizou `operator` nesta conta/filial."""
     for proof in proofs:
         if proof.get("a") != str(account.pk) or proof.get("p") != approver_id or not proof.get("j"):
@@ -61,6 +86,9 @@ def find(proofs, *, account, store, operator, approver_id, codes, percent=None):
         if proof.get("o") != getattr(operator, "pk", None) or proof.get("c") not in codes:
             continue
         if percent is not None and Decimal(str(percent)) > Decimal(proof.get("m") or "0") + Decimal("0.01"):
+            continue
+        # Caixa e preço: o comprovante é DAQUELA operação (o desconto já vale só até o percentual autorizado).
+        if proof.get("c") in ("cash.approve", "sales.price_override") and (not what or proof.get("w") != what):
             continue
         if _spent(proof):
             continue

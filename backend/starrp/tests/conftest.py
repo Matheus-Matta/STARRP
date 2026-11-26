@@ -89,6 +89,16 @@ def _clean_cache():
 
 
 @pytest.fixture(autouse=True)
+def _clean_tenant():
+    """Quem chama a ponte da Cosmos direto deixa conta, filiais e vendedor no contexto: não passam ao próximo teste."""
+    from starrp.core.tenant import clear_current_account
+
+    clear_current_account()
+    yield
+    clear_current_account()
+
+
+@pytest.fixture(autouse=True)
 def _private_files(settings, tmp_path):
     """Certificados (pasta privada) de cada teste numa pasta temporária, nunca em backend/private."""
     settings.PRIVATE_MEDIA_ROOT = tmp_path / "private"

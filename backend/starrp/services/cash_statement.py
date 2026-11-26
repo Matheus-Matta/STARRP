@@ -13,6 +13,7 @@ from django.db.models.functions import Coalesce
 
 from starrp.core.text import brl
 from starrp.models import CashMovement, Sale, SaleItem
+from starrp.services.reports import NET, money
 from starrp.services.cash_report import summary
 
 ZERO = Decimal("0")
@@ -49,11 +50,11 @@ def _items(session):
                                         status=SaleItem.Status.ACTIVE)
             .values("variant", "description", "sku", "unit")
             # `sold_quantity`, não `quantity`: o nome sombrearia o campo e o custo multiplicaria por uma soma.
-            .annotate(sold_quantity=Sum("quantity"), total=Coalesce(Sum("total"), ZERO), cost=Coalesce(Sum(cost), ZERO),
+            .annotate(sold_quantity=Sum("quantity"), total=NET, cost=Coalesce(Sum(cost), ZERO),
                       sales=Count("sale", distinct=True))
             .order_by("-total"))
     return [{**{k: v for k, v in row.items() if k != "sold_quantity"}, "quantity": row["sold_quantity"],
-             "variant": str(row["variant"]), "margin": row["total"] - row["cost"]} for row in rows]
+             "variant": str(row["variant"]), "total": money(row["total"]), "margin": money(row["total"]) - row["cost"]} for row in rows]
 
 
 def statement(session):

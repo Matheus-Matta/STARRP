@@ -50,7 +50,22 @@ class BrandSerializer(TenantSerializer):
 
 
 AttributeValueSerializer = tenant_serializer(AttributeValue, read_only=("normalized",))
-KitComponentSerializer = tenant_serializer(KitComponent)
+
+
+class KitComponentSerializer(TenantSerializer):
+    class Meta:
+        model = KitComponent
+        fields = "__all__"
+
+    def validate(self, attrs):
+        attrs = super().validate(attrs)
+        component = attrs.get("component", getattr(self.instance, "component", None))
+        if component is not None and component.is_kit:  # a baixa não desce dois níveis: sairia sem estoque e sem custo
+            raise serializers.ValidationError({"component": "Kit dentro de kit não é aceito: use os produtos dele."})
+        return attrs
+
+
+
 ProductImageSerializer = tenant_serializer(ProductImage)
 
 

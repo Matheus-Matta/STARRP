@@ -46,6 +46,8 @@ def _convert(definition, value):
             number = Decimal(str(value).replace(",", "."))
         except InvalidOperation:
             raise ValueError("Informe um número.") from None
+        if not number.is_finite() or abs(number) > Decimal("1e15"):
+            raise ValueError("Informe um número.")
         return int(number) if number == number.to_integral_value() else float(number)
     if definition.type == kind.BOOLEAN:
         if isinstance(value, bool):

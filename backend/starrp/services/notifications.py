@@ -11,7 +11,7 @@ CATEGORY_PERMISSION = {
 }
 
 
-def recipients(account, permission=""):
+def recipients(account, permission="", store=None):
     profiles = (UserProfile.all_objects.filter(
         account=account, deleted_at__isnull=True, is_active=True, user__is_active=True,
     ).select_related("user", "role").prefetch_related(
@@ -19,16 +19,20 @@ def recipients(account, permission=""):
     ))
     users = []
     for profile in profiles:
+        allowed = profile.allowed_store_ids()
+        if store is not None and allowed is not None and store.pk not in allowed:
+            continue  # o assunto é de outra filial
         if profile.is_account_admin or (permission and permission in profile.permission_codes()):
             users.append(profile.user)
     return users
 
 
 def send(*, account, title, body="", category=Notification.Category.SYSTEM,
-         level=Notification.Level.INFO, url="", entity="", object_id="", recipient=None, permission=""):
+         level=Notification.Level.INFO, url="", entity="", object_id="", recipient=None, permission="",
+         store=None):
     """Cria uma cópia por destinatário: cada pessoa tem seu próprio estado de leitura."""
     required = permission or CATEGORY_PERMISSION.get(category, "")
-    targets = [recipient] if recipient is not None else recipients(account, required)
+    targets = [recipient] if recipient is not None else recipients(account, required, store)
     rows = [Notification(
         account=account, recipient=user, category=category, permission=required, level=level,
         title=title, body=body, url=url, entity=entity, object_id=str(object_id or ""),

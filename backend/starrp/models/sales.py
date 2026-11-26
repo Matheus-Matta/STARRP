@@ -269,6 +269,8 @@ class Commission(StoreModel):
     amount = MoneyField(help_text="Negativo quando estorno de devolução.")
     status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING, db_index=True)
     paid_at = models.DateTimeField(null=True, blank=True)
+    payout = models.ForeignKey("starrp.FinancialTransaction", null=True, blank=True, related_name="commissions",
+                               on_delete=models.SET_NULL, help_text="Lançamento que pagou (estornado, volta a pagar).")
 
     class Meta:
         indexes = [models.Index(fields=["seller", "status", "created_at"])]

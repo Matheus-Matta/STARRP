@@ -82,6 +82,23 @@ def _date(value):
         return None
 
 
+def _moment(value):
+    try:
+        return datetime.fromisoformat(value) if len(value) > 10 else None
+    except ValueError:
+        raise BusinessError("Data de emissão inválida no XML.", code="nfe_invalid") from None
+
+
+def is_purchase(content):
+    """Saída do fornecedor (tpNF 1) e finalidade normal: só ela vira entrada sozinha. Nota de ENTRADA do fornecedor
+    (devolução recebida), complementar (2), de ajuste (3) e de devolução (4) não são compra."""
+    try:
+        inf = safe_xml.fromstring(content if isinstance(content, bytes) else content.encode()).find(".//n:infNFe", NS)
+    except ElementTree.ParseError:
+        return False
+    return _text(inf, "n:ide/n:tpNF", "1") == "1" and _text(inf, "n:ide/n:finNFe", "1") not in ("2", "3", "4")
+
+
 def _taxes(imposto):
     """O que entra no custo de compra: IPI e ICMS-ST (o ICMS próprio é recuperável
     em regime normal e, no Simples, não se credita — fica fora por padrão)."""
@@ -94,13 +111,17 @@ def _taxes(imposto):
 
 def _item(det):
     prod = det.find("n:prod", NS)
+    if prod is None:
+        raise BusinessError("O XML tem um item sem produto.", code="nfe_invalid")
     lots = [
         {"number": _text(r, "n:nLote"), "quantity": str(_dec(r, "n:qLote")),
          "manufactured_at": _date(_text(r, "n:dFab")), "expires_at": _date(_text(r, "n:dVal"))}
         for r in prod.findall("n:rastro", NS)
     ]
+    if not str(det.get("nItem", "")).isascii() or not str(det.get("nItem", "")).isdigit():
+        raise BusinessError("O XML tem um item sem produto ou sem número.", code="nfe_invalid")
     return NFeItem(
-        number=int(det.get("nItem", "0")),
+        number=int(det.get("nItem")),
         supplier_code=_text(prod, "n:cProd"),
         barcode=_barcode(_text(prod, "n:cEAN")),
         taxable_barcode=_barcode(_text(prod, "n:cEANTrib")),
@@ -143,7 +164,7 @@ def parse(content: bytes) -> NFeData:
         access_key=(inf.get("Id") or "").removeprefix("NFe"),
         number=_text(inf, "n:ide/n:nNF"),
         series=_text(inf, "n:ide/n:serie"),
-        issued_at=datetime.fromisoformat(issued) if len(issued) > 10 else None,
+        issued_at=_moment(issued),
         emitter={
             "document": _text(emit, "n:CNPJ") or _text(emit, "n:CPF"),
             "legal_name": _text(emit, "n:xNome"),

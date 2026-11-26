@@ -58,6 +58,8 @@ def follow_delivery(sale, address, user=None):
 
 
 def _clean(data, what):
+    if data and not isinstance(data, dict):
+        raise BusinessError(f"Endereço de {what} em formato inválido.", code="address_invalid")
     data = {f: str((data or {}).get(f) or "").strip() for f in (*FIELDS, "recipient")}
     data["zip_code"] = only_digits(data["zip_code"])
     data["state"] = data["state"].upper()[:2]

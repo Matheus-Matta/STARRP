@@ -16,10 +16,11 @@ from decimal import Decimal
 
 from django.db import transaction
 from rest_framework import serializers
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from starrp.core.parsers import ObjectJSONParser
 from starrp.core.permissions import IsAccountAdmin
 from starrp.models import Module, StockRule, Store, StoreRule
 from starrp.services import rules
@@ -163,7 +164,7 @@ class AccountLogoView(APIView):
     """POST multipart `file`: troca o logo (ajustado para 1080×1080). DELETE: tira (volta o do Starrp)."""
 
     permission_classes = [IsAccountAdmin]
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
+    parser_classes = [MultiPartParser, FormParser, ObjectJSONParser]
 
     def post(self, request):
         from starrp.core.errors import BusinessError

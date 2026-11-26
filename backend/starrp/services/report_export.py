@@ -16,6 +16,7 @@ from datetime import date
 from decimal import Decimal
 
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 from openpyxl.chart import BarChart, LineChart, PieChart, Reference
 from openpyxl.styles import Alignment, Font, PatternFill
 from openpyxl.utils import get_column_letter
@@ -114,6 +115,11 @@ def _sheet_name(title, used):
     return name
 
 
+def _safe(value):
+    """Caractere de controle (vindo de um filtro da URL ou de um cadastro) o Excel não aceita: sai do texto."""
+    return ILLEGAL_CHARACTERS_RE.sub("", value) if isinstance(value, str) else value
+
+
 def _as_text(cell):
     """O openpyxl grava texto começando com "=" como FÓRMULA: aqui volta a ser texto (S-10). O valor fica igual."""
     if isinstance(cell.value, str) and cell.data_type == "f":
@@ -123,12 +129,12 @@ def _as_text(cell):
 
 def _write_table(ws, cols, rows, start_row=1):
     for c, (label, _, _) in enumerate(cols, start=1):
-        cell = _as_text(ws.cell(row=start_row, column=c, value=label))
+        cell = _as_text(ws.cell(row=start_row, column=c, value=_safe(label)))
         cell.font, cell.fill = BOLD, HEAD_FILL
         cell.alignment = Alignment(horizontal="right" if cols[c - 1][2] in FORMATS and cols[c - 1][2] != "date" else "left")
     for r, row in enumerate(rows, start=start_row + 1):
         for c, (_, key, fmt) in enumerate(cols, start=1):
-            cell = _as_text(ws.cell(row=r, column=c, value=_cell_value(row.get(key), fmt)))
+            cell = _as_text(ws.cell(row=r, column=c, value=_safe(_cell_value(row.get(key), fmt))))
             if fmt in FORMATS:
                 cell.number_format = FORMATS[fmt]
             if row.get("strong"):
@@ -143,9 +149,9 @@ def _write_table(ws, cols, rows, start_row=1):
 
 def _summary(ws, report, context):
     # Título e subtítulo podem vir da Cosmos (texto do modelo): nunca fórmula (rodada 1, P-16).
-    ws["A1"] = report["title"]
+    ws["A1"] = _safe(report["title"])
     _as_text(ws["A1"]).font = TITLE_FONT
-    ws["A2"] = report["subtitle"]
+    ws["A2"] = _safe(report["subtitle"])
     _as_text(ws["A2"])
     period = report["period"]
     lines = [("Período", f"{_parse_date(period['from']):%d/%m/%Y} a {_parse_date(period['to']):%d/%m/%Y}"),
@@ -153,22 +159,22 @@ def _summary(ws, report, context):
              ("Filtros", context.get("filters") or "nenhum"),
              ("Emitido por", context.get("user", "")), ("Emitido em", context.get("issued", ""))]
     for i, (label, value) in enumerate(lines, start=4):
-        ws.cell(row=i, column=1, value=label).font = BOLD
-        _as_text(ws.cell(row=i, column=2, value=value))
+        ws.cell(row=i, column=1, value=_safe(label)).font = BOLD
+        _as_text(ws.cell(row=i, column=2, value=_safe(value)))
     start = 4 + len(lines) + 1
     cols = [("Indicador", "label", "text"), ("Valor", "value", None), ("Variação vs. período anterior", "delta", "percent"),
             ("Observação", "hint", "text")]
     for c, (label, _, _) in enumerate(cols, start=1):
-        cell = _as_text(ws.cell(row=start, column=c, value=label))
+        cell = _as_text(ws.cell(row=start, column=c, value=_safe(label)))
         cell.font, cell.fill = BOLD, HEAD_FILL
     for r, k in enumerate(report["kpis"], start=start + 1):
-        _as_text(ws.cell(row=r, column=1, value=k["label"]))
-        value = ws.cell(row=r, column=2, value=_cell_value(k["value"], k["format"]))
+        _as_text(ws.cell(row=r, column=1, value=_safe(k["label"])))
+        value = ws.cell(row=r, column=2, value=_safe(_cell_value(k["value"], k["format"])))
         if k["format"] in FORMATS:
             value.number_format = FORMATS[k["format"]]
-        delta = ws.cell(row=r, column=3, value=_cell_value(k["delta"], "percent"))
+        delta = ws.cell(row=r, column=3, value=_safe(_cell_value(k["delta"], "percent")))
         delta.number_format = '+0.0%;-0.0%;0.0%'
-        _as_text(ws.cell(row=r, column=4, value=k.get("hint") or ""))
+        _as_text(ws.cell(row=r, column=4, value=_safe(k.get("hint") or "")))
     for col, width in zip("ABCD", (34, 22, 30, 60), strict=True):
         ws.column_dimensions[col].width = width
 

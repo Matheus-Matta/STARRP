@@ -84,7 +84,8 @@ class FinancialTitleSerializer(TenantSerializer):
     category_name = serializers.CharField(source="category.name", read_only=True, default=None)
     open_amount = serializers.SerializerMethodField()
     next_due = serializers.SerializerMethodField()
-    installment_count = serializers.IntegerField(write_only=True, required=False, default=1, min_value=1)
+    installment_count = serializers.IntegerField(write_only=True, required=False, default=1, min_value=1,
+                                                 max_value=420)  # 35 anos por mês
     first_due = serializers.DateField(write_only=True, required=False)
     # "single": paga tudo de uma vez (1 parcela); "installments": parcelado pela frequência.
     payment_mode = serializers.ChoiceField(choices=["single", "installments"], write_only=True, required=False)
@@ -99,7 +100,7 @@ class FinancialTitleSerializer(TenantSerializer):
         return [i for i in obj.installments.all() if i.deleted_at is None and i.status in ("open", "partial")]
 
     def get_open_amount(self, obj):
-        return str(sum((i.amount - i.paid_amount for i in self._open(obj)), Decimal("0")))
+        return str(sum((i.balance for i in self._open(obj)), Decimal("0")))
 
     def get_next_due(self, obj):
         dates = sorted(i.due_date for i in self._open(obj))
@@ -109,6 +110,8 @@ class FinancialTitleSerializer(TenantSerializer):
         attrs = super().validate(attrs)
         if attrs.get("due_day") is not None and not 1 <= attrs["due_day"] <= 31:
             raise serializers.ValidationError({"due_day": "Dia de 1 a 31."})
+        if "total" in attrs and attrs["total"] <= 0:
+            raise serializers.ValidationError({"total": "Informe um valor maior que zero."})
         self._check_frozen(attrs)
         return attrs
 
@@ -148,6 +151,11 @@ class SettleSerializer(serializers.Serializer):
     fine = serializers.DecimalField(min_value=ZERO, default=0, **Money)
     discount = serializers.DecimalField(min_value=ZERO, default=0, **Money)
     date = serializers.DateField(required=False)
+
+    def validate_date(self, value):
+        if value > timezone.localdate():
+            raise serializers.ValidationError("A baixa não pode ter data futura.")
+        return value
 
 
 class RecurringTitleSerializer(TenantSerializer):

@@ -17,7 +17,7 @@ from starrp.core.permissions import has_permission_code
 from starrp.models import CashMovement, CustomerCredit, FinancialTitle, Payment, PaymentMethod, Sale
 from starrp.models.sales import FulfillmentStatus
 from starrp.services import cash, finance, ledger, sales
-from starrp.services.checkout import _check_method, check_method_store
+from starrp.services.checkout import _lock_customer, _check_method, check_method_store
 
 Kind = PaymentMethod.Kind
 LOCKED_FULFILLMENT = (FulfillmentStatus.DELIVERED, FulfillmentStatus.RETURNED, FulfillmentStatus.CANCELLED)
@@ -62,8 +62,8 @@ def _undo(payment, user, label):
     """Desfaz o que o pagamento gerou. Dinheiro só volta se o turno dele ainda está aberto: turno
     fechado já foi conferido e não se reescreve."""
     if payment.method.kind == Kind.CASH:
-        session = payment.cash_session
-        if session is None or session.is_finished:
+        session = payment.cash_session and cash.lock_session(payment.cash_session)
+        if session is None or session.status != session.Status.OPEN:
             raise StateConflict("Este pagamento em dinheiro é de um turno de caixa já fechado: acerte com sangria/"
                                 "suprimento no caixa atual.", code="cash_session_closed")
         CashMovement.all_objects.filter(payment=payment).update(status=CashMovement.Status.CANCELLED)
@@ -80,11 +80,17 @@ def change_payment(payment, user, method, *, reason, installments=1, nsu="", aut
     payment = Payment.all_objects.select_for_update().select_related("method", "cash_session").get(pk=payment.pk)
     if payment.status != Payment.Status.APPROVED:
         raise StateConflict("Só se troca a forma de um pagamento aprovado.", code="payment_not_approved")
+    if sale.refunded_amount > 0:  # R4-11: devolvia o PIX em dinheiro e depois trocava o PIX por vale
+        raise StateConflict("Venda com devolução não troca a forma de pagamento.", code="sale_refunded")
     if method.account_id != sale.account_id or not method.is_active:
         raise BusinessError("Forma de pagamento inválida.")
     check_method_store(method, sale)
-    installments = max(int(installments or 1), 1)
-    _check_method(sale, method, payment.amount, installments)
+    try:
+        installments = max(int(installments or 1), 1)
+    except (TypeError, ValueError):
+        raise BusinessError("Número de parcelas inválido.", code="installments_invalid") from None
+    if method.requires_reference and sale.store.rule.require_payment_reference and not (nsu or authorization_code):
+        raise BusinessError(f"{method.name}: informe o NSU/autorização do comprovante.", code="reference_required")
     session = payment.cash_session
     if method.kind == Kind.CASH:
         # O dinheiro entra AGORA, na gaveta de quem está corrigindo.
@@ -92,9 +98,12 @@ def change_payment(payment, user, method, *, reason, installments=1, nsu="", aut
         if session is None:
             raise StateConflict("Abra o caixa para receber em dinheiro.", code="cash_session_required")
 
+    if sale.customer_id and method.kind in (Kind.STORE_CREDIT, Kind.INSTALLMENT_PLAN):
+        _lock_customer(sale)  # cliente antes da gaveta, como no pagamento
     _undo(payment, user, f"Troca de pagamento da venda {sale.number}")
     payment.status = Payment.Status.CANCELLED
     payment.save(update_fields=["status", "updated_at"])
+    _check_method(sale, method, payment.amount, installments)  # depois de desfazer: o título antigo não conta no limite
 
     replacement = Payment.all_objects.create(
         account_id=sale.account_id, store_id=sale.store_id, sale=sale, method=method, cash_session=session,

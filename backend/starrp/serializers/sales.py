@@ -12,7 +12,7 @@ from rest_framework import serializers
 
 from starrp.core.costs import HideCostFieldsMixin
 from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer
-from starrp.models import Commission, Customer, Payment, PaymentMethod, ProductVariant, Sale, SaleItem, Terminal
+from starrp.models import Commission, Customer, Payment, PaymentMethod, ProductVariant, Sale, SaleChannel, SaleItem, Terminal
 
 Money = {"max_digits": 14, "decimal_places": 2}
 Qty = {"max_digits": 14, "decimal_places": 3}
@@ -162,7 +162,9 @@ class ApprovalField(serializers.DictField):
 
 
 class SaleCreateSerializer(serializers.Serializer):
-    channel = serializers.ChoiceField(choices=Sale._meta.get_field("channel").choices, default="pos")
+    # Loja virtual é da integração, nunca de quem chama a API (R4-15: liberava cupom só do site no balcão).
+    channel = serializers.ChoiceField(choices=[c for c in SaleChannel.choices if c[0] != SaleChannel.ECOMMERCE],
+                                      default="pos")
     terminal = TenantPrimaryKeyField(Terminal, required=False, allow_null=True)
     seller = serializers.IntegerField(required=False, allow_null=True)
     customer = TenantPrimaryKeyField(Customer, required=False, allow_null=True)

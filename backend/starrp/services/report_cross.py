@@ -19,6 +19,7 @@ from django.utils import timezone
 
 from starrp.models import Review, Sale, SaleItem
 from starrp.services import report_book as rb
+from starrp.services import reports
 
 ZERO = Decimal("0")
 CLASSES = ("A", "B", "C")
@@ -42,7 +43,7 @@ def customer_classes(sales):
 
 
 def product_classes(items):
-    return _abc(dict(items.values_list("variant__product_id").annotate(t=Sum("total"))))
+    return _abc({k: net for k, (net, _cost) in reports.net_by(items, "variant__product_id").items()})
 
 
 def reviews_of(account, store):
@@ -209,8 +210,8 @@ def product_class_rows(account, store, params):
     agg = {k: {"products": 0, "revenue": ZERO, "cost": ZERO, "ratings": [], "returned": ZERO} for k in CLASSES}
     for cls in classes.values():
         agg[cls]["products"] += 1
-    for product, revenue, cost in items.values_list("variant__product_id").annotate(r=Sum("total"), c=Sum(rb.COST)):
-        agg[classes[product]]["revenue"] += revenue or ZERO
+    for product, revenue, cost in items.order_by().values_list("variant__product_id").annotate(r=reports.NET, c=Sum(rb.COST)):
+        agg[classes[product]]["revenue"] += reports.money(revenue)
         agg[classes[product]]["cost"] += cost or ZERO
     for product, rating in reviews_of(account, store).filter(kind="product", product_id__in=classes.keys()).values_list(
             "product_id", "rating"):
@@ -303,18 +304,19 @@ def cross_sellers(account, store, params):
                                                         cancelled_at__date__range=(start, end)), store)
                      .values_list("seller_id").annotate(n=Count("id")))
     items = rb._items(sales, params)
-    margin = {s: (r or 0) - (c or 0) for s, r, c in items.values_list("sale__seller_id").annotate(
-        r=Sum("total"), c=Sum(rb.COST))}
+    nets = reports.net_by(items, "sale__seller_id")
+    grouped = rb._grouped(sales, params, "seller_id")
     ratings = defaultdict(list)
     for seller, rating in reviews_of(account, store).filter(sale__in=sales).values_list("sale__seller_id", "rating"):
         ratings[seller].append(rating)
     rows = []
-    for r in sales.values("seller_id", "seller__first_name", "seller__username").annotate(
-            n=Count("id"), revenue=Sum("total"), gross=Sum("subtotal"), disc=Sum("discount")):
+    for r in sales.order_by().values("seller_id", "seller__first_name", "seller__username").annotate(n=Count("id")):
         sid = r["seller_id"]
+        r.update(grouped.get(sid, {"count": 0, "revenue": ZERO, "discount": ZERO}))
+        net, cost = nets.get(sid, (ZERO, ZERO))
         rows.append({"label": r["seller__first_name"] or r["seller__username"], "sales": r["n"],
-                     "ticket": rb._ticket(r["revenue"], r["n"]), "discount": rb._pct(r["disc"] or 0, r["gross"] or 0),
-                     "margin_pct": rb._pct(margin.get(sid, ZERO), r["revenue"]),
+                     "ticket": rb._ticket(r["revenue"], r["n"]), "discount": rb._pct(r["discount"], r["revenue"] + r["discount"]),
+                     "margin_pct": rb._pct(net - cost, net),
                      "cancel": rb._pct(cancelled.get(sid, 0), r["n"] + cancelled.get(sid, 0)),
                      "rating": avg(ratings[sid]), "reviews": len(ratings[sid])})
     rows.sort(key=lambda r: -r["sales"])
@@ -363,7 +365,7 @@ def cross_products(account, store, params):
     items = rb._items(rb._sales(account, store, params), params)
     classes = product_classes(items)
     names = dict(items.values_list("variant__product_id", "variant__product__name").distinct())
-    revenue = dict(items.values_list("variant__product_id").annotate(t=Sum("total")))
+    revenue = {k: net for k, (net, _cost) in reports.net_by(items, "variant__product_id").items()}
     ratings = defaultdict(list)
     for product, rating in reviews_of(account, store).filter(kind="product", product_id__in=classes.keys()).values_list(
             "product_id", "rating"):
@@ -420,7 +422,7 @@ DISCOUNT_BANDS = [("Sem desconto", Decimal(0), Decimal(0)), ("Até 5%", Decimal(
 
 def cross_discounts(account, store, params):
     sales = list(rb._sales(account, store, params).values("pk", "customer_id", "completed_at", "total", "subtotal", "discount",
-                                                          "coupon_discount"))
+                                                          "coupon_discount", "coupon__kind"))
     cost = dict(SaleItem.all_objects.filter(sale_id__in=[s["pk"] for s in sales], status=SaleItem.Status.ACTIVE).values_list(
         "sale_id").annotate(c=Sum(rb.COST)))
     ratings = defaultdict(list)
@@ -437,8 +439,10 @@ def cross_discounts(account, store, params):
         if not group:
             continue
         revenue = sum((s["total"] for s in group), ZERO)
+        net = sum((max((s["subtotal"] or ZERO) - (s["discount"] or ZERO) - (
+            ZERO if s["coupon__kind"] == "free_shipping" else s["coupon_discount"] or ZERO), ZERO) for s in group), ZERO)
         rows.append({"label": label, "sales": len(group), "ticket": rb._ticket(revenue, len(group)),
-                     "margin_pct": rb._pct(revenue - sum((cost.get(s["pk"]) or ZERO for s in group), ZERO), revenue),
+                     "margin_pct": rb._pct(net - sum((cost.get(s["pk"]) or ZERO for s in group), ZERO), net),
                      "rating": avg([r for s in group for r in ratings[s["pk"]]]),
                      "came_back": came_back(account, store, [(s["customer_id"], s["completed_at"]) for s in group])})
     discounted = [r for r in rows if r["label"] != "Sem desconto"]

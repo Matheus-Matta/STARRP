@@ -7,10 +7,12 @@ from rest_framework.response import Response
 
 from starrp.core.permissions import has_permission_code
 from starrp.core.text import decimals_as_text
+from starrp.core.values import user_pk
 from starrp.core.viewsets import TenantViewSet
 from starrp.models import Commission, FinancialAccount
 from starrp.serializers import sales as s
 from starrp.services import commissions
+from starrp.views.finance import check_network_account
 
 
 class CommissionViewSet(TenantViewSet):
@@ -38,8 +40,9 @@ class CommissionViewSet(TenantViewSet):
     @action(detail=False, methods=["post"])
     def payout(self, request):
         """Paga as comissões pendentes de um vendedor até `until` (padrão: hoje)."""
-        seller = get_object_or_404(get_user_model(), pk=request.data.get("seller"), profile__account=request.account)
+        seller = get_object_or_404(get_user_model(), pk=user_pk(request.data.get("seller")), profile__account=request.account)
         account = get_object_or_404(FinancialAccount.objects, pk=request.data.get("financial_account"))
+        check_network_account(request, account)
         until = parse_date(str(request.data.get("until") or "")) or None
         result = commissions.pay(request.account, seller, account, request.user, until=until, store=request.store)
         return Response(decimals_as_text(result), status=201)

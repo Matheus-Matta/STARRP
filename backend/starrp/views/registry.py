@@ -3,7 +3,7 @@ from django.db.models import Count, F, OuterRef, Q, Subquery, Sum
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema
 from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from rest_framework.exceptions import PermissionDenied
@@ -12,14 +12,16 @@ from rest_framework.permissions import SAFE_METHODS
 from starrp.core.bulk import bulk_action
 from starrp.core.bulk_helpers import add_tags, related_param
 from starrp.core.errors import BusinessError, StateConflict
+from starrp.core.parsers import ObjectJSONParser
 from starrp.core.viewsets import ReadOnlyTenantViewSet, SystemDataViewSet, TenantViewSet
 from starrp.models import (
     Customer, CustomerAddress, CustomerCredit, CustomerGroup, Permission, Role, Store, Supplier, Tag, Terminal, UserProfile,
 )
 from starrp.serializers import company, operations, partners, users
 from starrp.core.permissions import has_permission_code, is_account_admin
-from starrp.services import customer_credits, fiscal_data, fiscal_emission
+from starrp.services import checkout, customer_credits, finance, fiscal_data, fiscal_emission
 from starrp.services.store_access import sellers_of, visible_profiles
+from starrp.views.fiscal import check_fiscal_config
 
 
 class CustomerGroupViewSet(TenantViewSet):
@@ -48,6 +50,13 @@ class CustomerViewSet(TenantViewSet):
         from starrp.views.catalog import filter_by_tag
 
         return filter_by_tag(super().get_queryset(), self.request).annotate(credit_total=Subquery(credits))
+
+    def perform_destroy(self, instance):
+        if finance.open_receivables(instance) > 0:
+            raise StateConflict("Este cliente tem parcelas em aberto: receba ou cancele antes de excluir.")
+        if checkout.credit_balance(instance) > 0 or finance.party_credit(customer=instance) > 0:
+            raise StateConflict("Este cliente tem crédito ou vale-troca: acerte antes de excluir.")
+        super().perform_destroy(instance)
 
     @extend_schema(request=partners.CustomerCreditGrantInput, responses={201: operations.CustomerCreditSerializer})
     @action(detail=True, methods=["post"], url_path="grant-credit")
@@ -120,6 +129,15 @@ class StoreViewSet(TenantViewSet):
             store.save(update_fields=["cash_action_password"])
         serializer.instance = store
 
+    def perform_update(self, serializer):
+        # R4-05: apontar a filial para os dados fiscais de outra entregava o certificado e o CSC dela.
+        if "fiscal_config" in serializer.validated_data:
+            new, old = serializer.validated_data["fiscal_config"], serializer.instance.fiscal_config
+            for config in (new, old):
+                if new != old and config is not None:
+                    check_fiscal_config(self.request, config)
+        super().perform_update(serializer)
+
     def initial(self, request, *args, **kwargs):
         # O certificado da aba "Nota fiscal" chega em multipart: a base exige corpo JSON-objeto.
         if self.action == "fiscal_certificate":
@@ -138,18 +156,20 @@ class StoreViewSet(TenantViewSet):
         self._fiscal_permission(request, write)
         store = self.get_object()
         if write:
+            check_store_fiscal(request, store)
             fiscal_emission.apply_store_settings(store, request.data, request.user)
             store.refresh_from_db()
         return Response(fiscal_emission.readiness(store))
 
     @action(detail=True, methods=["post"], url_path="fiscal/certificate",
-            parser_classes=[MultiPartParser, FormParser, JSONParser])
+            parser_classes=[MultiPartParser, FormParser, ObjectJSONParser])
     def fiscal_certificate(self, request, pk=None):
         """Certificado A1 (.pfx + senha) nos dados fiscais da filial (cria pelo CNPJ se faltar)."""
         from starrp.views.fiscal import MAX_PFX_BYTES
 
         self._fiscal_permission(request, True)
         store = self.get_object()
+        check_store_fiscal(request, store)
         upload, password = request.data.get("file"), str(request.data.get("password", ""))
         if upload is None or not hasattr(upload, "read"):
             raise BusinessError("Envie o arquivo do certificado (.pfx).")
@@ -159,6 +179,15 @@ class StoreViewSet(TenantViewSet):
         fiscal_data.save_certificate(config or fiscal_data.from_store(store, request.user), upload, password)
         store.refresh_from_db()
         return Response(fiscal_emission.readiness(store))
+
+
+def check_store_fiscal(request, store):
+    """Dados fiscais compartilhados com filial que a pessoa não acessa só mudam por quem acessa todas (R4-05):
+    os já ligados à filial e os do mesmo CNPJ, que seriam ligados agora."""
+    config = store.fiscal_config if store.fiscal_config and store.fiscal_config.deleted_at is None else None
+    config = config or fiscal_data.existing_for(store)
+    if config is not None:
+        check_fiscal_config(request, config)
 
 
 class TerminalViewSet(TenantViewSet):

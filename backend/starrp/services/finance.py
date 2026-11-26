@@ -11,16 +11,20 @@ from datetime import timedelta
 from decimal import ROUND_DOWN, Decimal
 
 from django.db import transaction
-from django.db.models import Q, Sum
+from django.db.models import DecimalField, ExpressionWrapper, F, Q, Sum
 from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from starrp.core.errors import BusinessError, StateConflict
-from starrp.models import FinancialTitle, FinancialTransaction, Installment, PaymentMethod, TitleStatus
+from starrp.models import FinancialTitle, FinancialTransaction, Installment, InstallmentSettlement, PaymentMethod, TitleStatus
 
 ZERO = Decimal("0")
 
 CENTS = Decimal("0.01")
+
+#: O saldo da parcela no banco: a MESMA conta de `Installment.balance` (juros, multa e desconto entram, R5-11).
+OPEN_BALANCE = ExpressionWrapper(F("amount") + F("interest") + F("fine") - F("discount") - F("paid_amount"),
+                                 output_field=DecimalField(max_digits=18, decimal_places=2))
 
 
 def add_months(day, months):
@@ -120,7 +124,7 @@ def receivable_from_payment(payment, user=None):
             sale=sale, payment=payment, category_key="sales",
         )
     if method.settlement_days:
-        net = (payment.amount * (100 - method.fee_percent) / 100).quantize(CENTS)
+        net = (payment.amount * (100 - payment.fee_rate) / 100).quantize(CENTS)
         return create_title(
             store=sale.store, kind=FinancialTitle.Kind.RECEIVABLE, description=f"Venda {sale.number} - {method.name}",
             total=net, installments=payment.installments or 1,
@@ -134,8 +138,8 @@ def open_receivables(customer):
     total = Installment.all_objects.filter(
         title__customer=customer, title__kind=FinancialTitle.Kind.RECEIVABLE, deleted_at__isnull=True,
         status__in=[TitleStatus.OPEN, TitleStatus.PARTIAL],
-    ).aggregate(t=Sum("amount"), p=Sum("paid_amount"))
-    return (total["t"] or Decimal("0")) - (total["p"] or Decimal("0"))
+    ).aggregate(t=Sum(OPEN_BALANCE))
+    return total["t"] or Decimal("0")
 
 
 def _refresh_title(title):
@@ -157,14 +161,16 @@ def _party(title):
 
 def party_credit(*, customer=None, supplier=None):
     """Crédito da parte: o que ela pagou (cliente) ou recebeu adiantado (fornecedor) sem título,
-    menos o que já foi usado em baixas. Cliente: entradas avulsas; fornecedor: saídas avulsas."""
+    menos o que já foi usado em baixas. Cliente: entradas avulsas; fornecedor: saídas avulsas. Só lançamento SEM
+    categoria: com categoria ele já é receita/despesa na DRE, e contar de novo quitaria outra dívida (R5-04)."""
     if customer is None and supplier is None:
         return ZERO
     if customer is not None:
         txs, kind, parts = Q(customer=customer), FinancialTransaction.Kind.IN, Q(title__customer=customer)
     else:
         txs, kind, parts = Q(supplier=supplier), FinancialTransaction.Kind.OUT, Q(title__supplier=supplier)
-    moved = FinancialTransaction.all_objects.filter(txs, installment__isnull=True, deleted_at__isnull=True).aggregate(
+    moved = FinancialTransaction.all_objects.filter(txs, installment__isnull=True, category__isnull=True,
+                                                       deleted_at__isnull=True).aggregate(
         given=Coalesce(Sum("amount", filter=Q(kind=kind)), ZERO),
         back=Coalesce(Sum("amount", filter=~Q(kind=kind)), ZERO))
     used = Installment.all_objects.filter(parts, deleted_at__isnull=True).aggregate(t=Coalesce(Sum("credit_used"), ZERO))["t"]
@@ -182,7 +188,7 @@ def party_credits(customer_ids=(), supplier_ids=()):
             continue
         credit = dict.fromkeys(ids, ZERO)
         for row in (FinancialTransaction.all_objects.filter(**{f"{field}_id__in": ids}, installment__isnull=True,
-                                                             deleted_at__isnull=True)
+                                                             category__isnull=True, deleted_at__isnull=True)
                     .order_by().values(f"{field}_id")
                     .annotate(given=Coalesce(Sum("amount", filter=Q(kind=kind)), ZERO),
                               back=Coalesce(Sum("amount", filter=~Q(kind=kind)), ZERO))):
@@ -243,6 +249,9 @@ def settle(installment, financial_account, amount, user, *, interest=0, fine=0, 
     part.paid_at = paid_at
     part.status = TitleStatus.PAID if part.balance <= 0 else TitleStatus.PARTIAL
     part.save()
+    InstallmentSettlement.all_objects.create(
+        account_id=part.account_id, installment=part, date=paid_at, amount=settled, interest=Decimal(interest),
+        fine=Decimal(fine), discount=Decimal(discount), credit=credit, created_by=user)
     if settled > 0:
         FinancialTransaction.all_objects.create(
             account_id=part.account_id, financial_account=financial_account, kind=in_out,
@@ -257,6 +266,50 @@ def settle(installment, financial_account, amount, user, *, interest=0, fine=0, 
         )
     _refresh_title(title)
     return part
+
+
+@transaction.atomic
+def unsettle(installment, user, reason):
+    """Desfaz a baixa lançada por engano (R5-09): o dinheiro volta por lançamento inverso (nada se apaga), o crédito
+    usado volta à parte e a parcela fica em aberto, sem os juros/multa/desconto daquela baixa. O que foi pago a
+    mais continua como crédito (lançamento avulso próprio)."""
+    from starrp.services import ledger
+
+    if not str(reason or "").strip():
+        raise BusinessError("Escreva o motivo de desfazer a baixa.", code="reason_required")
+    part = Installment.all_objects.select_for_update().get(pk=installment.pk)
+    if part.paid_amount <= 0:
+        raise StateConflict("Esta parcela não tem baixa.", code="installment_not_paid")
+    for tx in part.transactions.filter(reversal_of__isnull=True, reversals__isnull=True,
+                                       deleted_at__isnull=True).select_related("financial_account"):
+        if tx.financial_account.deleted_at is not None:
+            raise StateConflict(f"A conta {tx.financial_account.name} foi excluída: o dinheiro voltaria para uma conta "
+                                "que não aparece. Lance o acerto à mão.", code="account_deleted")
+        ledger.reverse(tx, description=f"Baixa desfeita: {reason}", user=user)
+    done = part.settlements.filter(deleted_at__isnull=True).aggregate(
+        a=Sum("amount"), i=Sum("interest"), f=Sum("fine"), d=Sum("discount"), c=Sum("credit"))
+    InstallmentSettlement.all_objects.create(
+        account_id=part.account_id, installment=part, date=timezone.localdate(), created_by=user,
+        amount=-(done["a"] or ZERO), interest=-(done["i"] or ZERO), fine=-(done["f"] or ZERO),
+        discount=-(done["d"] or ZERO), credit=-(done["c"] or ZERO))
+    part.paid_amount = part.credit_used = part.interest = part.fine = part.discount = ZERO
+    part.paid_at, part.status = None, TitleStatus.OPEN
+    part.save()
+    _refresh_title(part.title)
+    return part
+
+
+@transaction.atomic
+def cancel_title(title, user):
+    """Cancela um título lançado à mão, sem baixa. O de venda, nota ou recorrência segue a origem dele."""
+    title = FinancialTitle.all_objects.select_for_update().get(pk=title.pk)
+    if title.sale_id or title.payment_id or title.inbound_nfe_id:
+        raise StateConflict("Este título veio de uma venda ou nota: cancele por lá.", code="title_from_document")
+    if title.status == TitleStatus.CANCELLED:
+        raise StateConflict("Título já cancelado.")
+    cancel_titles(FinancialTitle.all_objects.filter(pk=title.pk), "O título tem parcela com baixa: desfaça a baixa antes.")
+    title.refresh_from_db()
+    return title
 
 
 @transaction.atomic

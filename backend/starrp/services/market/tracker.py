@@ -350,10 +350,17 @@ def approve(check, user, price=None):
     """Aplica o novo preço no cadastro (com histórico). `price` = outro valor que a pessoa escolheu."""
     if check.status != PriceCheck.Status.PENDING or check.suggested_price is None:
         raise BusinessError("Esta sugestão não está aguardando aprovação.", code="price_not_pending")
-    new = Decimal(str(price)).quantize(pricing.CENT) if price not in (None, "") else check.suggested_price
-    if new <= 0:
-        raise BusinessError("Informe um preço maior que zero.", code="price_invalid")
+    try:
+        new = Decimal(str(price)) if price not in (None, "") else check.suggested_price
+    except ArithmeticError:
+        new = Decimal("0")
+    if not new.is_finite() or not 0 < new < Decimal("1e9"):
+        raise BusinessError("Informe um preço válido, maior que zero.", code="price_invalid")
+    new = new.quantize(pricing.CENT)
     with transaction.atomic():
+        check = PriceCheck.all_objects.select_for_update().get(pk=check.pk)
+        if check.status != PriceCheck.Status.PENDING:
+            raise BusinessError("Esta sugestão não está aguardando aprovação.", code="price_not_pending")
         variant = ProductVariant.all_objects.select_for_update().get(pk=check.variant_id)
         check.previous_price = variant.price
         variant.price, variant.updated_by = new, user

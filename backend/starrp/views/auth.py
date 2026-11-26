@@ -9,7 +9,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
-from django.utils import timezone
 from rest_framework import serializers
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -147,6 +146,6 @@ class PasswordResetConfirmView(APIView):
         reset.user.set_password(password)
         reset.user.save(update_fields=["password"])
         # Este link e os outros ainda abertos deste usuário deixam de valer (R2-28).
-        PasswordResetRequest.objects.filter(user=reset.user, used_at__isnull=True).update(used_at=timezone.now())
+        password_reset.invalidate(reset.user)
         sessions.revoke_all(reset.user)  # quem estava logado com a senha antiga sai
         return Response({"detail": "Senha alterada."})

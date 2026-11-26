@@ -126,7 +126,39 @@ def _check_bins(item, doc):
         raise BusinessError(f"Endereço {item.destination_bin.code} não pertence ao depósito de destino.")
 
 
-def _inventory(item, doc, user):
+def _surplus_lot(item, doc, quantity):
+    """Sobra de produto com lote entra num lote (sem ele não se venderia): o informado, o do endereço ou o mais novo."""
+    if item.lot_id or quantity <= 0 or not item.variant.track_lots or not item.variant.track_stock:
+        return item.lot
+    lots = StockLot.all_objects.filter(variant=item.variant, warehouse=doc.warehouse, deleted_at__isnull=True)
+    if item.bin_id:
+        here = lots.filter(pk__in=BinBalance.all_objects.filter(bin=item.bin, variant=item.variant, quantity__gt=0).values("lot"))
+        lots = here if here.exists() else lots
+    today = timezone.localdate()
+    valid = [lot for lot in lots.order_by("-received_at", "-created_at") if not lot.expires_at or lot.expires_at >= today]
+    if not valid:
+        raise BusinessError(f"{item.variant.display_name} exige lote: informe o lote da sobra (ou lance uma entrada).",
+                            code="lot_required")
+    return valid[0]
+
+
+def _count_groups(items):
+    """{id da 1ª linha: quanto as outras linhas do mesmo produto/endereço/lote contaram} e as linhas já somadas."""
+    groups, others, skip = {}, {}, set()
+    for item in items:
+        groups.setdefault((item.variant_id, item.bin_id, item.lot_id), []).append(item)
+    for (variant, bin, lot), rows in groups.items():
+        mixed = any(k[0] == variant and k != (variant, bin, lot) and (
+            (not bin and not lot) or (bin and not lot and (k[1] == bin or not k[1]))) for k in groups)
+        if mixed:
+            raise BusinessError(f"{rows[0].variant.display_name}: conte por endereço/lote OU o total, não os dois.",
+                                code="inventory_mixed")
+        others[rows[0].pk] = sum((r.quantity for r in rows[1:]), Decimal("0"))
+        skip.update(r.pk for r in rows[1:])
+    return others, skip
+
+
+def _inventory(item, doc, user, others=Decimal("0")):
     """Contagem: grava o saldo do sistema como esperado e move só a diferença.
     Com endereço, a contagem é DAQUELE endereço (e lote, se informado)."""
     if item.bin_id:
@@ -135,14 +167,17 @@ def _inventory(item, doc, user):
         if item.lot_id:
             rows = rows.filter(lot=item.lot)
         current = sum((r.quantity for r in rows), Decimal("0"))
+    elif item.lot_id:
+        current = StockLot.all_objects.get(pk=item.lot_id).quantity
     else:
         current = stock.available(item.variant, doc.warehouse)
+    current -= others  # o mesmo produto em mais de uma linha: o contado é a SOMA delas
     item.expected_quantity = current
     item.save(update_fields=["expected_quantity", "updated_at"])
     delta = item.quantity - current
     if delta:
         stock.move(item.variant, doc.warehouse, delta, StockMovement.Kind.ADJUSTMENT, allow_negative=True,
-                   lot=item.lot, bin=item.bin, source_key=f"doc:{item.pk}", document_item=item, operator=user,
+                   lot=_surplus_lot(item, doc, delta), bin=item.bin, source_key=f"doc:{item.pk}", document_item=item, operator=user,
                    rule=_rule(doc, doc.warehouse))
 
 
@@ -273,14 +308,20 @@ def post(document, user):
     doc = StockDocument.all_objects.select_for_update().get(pk=document.pk)
     if doc.status != StockDocument.Status.DRAFT:
         raise StateConflict("Só rascunho pode ser confirmado.")
+    if doc.inbound_nfe_id and doc.kind != Kind.ENTRY:
+        raise StateConflict("A nota de entrada só se recebe com um documento de entrada.", code="nfe_document_locked")
     if doc.inbound_nfe_id and doc.checked_at is None:
         raise BusinessError("Conclua a conferência antes de aprovar a entrada da nota.", code="conference_required")
     items = list(doc.items.select_related("variant__product", "lot", "bin", "destination_bin"))
     if not items:
         raise BusinessError("O documento não tem itens.")
+    others, counted = _count_groups(items) if doc.kind == Kind.INVENTORY else ({}, set())
     for item in items:
         _check_bins(item, doc)
-        if doc.kind == Kind.RELOCATION:
+        if item.pk in counted:
+            item.expected_quantity = item.quantity  # somada na primeira linha do produto
+            item.save(update_fields=["expected_quantity", "updated_at"])
+        elif doc.kind == Kind.RELOCATION:
             _relocation(item, doc, user)
         elif doc.kind == Kind.ENTRY:
             _entry(item, doc, StockMovement.Kind.PURCHASE, user)
@@ -293,9 +334,9 @@ def post(document, user):
         elif doc.kind == Kind.ADJUSTMENT:
             stock.move(item.variant, doc.warehouse, item.quantity, StockMovement.Kind.ADJUSTMENT,
                        allow_negative=True, source_key=f"doc:{item.pk}", document_item=item, operator=user,
-                       rule=_rule(doc, doc.warehouse))
+                       lot=_surplus_lot(item, doc, item.quantity), bin=item.bin, rule=_rule(doc, doc.warehouse))
         elif doc.kind == Kind.INVENTORY:
-            _inventory(item, doc, user)
+            _inventory(item, doc, user, others.get(item.pk, Decimal("0")))
     _register_divergences(doc, items, user)
     doc.status, doc.posted_at, doc.posted_by = StockDocument.Status.POSTED, timezone.now(), user
     doc.save(update_fields=["status", "posted_at", "posted_by", "updated_at"])

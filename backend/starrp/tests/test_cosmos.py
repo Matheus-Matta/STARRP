@@ -170,7 +170,7 @@ def test_alteracao_mostra_de_para(ctx):
     tools.run(tool_ctx, "propor_alteracao", {"metodo": "PATCH", "caminho": f"/catalog/brands/{brand.pk}/",
                                              "corpo": {"name": "Nova"}, "titulo": "Renomear"})
     preview = CosmosAction.all_objects.get().preview
-    assert preview == [{"label": "Nome", "from": "Antiga", "value": "Nova"}]
+    assert preview == [{"label": "Registro", "value": "Antiga"}, {"label": "Nome", "from": "Antiga", "value": "Nova"}]
     brand.refresh_from_db()
     assert brand.name == "Antiga"
 

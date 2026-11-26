@@ -12,10 +12,11 @@ Só roda uma vez por conta (se já houver avaliação, não faz nada). O `seed_d
 import random
 from datetime import timedelta
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.db import transaction
 from django.utils import timezone
 
+from starrp.management.demo import DemoCommand
 from starrp.models import Account, CustomerAddress, Review, Sale, SaleItem
 from starrp.services.reviews import public_name
 from starrp.services.sales import DELIVERY_KEY
@@ -39,7 +40,7 @@ def _rating(bias=0):
     return max(1, min(5, value + bias))
 
 
-class Command(BaseCommand):
+class Command(DemoCommand):
     help = "Cria avaliações e entregas de exemplo a partir das vendas existentes (uma vez por conta)."
 
     def add_arguments(self, parser):

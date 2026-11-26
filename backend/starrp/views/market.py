@@ -18,10 +18,11 @@ Ver pede `pricing.access`; decidir, cadastrar concorrente e reler pedem `pricing
 """
 from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from starrp.core.errors import BusinessError
+from starrp.core.parsers import ObjectJSONParser
 from starrp.core.viewsets import TenantViewSet
 from starrp.models import BackgroundTask, CompetitorPrice, MarketOffer, Module, PriceCheck
 from starrp.serializers.market import (
@@ -123,7 +124,7 @@ class CompetitorPriceViewSet(TenantViewSet):
     permission_code = "pricing"
     required_module = Module.PRICING
     action_permissions = {"import_sheet": MANAGE}
-    parser_classes = [JSONParser, FormParser, MultiPartParser]
+    parser_classes = [ObjectJSONParser, FormParser, MultiPartParser]
     select_related = ("variant__product",)
     filterset_fields = ("variant", "variant__product", "competitor")
     search_fields = ["competitor", "variant__product__name", "variant__sku"]

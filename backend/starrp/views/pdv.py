@@ -33,7 +33,8 @@ class PdvBootstrapView(APIView):
         store = request.store
         if store is None:
             raise BusinessError("Informe a filial do PDV no header X-Store-ID.", code="store_required")
-        installation_id = (request.data.get("installation_id") or "").strip()
+        raw = request.data.get("installation_id")
+        installation_id = raw.strip()[:120] if isinstance(raw, str) else ""
         if not installation_id:
             raise BusinessError("installation_id é obrigatório.")
         terminal, _ = Terminal.all_objects.get_or_create(
@@ -404,7 +405,9 @@ class PdvOfflineSaleView(APIView):
             return Response(offline_sales.preview(request.store, request.user, request.data, render))
         sale, created = offline_sales.import_sale(request.store, request.user, request.data)
         invoice = request.data.get("invoice")
-        if isinstance(invoice, dict):
+        # A nota é da venda CONCLUÍDA e de quem opera o caixa (R4-09): o pedido guardado do vendedor não emite.
+        if (isinstance(invoice, dict) and sale.status == Sale.Status.COMPLETED
+                and has_permission_code(request.user, "cash.manage")):
             fiscal_emission.register(sale, request.user, invoice)
         sale = Sale.all_objects.prefetch_related("items", "payments__method", "invoices").get(pk=sale.pk)
         return Response(sales_s.SaleSerializer(sale, context=ctx).data, status=201 if created else 200)
@@ -432,7 +435,7 @@ AUTHORIZABLE = ("sales.discount", "sales.price_override", "sales.cancel_item", "
 
 
 class PdvAuthorizeView(APIView):
-    """POST /pdv/authorize/ {"code", "percent"?, "approval"?}: o PDV desktop monta a venda no
+    """POST /pdv/authorize/ {"code", "percent"?, "what"?, "approval"?}: o PDV desktop monta a venda no
     PC e só pergunta aqui se a ação passa (e quem autorizou). Mesmos erros da venda no servidor
     (`*approval_required`, `approval_invalid`): o diálogo do gerente funciona igual.
 
@@ -461,12 +464,13 @@ class PdvAuthorizeView(APIView):
             approver = approvals.authorize(request.user, request.account, request.store, code, approval)
         from starrp.services import approval_proof
 
+        what = approval_proof.scope_of(code, request.data.get("what"))
         if approver is None:  # senha de ações do caixa da loja (o comprovante vale para a mesma operação)
             return Response({"approver": None, "by": "cash_password", "codes": list(AUTHORIZABLE),
                              "max_discount_percent": "0",
                              "proof": approval_proof.issue(account=request.account, store=request.store,
                                                            operator=request.user, approver=None, code=code,
-                                                           max_percent=percent or 0)})
+                                                           max_percent=percent or 0, what=what)})
 
         limit = approvals.max_discount_percent(approver)
         return Response({
@@ -479,6 +483,6 @@ class PdvAuthorizeView(APIView):
             # No desconto, o comprovante vale ATÉ o percentual autorizado agora (não o limite do gerente): uma
             # autorização de 5% não cobre um desconto de 30% em outra venda.
             "proof": approval_proof.issue(account=request.account, store=request.store, operator=request.user,
-                                          approver=approver, code=code,
+                                          approver=approver, code=code, what=what,
                                           max_percent=percent if code == "sales.discount" else limit),
         })

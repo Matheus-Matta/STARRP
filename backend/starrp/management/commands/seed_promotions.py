@@ -14,11 +14,12 @@ import random
 from datetime import timedelta
 from decimal import Decimal
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import CommandError
 from django.db import transaction
 from django.db.models import Sum
 from django.utils import timezone
 
+from starrp.management.demo import DemoCommand
 from starrp.models import Account, CouponRedemption, DiscountTable, Payment, Sale, StockBalance, Store, UserProfile
 
 from .seed_demo import Api
@@ -29,7 +30,7 @@ COME_BACK = {"VOLTE15": 0.75, "CLUBE12": 0.65, "BEMVINDO10": 0.5, "PIX5": 0.4, "
 COUPONS = ["VOLTE15", "CLUBE12", "BEMVINDO10", "BLACK30", "PIX5", "VIP25", "ANIVER20"]
 
 
-class Command(BaseCommand):
+class Command(DemoCommand):
     help = "Cria vendas de exemplo com cupom, desconto manual e promoção (uma vez por conta)."
 
     def add_arguments(self, parser):

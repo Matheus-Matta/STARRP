@@ -18,6 +18,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 from starrp.core.costs import COST_KEY, sees_costs
+from starrp.core.permissions import has_permission_code
 from starrp.core.secrets import SECRET_FIELDS, fingerprint, is_secret_field
 from starrp.models import AuditLog
 
@@ -101,7 +102,7 @@ HISTORY_LIMIT = 300
 def _history_rows(instance, logs):
     """Alterações do histórico que a auditoria não registrou, com o que mudou."""
     manager = getattr(instance, "history", None)
-    if manager is None:
+    if not hasattr(manager, "order_by"):  # sem histórico (ou um campo do model com esse nome)
         return [], []
     records = list(manager.order_by("-history_date")[:HISTORY_LIMIT])[::-1]
     skip = {f.name for f in instance._meta.concrete_fields
@@ -153,10 +154,34 @@ def events(instance, user=None):
     """Todos os acontecimentos do registro, do mais novo para o mais antigo. Com `user`, o custo só aparece para
     quem tem `catalog.view_costs` (M-10)."""
     rows = _events(instance)
+    if user is not None and not has_permission_code(user, "cash.approve"):
+        _blind(instance, rows)
     if user is not None and not sees_costs(user):
         for row in rows:
             row["changes"] = [c for c in row["changes"] if not (isinstance(c, dict) and COST_KEY.search(str(c.get("key"))))]
     return rows
+
+
+def visible_changes(changes, entity, user):
+    """As mudanças que este usuário pode ver (custo e fechamento cego)."""
+    from starrp.services.cash import BLIND_FIELDS
+
+    keys = [str(c.get("key")) if isinstance(c, dict) else "" for c in changes]
+    hide_cost = not sees_costs(user)
+    hide_drawer = entity == "cashsession" and not has_permission_code(user, "cash.approve")
+    return [c for c, key in zip(changes, keys, strict=True)
+            if not (hide_cost and COST_KEY.search(key)) and not (hide_drawer and key in BLIND_FIELDS)]
+
+
+def _blind(instance, rows):
+    """Fechamento cego (R4-13): o histórico do turno mostrava o esperado e a diferença."""
+    from starrp.services.cash import BLIND_FIELDS
+
+    if instance._meta.model_name != "cashsession":
+        return
+    for row in rows:
+        row["changes"] = [c for c in row["changes"]
+                          if not (isinstance(c, dict) and c.get("key") in BLIND_FIELDS)]
 
 
 def _events(instance):

@@ -26,7 +26,7 @@ from django.db import IntegrityError, transaction
 from django.db.models import Count, OuterRef, Q, Subquery
 from django.utils import timezone
 
-from starrp.core.text import only_digits
+from starrp.core import documents
 from starrp.models import (
     Account, CashDiscrepancy, CosmosFinding, Customer, Product, ProductVariant, Sale, StockBalance, StockDocument,
     StockMovement, Supplier, UserProfile,
@@ -42,29 +42,8 @@ Severity = CosmosFinding.Severity
 
 
 # ── validação de documento ─────────────────────────────────────────────────
-def _cpf_ok(digits):
-    if len(digits) != 11 or digits == digits[0] * 11:
-        return False
-    for size in (9, 10):
-        total = sum(int(d) * w for d, w in zip(digits[:size], range(size + 1, 1, -1), strict=False))
-        if (total * 10 % 11) % 10 != int(digits[size]):
-            return False
-    return True
-
-
-def _cnpj_ok(digits):
-    if len(digits) != 14 or digits == digits[0] * 14:
-        return False
-    for size, weights in ((12, [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]), (13, [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2])):
-        rest = sum(int(d) * w for d, w in zip(digits[:size], weights, strict=True)) % 11
-        if (0 if rest < 2 else 11 - rest) != int(digits[size]):
-            return False
-    return True
-
-
 def document_ok(value):
-    digits = only_digits(value or "")
-    return not digits or (_cpf_ok(digits) if len(digits) == 11 else _cnpj_ok(digits))
+    return not documents.clean(value) or documents.is_valid_document(value)
 
 
 def _money(value):

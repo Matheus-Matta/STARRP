@@ -4,7 +4,7 @@ from decimal import Decimal
 from django.db import transaction
 from rest_framework import serializers
 
-from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, tenant_serializer
+from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, WholeRow, tenant_serializer
 from starrp.core.text import only_digits
 from starrp.models import (
     Asset, AssetDisposal, AssetMovement, AuditLog, Brand, Category, Coupon, DiscountTable, FiscalConfig, FiscalProfile,
@@ -18,7 +18,7 @@ from starrp.services import integrations
 PromotionSerializer = tenant_serializer(Promotion, exclude=["products"])
 
 
-class RuleProductSerializer(serializers.Serializer):
+class RuleProductSerializer(WholeRow, serializers.Serializer):
     """Produto da regra (alvo "Produtos"), com o "por" do encarte opcional."""
 
     product = TenantPrimaryKeyField(Product)
@@ -26,7 +26,7 @@ class RuleProductSerializer(serializers.Serializer):
     compare_at_price = serializers.DecimalField(max_digits=14, decimal_places=2, required=False, allow_null=True)
 
 
-class RuleSerializer(serializers.Serializer):
+class RuleSerializer(WholeRow, serializers.Serializer):
     """Regra DENTRO da tabela de desconto. A ordem da lista é a prioridade (1ª = topo)."""
 
     id = serializers.UUIDField(required=False)
@@ -139,7 +139,29 @@ PromotionProductSerializer = tenant_serializer(PromotionProduct)
 CouponSerializer = tenant_serializer(Coupon)
 
 # Fiscal
-FiscalProfileSerializer = tenant_serializer(FiscalProfile)
+
+
+class FiscalProfileSerializer(TenantSerializer):
+    class Meta:
+        model = FiscalProfile
+        fields = "__all__"
+        read_only_fields = ["is_system"]
+
+    def _single_default(self, profile):
+        if profile.is_default:  # um padrão por conta
+            FiscalProfile.all_objects.filter(account=profile.account, is_default=True).exclude(pk=profile.pk).update(
+                is_default=False)
+        return profile
+
+    @transaction.atomic
+    def create(self, validated_data):
+        return self._single_default(super().create(validated_data))
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        return self._single_default(super().update(instance, validated_data))
+
+
 FiscalSeriesSerializer = tenant_serializer(FiscalSeries)
 InvoiceItemSerializer = tenant_serializer(InvoiceItem)
 
@@ -275,8 +297,42 @@ class InboundNFeSerializer(TenantSerializer):
 
 # Patrimônio
 AssetSerializer = tenant_serializer(Asset, read_only=("qr_token", "source_nfe_cancelled"))
-AssetMovementSerializer = tenant_serializer(AssetMovement)
-AssetDisposalSerializer = tenant_serializer(AssetDisposal)
+
+
+class AssetMovementSerializer(TenantSerializer):
+    class Meta:
+        model = AssetMovement
+        fields = "__all__"
+        read_only_fields = ["from_location", "moved_by"]
+
+    @transaction.atomic
+    def create(self, validated_data):
+        asset = Asset.all_objects.select_for_update().get(pk=validated_data["asset"].pk)
+        if asset.status == Asset.Status.DISPOSED:
+            raise serializers.ValidationError({"asset": "Este bem já foi baixado."})
+        moved = super().create({**validated_data, "from_location": asset.location,
+                                "moved_by": validated_data.get("created_by")})
+        asset.location = moved.to_location
+        asset.save(update_fields=["location", "updated_at"])
+        return moved
+
+
+
+
+class AssetDisposalSerializer(TenantSerializer):
+    class Meta:
+        model = AssetDisposal
+        fields = "__all__"
+
+    @transaction.atomic
+    def create(self, validated_data):
+        disposal = super().create(validated_data)
+        lost = disposal.kind in (AssetDisposal.Kind.LOST, AssetDisposal.Kind.STOLEN)
+        Asset.all_objects.filter(pk=disposal.asset_id).update(
+            status=Asset.Status.LOST if lost else Asset.Status.DISPOSED)
+        return disposal
+
+
 
 # Dispositivos
 PrinterSerializer = tenant_serializer(Printer)
@@ -285,7 +341,24 @@ ScaleReadingSerializer = tenant_serializer(ScaleReading)
 PrintJobSerializer = tenant_serializer(PrintJob, read_only=("serial", "printed_at", "printed_by"))
 
 # Sistema
-AuditLogSerializer = tenant_serializer(AuditLog)
+
+
+class AuditLogSerializer(TenantSerializer):
+    """As mesmas regras do histórico do registro: sem custo para quem não o vê e sem a gaveta (fechamento cego)."""
+
+    class Meta:
+        model = AuditLog
+        fields = "__all__"
+
+    def to_representation(self, instance):
+        from starrp.services.history import visible_changes
+
+        data = super().to_representation(instance)
+        request = self.context.get("request")
+        changes = data.get("changes")
+        if request is not None and isinstance(changes, dict) and isinstance(changes.get("fields"), list):
+            data["changes"] = {**changes, "fields": visible_changes(changes["fields"], instance.entity, request.user)}
+        return data
 NotificationSerializer = tenant_serializer(Notification, read_only=("read_at",))
 ImportJobSerializer = tenant_serializer(
     ImportJob, read_only=("status", "total", "created_count", "updated_count", "errors", "finished_at")

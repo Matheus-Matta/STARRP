@@ -9,9 +9,29 @@
 from decimal import Decimal
 
 from django.core.validators import MinValueValidator
+from django.db import transaction
 from rest_framework import serializers
 
 READ_ONLY_BASE = ("id", "account", "created_at", "updated_at", "created_by", "updated_by", "deleted_at")
+
+
+class WholeRow:
+    """Linha de uma lista que vem COMPLETA (regras, faixas): no PATCH do pai o obrigatório e o padrão valem do mesmo
+    jeito. O DRF pula os dois, e a linha vazia virava erro 500."""
+
+    def to_internal_value(self, data):
+        attrs = super().to_internal_value(data)
+        missing = {}
+        for name, field in self.fields.items():
+            if field.read_only or field.source in attrs:
+                continue
+            if field.required:
+                missing[name] = [field.error_messages["required"]]
+            elif field.default is not serializers.empty:
+                attrs[field.source] = field.default
+        if missing:
+            raise serializers.ValidationError(missing)
+        return attrs
 
 
 class TenantSerializer(serializers.ModelSerializer):
@@ -40,6 +60,19 @@ class TenantSerializer(serializers.ModelSerializer):
         if hasattr(instance, "children_count"):  # cadastro em árvore (`TenantViewSet.tree_parent`)
             data["children_count"] = instance.children_count
         return data
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        """Relê a linha TRAVADA antes de gravar (R4-08): o `save()` escreve todas as colunas, e o que mudou entre a
+        leitura e aqui (documento confirmado, baixa do lote, custo médio) voltava ao valor velho."""
+        model = type(instance)
+        manager = getattr(model, "all_objects", model._base_manager)
+        instance.refresh_from_db(from_queryset=manager.select_for_update(of=("self",)))
+        self.check_locked(instance, validated_data)
+        return super().update(instance, validated_data)
+
+    def check_locked(self, instance, validated_data):
+        """Regra que depende do estado ATUAL do registro (com a trava)."""
 
     def get_uniqueness_extra_kwargs(self, field_names, declared_fields, extra_kwargs):
         # O DRF lê as UniqueConstraint e marca os campos delas como OBRIGATÓRIOS —

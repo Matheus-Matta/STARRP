@@ -60,9 +60,11 @@ AssetViewSet = crud("AssetViewSet", Asset, s.AssetSerializer, "assets", Module.A
                     filterset_fields=["status", "location", "product", "responsible"],
                     search_fields=["code", "description", "serial_number"])
 AssetMovementViewSet = crud("AssetMovementViewSet", AssetMovement, s.AssetMovementSerializer, "assets",
-                            Module.ASSETS, filterset_fields=["asset"])
+                            Module.ASSETS, filterset_fields=["asset"],  # histórico: corrige-se com outro movimento
+                            http_method_names=["get", "post", "head", "options"])
 AssetDisposalViewSet = crud("AssetDisposalViewSet", AssetDisposal, s.AssetDisposalSerializer, "assets",
-                            Module.ASSETS, filterset_fields=["kind"])
+                            Module.ASSETS, filterset_fields=["kind"],  # editar ou excluir não devolvia o bem
+                            http_method_names=["get", "post", "head", "options"])
 
 PrinterViewSet = crud("PrinterViewSet", Printer, s.PrinterSerializer, "devices",
                       filterset_fields=["terminal", "purpose", "is_active"])
@@ -79,7 +81,7 @@ PrintJobViewSet = crud("PrintJobViewSet", PrintJob, s.PrintJobSerializer, "devic
 AuditLogViewSet = crud("AuditLogViewSet", AuditLog, s.AuditLogSerializer, "users", base=ReadOnlyTenantViewSet,
                        filterset_fields=["entity", "object_id", "action", "actor"], audit=False)
 ImportJobViewSet = crud("ImportJobViewSet", ImportJob, s.ImportJobSerializer, "settings",
-                        http_method_names=["get", "post", "head", "options"])
+                        http_method_names=["get", "head", "options"])  # nada processa uma importação criada por aqui
 
 
 class NotificationViewSet(TenantViewSet):

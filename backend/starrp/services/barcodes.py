@@ -11,7 +11,7 @@ O código pode ser também o de um VOLUME (caixa "Vol 2/3"): o resultado traz a
 variante e o volume, para a conferência saber que leu só uma parte da unidade.
 """
 from dataclasses import dataclass
-from decimal import Decimal
+from decimal import ROUND_CEILING, Decimal
 
 from starrp.models import ProductBarcode, ProductVariant, ProductVolume, StockLot, StoreRule
 
@@ -20,6 +20,7 @@ from starrp.models import ProductBarcode, ProductVariant, ProductVolume, StockLo
 class CodeResult:
     variant: ProductVariant
     quantity: Decimal | None = None
+    total: Decimal | None = None  # etiqueta de PREÇO: o valor impresso (é ele que o cliente paga)
     volume: ProductVolume | None = None
     lot: StockLot | None = None
 
@@ -34,21 +35,32 @@ def ean_check_digit_ok(code):
     return (10 - total % 10) % 10 == check
 
 
-def _scale_label(account_id, code):
-    # A regra (de uma filial ativa) que usa etiqueta de balança; a padrão primeiro.
-    store = StoreRule.all_objects.filter(account_id=account_id, deleted_at__isnull=True,
+def _scale_rule(account_id, store):
+    """A regra da FILIAL que está lendo; sem filial, a de uma filial ativa que usa etiqueta."""
+    if store is not None:
+        return store.rule if store.rule and store.rule.scale_barcode_mode else None
+    return StoreRule.all_objects.filter(account_id=account_id, deleted_at__isnull=True,
                                          stores__deleted_at__isnull=True).exclude(scale_barcode_mode="").first()
-    if store is None or not ean_check_digit_ok(code) or not code.startswith(store.scale_barcode_prefix):
+
+
+def _scale_label(account_id, code, store=None):
+    rule = _scale_rule(account_id, store)
+    if rule is None or not ean_check_digit_ok(code) or not code.startswith(rule.scale_barcode_prefix):
         return None
     plu, value = code[1:7].lstrip("0"), Decimal(code[7:12])
     variant = _alive(account_id).filter(scale_code=plu).first()
     if variant is None:
         return None
-    if store.scale_barcode_mode == StoreRule.ScaleBarcode.WEIGHT:
+    if rule.scale_barcode_mode == StoreRule.ScaleBarcode.WEIGHT:
         return CodeResult(variant, (value / 1000).quantize(Decimal("0.001")))
-    if not variant.price:
+    from starrp.services import pricing
+
+    price = pricing.quote(variant, getattr(store, "pk", None)).unit_price  # o preço que será cobrado (com promoção)
+    if not price:
         return CodeResult(variant)
-    return CodeResult(variant, (value / 100 / variant.price).quantize(Decimal("0.001")))
+    total = value / 100
+    # Para CIMA no grama: peso × preço nunca fica abaixo da etiqueta (a sobra de centavos sai no desconto da linha).
+    return CodeResult(variant, (total / price).quantize(Decimal("0.001"), rounding=ROUND_CEILING), total=total)
 
 
 def _alive(account_id):
@@ -57,7 +69,7 @@ def _alive(account_id):
     ).select_related("product")
 
 
-def resolve_code(account_id, code):
+def resolve_code(account_id, code, store=None):
     code = (code or "").strip()
     if not code:
         return None
@@ -71,7 +83,7 @@ def resolve_code(account_id, code):
     ).select_related("variant__product").first()
     if volume is not None:
         return CodeResult(volume.variant, volume=volume)
-    scale = _scale_label(account_id, code)
+    scale = _scale_label(account_id, code, store)
     if scale is not None:
         return scale
     variant = _alive(account_id).filter(sku=code).first()

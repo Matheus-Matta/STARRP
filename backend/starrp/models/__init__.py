@@ -147,6 +147,7 @@ from starrp.models.finance import (  # noqa: F401
     TitleStatus,
     FinancialTitle,
     Installment,
+    InstallmentSettlement,
     FinancialTransaction,
     RecurringTitle,
 )

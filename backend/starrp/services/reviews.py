@@ -159,7 +159,10 @@ def generate_link(sale, kind, user=None, days=LINK_DAYS):
     if kind not in kinds_of(sale):
         raise BusinessError("Esta venda não teve entrega para avaliar." if kind == ReviewLink.Kind.DELIVERY
                             else "Tipo de avaliação inválido.", code="review_kind")
-    days = int(days or LINK_DAYS)
+    try:
+        days = int(days or LINK_DAYS)
+    except (TypeError, ValueError, OverflowError):
+        raise BusinessError("Prazo do link inválido.", code="link_days") from None
     if not 1 <= days <= LINK_DAYS_MAX:
         raise BusinessError(f"O link vale de 1 a {LINK_DAYS_MAX} dias.", code="link_days")
     Sale.all_objects.select_for_update().filter(pk=sale.pk).first()  # dois cliques não geram dois links

@@ -69,7 +69,7 @@ def _cubic(variant):
     return sizes[0] * sizes[1] * sizes[2] / Decimal(1_000_000)
 
 
-def count_scans(account_id, codes):
+def count_scans(account_id, codes, store=None):
     """Leituras -> unidades completas por variante. Código não reconhecido volta em `unknown`.
 
     Código da variante (EAN/SKU) vale 1 unidade inteira; código de volume vale
@@ -77,7 +77,7 @@ def count_scans(account_id, codes):
     """
     whole, boxes, found, unknown = defaultdict(int), defaultdict(lambda: defaultdict(int)), {}, []
     for code in codes:
-        result = resolve_code(account_id, code)
+        result = resolve_code(account_id, code, store)
         if result is None:
             unknown.append(code)
             continue
@@ -108,7 +108,7 @@ def conference(document, codes):
     for item in document.items.filter(deleted_at__isnull=True).select_related("variant__product"):
         expected[item.variant_id] += item.quantity
         variants[item.variant_id] = item.variant
-    counts, unknown = count_scans(document.account_id, codes)
+    counts, unknown = count_scans(document.account_id, codes, document.store)
     rows = []
     for pk in list(variants) + [pk for pk in counts if pk not in variants]:
         count = counts.get(pk, {})

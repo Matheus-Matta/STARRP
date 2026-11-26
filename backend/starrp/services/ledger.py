@@ -57,7 +57,46 @@ def reverse(tx, *, description="", user=None):
             deleted_at__isnull=True).exclude(pk=tx.pk)
         for other in others:
             _reverse_one(other, description=description, user=user)
-    return _reverse_one(tx, description=description, user=user)
+    reversal = _reverse_one(tx, description=description, user=user)
+    _check_credit(tx)
+    if tx.source_key.startswith("commission_payout:"):
+        _reopen_commissions(tx)
+    return reversal
+
+
+def _reopen_commissions(tx):
+    """Estornou o pagamento da comissão: ela volta a ficar a pagar (R7-N7)."""
+    from starrp.models import Commission
+
+    reopened = Commission.all_objects.filter(payout=tx, status=Commission.Status.PAID).update(
+        status=Commission.Status.PENDING, paid_at=None, payout=None)
+    if not reopened:
+        raise BusinessError("Este pagamento de comissão é anterior ao vínculo com as comissões: não dá para reabri-las. "
+                            "Faça o acerto por um lançamento avulso.", code="commission_payout_old")
+
+
+def _check_credit(tx):
+    """Estornar a entrada que virou crédito JÁ USADO deixava a parcela paga sem dinheiro nenhum (R5-03)."""
+    from starrp.services import finance
+
+    party = {"customer": tx.customer} if tx.customer_id else {"supplier": tx.supplier} if tx.supplier_id else None
+    if party is None or tx.installment_id or tx.category_id:
+        return
+    if tx.kind != (IN if tx.customer_id else OUT):
+        return  # só a entrada que DEU crédito; estornar uma saída devolve crédito
+    (owner,) = party.values()
+    type(owner).all_objects.select_for_update().filter(pk=owner.pk).first()
+    if finance.party_credit(**party) < 0:
+        raise BusinessError("O crédito deste lançamento já foi usado numa baixa: desfaça a baixa antes de estornar.",
+                            code="credit_used")
+
+
+def legs(tx):
+    """As duas pernas de uma transferência (ou só o lançamento)."""
+    if not tx.transfer_pair:
+        return [tx]
+    return list(FinancialTransaction.all_objects.filter(account_id=tx.account_id, transfer_pair=tx.transfer_pair,
+                                                        deleted_at__isnull=True).select_related("financial_account"))
 
 
 def _reverse_one(tx, *, description="", user=None):
@@ -66,7 +105,8 @@ def _reverse_one(tx, *, description="", user=None):
     return FinancialTransaction.all_objects.create(
         account_id=tx.account_id, financial_account=tx.financial_account, kind=OUT if tx.kind == IN else IN,
         amount=tx.amount, date=timezone.localdate(), description=(description or f"Estorno: {tx.description}")[:255],
-        category=tx.category, reversal_of=tx, sale=tx.sale, payment=tx.payment, cash_session=tx.cash_session,
+        category=tx.category, reversal_of=tx, transfer_pair=tx.transfer_pair, installment=tx.installment, sale=tx.sale,
+        payment=tx.payment, cash_session=tx.cash_session,
         customer=tx.customer, supplier=tx.supplier, operator=user, created_by=user,
     )
 
@@ -86,7 +126,7 @@ def transfer(source, target, amount, *, description, user=None, date=None):
 # ── Caixa ─────────────────────────────────────────────────────────────────────
 
 def session_opened(session):
-    post(vault_for(session.store), OUT, session.opening_amount, date=session.opened_at.date(),
+    post(vault_for(session.store), OUT, session.opening_amount, date=timezone.localdate(session.opened_at),
          description=f"Troco de abertura - {session.register.name}", source_key=f"cash_open:{session.pk}",
          cash_session=session, user=session.opened_by)
 
@@ -103,7 +143,7 @@ def session_movement(movement):
 
 
 def session_closed(session):
-    post(vault_for(session.store), IN, session.counted_amount or 0, date=(session.closed_at or timezone.now()).date(),
+    post(vault_for(session.store), IN, session.counted_amount or 0, date=timezone.localdate(session.closed_at),
          description=f"Fechamento - {session.register.name}", source_key=f"cash_close:{session.pk}",
          cash_session=session, user=session.closed_by)
 
@@ -127,7 +167,7 @@ def payment_received(payment, user=None):
     account = method.financial_account
     post(account, IN, payment.amount, description=f"Venda {sale.number} - {method.name}", category_key="sales",
          source_key=f"payment:{payment.pk}", sale=sale, payment=payment, user=user)
-    fee = payment.amount * method.fee_percent / 100
+    fee = payment.amount * payment.fee_rate / 100
     post(account, OUT, fee, description=f"Taxa {method.name} - venda {sale.number}", category_key="card_fees",
          source_key=f"payment_fee:{payment.pk}", sale=sale, payment=payment, user=user)
 

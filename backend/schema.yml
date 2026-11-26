@@ -8650,6 +8650,41 @@ paths:
               schema:
                 $ref: '#/components/schemas/Installment'
           description: ''
+  /api/v1/finance/installments/{id}/unsettle/:
+    post:
+      operationId: v1_finance_installments_unsettle_create
+      description: 'Desfaz a baixa lançada por engano: {"reason"}.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este Parcela.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Installment'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Installment'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Installment'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Installment'
+          description: ''
   /api/v1/finance/installments/bulk/:
     get:
       operationId: v1_finance_installments_bulk_retrieve
@@ -9186,6 +9221,41 @@ paths:
           multipart/form-data:
             schema:
               $ref: '#/components/schemas/PatchedFinancialTitle'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FinancialTitle'
+          description: ''
+  /api/v1/finance/titles/{id}/cancel/:
+    post:
+      operationId: v1_finance_titles_cancel_create
+      description: Cancela um título lançado à mão que não tem baixa.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: Um string UUID que identifica este Título financeiro.
+        required: true
+      tags:
+      - v1
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FinancialTitle'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/FinancialTitle'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/FinancialTitle'
+        required: true
       security:
       - jwtAuth: []
       responses:
@@ -10653,31 +10723,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedImportJobList'
           description: ''
-    post:
-      operationId: v1_imports_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-        required: true
-      security:
-      - jwtAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ImportJob'
-          description: ''
   /api/v1/imports/{id}/:
     get:
       operationId: v1_imports_retrieve
@@ -10730,31 +10775,6 @@ paths:
       operationId: v1_imports_bulk_retrieve
       tags:
       - v1
-      security:
-      - jwtAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ImportJob'
-          description: ''
-    post:
-      operationId: v1_imports_bulk_create
-      tags:
-      - v1
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-          application/x-www-form-urlencoded:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-          multipart/form-data:
-            schema:
-              $ref: '#/components/schemas/ImportJob'
-        required: true
       security:
       - jwtAuth: []
       responses:
@@ -13885,7 +13905,7 @@ paths:
     post:
       operationId: v1_pdv_authorize_create
       description: |-
-        POST /pdv/authorize/ {"code", "percent"?, "approval"?}: o PDV desktop monta a venda no
+        POST /pdv/authorize/ {"code", "percent"?, "what"?, "approval"?}: o PDV desktop monta a venda no
         PC e só pergunta aqui se a ação passa (e quem autorizou). Mesmos erros da venda no servidor
         (`*approval_required`, `approval_invalid`): o diálogo do gerente funciona igual.
 
@@ -22955,12 +22975,14 @@ components:
         from_location:
           type: string
           format: uuid
+          readOnly: true
           nullable: true
         to_location:
           type: string
           format: uuid
         moved_by:
           type: integer
+          readOnly: true
           nullable: true
       required:
       - account
@@ -22968,7 +22990,9 @@ components:
       - created_at
       - created_by
       - deleted_at
+      - from_location
       - id
+      - moved_by
       - to_location
       - updated_at
       - updated_by
@@ -23123,6 +23147,8 @@ components:
       - value
     AuditLog:
       type: object
+      description: 'As mesmas regras do histórico do registro: sem custo para quem
+        não o vê e sem a gaveta (fechamento cego).'
       properties:
         id:
           type: string
@@ -24199,6 +24225,12 @@ components:
           format: uuid
           readOnly: true
           nullable: true
+        payout:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: Lançamento que pagou (estornado, volta a pagar).
       required:
       - account
       - amount
@@ -24208,6 +24240,7 @@ components:
       - deleted_at
       - id
       - paid_at
+      - payout
       - rate
       - sale
       - sale_item
@@ -25330,6 +25363,7 @@ components:
           readOnly: true
         installment_count:
           type: integer
+          maximum: 420
           minimum: 1
           writeOnly: true
           default: 1
@@ -25929,6 +25963,7 @@ components:
           maxLength: 120
         is_system:
           type: boolean
+          readOnly: true
           description: 'Pré-pronto do sistema: ajusta, mas não exclui.'
         ncm:
           type: string
@@ -26003,6 +26038,7 @@ components:
       - created_by
       - deleted_at
       - id
+      - is_system
       - name
       - updated_at
       - updated_by
@@ -26231,19 +26267,16 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,12}(?:\.\d{0,2})?$
-          title: Valor
         lead_days:
           type: integer
-          maximum: 9223372036854775807
+          maximum: 3650
           minimum: 0
-          format: int64
-          nullable: true
-          description: Vazio = prazo da tabela.
         label:
           type: string
           description: 'Ex.: "Zona Sul", "Grande SP".'
           maxLength: 80
       required:
+      - value
       - zip_end
       - zip_start
     FrequencyEnum:
@@ -30514,12 +30547,14 @@ components:
         from_location:
           type: string
           format: uuid
+          readOnly: true
           nullable: true
         to_location:
           type: string
           format: uuid
         moved_by:
           type: integer
+          readOnly: true
           nullable: true
     PatchedAttribute:
       type: object
@@ -30928,6 +30963,12 @@ components:
           format: uuid
           readOnly: true
           nullable: true
+        payout:
+          type: string
+          format: uuid
+          readOnly: true
+          nullable: true
+          description: Lançamento que pagou (estornado, volta a pagar).
     PatchedCompetitorPrice:
       type: object
       properties:
@@ -31593,6 +31634,7 @@ components:
           readOnly: true
         installment_count:
           type: integer
+          maximum: 420
           minimum: 1
           writeOnly: true
           default: 1
@@ -31985,6 +32027,7 @@ components:
           maxLength: 120
         is_system:
           type: boolean
+          readOnly: true
           description: 'Pré-pronto do sistema: ajusta, mas não exclui.'
         ncm:
           type: string
@@ -35371,6 +35414,12 @@ components:
           type: string
           format: date-time
           readOnly: true
+        fee_percent:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,4})?$
+          readOnly: true
+          nullable: true
         metadata:
           title: Metadados
         store:
@@ -35390,6 +35439,7 @@ components:
           nullable: true
       required:
       - created_at
+      - fee_percent
       - id
       - method
       - method_kind

@@ -189,6 +189,11 @@ def cancel(invoice, reason):
     data = answer.data
     if answer.trusted and data.get("situacao") == "cancelada":
         return str(data.get("protocolo") or "")
+    # Resposta perdida, ou o evento já tinha sido aceito antes: a SEFAZ diz se a nota está cancelada.
+    check = call("/v1/nfe/consultar", {
+        **context(config, issuer_of(config, invoice.store), invoice.document_model), "chave": invoice.access_key})
+    if check.trusted and check.data.get("situacao") == "cancelada":
+        return str(check.data.get("protocolo") or "")
     reason_text = " ".join(filter(None, [str(data.get("cstat") or ""),
                                          str(data.get("motivo") or data.get("mensagem") or "")])).strip()
     raise StateConflict(f"A SEFAZ não confirmou o cancelamento: {reason_text or 'sem resposta do comunicador'}. "

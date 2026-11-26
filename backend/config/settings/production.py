@@ -56,7 +56,7 @@ SPECTACULAR_SETTINGS = {**SPECTACULAR_SETTINGS, "SERVE_PERMISSIONS": ["rest_fram
 # Postgres; o pool reaproveita poucas conexões entre as requisições. O pool exige CONN_MAX_AGE = 0.
 # Conta: processos do uvicorn (WEB_CONCURRENCY) × POSTGRES_POOL_MAX (+ worker/beat do Celery) < max_connections.
 DATABASES["default"]["CONN_MAX_AGE"] = 0
-DATABASES["default"]["CONN_HEALTH_CHECKS"] = False
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True  # o pool testa a conexão antes de entregar (Postgres reiniciado)
 DATABASES["default"]["OPTIONS"] = {"pool": {
     "min_size": config("POSTGRES_POOL_MIN", default=2, cast=int),
     "max_size": config("POSTGRES_POOL_MAX", default=10, cast=int),
@@ -100,7 +100,7 @@ SECURE_HSTS_INCLUDE_SUBDOMAINS = config("SECURE_HSTS_INCLUDE_SUBDOMAINS", defaul
 # http → https também no Django (o proxy já redireciona; isto cobre acesso direto). O healthcheck do
 # container fala http com o próprio processo, então /health/ fica de fora.
 SECURE_SSL_REDIRECT = config("SECURE_SSL_REDIRECT", default=True, cast=bool)
-SECURE_REDIRECT_EXEMPT = [r"^health/$"]
+SECURE_REDIRECT_EXEMPT = [r"^health/$", r"^health/ready/$"]
 
 # Erros de produção no Sentry (opcional): sem SENTRY_DSN, nada é enviado. Sem dados pessoais (PII).
 SENTRY_DSN = config("SENTRY_DSN", default="")

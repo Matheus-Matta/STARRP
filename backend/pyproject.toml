@@ -1,7 +1,7 @@
 [tool.ruff]
 line-length = 120
 target-version = "py312"
-exclude = ["migrations", ".venv"]
+exclude = ["migrations", ".venv", "redteam_tmp"]
 
 [tool.ruff.lint]
 # Entra o que aponta defeito; fica de fora o que só discorda de estilo.

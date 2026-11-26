@@ -18,10 +18,11 @@
 from django.db.models import Q
 from django.utils import timezone
 from rest_framework.decorators import action
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from starrp.core.errors import BusinessError, StateConflict
+from starrp.core.parsers import ObjectJSONParser
 from starrp.core.viewsets import TenantViewSet
 from starrp.models import FiscalConfig, InboundNFe, InboundNFeItem
 from starrp.models.platform import Module
@@ -39,7 +40,7 @@ class InboundNFeViewSet(TenantViewSet):
     permission_code = "inbound_nfe"
     required_module = Module.INBOUND_NFE
     http_method_names = ["get", "patch", "post", "head", "options"]
-    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    parser_classes = [ObjectJSONParser, MultiPartParser, FormParser]
     select_related = ("store", "fiscal_config")
     prefetch_related = ("items__variant__product", "items__variant__volumes", "stock_documents")
     filterset_fields = {"receiving": ["exact"], "fiscal_status": ["exact"], "manifestation": ["exact"],

@@ -89,6 +89,8 @@ class Payment(StoreModel):
     reference = models.CharField(max_length=120, blank=True, help_text="txid do PIX ou outra referência.")
     idempotency_key = models.CharField(max_length=120, null=True, blank=True)
     paid_at = models.DateTimeField(auto_now_add=True)
+    # A taxa da forma NO DIA: mudar a taxa hoje não reescreve os meses fechados.
+    fee_percent = models.DecimalField(max_digits=7, decimal_places=4, null=True, blank=True, editable=False)
     metadata = models.JSONField(default=dict, blank=True)
 
     class Meta:
@@ -103,3 +105,12 @@ class Payment(StoreModel):
 
     def __str__(self):
         return f"{self.method} {self.amount}"
+
+    @property
+    def fee_rate(self):
+        return self.method.fee_percent if self.fee_percent is None else self.fee_percent
+
+    def save(self, *args, **kwargs):
+        if self._state.adding and self.fee_percent is None and self.method_id:
+            self.fee_percent = self.method.fee_percent
+        super().save(*args, **kwargs)

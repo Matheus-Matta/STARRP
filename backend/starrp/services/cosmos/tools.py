@@ -407,14 +407,16 @@ def _preview(ctx, method, path, body, campos):
     if method in {"PATCH", "PUT"}:
         result = bridge.call(ctx.actor, "GET", path)
         current = result.data if result.ok and isinstance(result.data, dict) else {}
-    rows = []
+    rows = _target_rows(ctx, method, path)
     for key, value in body.items():
         if current and key in current and _show(current[key]) == _show(value):
             continue  # não muda: não polui o cartão
         row = {"label": _label(key, labels), "value": _show(value)}
         if isinstance(value, (list, dict)) and value:
             # Aninhado (itens, endereços): o resumo ("3 itens") não basta — o detalhe vai inteiro (rodada 1, P-18).
-            row["detail"] = json.dumps(value, ensure_ascii=False, default=str)[:4000]
+            row["detail"] = json.dumps(value, ensure_ascii=False, default=str)  # inteiro: o limite do corpo é conferido antes
+        elif isinstance(value, str) and len(value) > 150:
+            row["detail"] = value  # o resumo corta: o texto inteiro vai no detalhe
         if notes.get(key) and notes[key] != row["value"]:
             row["note"] = notes[key]
         if current and key in current:
@@ -425,6 +427,20 @@ def _preview(ctx, method, path, body, campos):
     rows += [{"label": str(c["rotulo"])[:80], "value": str(c.get("valor", ""))[:300]}
              for c in given if (not c.get("chave") or c["chave"] not in body) and str(c["rotulo"]).lower() not in shown]
     return rows
+
+
+TARGET = re.compile(r"^(.*?/(?:[0-9a-f]{8}-[0-9a-f-]{27}|\d+))(?:/|$)")
+
+
+def _target_rows(ctx, method, path):
+    """QUAL registro muda, pelo servidor: numa exclusão ou ação o cartão mostrava só o título que o modelo escreveu."""
+    match = TARGET.match(path.strip("/"))
+    if match is None or getattr(ctx, "actor", None) is None:
+        return []
+    result = bridge.call(ctx.actor, "GET", f"{match.group(1)}/")
+    data = result.data if result.ok and isinstance(result.data, dict) else {}
+    name = next((str(data[k]) for k in ("display_name", "name", "description", "title", "number", "code", "sku") if data.get(k)), "")
+    return [{"label": "Registro", "value": name[:200]}] if name else []
 
 
 def _api_message(data):

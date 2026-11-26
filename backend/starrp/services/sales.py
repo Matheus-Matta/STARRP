@@ -110,46 +110,65 @@ def _limit_of(user_id):
 
 
 def _granted_percent(item):
-    """Até quanto o desconto deste item já foi autorizado: o limite de quem o autorizou."""
-    by = (item.metafields or {}).get("_discount_by")
-    return _limit_of(by) if by else Decimal("0")
+    """Até quanto o desconto deste item já foi autorizado (R4-17: o percentual pedido, não o limite de quem
+    autorizou). Item antigo, sem o percentual gravado: o limite de quem autorizou."""
+    meta = item.metafields or {}
+    if meta.get("_discount_ok") is not None:
+        return Decimal(str(meta["_discount_ok"]))
+    return _limit_of(meta["_discount_by"]) if meta.get("_discount_by") else Decimal("0")
+
+
+def _combined_percent(sale, header):
+    """Desconto do item MAIS o do cabeçalho sobre o preço cheio: 5% no item e 5% na venda não é "5%"."""
+    gross = sum((cents(i.quantity * i.unit_price) for i in sale.items.filter(status=SaleItem.Status.ACTIVE)), Decimal("0"))
+    return _discount_percent(gross - (sale.subtotal - Decimal(header)), gross)
+
+
+def discount_grant(sale, amount):
+    """O que fica gravado na venda quando o desconto do cabeçalho é autorizado."""
+    return {"percent": str(_discount_percent(amount, sale.subtotal)), "combined": str(_combined_percent(sale, amount))}
 
 
 def check_discounts(sale, user, items):
-    """Na conclusão, nenhum desconto pode estar acima do limite de quem o autorizou (R2-05): tirar ou reduzir
-    itens depois do desconto mudava o percentual sem pedir ninguém. Venda feita no PDV sem servidor já
-    aconteceu e tem a própria conferência (`offline_sales._Checks`)."""
+    """Na conclusão, nenhum desconto pode estar acima do que foi autorizado (R2-05, R4-17): tirar ou reduzir
+    itens depois do desconto mudava o percentual sem pedir ninguém."""
     from starrp.core.errors import ApprovalRequired
     from starrp.services.approvals import max_discount_percent
 
-    if (sale.metafields or {}).get("_offline_id"):
-        return
-    own = max_discount_percent(user)
-
-    def allowed(*ids):
-        return max([own, *(_limit_of(pk) for pk in set(ids) if pk)]) + Decimal("0.01")
+    own, slack = max_discount_percent(user), Decimal("0.01")
 
     def refuse(percent, limit):
         raise ApprovalRequired(f"Desconto de {percent:.2f}% acima do limite autorizado ({limit:.2f}%): refaça o "
                                "desconto com a autorização do gerente.", code="discount_approval_required")
 
     if sale.discount and sale.subtotal:
-        percent = _discount_percent(sale.discount, sale.subtotal)
-        if percent > own + Decimal("0.01") and percent > (limit := allowed(sale.discount_approved_by_id)):
-            refuse(percent, limit)
+        granted = (sale.metafields or {}).get("_discount_ok")
+        if granted is None:  # desconto dado antes desta regra
+            limit = _limit_of(sale.discount_approved_by_id) if sale.discount_approved_by_id else Decimal("0")
+            granted = {"percent": limit, "combined": max(limit, _combined_percent(sale, sale.discount))}
+        for key, percent in (("percent", _discount_percent(sale.discount, sale.subtotal)),
+                             ("combined", _combined_percent(sale, sale.discount))):
+            limit = max(own, Decimal(str(granted[key])))
+            if percent > limit + slack:
+                refuse(percent, limit)
     for item in items:
         if not item.discount:
             continue
         percent = _discount_percent(item.discount, cents(item.quantity * item.unit_price))
-        if percent > own + Decimal("0.01"):
-            limit = allowed((item.metafields or {}).get("_discount_by"), item.created_by_id)
-            if percent > limit:
-                refuse(percent, limit)
+        limit = max(own, _granted_percent(item))
+        if percent > limit + slack and "_discount_ok" not in (item.metafields or {}) and item.created_by_id:
+            limit = max(limit, _limit_of(item.created_by_id))  # item anterior a esta regra
+            by = (item.metafields or {}).get("_approved_by")
+            limit = max(limit, _limit_of(by)) if by else limit
+        if percent > limit + slack:
+            refuse(percent, limit)
 
 
 @transaction.atomic
 def add_item(sale, variant, quantity, user, *, seller=None, discount=Decimal("0"), unit_price=None,
-             approval=None, metafields=None, parent_item=None, check_sellable=True):
+             approval=None, metafields=None, parent_item=None, check_sellable=True, label_total=None):
+    """`label_total`: o valor impresso na etiqueta da balança. O peso tem 3 casas, então peso × preço erra centavos:
+    a diferença (menos de 1 g) sai como desconto da linha e o cliente paga o da etiqueta."""
     sale = lock_open(sale)
     if check_sellable:  # venda feita no PDV sem servidor já aconteceu: produto inativado depois vale
         _check_sellable(variant)
@@ -168,11 +187,16 @@ def add_item(sale, variant, quantity, user, *, seller=None, discount=Decimal("0"
     gross = cents(quantity * price)
     if price > 0 and gross == 0:  # B-08: 0,001 un. saía de graça
         raise BusinessError("Quantidade pequena demais: o item sairia por R$ 0,00.", code="quantity_invalid")
+    rounding = gross - cents(label_total) if label_total is not None and not discount else Decimal("0")
     # "_" é do sistema (quem autorizou o desconto): nunca vem de quem chama a API.
     metafields = {k: v for k, v in (metafields or {}).items() if not str(k).startswith("_")}
     if discount:
-        approver = authorize_discount(user, sale.account, sale.store, _discount_percent(discount, gross), approval)
-        metafields["_discount_by"] = approver.pk
+        percent = _discount_percent(discount, gross)
+        approver = authorize_discount(user, sale.account, sale.store, percent, approval)
+        metafields.update(_discount_by=approver.pk, _discount_ok=str(percent))
+    elif 0 < rounding <= cents(price * Decimal("0.001")) + CENTS:
+        discount = rounding
+        metafields.update(_discount_by=user.pk, _discount_ok=str(_discount_percent(rounding, gross)))
     position = (sale.items.aggregate(m=Max("position"))["m"] or 0) + 1
     item = SaleItem.all_objects.create(
         account_id=sale.account_id,
@@ -232,7 +256,7 @@ def update_item(item, user, *, quantity=None, discount=None, approval=None):
         percent = _discount_percent(item.discount, gross)
         if discount is not None or percent > _granted_percent(item):
             approver = authorize_discount(user, sale.account, sale.store, percent, approval)
-            item.metafields = {**(item.metafields or {}), "_discount_by": approver.pk}
+            item.metafields = {**(item.metafields or {}), "_discount_by": approver.pk, "_discount_ok": str(percent)}
     item.total = max(gross - item.discount, Decimal("0"))
     item.updated_by = user
     item.save()
@@ -374,6 +398,8 @@ def set_metafields(sale, user, values):
     """Metacampos do pedido (os do sistema, com "_", ficam como estão)."""
     from starrp.services import metafields
 
+    if values and not isinstance(values, dict):
+        raise BusinessError("Metacampos em formato inválido.", code="metafields_invalid")
     sale = Sale.all_objects.select_for_update().get(pk=sale.pk)
     clean = metafields.clean(sale.account_id, "sale", {k: v for k, v in (values or {}).items() if not k.startswith("_")})
     system = {k: v for k, v in (sale.metafields or {}).items() if k.startswith("_")}
@@ -386,10 +412,14 @@ def set_metafields(sale, user, values):
 def set_discount(sale, user, amount, approval=None):
     sale = lock_open(sale)
     amount = cents(amount)
-    approver = authorize_discount(user, sale.account, sale.store, _discount_percent(amount, sale.subtotal), approval)
+    grant = discount_grant(sale, amount)
+    percent = max(Decimal(grant["percent"]), Decimal(grant["combined"])) if amount else Decimal("0")
+    approver = authorize_discount(user, sale.account, sale.store, percent, approval)
     sale.discount = amount
     sale.discount_approved_by = approver if amount else None
-    sale.save(update_fields=["discount", "discount_approved_by", "updated_at"])
+    sale.metafields = {**{k: v for k, v in (sale.metafields or {}).items() if k != "_discount_ok"},
+                       **({"_discount_ok": grant} if amount else {})}
+    sale.save(update_fields=["discount", "discount_approved_by", "metafields", "updated_at"])
     return recalculate(sale)
 
 
@@ -415,12 +445,12 @@ def recalculate(sale):
     """Subtotal, cupom (reavaliado: sai se a venda deixou de se qualificar) e total."""
     subtotal = sale.items.filter(status=SaleItem.Status.ACTIVE).aggregate(t=Sum("total"))["t"] or Decimal("0")
     sale.subtotal = cents(subtotal)
+    sale.discount = min(sale.discount, sale.subtotal)
     if sale.coupon_id:
         try:
             sale.coupon_discount = coupons.evaluate(sale.coupon, sale, sale.subtotal)
         except CouponRejected:
             sale.coupon, sale.coupon_code, sale.coupon_discount = None, "", Decimal("0")
-    sale.discount = min(sale.discount, sale.subtotal)
     sale.total = max(sale.subtotal - sale.discount - sale.coupon_discount + sale.freight, Decimal("0"))
     sale.save(update_fields=["subtotal", "discount", "coupon", "coupon_code", "coupon_discount", "total",
                              "updated_at"])
@@ -445,18 +475,32 @@ def header_discount(sale):
 def net_total(item, quantity):
     """Quanto foi pago por `quantity` unidades deste item. Arredonda UMA vez, no fim: por unidade, 1.000 un. de
     R$ 0,045 viravam R$ 50 em vez de R$ 45."""
-    sale = item.sale
     if not item.quantity:
         return Decimal("0")
-    share = (item.total / sale.subtotal * header_discount(sale)) if sale.subtotal else Decimal("0")
-    return cents((item.total - share) * Decimal(quantity) / item.quantity)
+    return cents((item.total - header_share(item)) * Decimal(quantity) / item.quantity)
+
+
+def header_share(item):
+    """A parte do item no desconto do cabeçalho, em centavos, por soma acumulada: as partes somam EXATAMENTE o
+    desconto (3 × R$ 10 com R$ 10 de desconto devolviam R$ 20,01 de R$ 20,00)."""
+    sale = item.sale
+    header = min(header_discount(sale), sale.subtotal)
+    if not sale.subtotal or not header:
+        return Decimal("0")
+    memo = sale.__dict__.get("_header_shares")
+    if memo is None or memo[0] != (header, sale.subtotal):  # uma leitura por venda (a devolução pergunta por item)
+        shares, running = {}, Decimal("0")
+        for pk, total in sale.items.filter(status=SaleItem.Status.ACTIVE).order_by(
+                "position", "created_at", "pk").values_list("pk", "total"):
+            before, running = running, running + total
+            shares[pk] = cents(header * running / sale.subtotal) - cents(header * before / sale.subtotal)
+        memo = sale.__dict__["_header_shares"] = ((header, sale.subtotal), shares)
+    return memo[1].get(item.pk, cents(item.total / sale.subtotal * header))
 
 
 def net_unit_price(item):
     """Preço pago por unidade com os descontos do cabeçalho rateados: é a base
     da devolução e da comissão (o cliente não recebe de volta o que não pagou)."""
     sale = item.sale
-    header = header_discount(sale)
-    share = (item.total / sale.subtotal * header) if sale.subtotal else Decimal("0")
-    return cents((item.total - share) / item.quantity) if item.quantity else Decimal("0")
+    return cents((item.total - header_share(item)) / item.quantity) if item.quantity and sale.subtotal else Decimal("0")
 

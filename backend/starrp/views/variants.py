@@ -44,7 +44,7 @@ class VariantViewSet(ReadOnlyTenantViewSet):
     @action(detail=False, methods=["get"], url_path="lookup")
     def lookup(self, request):
         """PDV: lê código de barras, SKU, etiqueta de balança ou de volume e devolve o preço vigente."""
-        result = resolve_code(request.account.id, request.query_params.get("code", ""))
+        result = resolve_code(request.account.id, request.query_params.get("code", ""), request.store)
         if result is None:
             raise BusinessError("Produto não encontrado para este código.", code="product_not_found")
         quote = pricing.quote(result.variant, getattr(request.store, "pk", None))
@@ -52,6 +52,7 @@ class VariantViewSet(ReadOnlyTenantViewSet):
         data.update({"current_price": str(quote.unit_price), "list_price": str(quote.list_price),
                      "promotion": str(quote.promotion.pk) if quote.promotion else None,
                      "scale_quantity": str(result.quantity) if result.quantity is not None else None,
+                     "scale_total": str(result.total) if result.total is not None else None,
                      "volume": result.volume.number if result.volume else None})
         return Response(data)
 

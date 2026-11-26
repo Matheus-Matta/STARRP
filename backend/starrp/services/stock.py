@@ -20,6 +20,10 @@ from starrp.services import wms
 ENTRY_KINDS_WITH_COST = {StockMovement.Kind.PURCHASE, StockMovement.Kind.INITIAL}
 
 
+# Estorno e contagem acertam o lote mesmo que ele fique devendo; o resto não tira do lote mais do que ele tem.
+LOT_MAY_OWE = {StockMovement.Kind.REVERSAL, StockMovement.Kind.ADJUSTMENT}
+
+
 def settings_for(account_id, store_id=None):
     """A regra de estoque da filial (`Store.stock_rule`); sem filial, a padrão da conta."""
     from starrp.services import rules
@@ -103,7 +107,11 @@ def _record(variant, warehouse, quantity, kind, *, lot, unit_cost, source_key, a
         _update_average_cost(variant, quantity, Decimal(unit_cost))
     cost = Decimal(unit_cost if unit_cost is not None else variant.average_cost)
     if lot is not None:
+        # Relido com trava (R4-16): o mesmo lote em duas linhas, cada uma com a sua cópia, baixava uma vez só.
+        lot.quantity = StockLot.all_objects.select_for_update(of=("self",)).only("quantity").get(pk=lot.pk).quantity
         lot.quantity += quantity
+        if lot.quantity < 0 and quantity < 0 and kind not in LOT_MAY_OWE:
+            raise InsufficientStock(f"O lote {lot.lot_number or lot.code} de {variant.display_name} não tem essa quantidade.")
         lot.status = StockLot.Status.DEPLETED if lot.quantity <= 0 else StockLot.Status.AVAILABLE
         lot.save(update_fields=["quantity", "status", "updated_at"])
     balance.quantity = new_balance

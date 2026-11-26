@@ -113,12 +113,13 @@ def bind_user(request):
 
 def _revoked(request, profile):
     """Token emitido antes de `sessions_revoked_at` (troca/redefinição de senha) não vale mais (S-12)."""
-    revoked = getattr(profile, "sessions_revoked_at", None)
+    from starrp.services import sessions
+
     token = getattr(request, "auth", None)
-    if revoked is None or token is None or not hasattr(token, "get"):
+    if token is None or not hasattr(token, "get"):
         return False
-    issued = token.get("iat")
-    return issued is not None and int(issued) < int(revoked.timestamp())
+    revoked, issued = sessions.revoked_at(request.user, profile), token.get("iat")
+    return revoked is not None and issued is not None and int(issued) < revoked
 
 
 def _account_for(request):

@@ -26,6 +26,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from starrp.core.errors import BusinessError, StateConflict
+from starrp.core.values import user_pk
 from starrp.core.viewsets import TenantViewSet
 from starrp.models import CustomerAddress, FreightTable, Invoice, Payment, PaymentMethod, Sale, SaleItem
 from starrp.serializers import operations as ops
@@ -42,7 +43,7 @@ def _seller(store, user_id):
     """Vendedor precisa ter acesso à loja da venda (não vende em filial alheia)."""
     if not user_id:
         return None
-    profile = sellers_of(store).filter(user_id=user_id).first()
+    profile = sellers_of(store).filter(user_id=user_pk(user_id)).first()
     if profile is None:
         raise BusinessError("Vendedor não encontrado nesta filial.", code="seller_not_found")
     return profile.user
@@ -93,6 +94,8 @@ class SaleViewSet(TenantViewSet):
     def create(self, request, *args, **kwargs):
         if request.store is None:
             raise BusinessError("Selecione a filial (header X-Store-ID).", code="store_required")
+        if not request.store.is_active:
+            raise BusinessError(f"A filial {request.store.name} está desativada.", code="store_inactive")
         data = self._body(s.SaleCreateSerializer)
         sale = sales.create(
             request.store, request.user, channel=data["channel"], terminal=data.get("terminal"),
@@ -117,11 +120,12 @@ class SaleViewSet(TenantViewSet):
     def items(self, request, pk=None):
         sale = self.get_object()
         data = self._body(s.AddItemSerializer)
-        variant, quantity = data.get("variant"), data.get("quantity")
+        variant, quantity, label_total = data.get("variant"), data.get("quantity"), None
         if variant is None:
-            found = resolve_code(request.account.id, data["code"])
+            found = resolve_code(request.account.id, data["code"], sale.store)
             if found is None:
                 raise BusinessError("Produto não encontrado para este código.", code="product_not_found")
+            label_total = found.total if not quantity else None
             variant, quantity = found.variant, quantity or found.quantity
         parent = None
         if data.get("service_for"):
@@ -131,7 +135,7 @@ class SaleViewSet(TenantViewSet):
             item = sales.add_item(
                 sale, variant, quantity or (parent.quantity if parent else Decimal("1")), request.user, seller=seller,
                 discount=data["discount"], unit_price=data.get("unit_price"), approval=data.get("approval"),
-                metafields=data.get("metafields"), parent_item=parent,
+                metafields=data.get("metafields"), parent_item=parent, label_total=label_total,
             )
             for service in data.get("services") or []:
                 sales.add_item(sale, service, item.quantity, request.user, seller=seller, parent_item=item)
@@ -235,6 +239,9 @@ class SaleViewSet(TenantViewSet):
         if changed and sale.payments.filter(status="approved", method__kind__in=("installment_plan", "store_credit")).exists():
             raise StateConflict("Tire o crediário/vale-troca já lançado antes de trocar o cliente.",
                                 code="customer_has_payment")
+        if changed and sale.shipping_address_id:  # a entrega era na casa do cliente de antes (R6-B11)
+            sale.shipping_address, sale.freight = None, Decimal("0")
+            sale.metafields = {k: v for k, v in (sale.metafields or {}).items() if k != sales.DELIVERY_KEY}
         for field in ("customer", "customer_document", "customer_name", "notes"):
             if field in data:
                 setattr(sale, field, data[field])

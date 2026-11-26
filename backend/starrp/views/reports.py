@@ -9,7 +9,7 @@ from rest_framework.exceptions import PermissionDenied
 from starrp.core.costs import cost_measure_requested, redact_report, sees_costs
 from starrp.core.permissions import has_permission_code
 from starrp.core.text import decimals_as_text
-from starrp.services import cash_flow, dre, report_book, report_export, reports
+from starrp.services import cash, cash_flow, dre, report_book, report_export, reports
 
 # nome → (função, permissão, módulo). Relatório financeiro exige o módulo Financeiro.
 REPORTS = {
@@ -24,6 +24,15 @@ REPORTS = {
     "balances": (cash_flow.balances, "finance.view", "finance"),
     "aging": (cash_flow.aging, "finance.view", "finance"),
 }
+
+
+def _blind(request, name):
+    """Fechamento cego: com o turno aberto, o operador não vê o recebido por forma (a gaveta sairia daí)."""
+    if not cash.counting(request.user, request.account):
+        return False
+    if name in {"payment-methods", "recebimentos"} or request.query_params.get("method"):
+        raise PermissionDenied("Feche o seu turno de caixa para ver os recebimentos por forma de pagamento.")
+    return True
 
 
 def _run(request, handler):
@@ -48,7 +57,11 @@ class ReportView(APIView):
         handler, permission, module = REPORTS[name]
         if not has_permission_code(request.user, permission) or not request.account.has_module(module):
             raise PermissionDenied("Sem acesso a este relatório (permissão ou módulo).")
-        return Response(decimals_as_text(_run(request, handler)))
+        blind = _blind(request, name)
+        data = _run(request, handler)
+        if blind and isinstance(data, dict):
+            data.pop("by_payment_method", None)
+        return Response(decimals_as_text(data))
 
 
 class ReportBookView(APIView):
@@ -62,6 +75,7 @@ class ReportBookView(APIView):
         handler, permission, module = report_book.BOOK[name]
         if not has_permission_code(request.user, permission) or not request.account.has_module(module):
             raise PermissionDenied("Sem acesso a este relatório (permissão ou módulo).")
+        _blind(request, name)
         return Response(decimals_as_text(_run(request, handler)))
 
 
@@ -78,9 +92,10 @@ class ReportBookExportView(APIView):
         handler, permission, module = report_book.BOOK[name]
         if not has_permission_code(request.user, permission) or not request.account.has_module(module):
             raise PermissionDenied("Sem acesso a este relatório (permissão ou módulo).")
+        _blind(request, name)
         params = request.query_params
         report = _run(request, handler)
-        block = int(params["bloco"]) if params.get("bloco", "").isdigit() else None
+        block = int(params["bloco"]) if params.get("bloco", "").isascii() and params.get("bloco", "").isdigit() else None
         if block is not None and block >= len(report["blocks"]):
             block = None
         tab = params.get("aba") or None

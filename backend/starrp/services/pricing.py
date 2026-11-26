@@ -39,7 +39,7 @@ class PriceQuote:
 
 def shelf_price(variant):
     manual = variant.promotional_price
-    if manual is not None and manual > 0:
+    if manual is not None and 0 < manual < (variant.price or 0):  # "promocional" maior que o preço não é promoção
         return Decimal(manual)
     return Decimal(variant.price or 0)
 
@@ -93,6 +93,8 @@ def _offer(rule, variant, link):
     typed_compare = getattr(link, "compare_at_price", None)
     compare_at = Decimal(typed_compare) if typed_compare is not None else shelf
     price = rule.price_for(shelf, link)
+    if price > shelf:
+        return None  # promoção nunca aumenta o preço, nem com "de/por" digitado
     if price >= compare_at and typed_compare is None:
         return None
     return Offer(price=price, compare_at=compare_at, promotion=rule)

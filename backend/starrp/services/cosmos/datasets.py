@@ -13,8 +13,9 @@ from dataclasses import dataclass, field
 from datetime import timedelta
 from decimal import Decimal
 
-from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, Q, Sum, Value
+from django.db.models import Avg, Count, DecimalField, ExpressionWrapper, F, FloatField, Q, Sum, Value
 from django.db.models.functions import (
+    Cast,
     Coalesce, ExtractHour, ExtractWeekDay, NullIf, TruncDate, TruncMonth, TruncWeek,
 )
 from django.utils import timezone
@@ -24,7 +25,9 @@ from starrp.models import (
     CosmosFinding, Customer, FinancialTitle, Installment, PriceCheck, Product, ProductVariant, Sale, SaleItem, SaleReturn, StockBalance,
 )
 from starrp.models.base import store_scope_q
+from starrp.services import finance, reports
 from starrp.services.reports import period
+from starrp.services.store_access import SALE_CHILDREN, scope_own_sales
 
 MONEY = DecimalField(max_digits=18, decimal_places=2)
 WEEKDAYS = {1: "Dom", 2: "Seg", 3: "Ter", 4: "Qua", 5: "Qui", 6: "Sex", 7: "Sáb"}
@@ -82,7 +85,7 @@ def _choices(model, name):
 ITEM_COST = ExpressionWrapper(F("unit_cost") * F("quantity"), output_field=MONEY)
 BALANCE_COST = ExpressionWrapper(F("quantity") * F("variant__average_cost"), output_field=MONEY)
 BALANCE_PRICE = ExpressionWrapper(F("quantity") * F("variant__price"), output_field=MONEY)
-OPEN_AMOUNT = ExpressionWrapper(F("amount") - F("paid_amount"), output_field=MONEY)
+OPEN_AMOUNT = finance.OPEN_BALANCE
 
 DATASETS = {
     "vendas": Dataset(
@@ -112,7 +115,7 @@ DATASETS = {
          "filial": Dim("Filial", "sale__store__name")},
         {"quantidade": Metric("Quantidade", Sum("quantity"), "quantity"), "faturamento": Metric("Faturamento", Sum("total")),
          "custo": Metric("Custo", Sum(ITEM_COST), permission=COSTS),
-         "margem": Metric("Margem", Sum(F("total") - ITEM_COST, output_field=MONEY), permission=COSTS),
+         "margem": Metric("Margem", reports.NET - Cast(Sum(ITEM_COST), FloatField()), permission=COSTS),
          "descontos": Metric("Descontos", Sum("discount")),
          "vendas": Metric("Vendas", Count("sale", distinct=True), "number")},
         {"filial": "sale__store", "vendedor": "sale__seller", "produto": "variant__product",
@@ -207,7 +210,7 @@ DATASETS = {
          "categoria": Dim("Categoria", "title__category__name"), "cliente": Dim("Cliente", "title__customer__name"),
          "fornecedor": Dim("Fornecedor", "title__supplier__name"), "filial": Dim("Filial", "title__store__name")},
         {"valor": Metric("Valor", Sum("amount")), "pago": Metric("Pago", Sum("paid_amount")),
-         "em_aberto": Metric("Em aberto", Sum(OPEN_AMOUNT)), "quantidade": Metric("Parcelas", Count("id"), "number")},
+         "em_aberto": Metric("Em aberto", Sum(OPEN_AMOUNT, filter=Q(status__in=["open", "partial"]))), "quantidade": Metric("Parcelas", Count("id"), "number")},
         {"tipo": "title__kind", "situacao": "status", "filial": "title__store", "cliente": "title__customer",
          "fornecedor": "title__supplier", "categoria": "title__category"},
     ),
@@ -241,6 +244,9 @@ def _can_metric(actor, metric):
 
 def _can(actor, ds):
     if ds.module != "base" and not (actor.user.is_superuser or actor.account.has_module(ds.module)):
+        return False
+    # Venda e o que sai dela: além do relatório, a permissão de ver vendas (R5-17).
+    if ds.model.__name__ in {"Sale", *SALE_CHILDREN} and not has_permission_code(actor.user, "sales.view"):
         return False
     return has_permission_code(actor.user, ds.permission)
 
@@ -290,7 +296,7 @@ def query(actor, dataset, metrics=None, group_by=None, filters=None, date_from=N
         if name not in ds.dims:
             raise DatasetError(f"Agrupamento '{name}' não existe em {dataset}. Opções: {', '.join(ds.dims)}.")
 
-    qs = ds.model.objects.filter(ds.base)
+    qs = scope_own_sales(ds.model.objects.filter(ds.base))  # vendedor: só as vendas dele
     if actor.store is not None:
         q = store_scope_q(ds.model, [actor.store.pk])
         qs = qs.filter(q) if q is not None else qs

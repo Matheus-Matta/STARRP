@@ -22,13 +22,21 @@ COPIED = ("legal_name", "state_registration", "municipal_registration", "phone",
           "complement", "district", "city", "city_ibge", "state", "zip_code")
 
 
+def existing_for(store):
+    """Os dados fiscais que já existem com o CNPJ desta filial."""
+    cnpj = only_digits(store.cnpj)
+    if len(cnpj) != 14:
+        return None
+    return FiscalConfig.all_objects.filter(account_id=store.account_id, cnpj=cnpj, deleted_at__isnull=True).first()
+
+
 @transaction.atomic
 def from_store(store, user=None):
     """Dados fiscais da loja: acha pelo CNPJ ou cria com o cadastro dela, e vincula."""
     cnpj = only_digits(store.cnpj)
     if len(cnpj) != 14:
         raise BusinessError(f"A filial {store.name} não tem CNPJ válido para os dados fiscais.", code="store_no_cnpj")
-    config = FiscalConfig.all_objects.filter(account_id=store.account_id, cnpj=cnpj, deleted_at__isnull=True).first()
+    config = existing_for(store)
     if config is None:
         config = FiscalConfig.all_objects.create(
             account_id=store.account_id, name=store.name, trade_name=store.name, cnpj=cnpj, created_by=user,

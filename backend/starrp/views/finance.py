@@ -16,6 +16,7 @@ from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404
 from django.utils.dateparse import parse_date
 from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.response import Response
 
 from starrp.core.bulk import bulk_action
@@ -34,12 +35,29 @@ class FinanceView:
     required_module = Module.FINANCE
     permission_code = "finance"
 
+    def check_account(self, account):
+        """Quem é de algumas filiais não TIRA dinheiro da conta da rede (R4-10): o lançamento direto já era
+        recusado, mas transferência, baixa e estorno passavam."""
+        check_network_account(self.request, account)
+
+
+def check_network_account(request, account):
+    if account is not None and account.store_id is None and getattr(request, "allowed_store_ids", None) is not None:
+        raise PermissionDenied("Esta conta é da rede; só quem acessa todas as filiais movimenta o dinheiro dela.")
+
 
 class FinancialAccountViewSet(FinanceView, TenantViewSet):
     model = FinancialAccount
     serializer_class = s.FinancialAccountSerializer
     filterset_fields = ["kind", "is_active", "store"]
     search_fields = ["name", "bank_code", "agency"]
+
+    def perform_destroy(self, instance):
+        if instance.payment_methods.filter(deleted_at__isnull=True).exists():
+            raise StateConflict("Esta conta recebe uma forma de pagamento: troque a conta dela antes de excluir.")
+        if instance.opening_balance + cash_flow._net(instance.transactions.filter(deleted_at__isnull=True)):
+            raise StateConflict("Esta conta tem saldo: transfira o dinheiro antes de excluir.")
+        super().perform_destroy(instance)
 
     @action(detail=True, methods=["get"])
     def statement(self, request, pk=None):
@@ -48,6 +66,7 @@ class FinancialAccountViewSet(FinanceView, TenantViewSet):
     @action(detail=False, methods=["post"])
     def transfer(self, request):
         source = get_object_or_404(FinancialAccount.objects, pk=request.data.get("source"))
+        self.check_account(source)
         target = get_object_or_404(FinancialAccount.objects, pk=request.data.get("target"))
         try:
             amount = Decimal(str(request.data.get("amount") or "0"))
@@ -92,6 +111,11 @@ class FinancialTitleViewSet(FinanceView, TenantViewSet):
         ensure_recurring(request.account)  # sem Celery, as recorrências do dia nascem aqui
         return super().list(request, *args, **kwargs)
 
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        """Cancela um título lançado à mão que não tem baixa."""
+        return Response(self.get_serializer(finance.cancel_title(self.get_object(), request.user)).data)
+
 
 class InstallmentViewSet(FinanceView, TenantViewSet):
     model = Installment
@@ -106,8 +130,21 @@ class InstallmentViewSet(FinanceView, TenantViewSet):
         body = s.SettleSerializer(data=request.data, context=self.get_serializer_context())
         body.is_valid(raise_exception=True)
         data = dict(body.validated_data)
-        part = finance.settle(self.get_object(), data.pop("financial_account", None), data.pop("amount"), request.user,
+        installment = self.get_object()
+        if installment.title.kind == FinancialTitle.Kind.PAYABLE:
+            self.check_account(data.get("financial_account"))
+        part = finance.settle(installment, data.pop("financial_account", None), data.pop("amount"), request.user,
                               **data)
+        return Response(self.get_serializer(part).data)
+
+    @action(detail=True, methods=["post"])
+    @transaction.atomic
+    def unsettle(self, request, pk=None):
+        """Desfaz a baixa lançada por engano: {"reason"}."""
+        installment = self.get_object()
+        for tx in installment.transactions.filter(reversal_of__isnull=True).select_related("financial_account"):
+            self.check_account(tx.financial_account)
+        part = finance.unsettle(installment, request.user, request.data.get("reason"))
         return Response(self.get_serializer(part).data)
 
     @action(detail=True, methods=["get"])
@@ -140,11 +177,18 @@ class FinancialTransactionViewSet(FinanceView, TenantViewSet):
         done, skipped = 0, []
         for tx in queryset:
             reason = ("já é um estorno" if tx.reversal_of_id else "baixa de parcela: estorne pelo título"
-                      if tx.installment_id else "já estornado" if tx.reversals.exists() else "")
+                      if tx.installment_id else "já estornado" if tx.reversals.exists()
+                      else "conta da rede" if self._restricted() and any(
+                          leg.financial_account.store_id is None for leg in ledger.legs(tx)) else "")
             if reason:
                 skipped.append({"id": str(tx.pk), "label": tx.description, "reason": reason})
                 continue
-            ledger.reverse(tx, description=str(params.get("reason") or ""), user=request.user)
+            try:
+                with transaction.atomic():
+                    ledger.reverse(tx, description=str(params.get("reason") or ""), user=request.user)
+            except BusinessError as error:
+                skipped.append({"id": str(tx.pk), "label": tx.description, "reason": str(error.detail)})
+                continue
             done += 1
         return {"affected": done, "skipped": skipped}
 
@@ -155,7 +199,9 @@ class FinancialTransactionViewSet(FinanceView, TenantViewSet):
         if tx.reversal_of_id:
             raise StateConflict("Este lançamento já é um estorno.")
         if tx.installment_id:
-            raise StateConflict("Baixa de parcela se estorna pelo título.")
+            raise StateConflict("Baixa de parcela se desfaz na parcela (Desfazer baixa).")
+        for leg in ledger.legs(tx):  # transferência: estornar uma perna desfaz as duas
+            self.check_account(leg.financial_account)
         reversal = ledger.reverse(tx, description=str(request.data.get("reason") or ""), user=request.user)
         return Response(self.get_serializer(reversal).data, status=201)
 

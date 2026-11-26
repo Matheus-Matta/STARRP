@@ -203,6 +203,24 @@ class Installment(TenantModel):
         return self.amount + self.interest + self.fine - self.discount - self.paid_amount
 
 
+class InstallmentSettlement(TenantModel):
+    """Cada baixa da parcela (e o desfazer dela, com valores negativos), na data em que aconteceu: a DRE de um mês
+    não muda quando a parcela recebe outra baixa no mês seguinte."""
+
+    store_lookup = "installment__title__store"
+
+    installment = models.ForeignKey(Installment, related_name="settlements", on_delete=models.CASCADE)
+    date = models.DateField(db_index=True)
+    amount = MoneyField()
+    interest = MoneyField()
+    fine = MoneyField()
+    discount = MoneyField()
+    credit = MoneyField()
+
+    class Meta:
+        ordering = ["date", "created_at"]
+
+
 class FinancialTransaction(TenantModel):
     store_lookup = "financial_account__store"
     store_shared_when_null = True

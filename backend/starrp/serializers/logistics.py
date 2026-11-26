@@ -1,11 +1,12 @@
 """Tabelas de frete (com as faixas de CEP aninhadas) e definições de metacampos."""
 import re
+from decimal import Decimal
 
 from django.db import transaction
 from django.utils.text import slugify
 from rest_framework import serializers
 
-from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer
+from starrp.core.serializers import TenantPrimaryKeyField, TenantSerializer, WholeRow
 from starrp.core.text import only_digits
 from starrp.models import Category, FreightTable, FreightZipRange, MetafieldDefinition
 
@@ -17,11 +18,14 @@ def _zip(value):
     return digits
 
 
-class FreightZipRangeSerializer(serializers.ModelSerializer):
+class FreightZipRangeSerializer(WholeRow, serializers.ModelSerializer):
     id = serializers.UUIDField(required=False)
     # Aceita "01000-000": o tamanho é conferido depois de tirar a máscara.
     zip_start = serializers.CharField(max_length=9)
     zip_end = serializers.CharField(max_length=9)
+    # Frete negativo era desconto sem autorização (R7-N4).
+    value = serializers.DecimalField(max_digits=14, decimal_places=2, min_value=Decimal("0"))
+    lead_days = serializers.IntegerField(min_value=0, max_value=3650, required=False)
 
     class Meta:
         model = FreightZipRange

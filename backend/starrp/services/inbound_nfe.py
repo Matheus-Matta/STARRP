@@ -12,16 +12,19 @@ Voltar passos: desvincular / voltar a usar um item, descartar a conferência
 contas a pagar). Mexer num vínculo com a conferência aberta descarta o rascunho
 (ele não moveu estoque) e a entrada nasce de novo com os itens certos.
 """
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 
 from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from starrp.core.errors import BusinessError, StateConflict
 from starrp.core.text import only_digits
-from starrp.models import InboundNFe, InboundNFeItem, ProductBarcode, Supplier, SupplierProduct
+from starrp.models import InboundNFe, InboundNFeItem, NFeEvent, ProductBarcode, Supplier, SupplierProduct
 from starrp.services import catalog, nfe_xml
 
+#: Situação pelo protocolo: autorizada (inclusive fora do prazo) ou uso denegado.
+STATUS = {**dict.fromkeys(("100", "150"), InboundNFe.FiscalStatus.AUTHORIZED),
+          **dict.fromkeys(("110", "301", "302", "303"), InboundNFe.FiscalStatus.DENIED)}
 ADDRESS = ("street", "number", "district", "city", "city_ibge", "state", "zip_code")
 
 
@@ -67,19 +70,19 @@ def import_xml(store, content, user, *, config=None, nsu=""):
         "xml_status": InboundNFe.XmlStatus.AVAILABLE, "full_xml": content.decode("utf-8", errors="replace"),
         "installments": data.installments, "fiscal_config": config,
     }
+    status = STATUS.get(data.status_code, InboundNFe.FiscalStatus.UNKNOWN)
     if existing is not None:
         nfe = existing
         for name, value in fields.items():
             setattr(nfe, name, value)
-        if data.status_code == "100" and nfe.fiscal_status == InboundNFe.FiscalStatus.UNKNOWN:
-            nfe.fiscal_status = InboundNFe.FiscalStatus.AUTHORIZED
+        if nfe.fiscal_status == InboundNFe.FiscalStatus.UNKNOWN or status == InboundNFe.FiscalStatus.DENIED:
+            nfe.fiscal_status = status
         nfe.save()
     else:
         try:
             nfe = InboundNFe.all_objects.create(
                 account_id=store.account_id, store=store, access_key=data.access_key, nsu=nsu, created_by=user,
-                fiscal_status=InboundNFe.FiscalStatus.AUTHORIZED if data.status_code == "100" else
-                InboundNFe.FiscalStatus.UNKNOWN, **fields,
+                fiscal_status=status, **fields,
             )
         except IntegrityError:
             raise StateConflict("Esta nota já foi importada.", code="nfe_duplicate") from None
@@ -93,6 +96,13 @@ def import_xml(store, content, user, *, config=None, nsu=""):
             freight=item.freight, insurance=item.insurance, other_expenses=item.other_expenses,
             tax_data=item.taxes, lots=item.lots,
         )
+    cancelled = NFeEvent.all_objects.filter(account_id=nfe.account_id, access_key=nfe.access_key, event_code="110111",
+                                            deleted_at__isnull=True).first()
+    if cancelled is not None:  # o cancelamento chegou antes da nota
+        from starrp.services import dfe
+
+        dfe.cancel_nfe(nfe, protocol=cancelled.protocol)
+        NFeEvent.all_objects.filter(pk=cancelled.pk, nfe__isnull=True).update(nfe=nfe)
     auto_match(nfe)
     _entry_when_ready(nfe, user)
     return nfe
@@ -115,6 +125,8 @@ def match_item(item, supplier):
         return link.variant, link.conversion_factor
     variant = _by_barcode(item.account_id, item.barcode)
     if variant is not None:
+        if item.barcode == item.taxable_barcode and item.taxable_quantity and item.taxable_quantity != item.quantity:
+            return None, Decimal("1")  # o MESMO código na caixa e na unidade: o fator é com a pessoa
         return variant, Decimal("1")
     variant = _by_barcode(item.account_id, item.taxable_barcode)
     if variant is not None and item.quantity:
@@ -170,10 +182,16 @@ def map_item(item, variant, factor, user):
 def product_from_item(item, user, *, price=None):
     """Cadastra o produto simples a partir do item da nota (nome, NCM, CEST, EAN) e vincula.
     Devolve a variante (a única, a padrão)."""
+    try:
+        price = Decimal(str(price or 0))
+    except InvalidOperation:
+        raise BusinessError("Preço inválido.", code="price_invalid") from None
+    if not price.is_finite() or not 0 <= price < Decimal("1e10"):
+        raise BusinessError("Preço inválido.", code="price_invalid")
     sku = f"{only_digits(item.nfe.supplier_document)[-4:]}-{item.supplier_code}"[:60]
     code = item.taxable_barcode or item.barcode
     variant = catalog.create_simple(
-        item.account_id, user, name=item.description[:180], sku=sku, price=Decimal(price or 0),
+        item.account_id, user, name=item.description[:180], sku=sku, price=price,
         barcodes=[code] if code else [], ncm=item.ncm, cest=item.cest,
     )
     factor = (item.taxable_quantity / item.quantity) if item.taxable_barcode and item.quantity else Decimal("1")

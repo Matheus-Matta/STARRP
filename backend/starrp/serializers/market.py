@@ -3,7 +3,7 @@ from decimal import Decimal
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from starrp.core.costs import HideCostFieldsMixin
+from starrp.core.costs import COST_LABEL, HideCostFieldsMixin
 from starrp.core.serializers import TenantSerializer
 from starrp.models import Brand, Category, CompetitorPrice, MarketOffer, PriceCheck, Product
 from starrp.services.market import sources
@@ -36,6 +36,14 @@ class PriceCheckSerializer(HideCostFieldsMixin, serializers.ModelSerializer):
                   "needs_review", "reason", "status", "status_display", "decided_by", "decided_by_name",
                   "decided_at", "applied_price", "previous_price", "updated_at")
         read_only_fields = fields
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if self._hides_costs():  # os textos dizem o custo, a margem e o preço mínimo (R5-07)
+            for name in ("reason", "ai_note"):
+                if COST_LABEL.search(str(data.get(name) or "")):
+                    data[name] = ""
+        return data
 
     def get_source(self, obj) -> str:
         return sources.public_sources(obj.source)

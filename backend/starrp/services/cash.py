@@ -42,6 +42,13 @@ def sees_drawer(user):
     return has_permission_code(user, "cash.approve")
 
 
+def counting(user, account):
+    """Operador com turno ainda não conferido e sem `cash.approve`: os totais por forma entregariam a gaveta (R5-08)."""
+    return not sees_drawer(user) and CashSession.all_objects.filter(
+        account=account, opened_by=user, deleted_at__isnull=True).exclude(
+        status__in=[CashSession.Status.CLOSED, CashSession.Status.CANCELLED]).exists()
+
+
 def can_operate(register, user):
     """Abre, movimenta e fecha o caixa o operador vinculado a ele (`operator`); quem aprova
     (gerente, supervisor) assume qualquer caixa da loja."""
@@ -56,6 +63,12 @@ def _require_operator(register, user, session=None):
                                "em Financeiro → Caixas.")
 
 
+#: Movimentos que somados dão o esperado na gaveta (R4-13): o operador vê as sangrias e os suprimentos dele.
+BLIND_KINDS = {CashMovement.Kind.SALE, CashMovement.Kind.REFUND, CashMovement.Kind.SALE.value,
+               CashMovement.Kind.REFUND.value}
+BLIND_FIELDS = ("expected_amount", "difference", "closing_report", "opening_expected", "opening_difference", "approval_reason")
+
+
 def blind(data):
     """Tira da resposta (relatório/extrato do turno) o que revela a gaveta: só fica o troco
     inicial e o contado; a venda em dinheiro e a diferença também saem."""
@@ -66,6 +79,10 @@ def blind(data):
         data["by_payment_method"] = [r for r in data["by_payment_method"] if r.get("method__kind") != "cash"]
     if isinstance(data.get("occurrences"), list):
         data["occurrences"] = [o for o in data["occurrences"] if o.get("kind") != "Diferença de caixa"]
+    if isinstance(data.get("session"), dict):  # o motivo traz o valor da diferença (R5-07)
+        data["session"] = {k: ("" if k == "approval_reason" else v) for k, v in data["session"].items()}
+    if isinstance(data.get("movements"), list):
+        data["movements"] = [m for m in data["movements"] if m.get("kind") not in BLIND_KINDS]
     # O total vendido menos as formas que não são dinheiro daria o esperado na gaveta: some também.
     if isinstance(data.get("sales"), dict):
         data["sales"] = {k: v for k, v in data["sales"].items() if k not in ("total", "average_ticket")}
@@ -158,6 +175,10 @@ def approve_opening(session, user, reason="", approval=None):
     return session
 
 
+def lock_session(session):
+    return CashSession.all_objects.select_for_update().get(pk=session.pk)
+
+
 def _locked(session):
     session = CashSession.all_objects.select_for_update().get(pk=session.pk)
     if session.status != CashSession.Status.OPEN:
@@ -213,15 +234,14 @@ def available_for_withdrawal(session):
     return expected_cash(session) - Decimal(pending)
 
 
-def record_cash_payment(session, payment, user):
+def record_cash_payment(session, payment, user, imported=False):
     """Entrada de dinheiro da venda na gaveta (líquido de troco). Trava o turno: um fechamento ao mesmo
     tempo calculava o esperado sem este dinheiro e o pagamento caía num turno já fechado.
 
     Venda do PDV offline é FATO (o dinheiro já entrou na gaveta daquele turno): uma reenviada depois
     que o fechamento do turno chegou continua entrando nele, como antes."""
     session = CashSession.all_objects.select_for_update().get(pk=session.pk)
-    offline = bool((payment.sale.metafields or {}).get("_offline_id"))
-    if session.status != CashSession.Status.OPEN and not offline:
+    if session.status != CashSession.Status.OPEN and not imported:
         raise StateConflict("O turno de caixa foi fechado: abra o caixa de novo para receber.", code="session_not_open")
     return CashMovement.all_objects.create(
         account_id=session.account_id, store_id=session.store_id, session=session, kind=CashMovement.Kind.SALE,

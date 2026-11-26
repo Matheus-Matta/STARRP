@@ -164,6 +164,7 @@ def test_sangria_offline_com_comprovante_e_aprovada_uma_vez_so(ctx):
     ctx.link(cashier)
     _open_offline(ctx, api)
     proof = api.post("/api/v1/pdv/authorize/", {"code": "cash.approve",
+                                                 "what": {"event": "movement", "kind": "withdrawal", "amount": "90"},
                                                  "approval": {"username": "gerente", "password": "senha123"}},
                      format="json").json()["proof"]
 

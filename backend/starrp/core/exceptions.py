@@ -5,7 +5,7 @@
 import logging
 
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.db import IntegrityError, OperationalError
+from django.db import DataError, IntegrityError, OperationalError
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
@@ -35,6 +35,9 @@ def api_exception_handler(exc, context):
     elif response is None and isinstance(exc, DjangoValidationError):
         detail = exc.message_dict if hasattr(exc, "message_dict") else {"detail": " ".join(exc.messages)}
         response, code = Response(detail, status=status.HTTP_400_BAD_REQUEST), "invalid"
+    elif response is None and isinstance(exc, (DataError, OverflowError)):  # texto ou número que não cabe na coluna
+        logger.warning("Valor que não cabe no banco: %s", type(exc).__name__)
+        response, code = Response({"detail": "Um dos valores é grande demais ou inválido."}, status=400), "invalid"
     elif response is None and isinstance(exc, OperationalError):
         logger.warning("Banco indisponível")
         response = Response(

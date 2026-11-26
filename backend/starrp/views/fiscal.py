@@ -8,10 +8,11 @@
 """
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed, PermissionDenied
-from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.response import Response
 
 from starrp.core.errors import BusinessError
+from starrp.core.parsers import ObjectJSONParser
 from starrp.core.viewsets import ReadOnlyTenantViewSet, TenantViewSet
 from starrp.models import FiscalConfig, FiscalSeries, Invoice, Store
 from starrp.models.platform import Module
@@ -56,7 +57,7 @@ class FiscalConfigViewSet(TenantViewSet):
     serializer_class = s.FiscalConfigSerializer
     permission_code = "fiscal"
     required_module = Module.BASE
-    parser_classes = [JSONParser, MultiPartParser, FormParser]
+    parser_classes = [ObjectJSONParser, MultiPartParser, FormParser]
     prefetch_related = ("stores", "dfe_states")
     filterset_fields = ["is_active", "environment", "dfe_enabled"]
     search_fields = ["name", "legal_name", "trade_name", "cnpj"]

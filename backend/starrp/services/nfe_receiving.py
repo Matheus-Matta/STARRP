@@ -19,7 +19,7 @@ from starrp.core.errors import BusinessError, StateConflict
 from starrp.models import (
     FinancialTitle, InboundNFe, Installment, StockDocument, StockDocumentItem, SupplierProduct, TitleStatus,
 )
-from starrp.services import numbering, stock
+from starrp.services import nfe_xml, numbering, stock
 from starrp.services.ledger import category
 
 FOUR = Decimal("0.0001")
@@ -58,7 +58,7 @@ def _payables(nfe, user):
     title = FinancialTitle.all_objects.create(
         account_id=nfe.account_id, store_id=nfe.store_id, kind=FinancialTitle.Kind.PAYABLE,
         description=f"NF-e {nfe.number} - {nfe.supplier_name}"[:255], supplier=nfe.supplier,
-        document_number=nfe.number, issue_date=(nfe.issued_at or timezone.now()).date(), total=total,
+        document_number=nfe.number, issue_date=timezone.localdate(nfe.issued_at), total=total,
         inbound_nfe=nfe, created_by=user, category=category(nfe.account_id, "suppliers"),
     )
     for index, dup in enumerate(nfe.installments, start=1):
@@ -85,6 +85,8 @@ def auto_entry(nfe, user=None):
     if (nfe.xml_status != InboundNFe.XmlStatus.AVAILABLE or nfe.ignored_at
             or nfe.fiscal_status in (InboundNFe.FiscalStatus.CANCELLED, InboundNFe.FiscalStatus.DENIED)):
         return None
+    if nfe.full_xml and not nfe_xml.is_purchase(nfe.full_xml):
+        return None  # complementar, ajuste ou entrada do fornecedor: a pessoa decide pelo botão
     items = nfe.items.filter(ignored=False)
     if not items.exists() or items.filter(variant__isnull=True).exists() or open_entry(nfe):
         return None

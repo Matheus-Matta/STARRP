@@ -9,9 +9,23 @@ from starrp.models import (
     LabelTemplate, ReceivingDivergence, StockBalance, StockDocument, StockDocumentItem, StockLot, StockMovement,
     Warehouse,
 )
-from starrp.services import numbering
+from starrp.services import numbering, wms
 
-WarehouseSerializer = tenant_serializer(Warehouse)
+
+class WarehouseSerializer(TenantSerializer):
+    class Meta:
+        model = Warehouse
+        fields = "__all__"
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
+        before = instance.uses_bins
+        saved = super().update(instance, validated_data)
+        if saved.uses_bins and not before:
+            wms.start_bins(saved)
+        return saved
+
+
 LabelTemplateSerializer = tenant_serializer(LabelTemplate)
 
 
@@ -71,7 +85,7 @@ class StockDocumentItemSerializer(HideCostFieldsMixin, TenantSerializer):
     """`TenantSerializer` (R2-03): produto, lote, endereço e item da nota precisam ser da MESMA conta e filial
     (o `ModelSerializer` puro aceitava o id de outra conta e mexia no custo médio dela), e nada negativo."""
 
-    cost_fields = ("unit_cost",)  # sem `catalog.view_costs` não vê nem grava o custo (M-10)
+    cost_fields = ("unit_cost", "total_cost")  # sem `catalog.view_costs` não vê nem grava o custo (M-10)
 
     id = serializers.UUIDField(required=False)
     variant_name = serializers.CharField(source="variant.display_name", read_only=True)
@@ -206,10 +220,17 @@ class StockDocumentSerializer(TenantSerializer):
         self._save_items(document, items)
         return document
 
-    @transaction.atomic
-    def update(self, instance, validated_data):
+    def check_locked(self, instance, validated_data):
         if not instance.is_editable:
             raise StateConflict("Documento confirmado não pode ser alterado.")
+        if instance.inbound_nfe_id:  # R4-06: a entrada da nota virava saída e a nota constava como recebida
+            for field in ("kind", "supplier", "destination"):
+                if field in validated_data and validated_data[field] != getattr(instance, field):
+                    raise StateConflict("Este documento é a entrada de uma NF-e: tipo e fornecedor são os da nota.",
+                                        code="nfe_document_locked")
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
         items = validated_data.pop("items", None)
         document = super().update(instance, validated_data)
         if items is not None:

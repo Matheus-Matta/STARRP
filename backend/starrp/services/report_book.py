@@ -28,7 +28,7 @@ from starrp.models import (
     ReceivingDivergence, Sale, SaleItem, StockBalance, StockMovement, Supplier, TitleStatus,
     UserProfile, Warehouse,
 )
-from starrp.services import cash_flow, dre, reports
+from starrp.services import cash_flow, dre, finance, reports
 from starrp.services.store_access import include_empty, scope_own_sales, scope_to_allowed, visible_stores
 
 ZERO = Decimal("0")
@@ -245,13 +245,36 @@ def _items(sales, params):
 
 
 def _margin(items):
-    agg = items.aggregate(revenue=Coalesce(Sum("total"), ZERO), cost=Coalesce(Sum(COST), ZERO))
-    return agg["revenue"] - agg["cost"]
+    return reports.margin_of(items)
 
 
-def _sales_totals(sales):
+def _sales_totals(sales, params=None):
+    """Quantidade e faturamento. Filtrado por categoria/marca/produto, o faturamento é o DESSES itens (R5-14)."""
     agg = sales.aggregate(count=Count("id"), revenue=Coalesce(Sum("total"), ZERO))
+    if params is not None and _item_q(params):
+        return agg["count"], reports.net_revenue(_items(sales, params))
     return agg["count"], agg["revenue"]
+
+
+def _grouped(sales, params, key):
+    """{chave: {count, revenue, discount}} das vendas por um campo delas. Com filtro de categoria/marca/produto, a
+    receita e o desconto são os dos itens filtrados (R6-03), não os da venda inteira."""
+    if not _item_q(params):
+        return {r[key]: {"count": r["n"], "revenue": r["t"] or ZERO, "discount": r["d"] or ZERO} for r in sales.order_by().values(
+            key).annotate(n=Count("id"), t=Sum("total"), d=Sum(F("discount") + F("coupon_discount")))}
+    out = {}
+    for r in _items(sales, params).order_by().values(f"sale__{key}").annotate(
+            n=Count("sale_id", distinct=True), t=reports.NET, g=Sum("total")):
+        net = reports.money(r["t"])
+        out[r[f"sale__{key}"]] = {"count": r["n"], "revenue": net, "discount": (r["g"] or ZERO) - net}
+    return out
+
+
+def _days(sales, params, field="revenue"):
+    if not _item_q(params):
+        return _by_day(sales, field)
+    rows = _items(sales, params).annotate(day=TruncDate("sale__completed_at")).order_by().values("day").annotate(t=reports.NET)
+    return [{"day": r["day"], field: reports.money(r["t"])} for r in rows]
 
 
 def _by_day(qs, field, value="total", date_field="completed_at"):
@@ -319,13 +342,13 @@ def _products_with_reviews(account, store, sales, params):
     rows = list(_items(sales, params).values(
         "variant__product_id", "variant__product__name", "variant__product__reference",
         "variant__product__category__name", "variant__product__brand__name").annotate(
-        sold_quantity=Sum("quantity"), revenue=Sum("total"), cost=Sum(COST), sales=Count("sale_id", distinct=True))
+        sold_quantity=Sum("quantity"), revenue=reports.NET, cost=Sum(COST), sales=Count("sale_id", distinct=True))
         .order_by("-revenue"))
     notes = product_reviews(account, store, {r["variant__product_id"] for r in rows})
     out = []
     for r in rows:
         note = notes.get(r["variant__product_id"], {})
-        revenue = r["revenue"] or ZERO
+        revenue = reports.money(r["revenue"])
         out.append({"product": r["variant__product__name"], "reference": r["variant__product__reference"] or "",
                     "category": r["variant__product__category__name"] or "—",
                     "brand": r["variant__product__brand__name"] or "—", "sales": r["sales"],
@@ -344,24 +367,24 @@ def _sales_filters(account, store, *names):
 # ── Movimento ───────────────────────────────────────────────────────────────
 def movement_sales(account, store, params):
     sales, before = _sales(account, store, params), _sales(account, store, _previous(params))
-    count, revenue = _sales_totals(sales)
-    prev_count, prev_revenue = _sales_totals(before)
+    count, revenue = _sales_totals(sales, params)
+    prev_count, prev_revenue = _sales_totals(before, params)
     margin, prev_margin = _margin(_items(sales, params)), _margin(_items(before, params))
-    discounts = sales.aggregate(t=Coalesce(Sum("discount"), ZERO) + Coalesce(Sum("coupon_discount"), ZERO))["t"]
+    channels = _grouped(sales, params, "channel")
+    discounts = sum((r["discount"] for r in channels.values()), ZERO)
     grain, (keys, labels) = _grain(params), _buckets(params)
     prev_keys, _ = _buckets(_previous(params))
-    now_rev = _series(_by_day(sales, "revenue"), keys, grain, "revenue")
-    then_rev = _series(_by_day(before, "revenue"), prev_keys, grain, "revenue")[:len(keys)]
+    now_rev = _series(_days(sales, params), keys, grain, "revenue")
+    then_rev = _series(_days(before, params), prev_keys, grain, "revenue")[:len(keys)]
     now_count = _series(sales.annotate(day=TruncDate("completed_at")).values("day").annotate(n=Count("id")), keys, grain, "n")
     channel_label = dict(Sale._meta.get_field("channel").choices)
-    by_channel = sales.values("channel").annotate(value=Sum("total"))
     word = GRAIN_WORD[grain]
     return _report("Vendas no período", "Faturamento das vendas concluídas contra o mesmo período imediatamente anterior.",
                    params, [
                        kpi("Faturamento", revenue, previous=prev_revenue),
                        kpi("Vendas", count, "number", previous=prev_count),
                        kpi("Ticket médio", _ticket(revenue, count), previous=_ticket(prev_revenue, prev_count)),
-                       kpi("Margem bruta", margin, previous=prev_margin, hint=f"{pt(_pct(margin, revenue))}% do faturamento"),
+                       kpi("Margem bruta", margin, previous=prev_margin, hint=f"{pt(_pct(margin, reports.net_revenue(_items(sales, params))))}% da receita dos itens"),
                        kpi("Descontos concedidos", discounts, good="down", hint=f"{pt(_pct(discounts, revenue + discounts))}% do bruto"),
                    ], [
                        {"type": "line", "title": f"Faturamento {word}", "span": "full", "format": "money",
@@ -373,8 +396,7 @@ def movement_sales(account, store, params):
                         "grain": grain, "x": labels, "series": [{"name": "Vendas", "values": now_count}]},
                        {"type": "share", "title": "Faturamento por canal", "span": "half", "format": "money",
                         "description": "Onde a venda aconteceu: PDV, retaguarda, PDV móvel ou loja virtual.",
-                        "rows": [{"label": channel_label.get(r["channel"], r["channel"]), "value": r["value"]}
-                                 for r in by_channel]},
+                        "rows": [{"label": channel_label.get(k, k), "value": r["revenue"]} for k, r in channels.items()]},
                        {"type": "table", "title": "Detalhe " + word, "span": "full", "columns": [
                            {"key": "label", "label": "Período"}, {"key": "count", "label": "Vendas", "format": "number"},
                            {"key": "revenue", "label": "Faturamento", "format": "money"},
@@ -424,7 +446,11 @@ def movement_hours(account, store, params):
     measure = params.get("measure") or "revenue"
     tz = timezone.get_current_timezone()
     revenue, counts = defaultdict(lambda: ZERO), defaultdict(int)
-    for moment, total in sales.values_list("completed_at", "total"):
+    rows = sales.values_list("completed_at", "total")
+    if _item_q(params):
+        rows = [(m, reports.money(t)) for _pk, m, t in _items(sales, params).order_by().values_list(
+            "sale_id", "sale__completed_at").annotate(t=reports.NET)]
+    for moment, total in rows:
         local = moment.astimezone(tz)
         key = ((local.weekday() + 1) % 7, local.hour)  # domingo primeiro
         revenue[key] += total
@@ -480,10 +506,9 @@ def movement_payments(account, store, params):
     for row in payments.annotate(day=TruncDate("sale__completed_at")).values("day", "method__name").annotate(v=Sum("amount")):
         per[row["method__name"] if row["method__name"] in top else OTHERS].append({"day": row["day"], "v": row["v"]})
     names = top + ([OTHERS] if OTHERS in per else [])
-    before = Payment.all_objects.filter(sale__in=_sales(account, store, _previous(params)),
-                                        status=Payment.Status.APPROVED).aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
-    fees = sum((Decimal(r["value"]) * Decimal(m.fee_percent or 0) / 100 for r in rows
-                for m in PaymentMethod.all_objects.filter(account=account, name=r["method__name"])[:1]), ZERO)
+    before = Payment.all_objects.filter(sale__in=_sales(account, store, _previous(params)), status=Payment.Status.APPROVED,
+                                        **({"method_id": params["method"]} if params.get("method") else {})).aggregate(t=Coalesce(Sum("amount"), ZERO))["t"]
+    fees = payments.aggregate(t=Coalesce(Sum(reports.FEE), ZERO))["t"]
     return _report("Formas de recebimento", "Como os clientes pagaram: participação de cada forma e o custo das taxas.",
                    params, [
                        kpi("Total recebido", total, previous=before),
@@ -491,7 +516,7 @@ def movement_payments(account, store, params):
                        kpi("Forma principal", rows[0]["method__name"] if rows else "—", "text",
                            hint=f"{pt(_pct(rows[0]['value'], total))}% do recebido" if rows else ""),
                        kpi("Taxas estimadas", fees.quantize(Decimal("0.01")), good="down",
-                           hint="pela taxa cadastrada em cada forma"),
+                           hint="pela taxa da forma no dia de cada pagamento"),
                    ], [
                        {"type": "bars", "title": f"Recebido {GRAIN_WORD[grain]}", "span": "full", "format": "money",
                         "stacked": True, "description": "Cada cor é uma forma de pagamento; a altura total é o recebido.",
@@ -515,12 +540,18 @@ def movement_payments(account, store, params):
 def movement_sellers(account, store, params):
     sales = _sales(account, store, params).filter(seller__isnull=False)
     rows = list(sales.values("seller_id", "seller__first_name", "seller__last_name", "seller__username").annotate(
-        count=Count("id"), revenue=Sum("total"), discount=Coalesce(Sum("discount"), ZERO) + Coalesce(Sum("coupon_discount"), ZERO))
-        .order_by("-revenue"))
-    commission = {r["seller_id"]: r["total"] for r in Commission.all_objects.filter(sale__in=sales).exclude(
+        n=Count("id")))
+    grouped = _grouped(sales, params, "seller_id")
+    for r in rows:
+        r.update(grouped.get(r["seller_id"], {"count": 0, "revenue": ZERO, "discount": ZERO}))
+    rows.sort(key=lambda r: -r["revenue"])
+    earned = Commission.all_objects.filter(sale__in=sales)
+    if _item_q(params):
+        earned = earned.filter(sale_item__in=_items(sales, params))
+    commission = {r["seller_id"]: r["total"] for r in earned.exclude(
         status=Commission.Status.CANCELLED).values("seller_id").annotate(total=Sum("amount"))}
-    prev = dict(_sales(account, store, _previous(params)).filter(seller__isnull=False).values_list("seller_id")
-                .annotate(t=Sum("total")))
+    prev = {k: r["revenue"] for k, r in _grouped(_sales(account, store, _previous(params)).filter(seller__isnull=False),
+                                                 params, "seller_id").items()}
     total = sum((r["revenue"] for r in rows), ZERO)
     for r in rows:
         r["name"] = " ".join(filter(None, [r["seller__first_name"], r["seller__last_name"]])) or r["seller__username"]
@@ -562,10 +593,11 @@ def movement_sellers(account, store, params):
 def movement_branches(account, store, params):
     """Comparativo da rede: sempre todas as filiais que o usuário enxerga."""
     sales = _sales(account, None, params)
-    rows = list(sales.values("store_id", "store__name").annotate(count=Count("id"), revenue=Sum("total")).order_by("-revenue"))
-    margins = {r["sale__store_id"]: (r["revenue"] or 0) - (r["cost"] or 0) for r in _items(sales, params).values(
-        "sale__store_id").annotate(revenue=Sum("total"), cost=Sum(COST))}
-    prev = dict(_sales(account, None, _previous(params)).values_list("store_id").annotate(t=Sum("total")))
+    names = dict(sales.order_by().values_list("store_id", "store__name").distinct())
+    rows = sorted(({"store_id": k, "store__name": names[k], **r} for k, r in _grouped(sales, params, "store_id").items()),
+                  key=lambda r: -r["revenue"])
+    nets = reports.net_by(_items(sales, params), "sale__store_id")
+    prev = {k: r["revenue"] for k, r in _grouped(_sales(account, None, _previous(params)), params, "store_id").items()}
     if include_empty(params):  # filial sem venda também aparece, zerada (ausência também é informação)
         seen = {r["store_id"] for r in rows}
         rows += [{"store_id": s.pk, "store__name": s.name, "count": 0, "revenue": ZERO}
@@ -573,8 +605,9 @@ def movement_branches(account, store, params):
     total = sum((r["revenue"] or ZERO for r in rows), ZERO)
     for r in rows:
         r["revenue"] = r["revenue"] or ZERO
-        r["name"], r["margin"] = r["store__name"], margins.get(r["store_id"], ZERO)
-        r["ticket"], r["margin_pct"] = _ticket(r["revenue"], r["count"]), _pct(r["margin"], r["revenue"])
+        net, cost = nets.get(r["store_id"], (ZERO, ZERO))
+        r["name"], r["margin"] = r["store__name"], net - cost
+        r["ticket"], r["margin_pct"] = _ticket(r["revenue"], r["count"]), _pct(r["margin"], net)
         r["growth"] = _delta(r["revenue"], prev.get(r["store_id"])) or ZERO
     selling = [r for r in rows if r["count"]]
     best = selling[0] if selling else None
@@ -608,8 +641,8 @@ def movement_branches(account, store, params):
 def _products(sales, params):
     # `sold_quantity`, e não `quantity`: o campo seria sombreado (agregado dentro de agregado).
     rows = (_items(sales, params).values("variant_id", "variant__product_id", "description", "sku").annotate(
-        sold_quantity=Sum("quantity"), revenue=Sum("total"), cost=Sum(COST)).order_by("-revenue"))
-    return [{**r, "margin": (r["revenue"] or 0) - (r["cost"] or 0)} for r in rows]
+        sold_quantity=Sum("quantity"), revenue=reports.NET, cost=Sum(COST)).order_by("-revenue"))
+    return [{**r, "revenue": reports.money(r["revenue"]), "margin": reports.money(r["revenue"]) - (r["cost"] or 0)} for r in rows]
 
 
 def goods_abc(account, store, params):
@@ -617,7 +650,7 @@ def goods_abc(account, store, params):
 
     measure = params.get("measure") or "revenue"
     rows = _products(_sales(account, store, params), params)
-    key = {"revenue": "revenue", "margin": "margin", "quantity": "sold_quantity"}[measure]
+    key = {"revenue": "revenue", "margin": "margin", "quantity": "sold_quantity"}.get(measure, "revenue")
     rows.sort(key=lambda r: -Decimal(r[key] or 0))
     total = sum((Decimal(r[key] or 0) for r in rows), ZERO)
     running, classes = ZERO, {"A": [], "B": [], "C": []}
@@ -631,7 +664,7 @@ def goods_abc(account, store, params):
         note = notes.get(r["variant__product_id"], {})
         r["rating"], r["reviews"] = note.get("avg"), note.get("n", 0)
     fmt = "quantity" if measure == "quantity" else "money"
-    word = {"revenue": "faturamento", "margin": "margem", "quantity": "quantidade vendida"}[measure]
+    word = {"revenue": "faturamento", "margin": "margem", "quantity": "quantidade vendida"}.get(measure, "faturamento")
     share = [{"label": f"Classe {k}", "value": sum((Decimal(r[key] or 0) for r in v), ZERO)} for k, v in classes.items()]
     return _report("Curva ABC de produtos", f"Classifica os produtos pelo {word}: A = até 80% do total, B = os próximos 15%, "
                    "C = o resto.", params, [
@@ -672,8 +705,10 @@ def goods_abc(account, store, params):
 def goods_categories(account, store, params):
     items = _items(_sales(account, store, params), params)
     rows = list(items.values("variant__product__category__name").annotate(
-        revenue=Sum("total"), cost=Sum(COST), quantity=Sum("quantity")).order_by("-revenue"))
-    brands = list(items.values("variant__product__brand__name").annotate(revenue=Sum("total")).order_by("-revenue"))
+        revenue=reports.NET, cost=Sum(COST), sold_quantity=Sum("quantity")).order_by("-revenue"))
+    brands = list(items.values("variant__product__brand__name").annotate(revenue=reports.NET).order_by("-revenue"))
+    for r in [*rows, *brands]:
+        r["revenue"] = reports.money(r["revenue"])
     total = sum((r["revenue"] or ZERO for r in rows), ZERO)
     for r in rows:
         r["name"] = r["variant__product__category__name"] or "Sem categoria"
@@ -698,7 +733,7 @@ def goods_categories(account, store, params):
         {"type": "share", "title": "Faturamento por marca", "span": "half", "format": "money",
          "rows": _top([{"label": r["variant__product__brand__name"] or "Sem marca", "value": r["revenue"]} for r in brands])},
         {"type": "table", "title": "Categorias", "span": "full", "columns": [
-            {"key": "name", "label": "Categoria"}, {"key": "quantity", "label": "Qtd.", "format": "quantity"},
+            {"key": "name", "label": "Categoria"}, {"key": "sold_quantity", "label": "Qtd.", "format": "quantity"},
             {"key": "revenue", "label": "Faturamento", "format": "money"}, {"key": "margin", "label": "Margem", "format": "money"},
             {"key": "margin_pct", "label": "Margem %", "format": "percent"},
             {"key": "share", "label": "Participação", "format": "percent"}], "rows": rows},
@@ -727,17 +762,17 @@ def goods_stock(account, store, params):
     listed = stale if situation == "stale" else below if situation == "below" else per_variant
     stale_value = sum((r["value"] or ZERO for r in stale), ZERO)
     return _report("Posição de estoque", "Quanto há guardado hoje, quanto vale (pelo último custo) e o que está parado.", params, [
-        kpi("Valor em estoque", agg["value"]),
+        {**kpi("Valor em estoque", agg["value"]), "cost": True},
         kpi("Unidades", agg["units"], "quantity"),
-        kpi("Parado no período", stale_value, good="down",
-            hint=f"{len(stale)} produto(s) sem venda · {pt(_pct(stale_value, agg['value']))}% do valor"),
+        {**kpi("Parado no período", stale_value, good="down",
+               hint=f"{len(stale)} produto(s) sem venda · {pt(_pct(stale_value, agg['value']))}% do valor"), "cost": True},
         kpi("Abaixo do mínimo", len(below), "number", good="down", hint="precisam de reposição"),
     ], [
-        {"type": "share", "title": "Valor por depósito", "span": "half", "format": "money",
+        {"type": "share", "cost": True, "title": "Valor por depósito", "span": "half", "format": "money",
          "rows": _top([{"label": r["warehouse__name"], "value": r["value"]} for r in by_warehouse])},
-        {"type": "ranking", "title": "Valor por categoria", "span": "half", "format": "money", "limit": 6,
+        {"type": "ranking", "cost": True, "title": "Valor por categoria", "span": "half", "format": "money", "limit": 6,
          "rows": [{"label": r["variant__product__category__name"] or "Sem categoria", "value": r["value"]} for r in by_category]},
-        {"type": "ranking", "title": "Dinheiro parado: maior valor sem venda no período", "span": "full", "format": "money", "limit": 8,
+        {"type": "ranking", "cost": True, "title": "Dinheiro parado: maior valor sem venda no período", "span": "full", "format": "money", "limit": 8,
          "description": "Estoque que não girou no período escolhido: candidatos a promoção, devolução ou transferência.",
          "rows": [{"label": name(r), "value": r["value"], "sub": f"{pt(r['units'].normalize())} un. em estoque"}
                   for r in stale[:15]]},
@@ -745,7 +780,7 @@ def goods_stock(account, store, params):
             situation, "Produtos em estoque"), "span": "full", "columns": [
             {"key": "sku", "label": "SKU"}, {"key": "name", "label": "Produto"},
             {"key": "quantity", "label": "Saldo", "format": "quantity"}, {"key": "min", "label": "Mínimo", "format": "quantity"},
-            {"key": "value", "label": "Valor", "format": "money"}, {"key": "status", "label": "Situação"}],
+            {"key": "value", "label": "Valor", "format": "money", "cost": True}, {"key": "status", "label": "Situação"}],
          "rows": [{"sku": r["variant__sku"], "name": name(r), "quantity": r["units"], "min": r["variant__min_stock"],
                    "value": r["value"], "status": "Abaixo do mínimo" if r in below else "Sem venda" if r in stale else "OK"}
                   for r in listed[:TABLE_MAX]]},
@@ -829,7 +864,7 @@ def goods_receiving_errors(account, store, params):
             {"key": "supplier", "label": "Fornecedor"}, {"key": "nfe", "label": "NF-e"}, {"key": "reason", "label": "Motivo"},
             {"key": "expected", "label": "Na nota", "format": "quantity"}, {"key": "arrived", "label": "Chegou", "format": "quantity"},
             {"key": "accepted", "label": "Entrou", "format": "quantity"}, {"key": "notes", "label": "Observação"}],
-         "rows": [{"date": e.created_at.date(), "product": e.variant.display_name,
+         "rows": [{"date": timezone.localdate(e.created_at), "product": e.variant.display_name,
                    "supplier": e.supplier.name if e.supplier_id else "—",
                    "nfe": e.inbound_nfe.number if e.inbound_nfe_id else "—", "reason": e.get_reason_display(),
                    "expected": e.expected_quantity, "arrived": e.arrived_quantity, "accepted": e.accepted_quantity,
@@ -914,15 +949,20 @@ def ledger_cash_flow(account, store, params):
         running += i - o
         balance.append(running)
     cats = defaultdict(list)
-    for row in flow["by_category"]:
-        cats[row["kind"]].append({"label": row["category__name"], "value": row["total"]})
+    by_category = flow["by_category"]
+    if account_id:
+        by_category = list(txs.filter(date__range=(start, end)).order_by().values("kind", "category__name").annotate(
+            total=Sum("amount")).order_by("kind", "-total"))
+    for row in by_category:
+        cats[row["kind"]].append({"label": row["category__name"] or "Sem categoria", "value": row["total"]})
     forecast = flow.get("forecast", {})
     return _report("Fluxo de caixa", "Entradas e saídas das contas (regime de caixa) e o saldo ao longo do período.", params, [
         kpi("Saldo inicial", opening),
         kpi("Entradas", inflow),
         kpi("Saídas", outflow, good="down"),
         kpi("Saldo final", opening + inflow - outflow, hint=f"variação de {brl(inflow - outflow)} no período"),
-        kpi("A receber previsto", forecast.get("receivable", ZERO), hint="parcelas que vencem no período"),
+        kpi("A receber previsto", forecast.get("receivable", ZERO), hint="parcelas que vencem no período"
+            + (" (todas as contas)" if account_id else "")),
     ], [
         {"type": "bars", "title": f"Entradas e saídas {GRAIN_WORD[grain]}", "span": "full", "format": "money",
          "description": "Azul entrou, laranja saiu. Semanas com saída maior que entrada consomem o saldo.",
@@ -947,7 +987,7 @@ def ledger_due(account, store, params):
     parts = parts.filter(title__store=store) if store is not None else scope_to_allowed(parts, "title__store")
     if params.get("kind"):
         parts = parts.filter(title__kind=params["kind"])
-    open_amount = ExpressionWrapper(F("amount") - F("paid_amount"), output_field=DecimalField(max_digits=18, decimal_places=2))
+    open_amount = finance.OPEN_BALANCE
     buckets = [("Vencido", Q(due_date__lt=today)), ("Próx. 7 dias", Q(due_date__range=(today, today + timedelta(days=7)))),
                ("8 a 30 dias", Q(due_date__range=(today + timedelta(days=8), today + timedelta(days=30)))),
                ("31 a 60 dias", Q(due_date__range=(today + timedelta(days=31), today + timedelta(days=60)))),
@@ -990,7 +1030,7 @@ def ledger_due(account, store, params):
                         "rows": [{"due": p.due_date, "kind": p.title.get_kind_display(), "description": p.title.description,
                                   "who": (p.title.customer.name if p.title.customer_id else p.title.supplier.name
                                           if p.title.supplier_id else "—"),
-                                  "open": p.amount - p.paid_amount, "late": max((today - p.due_date).days, 0)} for p in rows]},
+                                  "open": p.balance, "late": max((today - p.due_date).days, 0)} for p in rows]},
                    ], [_choice("kind", "Tipo", [("receivable", "A receber"), ("payable", "A pagar")])])
 
 
@@ -1054,7 +1094,7 @@ def relationship_customers(account, store, params):
         ever = ever.filter(customer__groups=params["customer_group"])
     recency = [0] * len(RECENCY)
     for last in ever.values("customer_id").annotate(last=Max("completed_at")).values_list("last", flat=True):
-        days = (end - last.date()).days
+        days = (end - timezone.localdate(last)).days
         recency[next(i for i, (_, lo, hi) in enumerate(RECENCY) if lo <= days <= hi)] += 1
     anonymous = count - identified.count()
     return _report("Clientes", "Quem compra, quanto, com que frequência e quem está sumindo.", params, [
@@ -1065,7 +1105,7 @@ def relationship_customers(account, store, params):
         kpi("Sumidos (+90 dias)", sum(recency[3:]), "number", good="down", hint="bons para uma campanha de retorno"),
     ], [
         {"type": "ranking", "title": "Os que mais compram", "span": "half", "format": "money", "limit": 8,
-         "rows": [{"label": r["customer__name"], "value": r["revenue"], "sub": f"{r['count']} compra(s) · última {r['last']:%d/%m}"}
+         "rows": [{"label": r["customer__name"], "value": r["revenue"], "sub": f"{r['count']} compra(s) · última {timezone.localdate(r['last']):%d/%m}"}
                   for r in rows[:30]]},
         {"type": "bars", "title": "Há quanto tempo compraram pela última vez", "span": "half", "format": "number",
          "description": "Recência de toda a base: as barras da direita são clientes a reconquistar.",
@@ -1083,7 +1123,7 @@ def relationship_customers(account, store, params):
             {"key": "first", "label": "Primeira no período", "format": "date"},
             {"key": "last", "label": "Última compra", "format": "date"}],
          "rows": [{"name": r["customer__name"], "count": r["count"], "revenue": r["revenue"], "ticket": _ticket(r["revenue"], r["count"]),
-                   "first": r["first"].date(), "last": r["last"].date()} for r in rows[:TABLE_MAX]]},
+                   "first": timezone.localdate(r["first"]), "last": timezone.localdate(r["last"])} for r in rows[:TABLE_MAX]]},
     ], _sales_filters(account, store, "customer_group", "channel", "seller"))
 
 
@@ -1095,11 +1135,10 @@ def relationship_customers_abc(account, store, params):
     sales = _sales(account, store, params).filter(customer__isnull=False)
     rows = list(sales.values("customer_id", "customer__name").annotate(
         count=Count("id"), revenue=Sum("total"), last=Max("completed_at")))
-    margins = {r["sale__customer_id"]: (r["revenue"] or 0) - (r["cost"] or 0) for r in _items(sales, params).values(
-        "sale__customer_id").annotate(revenue=Sum("total"), cost=Sum(COST))}
+    margins = {k: net - cost for k, (net, cost) in reports.net_by(_items(sales, params), "sale__customer_id").items()}
     for r in rows:
         r["name"], r["margin"], r["ticket"] = r["customer__name"], margins.get(r["customer_id"], ZERO), _ticket(r["revenue"], r["count"])
-    key = {"revenue": "revenue", "margin": "margin", "frequency": "count"}[measure]
+    key = {"revenue": "revenue", "margin": "margin", "frequency": "count"}.get(measure, "revenue")
     rows.sort(key=lambda r: -Decimal(r[key] or 0))
     total = sum((Decimal(r[key] or 0) for r in rows), ZERO)
     running, classes = ZERO, {"A": [], "B": [], "C": []}
@@ -1107,10 +1146,10 @@ def relationship_customers_abc(account, store, params):
         running += Decimal(r[key] or 0)
         r["position"], r["share"], r["cumulative"] = index, _pct(r[key], total), _pct(running, total)
         r["abc"] = "A" if r["cumulative"] <= 80 or index == 1 else "B" if r["cumulative"] <= 95 else "C"
-        r["last"] = r["last"].date()
+        r["last"] = timezone.localdate(r["last"])
         classes[r["abc"]].append(r)
     fmt = "number" if measure == "frequency" else "money"
-    word = {"revenue": "faturamento", "margin": "margem", "frequency": "número de compras"}[measure]
+    word = {"revenue": "faturamento", "margin": "margem", "frequency": "número de compras"}.get(measure, "faturamento")
     share = [{"label": f"Classe {k}", "value": sum((Decimal(r[key] or 0) for r in v), ZERO)} for k, v in classes.items()]
     revenue_a = sum((r["revenue"] for r in classes["A"]), ZERO)
     return _report("Curva ABC de clientes", f"Classifica os clientes pelo {word}: A = até 80% do total, B = os próximos 15%, "
@@ -1278,7 +1317,7 @@ def _reviewed_products(account, store, reviews, params):
         last[pid] = comment or last.get(pid, "")
     sold = {r["variant__product_id"]: r for r in _items(_sales(account, store, params), {}).filter(
         variant__product_id__in=[r["product_id"] for r in rows]).values("variant__product_id").annotate(
-        q=Sum("quantity"), revenue=Sum("total"), sales=Count("sale_id", distinct=True))}
+        q=Sum("quantity"), revenue=reports.NET, sales=Count("sale_id", distinct=True))}
     out = []
     for r in rows:
         s5, s4, s3, s2, s1 = stars[r["product_id"]]
@@ -1288,7 +1327,7 @@ def _reviewed_products(account, store, reviews, params):
                     "rating": (Decimal(r["total"]) / r["n"]).quantize(Decimal("0.1")), "reviews": r["n"],
                     "s5": s5, "s4": s4, "s3": s3, "s2": s2, "s1": s1, "satisfied": _pct(s5 + s4, r["n"]),
                     "pending": r["pending"], "sales": sale.get("sales", 0), "sold_quantity": sale.get("q") or ZERO,
-                    "revenue": sale.get("revenue") or ZERO,
+                    "revenue": reports.money(sale.get("revenue")),
                     "coverage": _pct(r["n"], sale.get("sales", 0)) if sale.get("sales") else None,
                     "last": last.get(r["product_id"], "")})
     return sorted(out, key=lambda r: (-r["reviews"], -r["rating"]))
