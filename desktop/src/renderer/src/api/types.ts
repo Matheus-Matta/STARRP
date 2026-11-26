@@ -136,6 +136,8 @@ export type CashMovement = {
 export type StoreRule = {
   require_open_cash_session?: boolean;
   require_seller?: boolean;
+  scale_barcode_mode?: string;
+  scale_barcode_prefix?: string;
   auto_print_receipt?: boolean;
   confirm_address_at_checkout?: boolean;
   require_payment_reference?: boolean;

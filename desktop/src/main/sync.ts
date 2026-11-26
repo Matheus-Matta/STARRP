@@ -67,8 +67,8 @@ export function nextLocalNumber() {
 }
 
 /** Segura o envio enquanto a nota é emitida (a venda vai com a nota, PRONTA). Se o app cair
- *  nesse meio, depois de 2 minutos ela vai sozinha (a nota segue depois). */
-const HOLD_MS = 2 * 60_000;
+ *  nesse meio, depois de 4 minutos ela vai sozinha (a nota segue depois). */
+const HOLD_MS = 4 * 60_000; // consulta + emissão + contingência, 60 s cada
 
 /** Comprovantes que o servidor deu em `/pdv/authorize/` (S-06): vão junto com a venda para o servidor
  *  conferir que o gerente autorizou de verdade. Ficam 3 dias (o mesmo prazo do servidor). */
@@ -102,7 +102,7 @@ export function enqueueCash(payload: Record<string, unknown>, label: string): Ou
 function enqueue(kind: OutboxEntry["kind"], payload: Record<string, unknown>, label: string, hold: boolean): OutboxEntry {
   const entry: OutboxEntry = {
     id: `${kind === "cash" ? "cash:" : ""}${String(payload.offline_id ?? randomUUID())}`, kind, label, createdAt: new Date().toISOString(),
-    attempts: 0, status: "pending", lastError: "", payload,
+    attempts: 0, status: "pending", lastError: "", payload, storeId: getConfig().storeId, serverUrl: getConfig().serverUrl,
     ...(hold ? { heldUntil: new Date(Date.now() + HOLD_MS).toISOString() } : {}),
   };
   saveOutbox([...outbox().filter((r) => r.id !== entry.id), entry]);
@@ -110,6 +110,22 @@ function enqueue(kind: OutboxEntry["kind"], payload: Record<string, unknown>, la
   if (!hold) void tick();
   return entry;
 }
+
+/** A linha é da filial e do servidor ativos? As de outra filial esperam ela voltar (nunca vão com o `X-Store-ID` errado). */
+const here = (row: OutboxEntry) => (row.storeId === undefined || row.storeId === getConfig().storeId)
+  && (row.serverUrl === undefined || row.serverUrl === getConfig().serverUrl);
+const headers = (row: OutboxEntry) => (row.storeId ? { "X-Store-ID": row.storeId } : undefined);
+
+/** Por que não dá para trocar de filial/servidor agora (vendas e notas esperando envio); vazio = pode. */
+export function pendingProblem(everyStore = false): string {
+  if (fiscal.busy()) return "Há uma nota fiscal sendo emitida: espere ela terminar.";
+  const rows = outbox().filter((r) => r.status !== "done" && (everyStore || here(r))).length;
+  const notes = fiscal.localInvoices().filter((i) => (!i.synced && i.saleId) || i.status === "contingency").length;
+  if (!rows && !notes) return "";
+  return `Há ${rows} venda(s) ou evento(s) de caixa e ${notes} nota(s) desta filial esperando envio: conecte, sincronize e resolva os recusados antes de trocar.`;
+}
+/** Espera o ciclo em andamento (a troca de filial não pode cair no meio de um envio). */
+export const idle = () => running ?? Promise.resolve();
 
 const held = (row: OutboxEntry) => Boolean(row.heldUntil && Date.parse(row.heldUntil) > Date.now());
 
@@ -170,20 +186,29 @@ const errorText = (data: unknown) => {
 };
 
 async function sendCash(entry: OutboxEntry): Promise<OutboxEntry> {
-  const response = await api({ method: "POST", path: "/pdv/offline-cash/", data: entry.payload });
+  const response = await api({ method: "POST", path: "/pdv/offline-cash/", data: entry.payload, headers: headers(entry) });
   if (response.ok) return { ...entry, status: "done", serverId: String((response.data as { id: string }).id), attempts: entry.attempts + 1, lastError: "" };
   return failedOrRetry(entry, response.status, response.data);
 }
+
+const WAITS = new Set(["offline_session_missing", "offline_session_other"]);
+/** O turno a que a linha pertence ("off:<id>" ou o id do servidor). */
+const shiftOf = (row: OutboxEntry) => row.kind === "cash" && row.payload.event === "open"
+  ? `off:${String(row.payload.offline_id)}` : String(row.payload.cash_session ?? row.payload.session ?? "");
 
 /** Erro de rede/servidor: tenta depois. "Turno ainda não chegou": espera a vez (fila em ordem).
  *  Regra de negócio: marca recusado com o motivo. */
 function failedOrRetry(entry: OutboxEntry, code: number, data: unknown): OutboxEntry {
   const errCode = (data as { error?: { code?: string } } | null)?.error?.code;
-  if (transient(code) || errCode === "offline_session_missing") {
+  // Turno de outro operador: espera o login dele (ou do gerente); não é recusa.
+  // A abertura deste turno foi descartada: esperar por ela seria para sempre. Vira recusa (o operador decide).
+  const lost = errCode === "offline_session_missing" && shiftOf(entry).startsWith("off:")
+    && !outbox().some((r) => r.payload.event === "open" && shiftOf(r) === shiftOf(entry));
+  if (!lost && (transient(code) || WAITS.has(errCode ?? ""))) {
     if (code === 0 || code >= 500) online = false;
-    return { ...entry, attempts: entry.attempts + 1, lastError: errorText(data) };
+    return { ...entry, waiting: WAITS.has(errCode ?? "") || undefined, attempts: entry.attempts + 1, lastError: errorText(data) };
   }
-  return { ...entry, status: "failed", attempts: entry.attempts + 1, lastError: errorText(data) };
+  return { ...entry, waiting: undefined, status: "failed", attempts: entry.attempts + 1, lastError: errorText(data) };
 }
 
 const send = (entry: OutboxEntry) => (entry.kind === "cash" ? sendCash(entry) : sendSale(entry));
@@ -192,11 +217,11 @@ async function sendSale(entry: OutboxEntry): Promise<OutboxEntry> {
   const saleRef = `off:${entry.id}`;
   const invoice = fiscal.invoicesFor(saleRef).find((i) => i.status === "authorized" || i.status === "contingency");
   const body = { ...entry.payload, ...(invoice ? { invoice: invoice.register } : {}) };
-  const response = await api({ method: "POST", path: "/pdv/offline-sales/", data: body });
+  const response = await api({ method: "POST", path: "/pdv/offline-sales/", data: body, headers: headers(entry) });
   if (response.ok) {
     const server = response.data as Record<string, unknown> & { id: string };
     const serverId = String(server.id);
-    if (invoice) fiscal.linkInvoices(saleRef, serverId);
+    fiscal.linkInvoices(saleRef, serverId, invoice?.key);
     local.linkServer(saleRef, server);
     return { ...entry, status: "done", serverId, serverSale: server, attempts: entry.attempts + 1, lastError: "" };
   }
@@ -225,14 +250,24 @@ async function cycle(): Promise<NetStatus> {
     // Fila: em ordem; para no primeiro erro de rede (o resto espera o próximo ciclo). Cada volta relê
     // a fila (pode ter entrado venda nova, ou o operador descartado uma) e grava só a linha enviada.
     const sent = new Set<string>();
+    // Turno esperando outro operador: as linhas dele (e a próxima abertura do mesmo caixa) esperam; o resto anda.
+    const blocked = new Set<string>();
+    const blockedRegisters = new Set<string>();
+    const waits = (r: OutboxEntry) => blocked.has(shiftOf(r))
+      || (r.payload.event === "open" && blockedRegisters.has(String(r.payload.register)));
     for (;;) {
-      const row = outbox().find((r) => r.status === "pending" && (r.kind === "sale" || r.kind === "cash") && !sent.has(r.id));
+      const row = outbox().find((r) => r.status === "pending" && here(r) && (r.kind === "sale" || r.kind === "cash") && !sent.has(r.id) && !waits(r));
       if (!row || held(row)) break; // a nota desta venda ainda está saindo: ela (e as de depois) esperam
       sent.add(row.id);
       const result = await send(row);
       if (!outbox().some((r) => r.id === row.id)) continue; // descartada durante o envio
       saveEntry(result);
       notify();
+      if (result.waiting && shiftOf(row)) {
+        blocked.add(shiftOf(row));
+        if (row.payload.event === "open") blockedRegisters.add(String(row.payload.register));
+        continue;
+      }
       if (result.status === "pending") break;
     }
     // Feitas há mais de 1 dia saem da fila (o servidor já tem).

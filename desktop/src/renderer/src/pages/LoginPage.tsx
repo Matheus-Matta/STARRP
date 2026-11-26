@@ -51,7 +51,12 @@ export default function LoginPage() {
       setError(problem);
       return;
     }
-    await saveConfig({ serverUrl: server });
+    try {
+      await saveConfig({ serverUrl: server });
+    } catch (e) {
+      setError(e instanceof Error ? e.message.replace(/^Error invoking remote method '[^']+': Error: /, "") : String(e));
+      return;
+    }
     setEditingServer(false);
     setError("");
   }

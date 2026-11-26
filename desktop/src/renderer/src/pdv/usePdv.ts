@@ -150,13 +150,13 @@ export function usePdv(operator: PdvOperator) {
    * superior pelo diálogo — conferido no servidor quando ele está no ar, senão pelas senhas
    * que este PC aprendeu. Devolve o id de quem autorizou (null = senha de ações do caixa).
    */
-  async function authorize(code: AuthorizeRequest["code"], percent?: number): Promise<number | null> {
+  async function authorize(code: AuthorizeRequest["code"], percent?: number, what?: Record<string, unknown>): Promise<number | null> {
     const own = code === "sales.discount"
       ? (percent ?? 0) <= Number(bootRef.current?.operator?.max_discount_percent ?? 0) + 1e-9
       : operator.permissions.includes(code) || operator.permissions.includes("*"); // "*" = administrador da conta
     if (own) return userId;
     return withApproval(async (approval) => {
-      const result = await window.starrp.local.authorize({ code, percent, approval: approval as AuthorizeRequest["approval"] });
+      const result = await window.starrp.local.authorize({ code, percent, what, approval: approval as AuthorizeRequest["approval"] });
       if (!result.ok) throw new ApiError(result.status, result.code, result.message);
       return result.approver?.id ?? null;
     });
@@ -266,7 +266,9 @@ export function usePdv(operator: PdvOperator) {
         id: found.id, name: found.display_name, unit: "UN", reference: "",
         variants: [{ id: found.id, name: found.display_name, sku: found.sku, price: found.list_price, current_price: found.current_price }],
       } as unknown as off.SnapProduct;
-      return { product, variant: product.variants[0]! };
+      const weight = (found as { scale_quantity?: string | null }).scale_quantity;
+      const total = (found as { scale_total?: string | null }).scale_total;
+      return { product, variant: product.variants[0]!, quantity: weight ? Number(weight) : null, total: total ? Number(total) : null };
     } catch (error) {
       if (isNetworkError(error) || (error instanceof ApiError && error.status === 404)) return null;
       throw error;
@@ -354,8 +356,14 @@ export function usePdv(operator: PdvOperator) {
     const [qty, code] = raw.includes("*") ? raw.split("*", 2) : [undefined, raw];
     const open = await ensureSale();
     if (off.isLocal(open)) {
-      const found = off.lookupCode(await snapshot(), code ?? "") ?? await findOnline((code ?? "").trim());
+      const snap = await snapshot();
+      const read = (code ?? "").trim();
+      const found: { product: off.SnapProduct; variant: off.SnapVariant; quantity?: number | null; total?: number | null } | null =
+        off.lookupCode(snap, read) ?? off.scaleLabel(snap, read, bootRef.current?.rules) ?? await findOnline(read);
       if (!found) throw new off.OfflineRefused(`Código ${code} não encontrado${serverDown() ? " no catálogo guardado deste PC" : ""}.`);
+      if (!qty && found.quantity) {
+        return remember(off.addLocalItem(open, found.product, found.variant, found.quantity, [], found.total ?? null));
+      }
       return remember(off.addLocalItem(open, found.product, found.variant, Number((qty ?? "1").replace(",", ".")) || 1));
     }
     remember(await online(() => withApproval((approval) =>
@@ -558,12 +566,16 @@ export function usePdv(operator: PdvOperator) {
     const base = off.newLocalSale(await window.starrp.offline.nextLocalNumber(),
       pre.seller ? { id: pre.seller, name: pre.sellerName } : null, serverDown());
     const known = pre.customer ? snap.customers.find((c) => c.id === pre.customer) : undefined;
-    const items: SaleItem[] = pre.items.map((row) => {
+    const ids = pre.items.map(() => crypto.randomUUID());
+    const items: SaleItem[] = pre.items.map((row, index) => {
       const found = off.findVariant(snap, row.variant);
       return {
-        id: crypto.randomUUID(), description: row.description, sku: found?.variant.sku ?? "", unit: found?.product.unit ?? "UN",
-        quantity: row.quantity, list_price: found?.variant.price ?? row.unit_price, unit_price: row.unit_price, discount: row.discount,
-        total: "0.00", status: "active", variant: row.variant, promotion: null, parent_item: null,
+        id: ids[index]!, description: row.description, sku: found?.variant.sku ?? "", unit: found?.product.unit ?? "UN",
+        quantity: row.quantity, list_price: row.parent === null ? found?.variant.price ?? row.unit_price : row.unit_price, unit_price: row.unit_price, discount: row.discount,
+        total: "0.00", status: "active", variant: row.variant,
+        promotion: row.parent === null && found && found.variant.current_price !== found.variant.price
+          && Number(row.unit_price) === Number(found.variant.current_price) ? found.variant.promotion ?? "shelf" : null,
+        parent_item: row.parent === null ? null : ids[row.parent] ?? null,
       };
     });
     const sale = off.recalc({
@@ -665,7 +677,7 @@ export function usePdv(operator: PdvOperator) {
       // senha que o PC aprendeu) e o movimento entra na fila. Cancelar desiste do movimento.
       // As mesmas regras do servidor ANTES de lançar (sangria até a gaveta, turno aberto...).
       rules.checkMovement(shift, kind, amount, await drawerNow(shift));
-      const approver = await authorize("cash.approve");
+      const approver = await authorize("cash.approve", undefined, { event: "movement", kind, amount: Number(amount).toFixed(2) });
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
       const label = kind === "withdrawal" ? "Sangria" : "Suprimento";

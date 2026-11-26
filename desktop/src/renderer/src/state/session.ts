@@ -10,6 +10,8 @@ import { ApiError, fromResponse } from "@/api/errors";
 import { authApi } from "@/api/pdv";
 import type { Me } from "@/api/types";
 
+import { notify } from "./toast";
+
 import type { AppConfig } from "../../../shared/ipc";
 import { createStore } from "./store";
 
@@ -90,6 +92,11 @@ export async function logout() {
 }
 
 export async function switchStore(storeId: string) {
+  const problem = await window.starrp.config.switchProblem();
+  if (problem) {
+    notify.warn("Filial não trocada", problem);
+    return;
+  }
   await saveConfig({ storeId });
   patch({ storeId });
 }

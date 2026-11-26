@@ -23,6 +23,10 @@ export const OFFLINE_PREFIX = "off:";
 export const isLocal = (sale: { id: string } | null | undefined) => Boolean(sale?.id.startsWith(OFFLINE_PREFIX));
 
 const cents = (v: number) => Math.round(v * 100) / 100;
+/** Quantidade × preço em inteiros (milésimos × centavos), metade para cima: igual ao servidor. Em ponto flutuante
+ *  0,045 × 53,00 dava 2,38 aqui e 2,39 lá, e a venda não fechava. */
+export const lineTotal = (quantity: number, price: number) =>
+  Math.floor((Math.round(quantity * 1000) * Math.round(price * 100) + 500) / 1000) / 100;
 const str = (v: number) => cents(v).toFixed(2);
 const qty = (v: number) => v.toFixed(3);
 export const SERVER_METHODS = new Set(["installment_plan", "store_credit"]);
@@ -57,7 +61,7 @@ export function newLocalSale(number: number, seller: { id: number; name: string 
 export function recalc(sale: Sale): Sale {
   const items = sale.items.map((i) => {
     if (i.status !== "active") return i;
-    const total = Math.max(cents(Number(i.quantity) * Number(i.unit_price)) - Number(i.discount ?? 0), 0);
+    const total = Math.max(cents(lineTotal(Number(i.quantity), Number(i.unit_price)) - Number(i.discount ?? 0)), 0);
     return { ...i, total: str(total) };
   });
   const subtotal = cents(items.filter((i) => i.status === "active").reduce((s, i) => s + Number(i.total), 0));
@@ -95,13 +99,33 @@ export function lookupCode(snapshot: Snapshot | null, code: string) {
   return null;
 }
 
+/** Etiqueta de balança (EAN-13 com o prefixo da filial): produto, peso e, na de preço, o valor impresso. */
+export function scaleLabel(snapshot: Snapshot | null, code: string, rule?: { scale_barcode_mode?: string; scale_barcode_prefix?: string }) {
+  const prefix = rule?.scale_barcode_prefix || "2";
+  if (!rule?.scale_barcode_mode || !/^\d{13}$/.test(code) || !code.startsWith(prefix)) return null;
+  const sum = [...code.slice(0, 12)].reduce((s, d, i) => s + Number(d) * (i % 2 ? 3 : 1), 0);
+  if ((10 - (sum % 10)) % 10 !== Number(code[12])) return null;
+  const plu = code.slice(1, 7).replace(/^0+/, "");
+  const value = Number(code.slice(7, 12));
+  for (const product of (snapshot?.products ?? []) as unknown as SnapProduct[]) {
+    for (const variant of product.variants) {
+      if (!variant.scale_code || variant.scale_code !== plu) continue;
+      if (rule.scale_barcode_mode === "weight") return { product, variant, quantity: value / 1000, total: null };
+      const price = Math.round(Number(variant.current_price) * 100);
+      if (!price) return null;
+      return { product, variant, quantity: Math.ceil((value * 1000) / price) / 1000, total: value / 100 };
+    }
+  }
+  return null;
+}
+
 type Service = PdvProductView["services"][number];
 
-export function addLocalItem(sale: Sale, product: SnapProduct, variant: SnapVariant, quantity: number, services: Service[] = []): Sale {
+export function addLocalItem(sale: Sale, product: SnapProduct, variant: SnapVariant, quantity: number, services: Service[] = [], labelTotal: number | null = null): Sale {
   if (!(quantity > 0)) throw new OfflineRefused("Quantidade precisa ser maior que zero.");
   // Com serviço (montagem, garantia) o item entra separado: cada um com os serviços dele.
-  const existing = services.length ? undefined
-    : sale.items.find((i) => i.status === "active" && i.variant === variant.id && !i.parent_item
+  const existing = services.length || labelTotal !== null ? undefined
+    : sale.items.find((i) => i.status === "active" && i.variant === variant.id && !i.parent_item && !Number(i.discount)
       && !sale.items.some((s) => s.parent_item === i.id && s.status === "active"));
   if (existing) {
     return recalc({ ...sale, items: sale.items.map((i) => (i === existing ? { ...i, quantity: qty(Number(i.quantity) + quantity) } : i)) });
@@ -109,7 +133,8 @@ export function addLocalItem(sale: Sale, product: SnapProduct, variant: SnapVari
   const parent: SaleItem = {
     id: crypto.randomUUID(), description: product.variants.length > 1 && variant.name !== product.name ? `${product.name} ${variant.name}` : product.name,
     sku: variant.sku, unit: product.unit, quantity: qty(quantity), list_price: variant.price, unit_price: variant.current_price,
-    discount: "0.00", total: "0.00", status: "active", variant: variant.id,
+    // Etiqueta de preço: o cliente paga o impresso (a sobra de menos de 1 g sai no desconto da linha).
+    discount: labelTotal === null ? "0.00" : str(Math.max(lineTotal(quantity, Number(variant.current_price)) - labelTotal, 0)), total: "0.00", status: "active", variant: variant.id,
     promotion: variant.current_price !== variant.price ? variant.promotion ?? "shelf" : null, parent_item: null,
   };
   const children: SaleItem[] = services.map((s) => ({

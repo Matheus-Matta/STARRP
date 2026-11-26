@@ -20,13 +20,13 @@ export const PRESALE_PREFIX = "PV1";
 
 type Packed = {
   o: string; n: number; s: number | null; sn: string; c: string | null; cn: string; d: string; g: string;
-  i: [string, string, string, string, string][]; t: string; at: string;
+  i: [string, string, string, string, string, number?][]; t: string; at: string;
 };
 
 export type Presale = {
   offlineId: string; number: number; seller: number | null; sellerName: string; customer: string | null; customerName: string;
   document: string; discount: string; total: string; createdAt: string;
-  items: { variant: string; quantity: string; unit_price: string; discount: string; description: string }[];
+  items: { variant: string; quantity: string; unit_price: string; discount: string; description: string; parent: number | null }[];
 };
 
 async function pipe(data: Uint8Array, stream: CompressionStream | DecompressionStream) {
@@ -44,11 +44,18 @@ const fromB64url = (text: string) => {
 };
 
 export async function encodePresale(sale: Sale): Promise<string> {
+  // O serviço (montagem, garantia) vai junto, apontando a posição do item dele: sem isso o caixa não o cobrava.
+  const active = sale.items.filter((i) => i.status === "active");
+  const items = [...active.filter((i) => !i.parent_item), ...active.filter((i) => i.parent_item)];
   const packed: Packed = {
     o: sale.id.slice(OFFLINE_PREFIX.length), n: sale.number, s: sale.seller, sn: sale.seller_name, c: sale.customer,
     cn: sale.customer_name, d: sale.customer_document ?? "", g: sale.discount, t: sale.total, at: sale.created_at,
-    i: sale.items.filter((i) => i.status === "active" && !i.parent_item)
-      .map((i) => [i.variant, i.quantity ?? "1", i.unit_price ?? "0", i.discount ?? "0", i.description.slice(0, 40)]),
+    i: items.map((i) => {
+      const row: Packed["i"][number] = [i.variant, i.quantity ?? "1", i.unit_price ?? "0", i.discount ?? "0", i.description.slice(0, 40)];
+      const parent = i.parent_item ? items.findIndex((p) => p.id === i.parent_item) : -1;
+      if (parent >= 0) row.push(parent);
+      return row;
+    }),
   };
   const bytes = await pipe(new TextEncoder().encode(JSON.stringify(packed)), new CompressionStream("deflate-raw"));
   return PRESALE_PREFIX + toB64url(bytes);
@@ -62,7 +69,9 @@ export async function decodePresale(raw: string): Promise<Presale> {
   return {
     offlineId: p.o, number: p.n, seller: p.s, sellerName: p.sn, customer: p.c, customerName: p.cn, document: p.d,
     discount: p.g, total: p.t, createdAt: p.at,
-    items: p.i.map(([variant, quantity, unit_price, discount, description]) => ({ variant, quantity, unit_price, discount, description })),
+    items: p.i.map(([variant, quantity, unit_price, discount, description, parent]) => ({
+      variant, quantity, unit_price, discount, description, parent: parent ?? null,
+    })),
   };
 }
 

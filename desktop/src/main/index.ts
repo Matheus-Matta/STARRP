@@ -11,8 +11,10 @@ import { join } from "node:path";
 import { app, BrowserWindow, dialog, ipcMain, Menu, session, shell } from "electron";
 
 import type { ApiRequest, AppConfig, AuthorizeRequest, EmitRequest, OfflineCache, PrinterTarget, PrintJob } from "../shared/ipc";
+import { normalizeServerUrl } from "../shared/serverUrl";
 import * as api from "./api";
 import { getConfig, installationId, setConfig } from "./config";
+import { onStorageProblem } from "./files";
 import * as fiscal from "./fiscal";
 import * as local from "./local";
 import * as printing from "./printing";
@@ -109,7 +111,21 @@ function registerIpc() {
   ipcMain.handle("auth:logout", () => api.logout());
   ipcMain.handle("auth:has-session", () => api.hasSession());
   ipcMain.handle("config:get", () => getConfig());
-  ipcMain.handle("config:set", (_e, patch: Partial<AppConfig>) => setConfig(patch));
+  ipcMain.handle("config:set", async (_e, patch: Partial<AppConfig>) => {
+    const now = getConfig();
+    // Outro servidor: a fila e as notas daqui são do atual. Trocar só de filial por login é permitido (cada
+    // linha da fila e cada nota fica com a sua filial); pela barra, a tela pergunta antes (`config:switch-problem`).
+    if (patch.serverUrl !== undefined && normalizeServerUrl(patch.serverUrl) !== now.serverUrl) {
+      const problem = sync.pendingProblem(true);
+      if (problem) throw new Error(problem);
+    }
+    if (patch.storeId !== undefined && patch.storeId !== now.storeId) {
+      if (fiscal.busy()) throw new Error("Há uma nota fiscal sendo emitida: espere ela terminar.");
+      await sync.idle();
+    }
+    return setConfig(patch);
+  });
+  ipcMain.handle("config:switch-problem", () => sync.pendingProblem());
   ipcMain.handle("config:installation-id", (_e, storeId: string) => installationId(storeId));
   ipcMain.handle("printers:list", () => printing.listPrinters(win));
   ipcMain.handle("printers:print", (_e, job: PrintJob) => printing.print(job, win));
@@ -169,6 +185,9 @@ if (!app.requestSingleInstanceLock()) {
     // O PDV não usa câmera, microfone, localização nem notificações do navegador: nega tudo.
     session.defaultSession.setPermissionRequestHandler((_wc, _permission, callback) => callback(false));
     session.defaultSession.setPermissionCheckHandler(() => false);
+    onStorageProblem((message) => {
+      void dialog.showMessageBox({ type: "error", title: "Dados do PDV", message });
+    });
     registerIpc();
     createWindow();
     sync.start(win!);

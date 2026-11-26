@@ -18,6 +18,7 @@ const bridge: StarrpBridge = {
   config: {
     get: () => ipcRenderer.invoke("config:get"),
     set: (patch) => ipcRenderer.invoke("config:set", patch),
+    switchProblem: () => ipcRenderer.invoke("config:switch-problem"),
     installationId: (storeId) => ipcRenderer.invoke("config:installation-id", storeId),
   },
   printers: {

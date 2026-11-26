@@ -62,6 +62,12 @@ export function linkServer(localId: string, server: Record<string, unknown>) {
     ? { ...s, server_id: server.id, server_number: server.number } : s)));
 }
 
+/** Os dois lados de uma venda feita aqui que já está no servidor (pelo id local ou pelo do servidor). */
+export function linkOf(ref: string): { localId: string; serverId: string } | null {
+  const found = history().find((s) => s.server_id && (s.id === ref || s.server_id === ref));
+  return found ? { localId: found.id, serverId: String(found.server_id) } : null;
+}
+
 /* ── senhas aprendidas (autorização offline) ─────────────────────────────── */
 
 type Verifier = { salt: string; hash: string; learnedAt?: string; n?: number };

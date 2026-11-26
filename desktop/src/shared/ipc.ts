@@ -128,6 +128,11 @@ export type OutboxEntry = {
   serverId?: string;
   /** A venda como o servidor devolveu (número real). */
   serverSale?: Record<string, unknown>;
+  /** Esperando o operador do turno (ou o gerente) entrar: não é recusa. */
+  waiting?: boolean;
+  /** Filial e servidor em que foi feita: só vai para eles (sem isto = fila de versão antiga). */
+  storeId?: string | null;
+  serverUrl?: string;
   /** Segurada até a nota sair (vai com a venda); passou do prazo, vai sozinha. */
   heldUntil?: string;
 };
@@ -144,6 +149,8 @@ export type FlushResult = { status: "done" | "queued" | "failed"; sale?: Record<
 export type AuthorizeRequest = {
   code: "sales.discount" | "sales.price_override" | "sales.cancel_item" | "sales.cancel" | "cash.approve";
   percent?: number;
+  /** O que a autorização cobre (o comprovante do servidor só vale para isto). */
+  what?: Record<string, unknown>;
   approval?: { username?: string; password?: string; cash_password?: string };
 };
 /** `ok: false` traz o mesmo erro que a API daria (`*approval_required`, `approval_invalid`). */
@@ -173,6 +180,8 @@ export type StarrpBridge = {
   config: {
     get: () => Promise<AppConfig>;
     set: (patch: Partial<AppConfig>) => Promise<AppConfig>;
+    /** Por que não trocar de filial agora (pendências daqui); "" = pode. */
+    switchProblem: () => Promise<string>;
     installationId: (storeId: string) => Promise<string>;
   };
   printers: {
