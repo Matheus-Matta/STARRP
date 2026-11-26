@@ -19,6 +19,7 @@
  */
 import Button from "primevue/button";
 import Dialog from "primevue/dialog";
+import { useQueryClient } from "@tanstack/vue-query";
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRouter } from "vue-router";
 
@@ -47,7 +48,7 @@ import { ApprovalCancelled } from "@/composables/useApproval";
 import { useNotify } from "@/composables/useNotify";
 import { usePdv } from "@/composables/usePdv";
 import { type CatalogProduct, usePdvCatalog } from "@/composables/usePdvCatalog";
-import { useSession } from "@/stores/session";
+import { LOGOUT_FAILED, useSession } from "@/stores/session";
 import { money } from "@/utils/format";
 import { openPrint } from "@/utils/print";
 import { CANCEL_SALE_REASONS, PARK_REASONS, REMOVE_ITEM_REASONS } from "@/utils/reasons";
@@ -59,6 +60,7 @@ const catalog = usePdvCatalog();
 const session = useSession();
 const router = useRouter();
 const notify = useNotify();
+const queryClient = useQueryClient();
 
 const catalogRef = ref<InstanceType<typeof PdvCatalog>>();
 const view = ref<View>("sale");
@@ -324,7 +326,12 @@ function printReceipt(id: string) {
 }
 
 async function logout() {
-  await session.logout();
+  try {
+    await session.logout();
+  } catch {
+    return notify.warn("Você ainda está conectado", LOGOUT_FAILED);
+  }
+  queryClient.clear(); // o próximo operador desta aba não vê nada do anterior
   await router.push("/login");
 }
 

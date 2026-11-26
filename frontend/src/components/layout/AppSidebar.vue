@@ -11,7 +11,8 @@ import { RouterLink, useRoute, useRouter } from "vue-router";
 
 import { usePrefetch } from "@/composables/usePrefetch";
 import { BRANDS, useTheme } from "@/composables/useTheme";
-import { useSession } from "@/stores/session";
+import { useNotify } from "@/composables/useNotify";
+import { LOGOUT_FAILED, useSession } from "@/stores/session";
 
 import { buildNavigation } from "./navigation";
 import StorePicker from "./StorePicker.vue";
@@ -22,6 +23,7 @@ const session = useSession();
 const route = useRoute();
 const router = useRouter();
 const queryClient = useQueryClient();
+const notify = useNotify();
 const theme = useTheme();
 const prefetch = usePrefetch();
 const groups = computed(() => buildNavigation(session.can, session.hasModule));
@@ -82,7 +84,11 @@ const userItems = computed(() => [
   { label: "Abrir o PDV", icon: "pi pi-shopping-cart", command: () => router.push("/pdv") },
   { separator: true },
   { label: "Sair", icon: "pi pi-sign-out", command: async () => {
-    await session.logout();
+    try {
+      await session.logout();
+    } catch {
+      return notify.warn("Você ainda está conectado", LOGOUT_FAILED);
+    }
     queryClient.clear();
     router.push("/login");
   } },

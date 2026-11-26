@@ -85,7 +85,13 @@ function titles(kind: "receivable" | "payable"): ResourceDef {
     endpoint: "/finance/titles/",
     params: { kind },
     icon: receivable ? "pi pi-arrow-down-left" : "pi pi-arrow-up-right",
-    formActions: [{ label: "Imprimir", icon: "pi pi-print", run: async ({ id }) => openPrint("titulo", id) }],
+    formActions: [
+      { label: "Imprimir", icon: "pi pi-print", run: async ({ id }) => openPrint("titulo", id) },
+      { label: "Cancelar título", icon: "pi pi-ban", severity: "danger",
+        visible: (v) => v.status === "open" && !v.sale && !v.inbound_nfe,
+        confirm: "Cancelar este título? As parcelas saem do que está em aberto.",
+        success: "Título cancelado", run: ({ id }) => financeApi.cancelTitle(id) },
+    ],
     rowActions: [{ label: "Imprimir", icon: "pi pi-print", run: async (row) => openPrint("titulo", String(row.id)) }],
     deletable: false,
     ordering: "-issue_date",
@@ -95,7 +101,7 @@ function titles(kind: "receivable" | "payable"): ResourceDef {
       children: async (row) => {
         const found = (await resourceApi.list("/finance/installments/", { title: String(row.id), ordering: "number", page_size: 200 })).results;
         return found.map((i) => ({ id: i.id, description: `Parcela ${i.number}/${found.length}`, next_due: i.due_date,
-                                   total: i.amount, open_amount: (Number(i.amount) - Number(i.paid_amount)).toFixed(2), status: i.status }));
+                                   total: i.amount, open_amount: i.status === "cancelled" ? "0.00" : String(i.balance ?? i.amount), status: i.status }));
       },
     },
     display: {

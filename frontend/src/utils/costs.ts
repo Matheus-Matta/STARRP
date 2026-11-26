@@ -9,8 +9,8 @@
 import type { ColumnDef, DisplayDef, DisplaySection, DisplayStat, ResourceDef } from "@/resources/types";
 
 export const COST_PERMISSION = "catalog.view_costs";
-const COST_KEY = /(^|_)(cost|costs|margin|profit|markup|cmv)(_|$)/;
-const COST_LABEL = /(^|[^\p{L}])(custos?|margem|margens|lucros?|cmv|markup)($|[^\p{L}])/iu;
+const COST_KEY = /(^|_)(cost|costs|margin|profit|markup|cmv|loss|losses|result)(_|$)/;
+const COST_LABEL = /(^|[^\p{L}])(custos?|margem|margens|lucros?|cmv|markup|prejuízos?|resultado|perda de)($|[^\p{L}])/iu;
 
 export const isCostKey = (key: unknown) => typeof key === "string" && COST_KEY.test(key);
 export const isCostLabel = (label: unknown) => typeof label === "string" && COST_LABEL.test(label);

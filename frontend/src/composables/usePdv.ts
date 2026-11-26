@@ -41,6 +41,7 @@ export function usePdv() {
   /** Tela bloqueada (sobrevive ao recarregar: recarregar não "desbloqueia"). */
   const locked = ref(sessionStorage.getItem(LOCK_KEY) === "1");
   let checkoutKey: string | null = null;
+  let checkoutSale: string | null = null;
 
   const items = computed(() => (sale.value?.items ?? []).filter((i: SaleItem) => i.status === "active"));
   const mode = computed(() => boot.value?.mode ?? "cashier");
@@ -159,6 +160,9 @@ export function usePdv() {
   });
 
   const checkout = (payments: PaymentInput[]) => run(async () => {
+    // A chave é DESTA venda: se a resposta se perdeu, a próxima venda não pode levar a chave dela (409).
+    if (checkoutSale !== sale.value!.id) checkoutKey = null;
+    checkoutSale = sale.value!.id;
     checkoutKey ??= idempotencyKey();
     const done = await salesApi.checkout(sale.value!.id, payments, checkoutKey);
     checkoutKey = null;

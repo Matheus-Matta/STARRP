@@ -13,6 +13,7 @@ import Button from "primevue/button";
 import DatePicker from "primevue/datepicker";
 import Dialog from "primevue/dialog";
 import Checkbox from "primevue/checkbox";
+import InputText from "primevue/inputtext";
 import InputNumber from "primevue/inputnumber";
 import { computed, ref } from "vue";
 
@@ -73,6 +74,23 @@ function toggleCredit() {
   form.value.amount = Number(due.value.toFixed(2));
 }
 
+const undoing = ref<Installment | null>(null);
+const reason = ref("");
+async function undo() {
+  if (!undoing.value) return;
+  saving.value = true;
+  try {
+    await financeApi.unsettle(undoing.value.id, reason.value.trim());
+    notify.success("Baixa desfeita", "O dinheiro voltou por lançamento inverso.");
+    undoing.value = null;
+    emit("changed");
+  } catch (error) {
+    notify.error(error, "Não foi possível desfazer a baixa");
+  } finally {
+    saving.value = false;
+  }
+}
+
 async function settle() {
   if (!settling.value) return;
   if (!form.value.financial_account && form.value.amount > 0) return notify.warn("Escolha a conta.");
@@ -113,7 +131,9 @@ async function settle() {
         <span><span class="pill" :class="STATUS[row.status]?.[1]">{{ STATUS[row.status]?.[0] ?? row.status }}</span></span>
         <Button v-if="['open', 'partial'].includes(row.status)" :label="receivable ? 'Receber' : 'Pagar'" icon="pi pi-check"
                 size="small" severity="secondary" outlined @click="open(row)" />
-        <small v-else class="muted">{{ row.paid_at ? date(row.paid_at) : "" }}</small>
+        <span v-else class="paid muted"><small>{{ row.paid_at ? date(row.paid_at) : "" }}</small></span>
+        <Button v-if="Number(row.paid_amount) > 0" class="undo" label="Desfazer baixa" icon="pi pi-undo" size="small" severity="danger"
+                text @click="undoing = row; reason = ''" />
       </div>
     </div>
 
@@ -148,6 +168,18 @@ async function settle() {
         <Button :label="`Confirmar ${money(total)}`" icon="pi pi-check" :loading="saving" @click="settle" />
       </template>
     </Dialog>
+
+    <Dialog :visible="undoing !== null" modal :header="`Desfazer a baixa da parcela ${undoing?.number}`"
+            :style="{ width: 'min(440px, calc(100vw - 24px))' }" @update:visible="undoing = null">
+      <p class="muted">A parcela volta a ficar em aberto e o dinheiro sai da conta por um lançamento inverso. O crédito usado volta;
+        o que foi pago a mais continua como crédito.</p>
+      <div class="field"><label>Motivo<span class="req">*</span></label>
+        <InputText v-model="reason" maxlength="150" autofocus fluid /></div>
+      <template #footer>
+        <Button label="Cancelar" severity="secondary" text @click="undoing = null" />
+        <Button label="Desfazer baixa" icon="pi pi-undo" severity="danger" :loading="saving" :disabled="!reason.trim()" @click="undo" />
+      </template>
+    </Dialog>
   </div>
 </template>
 
@@ -157,6 +189,7 @@ async function settle() {
 .row { display: grid; grid-template-columns: 44px 1.2fr 1fr 1fr 1fr 1fr 110px; gap: 0.5rem; align-items: center;
        padding: 8px 12px; border-top: 1px solid var(--border-subtle); font-size: 13.5px; }
 .head { border-top: 0; background: var(--surface-sunken); font: 650 11.5px/1.3 var(--font-sans); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.undo { grid-column: 1 / -1; justify-self: end; }
 .overdue { background: var(--danger-subtle); }
 .late { color: var(--danger-text); font-weight: 600; margin-left: 4px; }
 .right { text-align: right; }

@@ -3029,6 +3029,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/finance/installments/{id}/unsettle/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Desfaz a baixa lançada por engano: {"reason"}. */
+        post: operations["v1_finance_installments_unsettle_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/finance/installments/bulk/": {
         parameters: {
             query?: never;
@@ -3185,6 +3202,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch: operations["v1_finance_titles_partial_update"];
+        trace?: never;
+    };
+    "/api/v1/finance/titles/{id}/cancel/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Cancela um título lançado à mão que não tem baixa. */
+        post: operations["v1_finance_titles_cancel_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/finance/titles/{id}/history/": {
@@ -3687,7 +3721,7 @@ export interface paths {
         };
         get: operations["v1_imports_list"];
         put?: never;
-        post: operations["v1_imports_create"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -3739,7 +3773,7 @@ export interface paths {
         };
         get: operations["v1_imports_bulk_retrieve"];
         put?: never;
-        post: operations["v1_imports_bulk_create"];
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -5119,7 +5153,7 @@ export interface paths {
         get?: never;
         put?: never;
         /**
-         * @description POST /pdv/authorize/ {"code", "percent"?, "approval"?}: o PDV desktop monta a venda no
+         * @description POST /pdv/authorize/ {"code", "percent"?, "what"?, "approval"?}: o PDV desktop monta a venda no
          *     PC e só pergunta aqui se a ação passa (e quem autorizou). Mesmos erros da venda no servidor
          *     (`*approval_required`, `approval_invalid`): o diálogo do gerente funciona igual.
          *
@@ -8795,10 +8829,10 @@ export interface components {
             /** Format: uuid */
             asset: string;
             /** Format: uuid */
-            from_location?: string | null;
+            readonly from_location: string | null;
             /** Format: uuid */
             to_location: string;
-            moved_by?: number | null;
+            readonly moved_by: number | null;
         };
         /**
          * @description * `in_stock` - Em estoque
@@ -8884,6 +8918,7 @@ export interface components {
             /** Format: uuid */
             attribute: string;
         };
+        /** @description As mesmas regras do histórico do registro: sem custo para quem não o vê e sem a gaveta (fechamento cego). */
         AuditLog: {
             /** Format: uuid */
             readonly id: string;
@@ -9480,6 +9515,11 @@ export interface components {
             readonly sale_item: string | null;
             /** Format: uuid */
             readonly sale_return: string | null;
+            /**
+             * Format: uuid
+             * @description Lançamento que pagou (estornado, volta a pagar).
+             */
+            readonly payout: string | null;
         };
         /**
          * @description * `pending` - A pagar
@@ -10450,7 +10490,7 @@ export interface components {
             /** Nome */
             name: string;
             /** @description Pré-pronto do sistema: ajusta, mas não exclui. */
-            is_system?: boolean;
+            readonly is_system: boolean;
             /** @description Vale para o produto do perfil que não tiver NCM próprio. */
             ncm?: string;
             /** @description Vale para o produto do perfil que não tiver CEST próprio. */
@@ -10622,16 +10662,9 @@ export interface components {
             id?: string;
             zip_start: string;
             zip_end: string;
-            /**
-             * Valor
-             * Format: decimal
-             */
-            value?: string;
-            /**
-             * Format: int64
-             * @description Vazio = prazo da tabela.
-             */
-            lead_days?: number | null;
+            /** Format: decimal */
+            value: string;
+            lead_days?: number;
             /** @description Ex.: "Zona Sul", "Grande SP". */
             label?: string;
         };
@@ -13133,10 +13166,10 @@ export interface components {
             /** Format: uuid */
             asset?: string;
             /** Format: uuid */
-            from_location?: string | null;
+            readonly from_location?: string | null;
             /** Format: uuid */
             to_location?: string;
-            moved_by?: number | null;
+            readonly moved_by?: number | null;
         };
         PatchedAttribute: {
             /** Format: uuid */
@@ -13414,6 +13447,11 @@ export interface components {
             readonly sale_item?: string | null;
             /** Format: uuid */
             readonly sale_return?: string | null;
+            /**
+             * Format: uuid
+             * @description Lançamento que pagou (estornado, volta a pagar).
+             */
+            readonly payout?: string | null;
         };
         PatchedCompetitorPrice: {
             /** Format: uuid */
@@ -14071,7 +14109,7 @@ export interface components {
             /** Nome */
             name?: string;
             /** @description Pré-pronto do sistema: ajusta, mas não exclui. */
-            is_system?: boolean;
+            readonly is_system?: boolean;
             /** @description Vale para o produto do perfil que não tiver NCM próprio. */
             ncm?: string;
             /** @description Vale para o produto do perfil que não tiver CEST próprio. */
@@ -16201,6 +16239,8 @@ export interface components {
             reference?: string;
             /** Format: date-time */
             readonly paid_at: string;
+            /** Format: decimal */
+            readonly fee_percent: string | null;
             /** Metadados */
             metadata?: unknown;
             /**
@@ -27235,6 +27275,34 @@ export interface operations {
             };
         };
     };
+    v1_finance_installments_unsettle_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Parcela. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Installment"];
+                "application/x-www-form-urlencoded": components["schemas"]["Installment"];
+                "multipart/form-data": components["schemas"]["Installment"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Installment"];
+                };
+            };
+        };
+    };
     v1_finance_installments_bulk_retrieve: {
         parameters: {
             query?: never;
@@ -27665,6 +27733,34 @@ export interface operations {
                 "application/json": components["schemas"]["PatchedFinancialTitle"];
                 "application/x-www-form-urlencoded": components["schemas"]["PatchedFinancialTitle"];
                 "multipart/form-data": components["schemas"]["PatchedFinancialTitle"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["FinancialTitle"];
+                };
+            };
+        };
+    };
+    v1_finance_titles_cancel_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Um string UUID que identifica este Título financeiro. */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["FinancialTitle"];
+                "application/x-www-form-urlencoded": components["schemas"]["FinancialTitle"];
+                "multipart/form-data": components["schemas"]["FinancialTitle"];
             };
         };
         responses: {
@@ -28914,31 +29010,6 @@ export interface operations {
             };
         };
     };
-    v1_imports_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImportJob"];
-                "application/x-www-form-urlencoded": components["schemas"]["ImportJob"];
-                "multipart/form-data": components["schemas"]["ImportJob"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJob"];
-                };
-            };
-        };
-    };
     v1_imports_retrieve: {
         parameters: {
             query?: never;
@@ -28991,31 +29062,6 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJob"];
-                };
-            };
-        };
-    };
-    v1_imports_bulk_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImportJob"];
-                "application/x-www-form-urlencoded": components["schemas"]["ImportJob"];
-                "multipart/form-data": components["schemas"]["ImportJob"];
-            };
-        };
         responses: {
             200: {
                 headers: {

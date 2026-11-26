@@ -15,6 +15,8 @@ import type { Me } from "@/api/types";
 import { COST_PERMISSION, setSeesCosts } from "@/utils/costs";
 
 const STORE_KEY = "starrp.activeStore";
+/** O servidor não confirmou a saída (o cookie continua valendo). */
+export const LOGOUT_FAILED = "O servidor não respondeu. Tente sair de novo antes de deixar este computador.";
 /** Valor do header que pede a visão consolidada das lojas permitidas. */
 export const ALL_STORES = "*";
 
@@ -78,7 +80,8 @@ export const useSession = defineStore("session", () => {
   }
 
   async function logout() {
-    await authApi.logout().catch(() => undefined);
+    // Sem a resposta do servidor o cookie continua valendo: não finge que saiu (a próxima pessoa reabriria a sessão).
+    await authApi.logout();
     me.value = null;
   }
 

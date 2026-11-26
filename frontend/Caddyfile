@@ -78,7 +78,7 @@
 			# S-23: só script do próprio site (nada inline: o tema é /theme-boot.js e a impressão de etiquetas é
 			# chamada pelo app). Estilo inline fica (PrimeVue e Quill injetam <style>). Imagem de qualquer https
 			# (fotos de concorrentes, logos); CEP pelas APIs públicas.
-			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://viacep.com.br https://opencep.com https://cep.awesomeapi.com.br https://brasilapi.com.br; frame-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
+			Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://viacep.com.br https://opencep.com https://cep.awesomeapi.com.br https://brasilapi.com.br; frame-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; object-src 'none'; form-action 'self'"
 		}
 	}
 

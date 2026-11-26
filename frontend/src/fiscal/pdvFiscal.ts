@@ -14,6 +14,7 @@ import { reactive } from "vue";
 import { createFiscal } from "../../../shared/fiscal/engine";
 import { cloudTransport } from "../../../shared/fiscal/transport";
 import type { Kit, LocalInvoice, Numbers } from "../../../shared/fiscal/types";
+import { toApiError } from "@/api/errors";
 import { http } from "@/api/http";
 import { useSession } from "@/stores/session";
 
@@ -63,9 +64,11 @@ const TERMINAL_KEY = "starrp.pdv.terminal"; // o mesmo id do bootstrap do PDV we
 function asResponse(promise: Promise<{ status: number; data: unknown }>) {
   return promise
     .then((r) => ({ ok: true, status: r.status, data: r.data }))
-    .catch((error: { response?: { status: number; data: unknown } }) => ({
-      ok: false, status: error.response?.status ?? 0, data: error.response?.data ?? null,
-    }));
+    // O cliente http lança `ApiError` (status, code, message): sem resposta, status 0.
+    .catch((error: unknown) => {
+      const e = toApiError(error);
+      return { ok: false, status: e.status, data: { error: { code: e.code, message: e.message } } as unknown };
+    });
 }
 
 const server = {
@@ -99,7 +102,9 @@ export const fiscal = createFiscal({
 
 /** Emite a nota da venda concluída e já registra no servidor (devolve a nota com o id de lá). */
 export async function emitForSale(sale: Record<string, unknown> & { id: string }, model = fiscalSettings.model) {
-  const result = await fiscal.emit({ sale, model, saleRef: sale.id }, { contingency: fiscalSettings.contingency });
+  const emit = () => fiscal.emit({ sale, model, saleRef: sale.id }, { contingency: fiscalSettings.contingency });
+  // Duas abas com o mesmo pedido: uma de cada vez (a segunda encontra a nota da primeira).
+  const result = navigator.locks ? await navigator.locks.request(`starrp.fiscal:${sale.id}`, emit) : await emit();
   if (result.invoice && !result.invoice.server_invoice_id) {
     await fiscal.registerInvoice(result.invoice);
     return { ...result, invoice: fiscal.invoicesFor(sale.id).find((i) => i.key === result.invoice!.key) ?? result.invoice };
