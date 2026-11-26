@@ -11,7 +11,13 @@
 # Atualizar o backend sem tirar do ar: bash deploy-backend.sh 1.0.2 (troca o green, depois o blue).
 name: starrp
 
+# Log do Docker com tamanho máximo (sem isto o json-file cresce até encher o disco).
+x-logging: &logging
+  driver: json-file
+  options: { max-size: 10m, max-file: "5" }
+
 x-backend: &backend
+  logging: *logging
   image: ${BACKEND_IMAGE:-ghcr.io/matheus-matta/starrp-backend}:${BACKEND_VERSION:?defina BACKEND_VERSION (ex. 1.0.0) no .env}
   restart: unless-stopped
   env_file: .env
@@ -45,7 +51,7 @@ x-backend: &backend
 x-uvicorn: &uvicorn sh ./start-web.sh
 
 x-healthcheck: &healthcheck
-  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=4)"]
+  test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready/', timeout=4)"]
   interval: 15s
   timeout: 5s
   retries: 3
@@ -55,6 +61,7 @@ services:
   nginx:
     image: nginx:1.28-alpine
     restart: unless-stopped
+    logging: *logging
     # Dentro do container: sempre 80 e 443. No servidor: as portas do .env (padrão 80 e 443).
     ports:
       - "${NGINX_HTTP_PORT:-80}:80"
@@ -93,6 +100,7 @@ services:
   frontend:
     image: ${FRONTEND_IMAGE:-ghcr.io/matheus-matta/starrp-web}:${FRONTEND_VERSION:?defina FRONTEND_VERSION (ex. 1.0.0) no .env}
     restart: unless-stopped
+    logging: *logging
     environment:
       # Atrás do nginx: o Caddy da imagem só serve os arquivos do app em http na rede interna (o HTTPS é do nginx).
       SITE_ADDRESS: ":80"
@@ -112,6 +120,7 @@ services:
     <<: *backend
     command: *uvicorn
     healthcheck: *healthcheck
+    stop_grace_period: 90s   # a nota em emissão (até 60 s no ACBr) termina antes do SIGKILL
 
   backend-green:
     <<: *backend
@@ -119,6 +128,7 @@ services:
     image: ${BACKEND_IMAGE:-ghcr.io/matheus-matta/starrp-backend}:${BACKEND_GREEN_VERSION:-${BACKEND_VERSION:?defina BACKEND_VERSION (ex. 1.0.0) no .env}}
     command: *uvicorn
     healthcheck: *healthcheck
+    stop_grace_period: 90s
 
   # Fila do Celery (precificação, SEO, relatórios pesados, limpeza) e o agendador. Sem eles as tarefas
   # entram na fila e nunca rodam.
@@ -126,6 +136,7 @@ services:
     <<: *backend
     command: celery -A config worker -l info --concurrency ${CELERY_CONCURRENCY:-2}
     networks: [data, fiscal]
+    stop_grace_period: 120s  # termina a tarefa em andamento
 
   beat:
     <<: *backend
@@ -135,6 +146,7 @@ services:
   postgres:
     image: postgres:16-alpine
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
       POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
@@ -149,6 +161,7 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+    logging: *logging
     volumes: [redis:/data]
     networks: [data]
     healthcheck:
@@ -160,6 +173,7 @@ services:
   acbr:
     image: ghcr.io/matheus-matta/comunicador-fiscal:${ACBR_VERSAO:?defina ACBR_VERSAO (versão publicada do comunicador) no .env}
     restart: unless-stopped
+    logging: *logging
     # Só o que o comunicador precisa (S-11): ele é imagem de terceiro e não recebe o .env inteiro
     # (DJANGO_SECRET_KEY, banco, chave da OpenAI...). Token e chave: os MESMOS que o backend usa.
     environment:
@@ -174,16 +188,52 @@ services:
       - acbr:/app/data               # só o log: nenhum certificado nem XML fica gravado
     networks: [fiscal]
 
+  # Backup diário (banco + fotos + certificados cifrados) para um S3 (AWS, MinIO, B2, R2...): docker/backup/.
+  # Cifrado aqui antes de sair (BACKUP_PASSPHRASE). Fica "unhealthy" se a última cópia boa tiver mais de 26 h.
+  backup:
+    build: ./backup
+    image: starrp-backup:local
+    restart: unless-stopped
+    logging: *logging
+    # Só o que o backup precisa: não recebe o .env inteiro (chave da aplicação, tokens...).
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB no .env}
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER no .env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:-}
+      BACKUP_S3_REGION: ${BACKUP_S3_REGION:-us-east-1}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:?defina BACKUP_S3_BUCKET no .env (destino do backup)}
+      BACKUP_S3_PREFIX: ${BACKUP_S3_PREFIX:-starrp}
+      BACKUP_S3_ADDRESSING: ${BACKUP_S3_ADDRESSING:-path}
+      BACKUP_S3_ACCESS_KEY: ${BACKUP_S3_ACCESS_KEY:?defina BACKUP_S3_ACCESS_KEY no .env}
+      BACKUP_S3_SECRET_KEY: ${BACKUP_S3_SECRET_KEY:?defina BACKUP_S3_SECRET_KEY no .env}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:?defina BACKUP_PASSPHRASE no .env (20+ caracteres)}
+      BACKUP_CRON: ${BACKUP_CRON:-0 3 * * *}
+      BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-30}
+      BACKUP_ON_START: ${BACKUP_ON_START:-0}
+      TZ: ${TZ:-America/Sao_Paulo}
+    volumes:
+      # Gravável só para a restauração (restore.sh --apply); a cópia diária só lê.
+      - media:/data/media
+      - private:/data/private
+    networks: [data, backup]
+    depends_on:
+      postgres: { condition: service_healthy }
+
 networks:
   edge: {}                           # internet ↔ nginx
   web:                               # nginx ↔ backends e frontend (sem saída para a internet)
     internal: true
     ipam:
-      config: [{ subnet: "${WEB_SUBNET:-172.30.10.0/24}" }]
+      # Os outros containers pegam IP só na 2ª metade: o fixo do nginx (.10) nunca é dado a outro. Mudou WEB_SUBNET? Mude WEB_IP_RANGE junto.
+      config: [{ subnet: "${WEB_SUBNET:-172.30.10.0/24}", ip_range: "${WEB_IP_RANGE:-172.30.10.128/25}" }]
   data: { internal: true }           # backends/worker ↔ Postgres e Redis (banco sem saída para a internet)
   # backends/worker ↔ ACBr. Não é interna: o ACBr fala com a SEFAZ e os backends com OpenAI, busca de
   # preços etc. por ela. Mesmo assim nada aqui tem porta publicada: de fora, só o nginx.
   fiscal: {}
+  backup: {}                         # saída do backup para o S3 (o banco continua só na `data`)
 
 volumes:
   media:

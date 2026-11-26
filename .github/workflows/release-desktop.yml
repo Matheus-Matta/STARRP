@@ -15,7 +15,7 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write
+  contents: read   # escrita só no job que publica (dependências não veem o token de escrita)
 
 jobs:
   info:
@@ -27,6 +27,7 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
+          persist-credentials: false
           fetch-depth: 0
       - id: info
         run: bash .github/scripts/release-info.sh desktop desktop/ shared/
@@ -55,6 +56,8 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
         with:
           node-version: 22
@@ -82,6 +85,8 @@ jobs:
     name: Release
     needs: [info, build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write   # criar a Release
     steps:
       - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093  # v4
         with:

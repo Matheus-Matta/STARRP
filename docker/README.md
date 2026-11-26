@@ -17,6 +17,7 @@ internet ──► Cloudflare ──HTTPS──► nginx :443 ─┬─► backe
 | `worker`/`beat` | backend: fila e agendador do Celery            | —               |
 | `postgres`      | `postgres:16-alpine`                           | —               |
 | `redis`         | `redis:7-alpine`                               | —               |
+| `backup`        | `docker/backup` (postgres:16 + aws-cli), cópia diária para o S3 | — |
 | `acbr`          | `ghcr.io/matheus-matta/comunicador-fiscal`     | —               |
 
 **Redes** — só o nginx tem porta para fora:
@@ -37,6 +38,30 @@ docker compose ps                    # backends "healthy"
 ```
 
 Primeira vez: crie a conta `docker compose run --rm migrate python manage.py create_account "Loja" --admin admin --password <senha>`.
+
+## Backup
+
+O serviço `backup` (pasta `backup/`) copia todo dia, no horário de `BACKUP_CRON`, o banco (`pg_dump`), as fotos
+(`media`) e os certificados cifrados (`private`). Tudo é cifrado aqui (AES-256, senha `BACKUP_PASSPHRASE`) e
+enviado a um S3 qualquer: AWS, MinIO, Backblaze B2, Cloudflare R2. Destino e chaves vêm do `.env` (`BACKUP_*`).
+Apaga as cópias com mais de `BACKUP_KEEP_DAYS` dias e fica `unhealthy` se a última cópia boa tiver mais de 26 h.
+
+```bash
+docker compose exec backup backup.sh                   # cópia agora
+docker compose exec backup backup.sh --list            # cópias no armazenamento
+docker compose exec backup restore.sh --check          # TESTE: restaura a mais nova num banco à parte (faça todo mês)
+```
+
+Restaurar de verdade (substitui banco, fotos e certificados):
+
+```bash
+docker compose stop backend-blue backend-green worker beat
+docker compose exec backup restore.sh --apply 2026-11-25_030000
+docker compose up -d
+```
+
+Guarde **fora do servidor**: `BACKUP_PASSPHRASE` (sem ela a cópia não abre) e `FIELD_ENCRYPTION_KEY` (sem ela o
+CSC, a senha do A1 e os tokens restaurados não abrem).
 
 ## Atualizar
 
