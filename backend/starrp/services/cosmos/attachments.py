@@ -158,9 +158,13 @@ def purge(days=1):
 
     from django.utils import timezone
 
+    # Apaga de verdade (o arquivo tem as linhas da planilha): o delete() do queryset do sistema só marca
+    # deleted_at, deixa os dados no banco e devolve um número, não a tupla do Django.
+    from django.db.models import QuerySet
+
     old = CosmosAttachment.all_objects.filter(conversation__isnull=True,
                                               created_at__lt=timezone.now() - timedelta(days=days))
-    return old.delete()[0]
+    return QuerySet.delete(old)[0]
 
 
 def payload(attachment):

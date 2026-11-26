@@ -770,6 +770,27 @@ def test_status_entrega_o_resumo_de_ontem_uma_vez(ctx, monkeypatch):
     assert [str(d) for d in calls] == ["2026-11-02"]
 
 
+def test_tarefa_diaria_apaga_de_verdade_os_anexos_esquecidos(ctx, sent):
+    """A tarefa do resumo diário quebrava (TypeError) ao limpar anexos: o delete() do queryset do sistema
+    só marca deleted_at e devolve um número. Agora apaga de fato e mantém o anexo da conversa e o recente."""
+    from datetime import timedelta
+
+    from django.utils import timezone
+
+    from starrp.tasks.cosmos import cosmos_daily_digest
+
+    conversation = _ctx(ctx).conversation
+    make = lambda **kw: CosmosAttachment.all_objects.create(  # noqa: E731
+        account=ctx.account, user=ctx.admin, name="x.csv", kind="sheet", **kw)
+    forgotten, used, recent = make(), make(conversation=conversation), make()
+    CosmosAttachment._base_manager.filter(pk__in=[forgotten.pk, used.pk]).update(
+        created_at=timezone.now() - timedelta(days=3))
+    result = cosmos_daily_digest()
+    assert result["attachments_purged"] == 1
+    left = set(CosmosAttachment._base_manager.values_list("pk", flat=True))
+    assert forgotten.pk not in left and {used.pk, recent.pk} <= left
+
+
 # ── ensaio de toda proposta (não só criar/alterar/excluir) ───────────────────
 def test_sangria_em_caixa_fechado_nao_vira_cartao(ctx):
     from starrp.models import CashMovement, CashSession
