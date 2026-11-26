@@ -13,17 +13,21 @@
  *   `storeEmitter` por quem administra o fiscal); na nuvem, ficam no backend e vão em cada
  *   chamada dentro do envelope. O PDV manda só o documento, e nunca guarda o certificado;
  * - numeração: série própria do terminal; o número de uma venda é reservado uma vez e
- *   reaproveitado nas novas tentativas (rejeitada não consome número na SEFAZ);
+ *   reaproveitado nas novas tentativas, com o mesmo cNF (rejeitada não consome número na SEFAZ);
+ * - resposta perdida ("incerta": pode ter saído): a próxima tentativa CONSULTA a chave antes de
+ *   reenviar, e nunca vira contingência enquanto a SEFAZ não disser que a nota não existe;
  * - SEFAZ fora (e só ela: o comunicador respondeu de forma confiável): NFC-e em contingência offline
  *   (tpEmis 9), impressa, e transmitida depois (`transmitPending`);
  * - a nota vai ao servidor em `/sales/{id}/invoices/register/` (venda que já existe lá) ou junto
  *   com a venda pronta (`/pdv/offline-sales/`), e fica guardada aqui até ele saber.
  */
-import { buildIni, cents, digits, fmt, lines, messageOf, num, payments, pickResult, recipientOf, statusOf, totals, tzOffset } from "./document";
+import { accessKey, buildIni, cents, digits, fmt, lines, messageOf, num, payments, pickResult, recipientOf, statusOf, totals, tzOffset } from "./document";
 import type { SaleLike } from "./document";
 import { CommunicatorUnavailable } from "./transport";
-import type { AcbrTransport } from "./transport";
-import type { EmitOptions, EmitRequest, EmitResult, FiscalKitInfo, FiscalServer, FiscalStorage, Kit, LocalInvoice } from "./types";
+import type { AcbrAnswer, AcbrTransport } from "./transport";
+import type {
+  EmitOptions, EmitRequest, EmitResult, FiscalKitInfo, FiscalServer, FiscalStorage, Kit, LocalInvoice, Reserved,
+} from "./types";
 
 export type FiscalDeps = {
   storage: FiscalStorage;
@@ -64,6 +68,7 @@ export function createFiscal(deps: FiscalDeps) {
       const data = response.data as { error?: { message?: string }; detail?: string } | null;
       return kitInfo(response.status === 0 ? "Servidor fora do ar: usando o kit guardado." : data?.error?.message ?? data?.detail ?? `Erro ${response.status}`);
     }
+    if (deps.storeId() !== storeId) return kitInfo(); // trocou de filial enquanto baixava
     const fresh = { ...(response.data as Kit), storeId };
     storage.saveKit(fresh);
     // O número local nunca anda para trás; série nova (terminal recadastrado) recomeça pela do servidor.
@@ -78,18 +83,33 @@ export function createFiscal(deps: FiscalDeps) {
     return kitInfo();
   }
 
-  function reserve(saleRef: string, model: string, k: Kit) {
+  function reserve(saleRef: string, model: string, k: Kit, saleId?: string) {
     const state = storage.numbers();
     const key = `${model}:${saleRef}`;
     const series = state.series[model] ?? k.series[model]!.series;
-    const kept = state.bySale[key];
-    if (kept && kept.series === series) return kept;
-    const number = Math.max(state.next[model] ?? 1, k.series[model]?.next_number ?? 1);
+    const kept = state.bySale[key] ?? (saleId ? state.bySale[`${model}:${saleId}`] : undefined);
+    if (kept && kept.series === series) {
+      if (kept.cNF) return kept;
+      return saveReserved(saleRef, model, { ...kept, cNF: newCode() });
+    }
+    // Também depois da última nota guardada aqui: numeração perdida (arquivo estragado) não repete número.
+    const used = storage.invoices().filter((i) => i.document_model === model && i.series === series).map((i) => i.number);
+    const number = Math.max(state.next[model] ?? 1, k.series[model]?.next_number ?? 1, ...used.map((n) => n + 1));
     state.series[model] = series;
     state.next[model] = number + 1;
-    state.bySale[key] = { series, number };
+    state.bySale[key] = { series, number, cNF: newCode() };
     storage.saveNumbers(state);
     return state.bySale[key]!;
+  }
+
+  function newCode() {
+    return String(crypto.getRandomValues(new Uint32Array(1))[0]! % 100_000_000).padStart(8, "0");
+  }
+  function saveReserved(saleRef: string, model: string, value: Reserved) {
+    const state = storage.numbers();
+    state.bySale[`${model}:${saleRef}`] = value;
+    storage.saveNumbers(state);
+    return value;
   }
 
   const localInvoices = () => storage.invoices();
@@ -175,12 +195,40 @@ export function createFiscal(deps: FiscalDeps) {
     return { ok: true, message: "Certificado e CSC gravados no comunicador (cifrados lá). Este PDV não guarda o certificado." };
   }
 
+  const UNCERTAIN = "Não dá para saber se a nota saiu: emita de novo quando o comunicador e a SEFAZ responderem (ela será consultada antes).";
+  /** O envio pode ter chegado à SEFAZ: `incerto`, ou resposta sem decisão fiscal que não seja recusa do pedido (4xx). */
+  const maybeSent = (a: AcbrAnswer) => a.data.erro === "incerto" || (a.trusted && !a.data.situacao && !a.data.erro) || (!a.trusted && !(a.status >= 400 && a.status < 500 && a.status !== 408));
+
+  /** A tentativa anterior ficou sem resposta: o que a SEFAZ diz desta chave. `null` = ela não a tem (pode emitir). */
+  async function recover(k: Kit, req: EmitRequest, reference: string, reserved: Reserved, cNF: string): Promise<AcbrAnswer | null> {
+    const key = accessKey({ issuer: k.issuer, model: req.model, series: reserved.series, number: reserved.number, cNF, issuedAt: new Date(reserved.uncertainAt!) });
+    if (!key) throw new Error(`O cadastro da filial está sem o código IBGE da cidade. ${UNCERTAIN}`);
+    const answer = await acbr("/v1/nfe/consultar", { ...context(k, req.model, reference), chave: key });
+    const situation = String(answer.data.situacao ?? "");
+    if (answer.trusted && (situation === "nao_encontrada" || situation === "rejeitada")) return null;
+    if (!answer.trusted || answer.data.erro || situation === "processando") throw new Error(`${messageOf(answer.data)} ${UNCERTAIN}`.trim());
+    return { ...answer, data: { chave: key, ...answer.data } };
+  }
+
+  /** Uma emissão por venda de cada vez (clique duplo): a segunda espera e recebe a nota da primeira. */
+  const emitting = new Map<string, Promise<EmitResult>>();
   async function emit(req: EmitRequest, options: EmitOptions): Promise<EmitResult> {
+    const id = `${req.model}:${req.saleRef}`;
+    const running = emitting.get(id);
+    if (running) return running;
+    const turn = emitNow(req, options).finally(() => emitting.delete(id));
+    emitting.set(id, turn);
+    return turn;
+  }
+
+  async function emitNow(req: EmitRequest, options: EmitOptions): Promise<EmitResult> {
     const k = kit();
     if (!k) return { ok: false, error: "Kit fiscal não baixado: abra o PDV com o servidor no ar uma vez (Configurações → Nota fiscal)." };
     if (!k.series[req.model]) return { ok: false, error: `O kit não tem série para o modelo ${req.model}.` };
     const sale = req.sale as SaleLike;
-    const done = invoicesFor(req.saleRef).find((i) => i.document_model === req.model && (i.status === "authorized" || i.status === "contingency"));
+    // Pelos dois ids: nota emitida por versão antiga ficou com o id do servidor.
+    const known = [...invoicesFor(req.saleRef), ...(req.saleId ? invoicesFor(req.saleId) : [])];
+    const done = known.find((i) => i.document_model === req.model && (i.status === "authorized" || i.status === "contingency"));
     if (done) return { ok: true, invoice: done };
     try {
       const rows = lines(sale, k);
@@ -189,25 +237,43 @@ export function createFiscal(deps: FiscalDeps) {
       const pays = payments(sale);
       const recipient = recipientOf(sale);
       if (req.model === "55" && !recipient) throw new Error("A NF-e precisa do CPF/CNPJ do cliente.");
-      const { series, number } = reserve(req.saleRef, req.model, k);
-      const previous = invoicesFor(req.saleRef).find((i) => i.document_model === req.model && i.number === number);
-      const random = crypto.getRandomValues(new Uint32Array(1))[0]! % 100_000_000;
-      const cNF = String((previous?.register.cNF as string) ?? String(random).padStart(8, "0"));
-      const issuedAt = new Date();
+      const reserved = reserve(req.saleRef, req.model, k, req.saleId);
+      const { series, number } = reserved;
+      const previous = known.find((i) => i.document_model === req.model && i.number === number);
+      const cNF = String(previous?.register.cNF ?? reserved.cNF);
+      let issuedAt = new Date();
       const change = num(sale.change_amount);
       const reference = `${req.saleRef}:${req.model}:${number}`;
       const ini = (tpEmis: "1" | "9") => buildIni({ k, model: req.model, series, number, cNF, issuedAt, tpEmis, rows, pays, change, recipient });
 
       let tpEmis: "1" | "9" = "1";
-      let answer = await acbr("/v1/nfe/emitir", { ...context(k, req.model, reference), ini: ini("1"), tp_emis: "1" });
+      const mark = (uncertainAt?: string) => saveReserved(req.saleRef, req.model, { series, number, cNF, uncertainAt });
+      const found = reserved.uncertainAt ? await recover(k, req, reference, reserved, cNF) : null;
+      let answer: AcbrAnswer;
+      if (found) {
+        answer = found;
+        issuedAt = new Date(reserved.uncertainAt!);
+      } else {
+        const body = { ...context(k, req.model, reference), ini: ini("1"), tp_emis: "1" };
+        // Gravado ANTES do envio: resposta perdida, app fechado ou luz no meio não viram outra nota.
+        mark(issuedAt.toISOString());
+        try {
+          answer = await acbr("/v1/nfe/emitir", body);
+        } catch (error) {
+          if (!(error instanceof CommunicatorUnavailable) || !error.sent) mark(); // nem saiu daqui
+          throw error;
+        }
+      }
+      if (maybeSent(answer)) throw new Error(`${messageOf(answer.data)} ${UNCERTAIN}`.trim());
+      mark(); // a partir daqui a situação é conhecida
       if (answer.trusted && answer.data.erro === "sem_comunicacao" && req.model === "65" && options.contingency && k.offline_contingency) {
         tpEmis = "9";
         answer = await acbr("/v1/nfe/emitir", { ...context(k, req.model, reference), ini: ini("9"), tp_emis: "9" });
       }
       const result = answer.data;
-      const local = req.saleRef.startsWith("off:");
+      const local = req.saleRef.startsWith("off:") && !req.saleId;
       const invoice: LocalInvoice = {
-        key: reference, saleRef: req.saleRef, saleId: local ? "" : req.saleRef,
+        key: reference, saleRef: req.saleRef, saleId: req.saleId ?? (local ? "" : req.saleRef),
         document_model: req.model, series, number, environment: k.environment, emission_type: tpEmis,
         status: statusOf(result), access_key: digits(result.chave), protocol: String(result.protocolo ?? ""),
         qrcode: String(result.qrcode ?? ""), message: messageOf(result), issued_at: issuedAt.toISOString(),
@@ -239,7 +305,10 @@ export function createFiscal(deps: FiscalDeps) {
   async function registerInvoice(invoice: LocalInvoice): Promise<boolean> {
     if (!invoice.saleId) return false;
     const response = await server.post(`/sales/${invoice.saleId}/invoices/register/`, invoice.register).catch(() => ({ ok: false, status: 0, data: null }));
-    const final = response.status >= 400 && response.status < 500 && ![401, 408, 429].includes(response.status);
+    // 403/404 não são definitivos: outro operador, ou a filial certa ativa, ainda registra.
+    // Passados 3 dias, a recusa vale: senão a nota prenderia o PDV nesta filial para sempre.
+    const stale = [403, 404].includes(response.status) && Date.now() - Date.parse(invoice.issued_at) > 3 * 86_400_000;
+    const final = stale || response.status >= 400 && response.status < 500 && ![401, 403, 404, 408, 429].includes(response.status);
     if (response.ok || final) {
       // A resposta é a venda com as notas: guarda o id da nota no servidor (DANFE de lá).
       const rows = ((response.data as { invoices?: Record<string, unknown>[] } | null)?.invoices ?? []);
@@ -259,6 +328,8 @@ export function createFiscal(deps: FiscalDeps) {
     const k = kit();
     if (!k) return;
     for (const invoice of localInvoices().filter((i) => i.status === "contingency" && i.xml)) {
+      const issuer = (invoice.register.issuer as Record<string, string> | undefined)?.cnpj;
+      if (issuer && digits(issuer) !== digits(k.issuer.cnpj)) continue; // nota de outro emitente: espera o kit dele
       try {
         const answer = await acbr("/v1/nfe/transmitir", { ...context(k, invoice.document_model, invoice.key), xml: invoice.xml });
         if (!answer.trusted || answer.data.erro === "sem_comunicacao") return; // SEFAZ ainda fora
@@ -283,9 +354,13 @@ export function createFiscal(deps: FiscalDeps) {
     for (const invoice of localInvoices().filter((i) => !i.synced && i.saleId)) await registerInvoice(invoice);
   }
 
-  /** Venda local enviada: a nota dela passa a apontar para a venda do servidor. */
-  function linkInvoices(saleRef: string, saleId: string) {
-    for (const invoice of localInvoices().filter((i) => i.saleRef === saleRef)) saveInvoice({ ...invoice, saleId, synced: true });
+  /** Venda local enviada: as notas dela passam a apontar para a venda do servidor. A que foi junto (`sentKey`)
+   *  já está lá; nota válida que saiu DEPOIS do envio fica pendente e é registrada em seguida. */
+  function linkInvoices(saleRef: string, saleId: string, sentKey?: string) {
+    for (const invoice of localInvoices().filter((i) => i.saleRef === saleRef)) {
+      const late = invoice.key !== sentKey && (invoice.status === "authorized" || invoice.status === "contingency");
+      saveInvoice({ ...invoice, saleId, synced: !late });
+    }
   }
 
   return {

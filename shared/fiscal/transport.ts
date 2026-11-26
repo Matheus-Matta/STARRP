@@ -22,7 +22,16 @@ export interface AcbrTransport {
   health(): Promise<AcbrHealth>;
 }
 
-export class CommunicatorUnavailable extends Error {}
+export class CommunicatorUnavailable extends Error {
+  /** `sent: false` = a conexão nem abriu (comunicador fechado): é certo que nada saiu. */
+  readonly sent: boolean;
+  constructor(message: string, sent = true) {
+    super(message);
+    this.sent = sent;
+  }
+}
+/** Erros de rede em que o pedido não chegou a sair. */
+const NOT_SENT = new Set(["ECONNREFUSED", "ENOTFOUND", "EHOSTUNREACH", "ENETUNREACH"]);
 
 /** Respostas sem corpo fiscal (API.md §8): tratar como "sem resposta". */
 const UNTRUSTED = new Set([401, 403, 404, 413, 429]);
@@ -44,10 +53,13 @@ export function localTransport(access: () => { url: string; token?: string }, ti
           signal: AbortSignal.timeout(timeoutMs),
         });
       } catch (error) {
-        throw new CommunicatorUnavailable(`O Comunicador Fiscal não respondeu em ${base()} (${error instanceof Error ? error.message : error}).`);
+        throw new CommunicatorUnavailable(`O Comunicador Fiscal não respondeu em ${base()} (${error instanceof Error ? error.message : error}).`,
+          !NOT_SENT.has(String((error as { cause?: { code?: string } } | null)?.cause?.code ?? "")));
       }
-      const data = (await response.json().catch(() => ({}))) as Record<string, unknown>;
-      const fiscal = typeof data === "object" && data !== null && ("situacao" in data || "erro" in data || response.ok);
+      const parsed = (await response.json().catch(() => null)) as Record<string, unknown> | null;
+      const data = parsed && typeof parsed === "object" ? parsed : {};
+      // Corpo cortado ou ilegível não é decisão fiscal, nem com 200: a nota pode ter saído.
+      const fiscal = "situacao" in data || "erro" in data || (response.ok && Object.keys(data).length > 0);
       const trusted = !UNTRUSTED.has(response.status) && fiscal && data.erro !== "sigilo";
       if (!trusted) {
         const message = data.mensagem ?? data.detail ?? `HTTP ${response.status}`;

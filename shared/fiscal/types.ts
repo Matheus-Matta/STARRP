@@ -55,6 +55,8 @@ export type EmitRequest = {
   model: "65" | "55";
   /** Chave da venda: o número reservado é reaproveitado numa nova tentativa. */
   saleRef: string;
+  /** A venda local já virou venda do servidor (nota emitida depois do envio): id de lá. */
+  saleId?: string;
 };
 export type EmitResult = { ok: boolean; invoice?: LocalInvoice; error?: string };
 
@@ -73,7 +75,16 @@ export type FiscalKitInfo = {
 export type Numbers = {
   series: Record<string, number>;
   next: Record<string, number>;
-  bySale: Record<string, { series: number; number: number }>;
+  bySale: Record<string, Reserved>;
+};
+
+/** O número reservado de uma venda. `cNF` fica com ele: a chave é a mesma em toda tentativa. */
+export type Reserved = {
+  series: number;
+  number: number;
+  cNF?: string;
+  /** Envio sem resposta confiável: a nota PODE ter saído com esta data (a chave depende do mês dela). */
+  uncertainAt?: string;
 };
 
 /** Onde cada PDV guarda (desktop: arquivos cifrados pelo Windows; web: armazenamento do navegador). */

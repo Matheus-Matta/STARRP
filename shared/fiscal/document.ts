@@ -8,6 +8,9 @@ export const digits = (v: unknown) => String(v ?? "").replace(/\D/g, "");
 export const cents = (v: number) => Math.round(v * 100) / 100;
 export const num = (v: unknown) => Number(v ?? 0) || 0;
 export const fmt = (v: number, places = 2) => v.toFixed(places);
+/** Quantidade × preço em inteiros (quatro casas cada), metade para cima: o mesmo arredondamento do servidor. */
+export const lineTotal = (quantity: number, price: number) =>
+  Number((BigInt(Math.round(quantity * 10_000)) * BigInt(Math.round(price * 10_000)) + 500_000n) / 1_000_000n) / 100;
 const clean = (v: unknown) => String(v).replace(/[\r\n]+/g, " ").trim();
 const SEM_GTIN = "SEM GTIN";
 const HOMOLOG_ITEM = "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL";
@@ -49,7 +52,7 @@ export function lines(sale: SaleLike, k: Kit): Line[] {
     if (!fiscal || !profile || !ncm) missing.push(String(item.description));
     const quantity = num(item.quantity);
     const unitPrice = num(item.unit_price);
-    const vProd = cents(quantity * unitPrice);
+    const vProd = lineTotal(quantity, unitPrice);
     const vDesc = cents(Math.max(vProd - num(item.total), 0) + saleDiscount[index]!);
     const vOutro = others[index]!;
     const base = cents(vProd - vDesc + vOutro);
@@ -154,6 +157,18 @@ export function buildIni(o: {
   });
   if (o.change) section("pag", { vTroco: fmt(o.change) });
   return out.join("\n");
+}
+
+/** Chave de acesso (44 dígitos) da nota em emissão NORMAL: para consultar na SEFAZ uma nota de resposta perdida. */
+export function accessKey(o: { issuer: Record<string, string>; model: string; series: number; number: number; cNF: string; issuedAt: Date }) {
+  const pad = (v: string | number, size: number) => String(v).padStart(size, "0");
+  const uf = digits(o.issuer.city_ibge).slice(0, 2);
+  const month = `${pad(o.issuedAt.getFullYear() % 100, 2)}${pad(o.issuedAt.getMonth() + 1, 2)}`;
+  const body = uf + month + pad(digits(o.issuer.cnpj), 14) + o.model + pad(o.series, 3) + pad(o.number, 9) + "1" + pad(o.cNF, 8);
+  if (body.length !== 43) return null; // cadastro sem o IBGE da cidade: não dá para montar
+  const sum = [...body].reverse().reduce((total, digit, index) => total + Number(digit) * (2 + (index % 8)), 0);
+  const rest = 11 - (sum % 11);
+  return body + (rest >= 10 ? 0 : rest);
 }
 
 export function recipientOf(sale: SaleLike) {
