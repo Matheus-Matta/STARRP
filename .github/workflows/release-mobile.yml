@@ -1,16 +1,15 @@
 # Release do APP MÓVEL: só a tag mobile-v<versão> dispara (ex.: mobile-v1.0.1).
-# A versão da tag vira a versão do app (app.json → "version"); o número do build (versionCode/buildNumber) o EAS
-# sobe sozinho. Builds na nuvem do EAS, em paralelo:
-#   - Starrp-<versão>.apk  (perfil preview: instala direto nos aparelhos da loja)
-#   - Starrp-<versão>.aab  (perfil production: Google Play)
-#   - Starrp-<versão>.ipa  (perfil production: App Store, assinado pelo EAS)
-# Anexados à Release do GitHub com os commits de mobile/ (e frontend/src, que o app reaproveita).
+# Gera o Starrp-<versão>.apk aqui no GitHub (expo prebuild + Gradle, `npm run build:apk`), SEM o EAS e sem conta
+# Expo, e anexa à Release do GitHub com os commits de mobile/ (e frontend/src, que o app reaproveita). O APK
+# instala direto nos aparelhos da loja (não vai para a Play Store). Versão do app = versão da tag; versionCode =
+# X·10000 + Y·100 + Z.
 #
-# Uma vez só, antes da primeira tag (ver mobile/README.md, "Publicar pelo GitHub"):
-#   - segredo EXPO_TOKEN (expo.dev → Access tokens);
-#   - `npx eas-cli@latest init` no mobile/ (grava o projectId no app.json) e `eas credentials` para o iOS;
-#   - variável API_URL=https://... nos ambientes preview/production do EAS;
-#   - opcional: variável do repositório MOBILE_AUTO_SUBMIT=true envia o .aab e o .ipa às lojas (eas submit).
+# Opcional (Settings → Secrets and variables → Actions):
+#   - variável MOBILE_API_URL=https://app.suaempresa.com.br: servidor já preenchido no login (sem ela, digita-se lá);
+#   - segredos ANDROID_KEYSTORE_BASE64 (o .jks em base64), ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS e
+#     ANDROID_KEY_PASSWORD: assina com a chave da empresa. Sem eles, sai com a chave de DEBUG (bom para começar;
+#     trocar de chave depois obriga a desinstalar o app antigo).
+
 name: Release mobile
 
 on:
@@ -55,30 +54,14 @@ jobs:
           npm run lint
 
   build:
-    name: ${{ matrix.name }}
+    name: Android APK
     needs: info
-    strategy:
-      fail-fast: false   # o APK sai mesmo se a App Store falhar (credencial da Apple, por exemplo)
-      matrix:
-        include:
-          - name: Android APK
-            platform: android
-            profile: preview
-            file: apk
-          - name: Android AAB (Play Store)
-            platform: android
-            profile: production
-            file: aab
-          - name: iOS (App Store)
-            platform: ios
-            profile: production
-            file: ipa
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: mobile
     steps:
-      # Repositório inteiro: o app usa ../frontend/src (cadastros, relatórios) e o EAS envia a raiz do git.
+      # Repositório inteiro: o app usa ../frontend/src (cadastros, relatórios).
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
           persist-credentials: false
@@ -87,44 +70,37 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: mobile/package-lock.json
-      - uses: expo/expo-github-action@c7b66a9c327a43a8fa7c0158e7f30d6040d2481e  # v8
-        with:
-          eas-version: 22.23.5
-          token: ${{ secrets.EXPO_TOKEN }}
       - run: npm ci --no-audit --no-fund
-      - name: Versão da tag no app
+      - name: Chave de assinatura (se houver)
         env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "ANDROID_KEYSTORE=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Sem ANDROID_KEYSTORE_BASE64: o APK sai com a chave de debug."
+          fi
+      - name: Gerar o APK
+        env:
+          API_URL: ${{ vars.MOBILE_API_URL }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          GRADLE_OPTS: -Dorg.gradle.jvmargs=-Xmx4g
           VERSION: ${{ needs.info.outputs.version }}
         run: |
-          node -e '
-            const fs = require("fs");
-            const app = JSON.parse(fs.readFileSync("app.json", "utf8"));
-            app.expo.version = process.env.VERSION.replace(/-.*/, "");  // lojas aceitam só 1.2.3
-            fs.writeFileSync("app.json", JSON.stringify(app, null, 2) + "\n");
-          '
-          # O EAS envia o que está no git: commit local (não sobe para o GitHub).
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git diff --quiet || git commit -am "ci: mobile ${VERSION}" --no-verify
-      - name: Build no EAS
-        env:
-          SUBMIT: ${{ matrix.profile == 'production' && vars.MOBILE_AUTO_SUBMIT == 'true' && '--auto-submit' || '' }}
-        run: |
-          eas build --platform ${{ matrix.platform }} --profile ${{ matrix.profile }} \
-            --non-interactive --wait --json $SUBMIT > build.json
-          url="$(node -p 'JSON.parse(require("fs").readFileSync("build.json","utf8"))[0].artifacts.buildUrl')"
-          curl -fsSL -o "Starrp-${{ needs.info.outputs.version }}.${{ matrix.file }}" "$url"
+          export JAVA_HOME="$JAVA_HOME_17_X64"   # Java 17 já instalado no runner (o Gradle do RN pede 17)
+          npm run build:apk -- "$VERSION"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
-          name: mobile-${{ matrix.file }}
+          name: mobile-apk
           if-no-files-found: error
-          path: mobile/Starrp-*.${{ matrix.file }}
+          path: mobile/dist/Starrp-*.apk
 
   release:
     name: Release
     needs: [info, build]
-    # Publica o que saiu, mesmo que um dos builds tenha falhado (o resumo do job mostra qual).
-    if: ${{ !cancelled() && needs.info.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write   # criar a Release
@@ -137,7 +113,4 @@ jobs:
           name: App móvel ${{ needs.info.outputs.version }}
           body_path: artifacts/release-notes/release-notes.md
           prerelease: ${{ needs.info.outputs.prerelease == 'true' }}
-          files: |
-            artifacts/mobile-*/*.apk
-            artifacts/mobile-*/*.aab
-            artifacts/mobile-*/*.ipa
+          files: artifacts/mobile-apk/*.apk
