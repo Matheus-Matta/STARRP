@@ -13,6 +13,9 @@ daphne>=4.2,<4.3
 # Do daphne/channels: abaixo de 26.10.1 tem CVE-2026-116579.
 autobahn>=26.10.1
 celery>=5.4,<5.5
+# O celery 5.4 aceita qualquer kombu 5.x, mas o 5.7 exige redis-py 6.1+: com o redis 5.0 o worker e o beat
+# morriam ao subir (VersionMismatch). Travado junto com o redis.
+kombu>=5.4,<5.7
 redis>=5.0,<5.1
 psycopg[binary,pool]>=3.1,<3.3
 python-decouple>=3.8,<3.9
