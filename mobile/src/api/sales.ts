@@ -23,7 +23,7 @@ export type PaymentMethod = { id: string; name: string; kind: string; requires_r
 export type PaymentInput = { method: string; amount: string; tendered?: string; installments?: number; nsu?: string };
 
 const base = (id: string) => `/sales/${id}`;
-const newKey = () => `app-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+export const newKey = () => `app-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 
 export const salesApi = {
   create: (body: { customer?: string | null } = {}) => api.post<Sale>("/sales/", { channel: "mobile", ...body }),

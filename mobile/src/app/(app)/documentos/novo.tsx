@@ -34,7 +34,13 @@ type Line = {
   unitCost: string;
   lotNumber: string;
   expiresAt: string; // DD/MM/AAAA
+  /** O que a linha já tinha e esta tela não edita (endereço, fabricação, notas, id): volta igual ao salvar. */
+  kept?: Record<string, unknown>;
 };
+
+const KEPT = ["id", "bin", "destination_bin", "lot", "manufactured_at", "notes", "divergence_reason", "divergence_notes"];
+const keptOf = (item: Record<string, unknown>) =>
+  Object.fromEntries(KEPT.filter((k) => item[k] !== undefined).map((k) => [k, item[k]]));
 
 const KIND_ORDER: DocKind[] = ["entry", "exit", "transfer", "inventory", "adjustment", "supplier_return"];
 
@@ -115,6 +121,7 @@ function DocumentForm() {
             quantity: formatQty(i.quantity).replace(/\./g, ""), unitCost: i.unit_cost && toNumber(i.unit_cost)
               ? String(i.unit_cost).replace(".", ",") : "",
             lotNumber: i.lot_number ?? "", expiresAt: isoToBr(i.expires_at),
+            kept: keptOf(i as unknown as Record<string, unknown>),
           })));
         } else {
           setWarehouse((list.find((w) => w.is_default) ?? list[0])?.id ?? "");
@@ -182,7 +189,7 @@ function DocumentForm() {
       if (qty === null) return `Quantidade inválida em ${l.name}.`;
       if (kind !== "adjustment" && toNumber(qty) < 0) return `Quantidade negativa só em ajuste (${l.name}).`;
       if (kind !== "adjustment" && kind !== "inventory" && toNumber(qty) === 0) return `Quantidade zerada em ${l.name}.`;
-      const item: DocumentDraft["items"][number] = { variant: l.variant, quantity: qty };
+      const item: DocumentDraft["items"][number] = { ...l.kept, variant: l.variant, quantity: qty };
       if (isEntry) {
         const cost = parseDecimalInput(l.unitCost);
         if (cost !== null) item.unit_cost = cost;

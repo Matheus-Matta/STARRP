@@ -9,12 +9,12 @@
 import Feather from "@expo/vector-icons/Feather";
 import * as Haptics from "expo-haptics";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { ApiError } from "@/api/client";
-import { type PaymentInput, type PaymentMethod, type Sale, salesApi } from "@/api/sales";
+import { newKey, type PaymentInput, type PaymentMethod, type Sale, salesApi } from "@/api/sales";
 import { Guard } from "@/components/Guard";
 import { ProductPicker } from "@/components/ProductPicker";
 import { RelationSelect } from "@/components/resource/Pickers";
@@ -329,6 +329,7 @@ function PaySheet({ visible, onClose, sale, balance, onDone }: {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [needsCash, setNeedsCash] = useState(false);
+  const checkoutKey = useRef<string | null>(null); // a mesma chave até concluir: tocar de novo não vira outra cobrança
   const [wasOpen, setWasOpen] = useState(false);
 
   if (visible !== wasOpen) {
@@ -385,7 +386,7 @@ function PaySheet({ visible, onClose, sale, balance, onDone }: {
     setSaving(true);
     setError(null);
     try {
-      onDone(await salesApi.checkout(sale.id, payments));
+      onDone(await salesApi.checkout(sale.id, payments, (checkoutKey.current ??= newKey())));
     } catch (e) {
       if (e instanceof ApiError && e.code === "cash_session_required") setNeedsCash(true);
       setError(errorMessage(e));

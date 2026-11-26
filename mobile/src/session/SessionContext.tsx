@@ -74,8 +74,9 @@ export function SessionProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       // Endereço salvo com http:// no app de produção: vai ao login para trocar (tentar de novo não resolve).
       if (error instanceof client.ApiError && error.code === "insecure_server") setStatus("signedOut");
-      else if (error instanceof client.ApiError && error.status === 0) setStatus("unreachable");
-      else await signOut();
+      // Só a recusa do login (401) sai. Servidor em manutenção (502), limite (429) ou erro não apagam os tokens.
+      else if (error instanceof client.ApiError && error.status === 401) await signOut();
+      else setStatus("unreachable");
     }
   }, [fetchMe, signOut]);
 
